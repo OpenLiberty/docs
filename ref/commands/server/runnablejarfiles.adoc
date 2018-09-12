@@ -1,0 +1,94 @@
+// INSTRUCTION: Please remove all comments that start INSTRUCTION prior to commit. Most comments should be removed, although not the copyright.
+// INSTRUCTION: The copyright statement must appear at the top of the file
+//
+// Copyright (c) 2018 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+
+= Runnable JAR files
+
+// Pithy single sentence description of the command.
+Runnable JAR files contain applications, server configurations, and a Liberty installation.
+
+// If relevant, more info.
+
+== Usage
+
+Run the JAR file by using the standard java command with the `-jar` option, for example:
+----
+java -jar package_file_name.jar
+----
+
+When the JAR file runs, it gets extracted to a temporary location and then the server runs in the foreground, started by the Liberty server run command. All output is written to stdout or stderr. By default, files are extracted to temporary locations:
+
+    * For Windows: `%HOMEPATH%/wlpExtract/<jar file name>_nnnnnnnnnnnnnnnnnnn`
+    * For all other platforms: `$HOME/wlpExtract/<jar file name>_nnnnnnnnnnnnnnnnnnn`
+
+You can control the output location by using the `WLP_JAR_EXTRACT_ROOT` or `WLP_JAR_EXTRACT_DIR` environment variable (see [Environment variables]).
+
+To stop the Liberty server press Ctrl-C. When the Liberty server stops, the extraction directory is automatically deleted. If you stop the active shell in any other way, the extraction directory is not cleaned up automatically, you must clean it up manually. 
+
+
+=== Environment variables
+
+[%header,cols=2*]
+|===
+|Environment variable name
+|Description
+
+|WLP_JAR_EXTRACT_ROOT
+|Extracts JAR file to directory `${WLP_JAR_EXTRACT_ROOT}/<jar file name>_nnnnnnnnnnnnnnnnnnn`.
+
+|WLP_JAR_EXTRACT_DIR
+|Extracts JAR file to directory `${WLP_JAR_EXTRACT_DIR}`.
+
+|WLP_OUTPUT_DIR
+|Writes Liberty server output files to directory `${WLP_OUTPUT_DIR}`. By default, server output is written to the extraction directory, which is deleted when the server stops. If you want to save the output, specify a durable output location by using the `WLP_OUTPUT_DIR` environment variable before you start the server.
+
+|WLP_JAR_DEBUG
+|Runs Liberty server by using `server debug <server name>` instead of `server run <server name>`. You can run the Liberty server in debug mode if you set the environment variable WLP_JAR_DEBUG before you start the server.
+
+|WLP_JAR_ENABLE_2PC
+|Set to value `true` to enable two-phase-commit transactions when the runnable JAR file runs.
+
+By default, two-phase commit commit transactions are disabled because the transaction logs are in the expansion directory and are deleted when the Liberty server is stopped. Therefore, transaction recovery is not possible.
+
+To enable two-phase commit, configure the transaction log to be in a durable location in the file system or an RDBMS and set the `WLP_JAR_ENABLE_2PC` environment variable.
+
+To configure the transaction log, use either the `transactionLogDirectory` or `dataSourceRef` attribute on the transaction element in your `server.xml` configuration. 
+
+|WLP_JAR_CYGWIN
+|Set to value true if you are running the JAR file under CYGWIN. This variable causes the Liberty server JAR runner to do UNIX-style file and process handling when it is running in the CYGWIN environment. 
+
+Run under the bash shell, not `mintty`.
+
+Automatic extraction file deletion occurs only when you run under the bash shell. You can run under mintty, but you must delete the extraction files manually. Mintty does not forward the necessary signal that is required to trigger Java shutdown hooks.
+|===
+
+
+== See also
+
+* link:server-package.html[server package]
+
+
+// Include server script exit codes
+include::server-exitcodes.adoc[]
+
+
+// Include description of server process
+include::server-serverprocess.adoc[]
+
+
+
+//NOTE: Info taken from the following sources:
+
+//* https://www.ibm.com/support/knowledgecenter/SSEQTP_liberty/com.ibm.websphere.wlp.doc/ae/twlp_admin_script.html
+//* https://www.ibm.com/support/knowledgecenter/SSEQTP_liberty/com.ibm.websphere.wlp.doc/ae/twlp_setup_package_server.html
+//* https://www.ibm.com/support/knowledgecenter/SSEQTP_liberty/com.ibm.websphere.wlp.doc/ae/rwlp_setup_jarserver.html
+
+

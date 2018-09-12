@@ -1,0 +1,113 @@
+// INSTRUCTION: Please remove all comments that start INSTRUCTION prior to commit. Most comments should be removed, although not the copyright.
+// INSTRUCTION: The copyright statement must appear at the top of the file
+//
+// Copyright (c) 2018 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-layout: guide
+// INSTRUCTION: The project id is the part of the git repository after the guide- and must be specified
+:projectid: github repo name without the guide- prefix
+// INSTRUCTION: Provide an estimate of how long the guide will take to go through.
+:page-duration: 15 minutes
+// INSTRUCTION: Provide the date when the guide is published.  Format is YYYY-MM-DD.
+:page-releasedate: 2017-11-17
+// INSTRUCTION: Provide a description for the guide index page.
+:page-description: Learn how to create a REST service with JAX-RS, JSON-P, and Open Liberty.
+// INSTUCTION: Please provide relevant tags, try to avoid inventing new ones, tags where there is 1 guide for the tag isn't useful.
+:page-tags: ['REST', 'Getting Started']
+// INSTRUCTION: Specify the unique name of the guide that is used in the permalink.  For example below, it is rest-service
+:page-related-guides: ['']
+// INSTRUCTION: Specify the slug in the website. This must be unique.
+:page-permalink: /guides/rest-service
+// INSTRUCTION: You should have this to source the common page elements, clone git@github.com:OpenLiberty/guides-common.git
+:common-includes: https://raw.githubusercontent.com/OpenLiberty/guides-common/master
+// INSTRUCTION: You can't have a new line between the attributes and the title.
+// The details of what to fill in for this template are in the comments. So, read the source for this template to see the comments.
+//
+// Example title: Creating a RESTful web service
+= server dump command
+
+// Start the introduction with "You'll explore how to..." or something similarly catchy:
+Creates a snapshot of a server and saves the result into an archive file for further tuning and diagnosis.
+
+Useful for problem diagnosis of a Liberty server because the result file contains server configuration, log information, and details of the deployed applications in the workarea directory. The command can be applied to either a running or a stopped server.
+
+For a running server, the following information is also included:
+
+* State of each OSGi bundle in the server
+* Wiring information for each OSGi bundle in the server
+* Component list that is managed by the Service Component Runtime (SCR) environment
+* Detailed information of each component from SCR
+* Configuration administration data of each OSGi bundle
+* Information about registered OSGi services
+* Runtime environment settings such as Java virtual machine (JVM), heap size, operating system, thread information, and network status
+
+
+== Syntax
+
+Run the command from `path_to_liberty/wlp/bin`.
+
+----
+server dump serverName [options]
+----
+
+serverName::
+The name of the server to run the command against (if no server is specified, a server called `defaultServer` is automatically created to run the command against).
+options::
+One or more optional parameters.
+
+
+== Options
+
+[%header,cols=2*]
+|===
+|Option
+|Description
+
+|--archive="path_to_the_target_archive_file"
+|Specifies a target file for the package or dump operation. This path can be either a relative path, which is relative to the installation root directory of Liberty, or an absolute path. The default archive target is a compressed file with the server name, which is stored in the installation root directory. Use quotation marks if the value contains spaces. You can use this option for both package and dump operations.
+
+If you specify a `.jar` extension for your archive file name, the server command creates a new self-extracting archive file from which the Liberty server can be installed by using the `java` command. 
+//For more information, see Installing Liberty by extracting a Java archive file in the product documentation.
+
+|--include=diagnose_option,diagnose_option,...
+|Specifies the type of diagnostic information to be captured. The value of `--include` is a comma-delimited list, which can contain one or more of the following values:
+
+* `heap` is used to help diagnose the excessive memory consumption and memory leaks, which shows live objects in the memory and references between them. On IBM J9 virtual machines, the resulting file is named `heapdump.date.time.processID.sequenceNumber.phd`. On HotSpot virtual machines, the resulting file is named `java.date.time.processID.sequenceNumber.hprof`.
+* `system` is also used to help diagnose the excessive memory consumption and memory leaks, but they are also useful for finding defects in the virtual machine. These dumps are only supported on IBM J9 virtual machines. The resulting file is named `core.date.time.processID.sequenceNumber.dmp`.
+* `thread` is used to help diagnose hung threads, deadlocks, and can sometimes be used for diagnose excessive CPU issues. On IBM J9 virtual machines, the resulting file is named `javacore.date.time.processID.sequenceNumber.txt`. On HotSpot virtual machines, the resulting file is named `javadump.date.time.processID.sequenceNumber.txt`.
+
+The thread dump type is supported only when the server is running on the Java SDK. If the server is started with a JRE, an error is reported indicating that the server does not support the dump type. This restriction applies to HotSpot virtual machines only; the thread Java dump type is supported on any IBM JVM (JRE or SDK).
+
+|===
+
+== Usage
+
+To create a dump file of thread information from the `myserver` server in a ZIP archive called `myserver.zip`:
+----
+server dump myserver --archive="myserver.zip" --include=thread
+----
+
+To create a snapshot of the server status in a ZIP archive called `myserver.zip`:
+----
+server dump server_name --archive=myserver.zip --include=heap
+----
+
+== See also
+
+* link:server-list.html[server list]
+* link:server-javadump.html[server javadump]
+
+// Include server script exit codes
+include::server-exitcodes.adoc[]
+
+// Include description of server process
+include::server-serverprocess.adoc[]
+
+
+// https://www.ibm.com/support/knowledgecenter/SSEQTP_liberty/com.ibm.websphere.wlp.doc/ae/twlp_setup_dump_server.html
