@@ -1,0 +1,112 @@
+// INSTRUCTION: Please remove all comments that start INSTRUCTION prior to commit. Most comments should be removed, although not the copyright.
+// INSTRUCTION: The copyright statement must appear at the top of the file
+//
+// Copyright (c) 2018 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-layout: guide
+// INSTRUCTION: The project id is the part of the git repository after the guide- and must be specified
+:projectid: github repo name without the guide- prefix
+// INSTRUCTION: Provide an estimate of how long the guide will take to go through.
+:page-duration: 15 minutes
+// INSTRUCTION: Provide the date when the guide is published.  Format is YYYY-MM-DD.
+:page-releasedate: 2017-11-17
+// INSTRUCTION: Provide a description for the guide index page.
+:page-description: Learn how to create a REST service with JAX-RS, JSON-P, and Open Liberty.
+// INSTUCTION: Please provide relevant tags, try to avoid inventing new ones, tags where there is 1 guide for the tag isn't useful.
+:page-tags: ['REST', 'Getting Started']
+// INSTRUCTION: Specify the unique name of the guide that is used in the permalink.  For example below, it is rest-service
+:page-related-guides: ['']
+// INSTRUCTION: Specify the slug in the website. This must be unique.
+:page-permalink: /guides/rest-service
+// INSTRUCTION: You should have this to source the common page elements, clone git@github.com:OpenLiberty/guides-common.git
+:common-includes: https://raw.githubusercontent.com/OpenLiberty/guides-common/master
+// INSTRUCTION: You can't have a new line between the attributes and the title.
+// The details of what to fill in for this template are in the comments. So, read the source for this template to see the comments.
+
+
+= server pause command
+
+Pauses all or specific inbound work for a Liberty server.
+
+By pausing and resuming inbound work, you can isolate resources for auditing or debugging without having to stop the server. You can pause all components or specific components:
+
+* Pause HTTP endpoints to isolate one or more resources associated with an HTTP endpoint; for example, a database.
+* Pause message-driven bean (MDB) message endpoints to prevent the endpoints from receiving messages.
+
+== Usage
+
+To pause all pausable components on the `myserver` server:
+----
+server pause myserver
+----
+
+To pause the `db1HttpEndpoint` and `db2HttpEndpoint` HTTP endpoints on `myserver`:
+----
+server pause myserver --target=db1HttpEndpoint,db2HttpEndpoint
+----
+
+To pause the `Bean` MDB message endpoint on `myserver`:
+----
+server pause myserver --target=MDBApplication#MDBModule.jar#Bean
+----
+
+== Syntax
+
+Run the command from the `/wlp/bin` directory.
+
+----
+server pause serverName [options]
+----
+
+serverName::
+The name of the server with components you want to pause. If the named server is not running or does not exist, the command fails. If no server name is specified, the command uses defaultServer.
+options::
+One or more optional parameters. If you do not specify any options, all pausable components on the server are paused.
+
+
+== Options
+
+[%header,cols=2*]
+|===
+|Option
+|Description
+
+|--target=http_endpoint,http_endpoint,...
+|A comma-delimited list of HTTP endpoints to pause. Provide the ID of each HTTP endpoint as specified in the server configuration. For example, the following configuration shows two endpoint IDs, `db1HttpEndpoint` and `db2HttpEndpoint`, that you can specify for the `--target` option:
+
+`<httpEndpoint id="defaultHttpEndpoint" host="\*" httpPort="8800" httpsPort="8810"/>`
+
+`<httpEndpoint id="db1HttpEndpoint" host="*" httpPort="8801" httpsPort="8811"/>`
+
+`<httpEndpoint id="db2HttpEndpoint" host="*" httpPort="8802" httpsPort="8812"/>`
+
+|--target=message_endpoint,message_endpoint,...
+
+|A comma-delimited list of message endpoints to pause. Provide the activation name of each MDB message endpoint in the format: `ApplicationName#ModuleName#BeanName`.
+
+|===
+
+NOTE: LC: Can the types be combined in a single command? If so, we should mention it in the descriptions above and give an example in Usage below.
+
+
+
+== See also
+
+* link:server-resume.html[server resume]
+* link:server-debug.html[server debug]
+
+// Include server script exit codes
+include::server-exitcodes.adoc[]
+
+// Include description of server process
+include::server-serverprocess.adoc[]
+
+
+
+//NOTE: (LC) add info from:  https://www.ibm.com/support/knowledgecenter/SSEQTP_liberty/com.ibm.websphere.wlp.doc/ae/twlp_PauseResume_cmd.html
