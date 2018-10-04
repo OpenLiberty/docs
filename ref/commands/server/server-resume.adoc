@@ -1,0 +1,112 @@
+//
+// Copyright (c) 2018 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-layout: server-command
+:page-type: command
+= server resume command
+
+Resumes all or specific inbound work for an Open Liberty server.
+
+By pausing and resuming inbound work, you can isolate resources for auditing or debugging purposes without having to stop the server. You can stop the whole server or specified endpoints:
+
+* Isolate one or more resources associated with an HTTP endpoint; for example, a database.
+* Prevent a message-driven bean (MDB) message endpoint receiving messages.
+
+== Usage
+
+
+
+You can resume all components that were paused or specific components that were paused.
+
+To resume all components, issue the following command:
+
+----
+server resume <server_name>
+----
+
+To resume, for example, two specific components, issue the following command:
+
+server resume _servername_ --target=_target1_,_target2_
+
+The values for _target1_ and _target2_ are components that can be paused for each supported protocol.
+
+
+To resume the HTTP endpoints `db1HttpEndpoint` and `db2HttpEndpoint` on the `myserver` server:
+----
+server resume myserver --target=db1HttpEndpoint,db2HttpEndpoint
+----
+
+To resume the `Bean` MDB bean on the `myserver` server:
+----
+server resume myserver --target=MDBApplication#MDBModule.jar#Bean
+----
+
+
+== Syntax
+
+Run the command from `path_to_liberty/bin`.
+
+----
+server resume serverName [options]
+----
+
+serverName::
+The name of the server to run the command against (if no server is specified, a server called `defaultServer` is automatically created to run the command against).
+options::
+One or more optional parameters. If you do not specify any endpoints, the whole server is resumed.
+
+== Options
+
+[%header,cols=2*]
+|===
+|Option
+|Description
+
+|--target=http_endpoint,http_endpoint,...
+|A comma-delimited list of HTTP endpoints to be resumed. Provide the ID of each HTTP endpoint as specified in the server configuration. For example, in the following configuration, you can resume the `db1HttpEndpoint` and `db2HttpEndpoint` endpoints:
+
+`<httpEndpoint id="db1HttpEndpoint" host="\*" httpPort="8801" httpsPort="8811"/>`
+
+`<httpEndpoint id="db2HttpEndpoint" host="*" httpPort="8802" httpsPort="8812"/>`
+
+|--target=message_endpoint,message_endpoint,...
+
+|A comma-delimited list of HTTP endpoints to be resumed. Provide the activation name of each MDB message endpoint in the format: `ApplicationName#ModuleName#BeanName`.
+
+|===
+
+//NOTE: LC: Can the types be combined in a single command? If so, we should mention it in the descriptions above and give an example in Usage below.
+
+== Usage
+
+To resume the HTTP endpoints `db1HttpEndpoint` and `db2HttpEndpoint` on the `myserver` server:
+----
+server resume myserver --target=db1HttpEndpoint,db2HttpEndpoint
+----
+
+To resume the `Bean` MDB bean on the `myserver` server:
+----
+server resume myserver --target=MDBApplication#MDBModule.jar#Bean
+----
+
+
+== See also
+
+* link:server-pause.html[server pause]
+* link:server-debug.html[server debug]
+
+// Include server script exit codes
+include::server-exitcodes.adoc[]
+
+// Include description of server process
+include::server-serverprocess.adoc[]
+
+
+
+//NOTE: (LC) add info from:  https://www.ibm.com/support/knowledgecenter/SSEQTP_liberty/com.ibm.websphere.wlp.doc/ae/twlp_PauseResume_cmd.html
