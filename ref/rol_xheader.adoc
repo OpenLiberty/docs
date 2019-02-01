@@ -34,16 +34,12 @@ endpoint information that is presented by a proxy or a load balancer via Forward
 headers instead of the current TCP connected endpoint. This information can be retrieved by using
 certain servlet API calls or the NCSA Access Log.
 
-[horizontal]
-Note:: The Forwarded headers are favored over
-X-Forwarded-*, implying that when both types of headers are parsed by the HTTP Channel, only the
+NOTE: The Forwarded headers are favored over X-Forwarded-*, implying that when both types of headers are parsed by the HTTP Channel, only the
 values of the Forwarded header are accounted for.
 
 == Configuration
 
-In order to use the Forwarded and X-Forwarded-* header support, you need to configure the server.xml with a new element called ----
-                                                                                                                               <remoteIp>.
-                                                                                                                               ----
+In order to use the Forwarded and X-Forwarded-* header support, you need to configure the server.xml with a new element called <remoteIp>.
 This can be enabled in two modes: one remoteIp for each endpoint or one common remoteIp for multiple endpoints.
 
 *Using distinct remoteIp for each endpoint:
@@ -76,235 +72,36 @@ This can be enabled in two modes: one remoteIp for each endpoint or one common r
     <remoteIp id="myRemoteIp" proxies="<regular_expression>" useRemoteIpInAccessLog="<true/false>"/>
 ----
 
-Note::  Any of the servlet features supported by Liberty can be configured to retrieve the remote client IP, the host and/or the request protocol.
-           ----
-Note:: The <remoteIp>
-           ---- element can be optionally configured to provide a regular expression through a new configuration attribute called proxies. This is used to declare trusted Proxy node identifiers which can be IPv4/IPv6 addresses, an obfuscated token (which always starts with the underscore character), or a token called 'unknown'. If the <httpEndpoint> is configured to use the headers, and no regular expression is provided, please refer to the remoteIp table to see the default regular expression.
+NOTE: Any of the servlet features supported by Liberty can be configured to retrieve the remote client IP, the host and/or the request protocol.
 
-To generate a ZIP file containing only the server directories so that the contents can be deployed on an existing Liberty runtime installation (e.g. in a Docker container):
+NOTE: The ``<remoteIp>`` element can be optionally configured to provide a regular expression through a new configuration attribute called *proxies*. This is used to declare trusted Proxy node identifiers which can be IPv4/IPv6 addresses, an obfuscated token (which always starts with the underscore character), or a token called 'unknown'. If the ``<httpEndpoint>`` is configured to use the headers, and no regular expression is provided, please refer to the https://www.ibm.com/support/knowledgecenter/en/SSEQTP_liberty/com.ibm.websphere.liberty.autogen.base.doc/ae/rwlp_config_httpEndpoint.html[remoteIp] table to see the default regular expression.
 
-----
-server package server_name --archive=package_file_name.zip --include=usr
-----
+NOTE: The ``<remoteIp>`` element can be optionally configured to provide a Boolean-type configuration attribute called *useRemoteIpInAccessLog*, defaulted to “false”. This means that by default, the NCSA Access Log (if configured) will continue to reference the connected endpoint's TCP information when recording remote IP, host, and/or request protocol. When set to “true”, the NCSA Access Log (if configured) will reflect the X-Forwarded-* or Forwarded headers when recording the remote client IP, host, and/or the request protocol if the HTTP Channel has verified remote client information.
 
+*Enable the https://www.ibm.com/support/knowledgecenter/en/SSEQTP_liberty/com.ibm.websphere.wlp.doc/ae/rwlp_http_accesslogs.html[HTTP Access Log] when *useRemoteIpInAccessLog* is set to “true”.
 
-To generate a runnable JAR file:
+== Forwarded and X-Forwarded-* headers and verification
 
-----
-server package server_name --archive=package_file_name.jar --include=runnable
-----
+A proxy or a load balancer can be configured to provide the Forwarded or X-Forwarded-* request headers. WebSphere Liberty will only utilize the Forwarded “for” (the “for” parameter can optionally include the port), “host” and “proto” parameters, or also X-Forwarded-For, X-Forwarded-Port, X-Forwarded-Host and X-Forwarded-Proto headers. Note that the Forwarded “by” parameter or the X-Forwarded-By header is not used.
 
+When this feature is enabled, and either the Forwarded “for” parameter or X-Forwarded-For header are presented with a list of node identifiers (IP addresses), the HTTP Channel will verify the remote client information by processing the list in reversed ordering (right-to-left order). Each node identifier must match the regular expression pattern of trusted proxies. If each node identifier has been verified, then the first element in the list denotes the remote client IP address. As a result, the HTTP Channel is also able to verify the remote host and protocol information in the Forwarded or X-Forwarded-* headers (if and when present). This information is reflected in the ServletRequest API and in the NCSA Access Log.
 
-To generate a minimal runnable JAR file:
+Verification or processing of these headers will only stop when a given node identifier is not trusted. In this case, the remote client IP address could not be verified. As a result, the ServletRequest APIs would return the values as if the feature was disabled. These values consider the presence of internal headers, before defaulting to returning the information of the connected remote TCP connection. The NCSA Access Log would only record the information of the connected remote TCP connection.
 
-----
-server package server_name --archive=package_file_name.jar --include=minify,runnable
-----
+== Affected Servlet APIs and NCSA Access Log directives
 
+.https://javaee.github.io/javaee-spec/javadocs/javax/servlet/ServletRequest.html[ServletRequest] Java API:
+* getRemoteAddr()
+* getRemoteHost()
+* getRemotePort()
+* getScheme()
+* isSecure()
 
-To package a server that supports only Linux, use the following command:
+.NCSA Access Log directives:
+* %a – Remote IP address
+* %h – Remote host name
+* %H – Request protocol
 
-----
-server package --archive="linux.zip" --include=minify --os=Linux
-----
+For more information, see http://publib.boulder.ibm.com/httpserv/manual70/mod/mod_log_config.html[Apache Module mod_log_config] and https://www.ibm.com/support/knowledgecenter/SSAW57_9.0.0/com.ibm.websphere.nd.multiplatform.doc/ae/rrun_chain_httpcustom.html?view=embed#accesslogformat[accessLogFormat[].
 
-To package a server with Linux support retained, but Windows support removed, use the following command:
-
-----
-server package --archive="small.zip" --include=minify --os=Linux,-Win32
-----
-
-== Usage
-
-Run the JAR file by using the standard java command with the `-jar` option, for example:
-----
-java -jar package_file_name.jar
-----
-
-When the JAR file runs, it gets extracted to a temporary location and then the server runs in the foreground, started by the Liberty server run command. All output is written to stdout or stderr. By default, files are extracted to temporary locations:
-
-    * For Windows: `%HOMEPATH%/wlpExtract/<jar file name>_nnnnnnnnnnnnnnnnnnn`
-    * For all other platforms: `$HOME/wlpExtract/<jar file name>_nnnnnnnnnnnnnnnnnnn`
-
-You can control the output location by using the `WLP_JAR_EXTRACT_ROOT` or `WLP_JAR_EXTRACT_DIR` environment variable (see [Environment variables]).
-
-To stop the Liberty server press Ctrl-C. When the Liberty server stops, the extraction directory is automatically deleted. If you stop the active shell in any other way, the extraction directory is not cleaned up automatically, you must clean it up manually.
-
-
-=== Environment variables
-// Ensure that environment variables are in a table format. See the following example:
-
-[%header,cols=2*]
-|===
-|Environment variable name
-|Description
-
-|WLP_JAR_EXTRACT_ROOT
-|Extracts JAR file to directory `${WLP_JAR_EXTRACT_ROOT}/<jar file name>_nnnnnnnnnnnnnnnnnnn`.
-
-|WLP_JAR_EXTRACT_DIR
-|Extracts JAR file to directory `${WLP_JAR_EXTRACT_DIR}`.
-
-|WLP_OUTPUT_DIR
-|Writes Liberty server output files to directory `${WLP_OUTPUT_DIR}`. By default, server output is written to the extraction directory, which is deleted when the server stops. If you want to save the output, specify a durable output location by using the `WLP_OUTPUT_DIR` environment variable before you start the server.
-
-|WLP_JAR_DEBUG
-|Runs Liberty server by using `server debug <server name>` instead of `server run <server name>`. You can run the Liberty server in debug mode if you set the environment variable WLP_JAR_DEBUG before you start the server.
-
-|WLP_JAR_ENABLE_2PC
-|Set to value `true` to enable two-phase-commit transactions when the runnable JAR file runs.
-
-By default, two-phase commit commit transactions are disabled because the transaction logs are in the expansion directory and are deleted when the Liberty server is stopped. Therefore, transaction recovery is not possible.
-
-To enable two-phase commit, configure the transaction log to be in a durable location in the file system or an RDBMS and set the `WLP_JAR_ENABLE_2PC` environment variable.
-
-To configure the transaction log, use either the `transactionLogDirectory` or `dataSourceRef` attribute on the transaction element in your `server.xml` configuration.
-
-|WLP_JAR_CYGWIN
-|Set to value true if you are running the JAR file under CYGWIN. This variable causes the Liberty server JAR runner to do UNIX-style file and process handling when it is running in the CYGWIN environment.
-
-Run under the bash shell, not `mintty`.
-
-Automatic extraction file deletion occurs only when you run under the bash shell. You can run under mintty, but you must delete the extraction files manually. Mintty does not forward the necessary signal that is required to trigger Java shutdown hooks.
-|===
-
-== Options
-// Only include options relevant to the command and with text relevant to the command; eg don't talk about dump archives in the 'server package' article. Some commands don't have any relevant options - should this section just not be here when it has no content?
-
-[%header,cols=2*]
-|===
-|Option
-|Description
-
-|--archive="package_file_name.zip"
-|Specifies a target file for the package operation. This path can be either a relative path, which is relative to the installation root directory of Liberty, or an absolute path. The default archive target is a ZIP file with the server name, which is stored in the installation root directory. Use quotation marks if the value contains spaces.
-
-If you specify a `.jar` extension, instead of `.zip`, for your archive file name, the command creates a JAR file (see also the `--include=runnable` option).
-
-If you do not specify a valid package name or target location, the command creates the `wlp.zip` runtime archive in the `$WLP_OUTPUT_DIR` location, which is the `${wlp.install.dir}/usr/servers` directory by default. The target location must exist before running the command. If the target location is `c:\temp`, the `C:\temp` directory must exist and have write permission for the command to write the archive to the `C:\temp` directory.
-
-The resulting file is created by using UTF-8 encoding for entry names, so the tool that you use to open the file must be able to use UTF-8 encoding for entry names. The `jar` command in a Java SDK uses this format.
-
-|--include=all
-|Packages all the files in the Liberty installation directory. If the `${WLP_USER_DIR}` and `${WLP_OUTPUT_DIR}` are defined in the `server.env` file, the files under them are packaged.
-
-|--include=usr
-|Packages the files in the `${WLP_USER_DIR}` directory.
-
-|--include=wlp
-|Packages the files in the `wlp` directory but does not contain the `usr` directory.
-
-|--include=minify
-|Packages only those parts of the runtime environment, and files in the `${WLP_USER_DIR}` directory, that are required to run the server, which minimizes the size of the resulting archive.
-
-The parts of the runtime environment that are retained by the minify operation depend on the features that are configured in the server that you are packaging. Only those features that are required to run the server are retained, and the remaining features are removed. Therefore, you cannot later enable a feature that has been removed. For example, if only the `servlet-3.0` feature is retained, you cannot later enable the `jpa-2.0` feature.
-
-You can repeat the minify operation to further reduce the size of the archive if the configuration is changed. There is, however, no reverse operation for the minify operation, so if you later require one or more features that have been removed, you must begin again with a complete Liberty server.
-
-While the minify operation is running, the server is temporarily started, and you see the associated messages. For this reason, you cannot use the `--include=minify` option with a server that is not able to be started, but you can package it with the `--include=all` or `--include=usr` options.
-
-|--include=runnable
-|Use only with the `--archive="package_file_name.jar"` option. Packages an executable JAR file from which you can start a Liberty server by running the JAR file. See link:runnablejarfiles.html[Runnable JAR files].
-
-|--os=os_value,os_value,...
-|Use only with the `--include=minify` option. Specifies the operating systems that you want the packaged server to support. Supply a comma-separated list. The default value is any, indicating that the server is to be deployable to any operating system supported by the source.
-
-To specify that an operating system is not to be supported, prefix it with a minus sign (-). For a list of operating system values, refer to the https://www.osgi.org/developer/specifications/reference/#os[OSGi Alliance website]. If you exclude an operating system, you cannot later include it if you repeat the minify operation on the archive.
-
-|===
-
-
-== Exit codes
-
-The following exit codes are available for the server command and the equivalent executable JAR file ws-server.jar:
-
-0::
-    OK. 0 indicates successful completion of the requested operation. For server status, 0 indicates that the server is running.
-1::
-    For server status, 1 indicates that the server is not running. For other operations, it indicates invocation of a redundant operation. For example, starting a started server or stopping a stopped server. This code might also be returned by JVM if invalid Java options are used.
-2::
-    The server does not exist.
-3::
-    An unsupported action was called on a running server. For example, the server is running when the package action is called.
-4::
-    An unsupported action was called on a stopped server. For example, the server is not running when the dump action is called.
-5::
-    Unknown server status. For example, the workarea directory is missing, or the Attach API fails to work.
->=20::
-    Return codes greater than or equal to 20 indicates that an error occurred while performing the request. Messages are printed and captured in log files with more information about the error.
-
-== Server process
-
-NOTE: LC: Should this info be broken out for the different commands or is the majority relevant to all commands? (currently an include in all command topics)
-
-The server process is created by using the environment variables that are specified in the `server.env` file. The following JVM options are added by default:
-
-* The `-javaagent:wlp/bin/tools/ws-javaagent.jar` option is required for trace, monitoring, incremental publishing of applications, and other server capabilities.
-* The `-Xshareclasses` and related options enable the shared class cache on supported IBM J9 virtual machines.
-* The cache directory is set to `WLP_OUTPUT_DIR/.classCache`.
-* The `-XX:MaxPermSize` option increases the size of the permanent generation for HotSpot virtual machines before Java 8. You can set the `WLP_SKIP_MAXPERMSIZE` environment variable to `true` to avoid this default option, which avoids warnings such as:
-
-    `Java HotSpot(TM) Client VM warning: ignoring option MaxPermSize=256m; support was removed in 8.0`
-
-* The `-Djava.awt.headless=true` option avoids `java.awt.HeadlessException` on all platforms and focus-stealing problems on Mac OS X.
-
-You can use the `jvm.options` file to override these default JVM options or add more JVM options.
-//For more information about the `server.env` and `jvm.options` file, see Customizing the Liberty environment.
-
-By default, the `server` command sets the `umask` value to deny all permissions to `Other` users before the command runs the action. You can set the `WLP_SKIP_UMASK` environment variable to `true` in the `server.env` file to prevent the server command from modifying the umask. If you set the `WLP_SKIP_UMASK` environment variable, the server uses the `umask` value from the underlying process of the operation.
-
-The current working directory of the server process is set to the server output directory.
-
-The server command creates a process ID (PID) file when you start the server and deletes the PID file when you stop the server. By default, the PID file is set to `WLP_OUTPUT_DIR/.pid/serverName.pid`. The absolute path of the PID file can be changed by setting the `PID_FILE` environment variable, or the absolute path of the PID directory can be changed by setting the `PID_DIR` environment variable.
-
-The standard output and error from the server process is output to the foreground console for the `server run` and `server debug` commands and is redirected to the `WLP_OUTPUT_DIR/serverName/logs/console.log` file by default when you use the start action. The log name can be changed by setting the `LOG_FILE` environment variable, and the log directory can be changed by setting the `LOG_DIR` environment variable.
-//For more information about the logging configuration, see Logging and Trace.
-
-The `server stop` command prevents new application requests from entering the server, which allows existing requests some time to complete. After that time, the remaining server components are stopped and the server process exits. Application requests that do not complete in the allowed time fail but their exact behavior depends on their activity when the server components are stopped.
-
-== Syntax
-
-Run the command from `path_to_liberty/bin`.
-
-----
-server command_name
-----
-
-serverName::
-A name for the server (if no server is specified, a server called `defaultServer` is automatically created).
-
-Naming constraints:
-
-* Use only Unicode alphanumeric (e.g. 0-9, a-z, A-Z), underscore (_), dash (-), plus (+), and period (.) characters.
-* Do not begin the with a dash (-) or period (.).
-* Be aware that your file system, operating system, or compressed file directory might impose more restrictions.
-
-When the server is created successfully, you receive message: `Server server_name created`
-
-A directory with the name of the new server is created under the `${wlp.user.dir}/servers` directory, containing the configuration of the new server. The HTTP port numbers for the new server are assigned to default values and are shown in the generated `server.xml` file to make it easy to edit them.
-
-If the specified server exists, no server is created and you receive an exception message:
-----
-CWWKE0005E: The runtime environment could not be launched.
-CWWKE0045E: It was not possible to create the server called server_name because
-the server directory C:\wlp\usr\servers\server_name already exists.
-
-== See also
-
-* link:server-package.html[server package]
-
-
-// Include server script exit codes
-include::server-exitcodes.adoc[]
-
-
-// Include description of server process
-include::server-serverprocess.adoc[]
-
-
-
-//NOTE: Info taken from the following sources:
-
-//* https://www.ibm.com/support/knowledgecenter/SSEQTP_liberty/com.ibm.websphere.wlp.doc/ae/twlp_admin_script.html
-//* https://www.ibm.com/support/knowledgecenter/SSEQTP_liberty/com.ibm.websphere.wlp.doc/ae/twlp_setup_package_server.html
-//* https://www.ibm.com/support/knowledgecenter/SSEQTP_liberty/com.ibm.websphere.wlp.doc/ae/rwlp_setup_jarserver.html
+NOTE: These APIs and directives are only affected when the HTTP Channel is able to verify the remote client endpoint information.
