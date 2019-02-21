@@ -1,0 +1,110 @@
+:page-layout: intro
+:page-description: Concept for JSON-B
+:page-categories: REST
+:page-permalink: /docs/concept/col_JSON.html
+= JSON-B for serializing and deserializing Java objects
+
+JSON-B is a standard binding layer for converting Java objects. It defines a default mapping algorithm for converting existing Java classes to JSON messages.
+
+== Introduction to JSON-B
+
+JavaScript Object Notation (JSON) has established itself as the data language of microservices.  It is less versbose than XML, but still human readable.  Nevertheless, the Java language has not had a spec-defined technology for easily converting JSON into a Java object and vice versa.  JSON-B (https://jcp.org/en/jsr/detail?id=367[JSR-367]) allows users to quickly and easily convert objects to JSON - in some cases without any changes to the Java model classes.  It maps Java objects to JSON objects.  Easy-to-understand annotations make it easy to modify the JSON property name, make some properties optional, or provide advanced methods to modify the data during transformation.
+
+Combined with other technologies, like JAX-RS, the conversion between JSON and Java objects are even more seamless. Let's take a closer look at what JSON-B can do.
+
+== Why JSON-B is better than JSON-P
+
+JSON-B is a direct object-to-JSON mapping. JSONP maps via APIs like JsonObject/JsonArray/etc, and therefore, is more manual. One thing that JSON-B has that the JSON-P specification doesn't is an object binding API that supports direct object mapping to and from JSON representations. Java Architecture for XML Binding (JAXB) functions in this way, given the way that XML data is formatted in Java. JAXB is a collection of APIs that are used to bind XML schemas to Java objects and vice versa. For instance, in JAXB, the annotations API (javax.xml.bind.annotation) is used to bind Java elements to XML schemas. There's a https://dzone.com/articles/jsonb-java-api-for-json-binding[JSON-B article on DZone] that goes into more detail about why JSON-B is the better choice.
+
+== Examples of JSON-B in action 
+
+=== Add Maven repositories
+Add these repositories to your Maven project first:
+----
+<repositories>
+    <!-- Needed for JSON-B API -->
+    <repository>
+        <id>java.net-Public</id>
+        <name>Maven Java Net Snapshots and Releases</name>
+        <url>https://maven.java.net/content/groups/public/</url>
+    </repository>
+</repositories>
+----
+
+=== Add some dependencies
+Now, add these dependencies to the repository that you created: 
+----
+<dependency>
+    <groupId>javax.json.bind</groupId>
+    <artifactId>javax.json.bind-api</artifactId>
+    <version>1.0</version>
+</dependency>
+                    
+<dependency>
+    <groupId>org.eclipse</groupId>
+    <artifactId>yasson</artifactId>
+    <version>1.0</version>
+</dependency>
+
+<dependency>
+    <groupId>org.glassfish</groupId>
+    <artifactId>javax.json</artifactId>
+    <version>1.1</version>
+</dependency>
+----
+
+=== Map an object
+The main JSON-B entry point is `Jsonb` class. It provides all necessary methods to serialize and deserialize Java objects. `Jsonb` instances are thread safe. They can be cached and reused.  
+----
+<dependency>
+    <groupId>javax.json.bind</groupId>
+    <artifactId>javax.json.bind-api</artifactId>
+    <version>1.0</version>
+</dependency>
+                    
+<dependency>
+    <groupId>org.eclipse</groupId>
+    <artifactId>yasson</artifactId>
+    <version>1.0</version>
+</dependency>
+
+<dependency>
+    <groupId>org.glassfish</groupId>
+    <artifactId>javax.json</artifactId>
+    <version>1.1</version>
+</dependency>
+----
+
+=== Map a collection
+JSON-B supports collections and generic collections handling. For proper deserialization the runtime type of resulting object needs to be passed to JSON-B during deserialization. It can be done a way shown below. 
+----
+// List of dogs
+List<Dog> dogs = new ArrayList<>();
+dogs.add(falco);
+dogs.add(cassidy);
+
+// Create Jsonb and serialize
+Jsonb jsonb = JsonbBuilder.create();
+String result = jsonb.toJson(dogs);
+
+// Deserialize back
+dogs = jsonb.fromJson(result, new ArrayList<Dog>(){}.getClass().getGenericSuperclass());
+----
+
+=== Customize mappings
+You can customize mappings in lots of different ways. You can use JSON-B annotations for compile time customizations and JsonbConfig class for runtime customizations. The following sample includes the creation of a custom configuration that serializes null values. By default, class properties with null values are ignored. 
+----
+// Create custom configuration
+JsonbConfig nillableConfig = new JsonbConfig().withNullValues(true);
+
+// Create Jsonb with custom configuration
+Jsonb jsonb = JsonbBuilder.create(nillableConfig);
+
+// Use it!
+String result = jsonb.toJson(pojo);
+----
+
+== Where to next?
+
+Now that you’ve seen how JSON-B works, you can learn how to create a RESTful web service using JSON-B to ! Check out the https://openliberty.io/guides/?search=REST&key=tag[REST guides] written by our team. Launch your next RESTful service today!
+
