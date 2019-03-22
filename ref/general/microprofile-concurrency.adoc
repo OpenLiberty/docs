@@ -67,34 +67,32 @@ Applications are expected to shut down executor instances that they build when t
 
 * If you are using EE Concurrency, you can cast your existing `ManagedExecutorService` to `ManagedExecutor`.
 
-* MicroProfile Concurrency also configures and injects instances via CDI (requires the cdi-2.0
-feature or higher).
+== Integration with CDI
 
-** The container creates a `ManagedExecutor` instance per unqualified `ManagedExecutor` injection point. For example,
-`@Inject ManagedExecutor executor1;`
+Application scoped CDI producers can be used in combination with the builders as a convenient way to share single instances of `ManagedExecutor` and `ThreadContext` across an application and manage their lifecycle.
 
-** You can optionally configure an injected instance by specifying the `ManagedExecutorConfig` annotation. For example,
-`@Inject @ManagedExecutorConfig(propagated=ThreadContext.APPLICATION) executor2;`
-
-** MicroProfile Concurrency provides the `NamedInstance` qualifier as a convenience for sharing the instance across injection points:
-
+Example CDI qualifier, which is used to identify which instance you want injected:
 ----
-@Produces @ApplicationScoped @NamedInstance("myExecutor")
-protected ManagedExecutor getExecutor(@ManagedExecutorConfig(maxAsync = 5) ManagedExecutor exec) {
-    return exec;
+@Qualifier
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ ElementType.FIELD, ElementType.METHOD, ElementType.PARAMETER })
+public @interface AppAndSecurityContext {}
+----
+
+Example producer field and disposer method, defined in a CDI bean,
+----
+@Produces @ApplicationScoped @SecurityAndAppContext
+ManagedExecutor executor = ManagedExecutor.builder()
+    .propagated(ThreadContext.SECURITY, ThreadContext.APPLICATION)
+    .build();
+
+void disposeExecutor(@Disposes @SecurityAndAppContext exec) {
+    exec.shutdownNow();
 }
-
-@Inject @NamedInstance("myExecutor") ManagedExecutor exec3;
-
-@Inject @NamedInstance("myExecutor") ManagedExecutor exec4;
 ----
 
-If you enable MicroProfile Config (`mpConfig-1.3` feature or higher), you can override the configuration of instances that are created by the container for CDI injection by defining properties in MicroProfile Config that follow naming conventions that are defined by the MicroProfile Concurrency specification. For example, if the injection points from the previous examples are defined within a bean that is named, `org.example.MyBean`, then you could override as follows in the application's `microprofile-config.properties` or other MicroProfile Config source:
-
+Example injection points, defined in one or more CDI beans,
 ----
-org.example.MyBean/executor1/ManagedExecutor/maxAsync=15
-org.example.MyBean/executor1/ManagedExecutor/propagated=Application,Security
-org.example.MyBean/executor2/ManagedExecutor/maxAsync=20
-org.example.MyBean/getExecutor/1/ManagedExecutor/propagated=
-org.example.MyBean/getExecutor/1/ManagedExecutor/cleared=Remaining
+@Inject @SecurityAndAppContext
+ManagedExecutor exec1;
 ----
