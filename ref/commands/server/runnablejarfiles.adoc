@@ -19,14 +19,11 @@ For information about packaging the JAR, see link:server-package.html[server pac
 
 == Usage
 
-When the JAR file runs, it gets extracted to a temporary location and then the server runs in the foreground, started by the Liberty server run command. By default, files are extracted to temporary locations:
+When the JAR file runs, it gets extracted to a temporary location and the server runs in the foreground. By default, files are extracted to the `wlpExtract/<jar file name>_nnnnnnnnn` in the user home directory.
 
-    * For Windows: `%HOMEPATH%/wlpExtract/<jar file name>_nnnnnnnnnnnnnnnnnnn`
-    * For all other platforms: `$HOME/wlpExtract/<jar file name>_nnnnnnnnnnnnnnnnnnn`
+You can control the output location by using the `WLP_JAR_EXTRACT_ROOT` or `WLP_JAR_EXTRACT_DIR` environment variables (see <<Environment variables>>).
 
-You can control the output location by using the `WLP_JAR_EXTRACT_ROOT` or `WLP_JAR_EXTRACT_DIR` environment variable (see [Environment variables]).
-
-To stop the Liberty server press *Ctrl-C*. When the Liberty server stops, the extraction directory is automatically deleted. If you stop the active shell in any other way, the extraction directory is not cleaned up automatically, you must clean it up manually.
+To stop the Liberty server, press *Ctrl-C*. When the Liberty server stops, the extraction directory is automatically deleted. If you stop the active shell by sending a terminate signal, then the extraction directory is not cleaned up.
 
 == Environment variables
 
@@ -42,7 +39,9 @@ To stop the Liberty server press *Ctrl-C*. When the Liberty server stops, the ex
 |Extracts JAR file to directory `${WLP_JAR_EXTRACT_DIR}`.
 
 |`WLP_OUTPUT_DIR`
-|Writes Liberty server output files to directory `${WLP_OUTPUT_DIR}`. By default, server output is written to the extraction directory, which is deleted when the server stops. If you want to save the output, specify a durable output location by using the `WLP_OUTPUT_DIR` environment variable before you start the server.
+|Writes Liberty server output files to directory `${WLP_OUTPUT_DIR}`.
+
+By default, server output is written to the extraction directory, which is deleted when the server stops. If you want to save the output, specify a durable output location by using the `WLP_OUTPUT_DIR` environment variable before you start the server.
 
 |`WLP_JAR_DEBUG`
 |Runs Liberty server by using `server debug <server name>` instead of `server run <server name>`. You can run the Liberty server in debug mode if you set the environment variable `WLP_JAR_DEBUG` before you start the server.
@@ -50,18 +49,16 @@ To stop the Liberty server press *Ctrl-C*. When the Liberty server stops, the ex
 |`WLP_JAR_ENABLE_2PC`
 |Set to value `true` to enable two-phase commit transactions when the runnable JAR file runs.
 
-By default, two-phase commit commit transactions are disabled because the transaction logs are in the expansion directory and are deleted when the Liberty server is stopped. Therefore, transaction recovery is not possible.
+By default, two-phase commit transactions are disabled because the transaction logs are in the expansion directory and are deleted when the Liberty server stops. Therefore, transaction recovery is not possible.
 
-To enable two-phase commit, configure the transaction log to be in a durable location in the file system or an RDBMS and set the `WLP_JAR_ENABLE_2PC` environment variable.
+To enable two-phase commit, configure the transaction log to be in a durable location in the file system or an RDBMS, and set the `WLP_JAR_ENABLE_2PC` environment variable.
 
-To configure the transaction log, use either the `transactionLogDirectory` or `dataSourceRef` attribute on the transaction element in your `server.xml` configuration.
+To configure the transaction log, use either the `transactionLogDirectory` or `dataSourceRef` attributes on the transaction element in your `server.xml` configuration.
 
 |`WLP_JAR_CYGWIN`
-|Set to value true if you are running the JAR file under CYGWIN. This variable causes the Liberty server JAR runner to do UNIX-style file and UNIX-style process handling when it is running in the CYGWIN environment.
+|Set to value `true` if you are running the JAR file under CYGWIN. This variable causes the Liberty server JAR runner to do UNIX-style file and UNIX-style process handling when it is running in the CYGWIN environment.
 
-Run under the bash shell, not mintty.
-
-Automatic extraction file deletion occurs only when you run under the bash shell. You can run under mintty, but you must delete the extraction files manually. Mintty does not forward the necessary signal that is required to trigger Java shutdown hooks.
+Run under the bash shell, not mintty. Automatic extraction file deletion occurs only when you run under the bash shell. You can run under mintty, but you must delete the extraction files manually. Mintty does not forward the necessary signal that is required to trigger Java shutdown hooks.
 |===
 
 == See also
