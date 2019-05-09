@@ -13,45 +13,35 @@
 :page-type: general
 = RESTful microservices
 
-In microservices architecture, each application is designed as an independent service. These services request resources from one another, but are also capable of operating independently. Any service can provide resources to other services, while also being a client that requests resources from another service. Representational State Transfer (REST), as an architectural style, is one way to implement microservices. REST has become a valuable strategy for microservices, thanks to its simplicity, flexibility, and scalability.
+In microservices architecture, each application is designed as an independent service. Any service can be a client that requests resources from another service, while also responding to requests from other services. REST has become a valuable architectural style for microservices, thanks to its simplicity, flexibility, and scalability.
 
-
-One of the strongest advantages of REST for microservices is the independence of client and server. Either can be implemented without any internal knowledge of the other. Therefore, the code of the client can be altered without affecting the server, and vice versa, so each component can evolve independently. This makes REST an especially good fit for microservices, which generally rely on small, autonomous teams to develop, deploy, and scale their respective services independently.
+One of the strongest advantages of REST for microservices is that services can communicate without requiring internal knowledge of one another. Therefore, the code of each service can evolve at its own pace, without  affecting other services. This makes REST an especially good fit for microservices, which generally rely on small, autonomous teams to develop, deploy, and scale their respective services independently. Furthermore, in RESTful microservices, APIs are standardized according to link:https://swagger.io/specification/[the OpenAPI Specification], which provides a documented contract for how services are expected to communicate across ongoing development.
 
 == MicroProfile and REST
 
-link:/docs/intro/microprofile.html[Eclipse MicroProfile] is a modular set of technologies for managing microservices that makes developing and using REST APIs easy. These technologies help document your REST API, provide fault tolerance, manage authorization, and monitor the metrics and health of your microservice. Since most  microservices are based on REST APIs, MircoProfile is a valuable resource for building robust, scalable applications.
+link:/docs/intro/microprofile.html[Eclipse MicroProfile] is a modular set of technologies for building microservices with REST APIs. These technologies help document your REST API, provide fault tolerance, manage authentication and authorization, monitor the metrics and health of your microservice, and more. Since most  microservices are based on REST APIs, MicroProfile is a valuable resource for building robust, scalable applications.
 
 === What makes an API RESTful?
 
-RESTful APIs use standard HTTP verbs for CRUD operations, and must pay special attention to whether the operation is idempotent, meaning it can be retried multiple times.
+RESTful APIs use standard HTTP verbs for CRUD operations, and must pay special attention to whether the operation can be retried multiple times without changing the result (the concept of idempotence) and whether the results are safe to cache for future use (the concept of being safe).
 
 - POST operations are used to create or update resources, but they can't be invoked repeatedly. If a POST resource is invoked multiple times, it creates a new, unique resource with each invocation.
 - GET operations can be invoked repeatedly, without causing side effects. They should only be used to retrieve information.
 - PUT operations update resources. They usually include a complete copy of the resource to be updated, so that the operation can be invoked  multiple times.
 - DELETE operations can be invoked multiple times. Even though a resource can only be deleted once, and the response code will be different on subsequent invocations (e.g. 404), the server remains in the same state through multiple invocations.
 
-== Designing microservices RESTfullly
-REST is an architectural style for remote data transfer between apps and systems. In a RESTful system, each unique URL is a representation of an object. You can access and manipulate the object using standard HTTP operations, primarily these four HTTP verbs: 
+Well-designed REST APIs adhere to the HTTP protocol around resources and URIs, HTTP verbs, and statelessness. For example, REST APIs use HTTP verbs appropriately, so that operations can be idempotent and safe, wherever possible.
 
-- GET to retrieve it
-- DELETE to delete it
-- POST to create it
-- PUT to update it. 
-
-REST itself is not a protocol, but an architectural style that makes efficient and effective use of the standard HTTP protocol. REST architecture is popular among developers because it's lightweight, concise and easy to build, with human-readable results. REST uses the worldwide web as it was intended, by adhering to the HTTP protocol for Resources and  URIs, HTTP verbs and statelessness.
-
-
-=== Generating RESTful APIs
-https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md[OpenAPI v3] is the official specification for RESTful services. link:/guides/microprofile-openapi.html[MicroProfile Open API] provides a Java API for the OpenAPI specification that you can use to expose API documentation for your REST APIs.
+=== Generating and documenting RESTful APIs in microservices
+link:/guides/microprofile-openapi.html[MicroProfile Open API] provides a Java API for the https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md[OpenAPI v3] specification, the official specification for RESTful services. link:/guides/microprofile-openapi.html[MicroProfile Open API] can generate a skeleton implementation of a REST API and expose its documentation, or generate and expose the documentation for an already-implemented REST API.
 
 There are two ways to create an API:
 
 - *Start with an OpenAPI definition*: This approach begins by creating an OpenAPI definition in a language independent format (usually YAML). Then a code generator creates a skeleton implementation, and builds the service implementation from there. This pattern, favored by companies that have a central API design team, enables development and test to progress in parallel. The OpenAPI definition is a contract, an agreement between different teams for how the API will be designed.
-- *Start with code*: The service implementation code is the source of the API definition. This approach is beneficial for applications with an experimental aspect to them, since the API definition evolves as the services becomes more developed and defined. This approach is better suited to some languages than others, since it relies on tools that generate an OpenAPI definition from the code. Java, for example, has excellent support for generating OpenAPI documents from annotation-based REST frameworks.
+- *Start with code*: The service implementation code is the source of the API definition. This approach is beneficial for applications with an experimental aspect to them, since the API definition evolves as the services becomes more developed and defined. It is also is well-suited to Java, which has excellent support for generating OpenAPI documents from annotation-based REST frameworks.
 
 In either case, working with an OpenAPI definition helps identify  where the API is inconsistent, or difficult to understand from a consumer point of view. The OpenAPI definition can also be used to generate client stubs in various languages, which can then call the service or write integration tests.
 
 ==== See also:
 - link:/docs/intro/microprofile.html[Eclipse MicroProfile]
-- link:/guides/microprofile-openapi.html[MicroProfile Open API]
+- link:/guides/microprofile-openapi.html[MicroProfile OpenAPI]
