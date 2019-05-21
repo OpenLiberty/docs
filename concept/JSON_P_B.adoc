@@ -1,0 +1,45 @@
+// Copyright (c) 2018 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description: Java provides two API specifications for for converting plain Java objects (POJOs) to and from JSON data: JSON processing (JSON-P) and JSON binding (JSON-B)
+:seo-title: Serializing Data with JSON-P and JSON-B
+:seo-description: Java provides two API specifications for for converting plain Java objects (POJOs) to and from JSON data: JSON processing (JSON-P) and JSON binding (JSON-B)
+:page-layout: general-reference
+:page-type: general
+= Serializing data with JSON-P and JSON-B
+
+JavaScript object notation (JSON) has become the go-to format for sharing data among RESTful web services in microservices-based systems. It's lightweight, human-readable, and requires far less formatting than XML. It can also be readily transferred across different platforms and programming languages, in a format that all the participating languages can access.
+
+JSON supports two standard data structures: objects, or sets of key-value pairs usually surrounded by curly brackets, and arrays, which collect objects into larger sets. These objects and arrays are  serialized and deserialized for transfer between different microservices.
+
+Java provides two API specifications for for converting plain Java objects (POJOs) to and from JSON data: JSON processing (JSON-P) and JSON binding (JSON-B). JSON-P provides a Java API for processing JSON-formatted data. JSON-B provides a binding layer on top of JSON-P, making it even easier to convert objects to and from JSON.
+
+== JSON-P: Java's original API
+Before there was JSON-B, (which arrived as part of Java EE 8), JSON-P was Java's standardized way to interact with JSON. JSON-P is a lower-level API that provides two models (streaming and object) for JSON processing and transformation. The streaming model  provides an event-based parser that allows a developer to ask for the next event rather than handling the event in a callback, offering more control over the processing. The object model creates a random access structure to represent the JSON data in memory. This programming model is more flexible but sometimes requires more memory than the streaming model.
+
+In contrast to JSON-B, JSON-P avoids data loss by retaining all the information in a call. This can be either an advantage or a liability, depending on what the code is doing. In general, JSON-P is regarded as being less secure than JSON-B, which has emerged as the preferred API for transforming data in microservices.
+
+== Higher level binding with JSON-B
+JSON-B is a standard binding layer for converting Java objects to and from JSON messages. It provides default mapping to convert existing Java classes to JSON, but also enables developers to customize  mapping by using Java annotations. JSON-B is a direct object-to-JSON mapping, requiring much less code than JSON-P. Its intuitive default configurations make it easy to use. Even developers with no prior experience with JSON should be able to use JSON-B, because it's based around annotations and semantics that are already commonplace for enterprise developers.
+
+== To B or not to P?
+Since it's introduction as part of Java EE 8, JSON-B has become the preferred API for converting Java objects to and from JSON, thanks to it's type safety, ease-of-use and compile-time feedback. However, there are cases where JSON-P might be a better fit.
+
+Consider the subject of data loss. Say you have a Java object that is being sent between microservices in a weather forecast application. The object might contain the following data.
+
+``{ +
+  "location" : "Surf City" +
+  "temp" : 82 +
+  "conditions" : "sunny" +
+  "hightide" : 1500 }``
+
+If a service using JSON B received this object, but only asked for location and temperature, the other information would be lost. A service using JSON-P would retain all the data in the object. MicroProfile REST Client supports both JSON-P and JSON-B
+
+==== See also:
+- link:http://json-b.net/[JSON-B (JSON-Binding, JSR 367)]
+- link:https://javaee.github.io/jsonp/[JSON-P (JSON-Processing, JSR 374)]
