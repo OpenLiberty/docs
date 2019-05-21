@@ -18,21 +18,30 @@ By pausing and resuming inbound work, you can isolate resources for auditing or 
 * Pause HTTP endpoints to isolate one or more resources associated with an HTTP endpoint; for example, a database.
 * Pause message-driven bean (MDB) message endpoints to prevent the endpoints from receiving messages.
 
-== Usage
+== Usage examples
 
 To pause all pausable components on the `myserver` server:
+
 ----
 server pause myserver
 ----
 
-To pause the `db1HttpEndpoint` and `db2HttpEndpoint` HTTP endpoints on `myserver`:
+To pause the `db1HttpEndpoint` and `db2HttpEndpoint` HTTP endpoints on the `myserver` server:
+
 ----
 server pause myserver --target=db1HttpEndpoint,db2HttpEndpoint
 ----
 
-To pause the `Bean` MDB message endpoint on `myserver`:
+To pause the `Bean` MDB message endpoint on the `myserver` server:
+
 ----
 server pause myserver --target=MDBApplication#MDBModule.jar#Bean
+----
+
+To pause the `db1HttpEndpoint` HTTP endpoint and the `Bean` MDB message endpoint on the `myserver` server:
+
+----
+server pause myserver --target=db1HttpEndpoint,MDBApplication#MDBModule.jar#Bean
 ----
 
 == Syntax
@@ -45,9 +54,9 @@ server pause serverName [options]
 
 serverName::
 The name of the server with components you want to pause. If the named server is not running or does not exist, the command fails. If no server name is specified, the command uses defaultServer.
+
 options::
 One or more optional parameters. If you do not specify any options, all pausable components on the server are paused.
-
 
 == Options
 
@@ -68,24 +77,22 @@ One or more optional parameters. If you do not specify any options, all pausable
 |--target=message_endpoint,message_endpoint,...
 
 |A comma-delimited list of message endpoints to pause. Provide the activation name of each MDB message endpoint in the format: `ApplicationName#ModuleName#BeanName`.
-
 |===
-
-//NOTE: LC: Can the types be combined in a single command? If so, we should mention it in the descriptions above and give an example in Usage below.
-
-
 
 == See also
 
-* link:server-resume.html[server resume]
 * link:server-debug.html[server debug]
+* link:server-resume.html[server resume]
 
-// Include server script exit codes
-include::server-exitcodes.adoc[]
+== Exit codes
 
-// Include description of server process
-include::server-serverprocess.adoc[]
+The following exit codes are available for the `server pause` command and the equivalent executable JAR file `ws-server.jar`:
 
-
-
-//NOTE: (LC) add info from:  https://www.ibm.com/support/knowledgecenter/SSEQTP_liberty/com.ibm.websphere.wlp.doc/ae/twlp_PauseResume_cmd.html
+0::
+    OK. 0 indicates successful completion of the requested operation.
+1::
+    1 indicates that the JVM options that were used are not valid.
+2::
+    2 indicates that the server does not exist.
+>=20::
+    Exit codes greater than or equal to 20 indicate that an error occurred while performing the request. Messages are printed and captured in log files with more information about the error.
