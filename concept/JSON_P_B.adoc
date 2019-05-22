@@ -31,14 +31,116 @@ JSON-B is a standard binding layer for converting Java objects to and from JSON 
 Since its introduction as part of Java EE 8, JSON-B has become the preferred API for converting Java objects to and from JSON, thanks to its type safety, ease-of-use and compile-time feedback. However, there are cases where JSON-P might be a better fit.
 
 Consider the subject of data loss. Say you have a Java object that is being sent between microservices in a weather forecast application. The object might contain the following data.
-
-``{ +
-  "location" : "Surf City" +
-  "temp" : 82 +
-  "conditions" : "sunny" +
-  "hightide" : 1500 }``
+[source,java]
+----
+{ 
+  "location" : "Surf City"
+  "temp" : 82
+  "conditions" : "sunny"
+  "hightide" : 1500
+}
+----
 
 If a service using JSON B received this object, but only asked for location and temperature, the other information would be lost. A service using JSON-P would retain all the data in the object.
+
+== Basic usage of JSON-B
+
+Suppose we have the following data class:
+[source,java]
+----
+public static class User {
+
+    // Public fields will get be included in the JSON data
+    public String id;
+    public Set<String> roles;
+    public String name;
+    public int age;
+
+    // Private fields do not get included in the JSON data
+    private String somethingSecret = "shhhhh";
+
+    public User() {
+    }
+
+    public User(String id, String name, int age, Set<String> roles) {
+        this.id = id;
+        this.name = name;
+        this.age = age;
+        this.roles = roles;
+    }
+}
+----
+
+Note that the data class does not have any annotations or any reference to JSON-B API. We can rely on the default mappings of JSON-B to marshal and unmarshal the object for us. The main JSON-B entry point is the `Jsonb` class. It provides all necessary methods to serialize and deserialize Java objects. `Jsonb` instances are thread safe. They can be cached and reused.
+
+[source,java]
+----
+// Always cache Jsonb objects when possible! They are relatively expensive to create
+private static final Jsonb jsonb = JsonbBuilder.create();
+// ...
+
+// Convert POJO --> JSON
+User andy = new User("1234", "Andy", 77, Collections.singleton("admin"));
+String andyJson = jsonb.toJson(andy);
+System.out.println(andyJson); // prints: {"age":77,"id":"1234","name":"Andy","roles":["admin"]}
+
+// Convert JSON --> POJO
+String jsonData = "{\"age\":55,\"id\":\"5678\",\"name\":\"Hank\",\"roles\":[\"member\"]}";
+User hank = jsonb.fromJson(jsonData, User.class);
+----
+
+== Customize mappings
+
+By default, JSON property names match Java field/method names, but if this is not desired or possible, new mappings can be defined:
+[source,java]
+----
+// maps the 'name' field to the 'fullName' JSON property
+@JsonbProperty("fullName")
+public String name;
+
+// even though the field is public, tell JSON-B to ignore this field so it is not included in the JSON output
+@JsonbTransient
+public Set<String> roles;
+----
+
+== Using JSON-B through JAX-RS
+
+JSON-B works very well with JAX-RS because JAX-RS resources often consume or produce JSON data over HTTP, but within endpoints want to interact with the data as POJOs.
+
+[source,java]
+----
+@Path("/player")
+@ApplicationScoped
+@Consumes(MediaType.APPLICATION_JSON)
+@Produces(MediaType.APPLICATION_JSON)
+public class UserService {
+
+    @Inject
+    UserDB db;
+
+    @GET
+    @Path("/{userId}")
+    public User getUserById(@PathParam("userId") String id) {
+        User u = db.get(id);
+        return u;
+        // returned User object will be converted to JSON data using JSON-B
+    }
+
+    @POST
+    @Path("/{userId}")
+    public String createUser(User updatedUser, @PathParam("userId")) {
+        // The incoming 'updatedUser' parameter gets read from the incoming
+        // request body's JSON data and automatically converted to a User object
+        updatedUser.id = // generate an ID
+        db.save(updatedUser);
+        return updatedUser.id;
+    }
+}
+----
+
+== Where to next?
+
+Now that you’ve seen how JSON-B works, you can learn how to create a RESTful web service using JSON-B to ! Check out the https://openliberty.io/guides/?search=REST&key=tag[REST guides] written by our team. Launch your next RESTful service today!
 
 ==== See also:
 - link:http://json-b.net/[JSON-B (JSON-Binding, JSR 367)]
