@@ -16,37 +16,41 @@ Resumes all or specific inbound work for an Open Liberty server.
 By pausing and resuming inbound work, you can isolate resources for auditing or debugging purposes without having to stop the server. You can stop the whole server or specified endpoints:
 
 * Isolate one or more resources associated with an HTTP endpoint; for example, a database.
-* Prevent a message-driven bean (MDB) message endpoint receiving messages.
+* Prevent a message-driven bean (MDB) message endpoint from receiving messages.
 
-== Usage
-
-
+== Usage examples
 
 You can resume all components that were paused or specific components that were paused.
 
-To resume all components, issue the following command:
+To resume all components on the `myserver` server:
 
 ----
-server resume <server_name>
+server resume myserver
 ----
 
-To resume, for example, two specific components, issue the following command:
+To resume two specific components on the `myserver` server, where the values of `target1` and `target2` are components that can be paused for each supported protocol:
 
-server resume _servername_ --target=_target1_,_target2_
+----
+server resume myserver --target=target1,target2
+----
 
-The values for _target1_ and _target2_ are components that can be paused for each supported protocol.
+To resume the `db1HttpEndpoint` and `db2HttpEndpoint` HTTP endpoints on the `myserver` server:
 
-
-To resume the HTTP endpoints `db1HttpEndpoint` and `db2HttpEndpoint` on the `myserver` server:
 ----
 server resume myserver --target=db1HttpEndpoint,db2HttpEndpoint
 ----
 
-To resume the `Bean` MDB bean on the `myserver` server:
+To resume the `Bean` MDB message endpoint on the `myserver` server:
+
 ----
 server resume myserver --target=MDBApplication#MDBModule.jar#Bean
 ----
 
+To resume the `db1HttpEndpoint` HTTP endpoint and the `Bean` MDB message endpoint on the `myserver` server:
+
+----
+server resume myserver --target=db1HttpEndpoint,MDBApplication#MDBModule.jar#Bean
+----
 
 == Syntax
 
@@ -57,9 +61,10 @@ server resume serverName [options]
 ----
 
 serverName::
-The name of the server to run the command against (if no server is specified, a server called `defaultServer` is automatically created to run the command against).
+The name of the server to run the command against. If no server is specified, a server called `defaultServer` is automatically created to run the command against.
+
 options::
-One or more optional parameters. If you do not specify any endpoints, the whole server is resumed.
+One or more optional parameters. If you do not specify any endpoints, the entire server is resumed.
 
 == Options
 
@@ -78,35 +83,22 @@ One or more optional parameters. If you do not specify any endpoints, the whole 
 |--target=message_endpoint,message_endpoint,...
 
 |A comma-delimited list of HTTP endpoints to be resumed. Provide the activation name of each MDB message endpoint in the format: `ApplicationName#ModuleName#BeanName`.
-
 |===
-
-//NOTE: LC: Can the types be combined in a single command? If so, we should mention it in the descriptions above and give an example in Usage below.
-
-== Usage
-
-To resume the HTTP endpoints `db1HttpEndpoint` and `db2HttpEndpoint` on the `myserver` server:
-----
-server resume myserver --target=db1HttpEndpoint,db2HttpEndpoint
-----
-
-To resume the `Bean` MDB bean on the `myserver` server:
-----
-server resume myserver --target=MDBApplication#MDBModule.jar#Bean
-----
-
 
 == See also
 
-* link:server-pause.html[server pause]
 * link:server-debug.html[server debug]
+* link:server-pause.html[server pause]
 
-// Include server script exit codes
-include::server-exitcodes.adoc[]
+== Exit codes
 
-// Include description of server process
-include::server-serverprocess.adoc[]
+The following exit codes are available for the `server resume` command and the equivalent executable JAR file `ws-server.jar`:
 
-
-
-//NOTE: (LC) add info from:  https://www.ibm.com/support/knowledgecenter/SSEQTP_liberty/com.ibm.websphere.wlp.doc/ae/twlp_PauseResume_cmd.html
+0::
+    OK. 0 indicates successful completion of the requested operation.
+1::
+    1 indicates that the JVM options that were used are not valid.
+2::
+    2 indicates that the server does not exist.
+>=20::
+    Exit codes greater than or equal to 20 indicate that an error occurred while performing the request. Messages are printed and captured in log files with more information about the error.
