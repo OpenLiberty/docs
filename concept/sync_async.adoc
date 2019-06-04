@@ -13,22 +13,49 @@
 :page-type: general
 = Synchronous and Asynchronous REST
 
-REST clients can be implemented either synchronously or asynchronously. A synchronous client constructs an HTTP structure, sends a request, and waits for a response. An asynchronous client constructs an HTTP structure, sends a request, and moves on. In this case, the client is notified when the response arrives. The original thread, or another thread, can then process the response. Although asynchronous behavior can result in faster overall execution, synchronous behavior may be preferred in certain cases where more simplified code is necessary.
+REST clients can be implemented either synchronously or asynchronously. A synchronous client constructs an HTTP structure, sends a request, and waits for a response. An asynchronous client constructs an HTTP structure, sends a request, and moves on. In this case, the client is notified when the response arrives. The original thread, or another thread, can then process the response. Although asynchronous behavior can result in faster overall execution, synchronous behavior might be preferred in certain cases where more simplified code is necessary.
 
 
 == Synchronous REST Clients
-Synchronous REST clients take advantage on the inherent simplicity of REST architecture by using concise, streamlined code to send clearly defined HTTP requests. If a client is implemented synchronously, you don't need to worry about managing callbacks, Futures or `CompletionStage` return types. Synchronous clients may be preferred in situations where service availability is high and low latency is a priority.
+Synchronous REST clients take advantage on the inherent simplicity of REST architecture by using concise, streamlined code to send clearly defined HTTP requests. If a client is implemented synchronously, you don't need to worry about managing callbacks, `Future` or `CompletionStage` return types. Synchronous clients might be preferred in situations where service availability is high and low latency is a priority.
 
-However, it's important to remember that a synchronous client must wait for an API call to return before code execution can continue. In some cases, this delay could be perceived by users of your app as latency or poor performance. If an application is comprised of microservices making synchronous calls to one another, one failure could set off a chain reaction that results in service denial for the end user.
+However, a synchronous client must wait for an API call to return before code execution can continue. In some cases, this delay might be perceived by users of your app as latency or poor performance. If an application consists of microservices that are making synchronous calls to one another, one failure might set off a chain reaction that results in service denial for the user.
 
 `<include a use case of synchronous REST, with a code example?>`
 
 == Asynchronous REST Clients
-Implementing asynchronous REST clients can be a powerful strategy for microservices-based applications. Since asynchronous clients don't need to wait for a response in order to continue working, microservices in an app can continue to process and send data, even when one of their partner services runs into trouble. This capability provides more reliable service to the end user and can be especially valuable in cases where service availability is low or overloaded with demand.
+Implementing asynchronous REST clients can be a powerful strategy for microservices-based applications. Asynchronous clients don't need to wait for a response to continue working. Therefore, microservices in an app can continue to process and send data, even when one of their partner services runs into trouble. This capability provides more reliable service to the user and can be especially valuable in cases where service availability is low or overloaded with demand.
 
-Asynchronous clients rely on callbacks—functions that are executed after another function completes—to manage the transfer of data between microservices.  The return type of the interface method determines whether a RESTful service is invoked synchronously or asynchronously.  If the return type is a `CompletionStage`, the service is invoked asynchronously. A `CompletionStage` acts as a promise to the service that a particular piece of code will be executed. A wide range of callbacks can be attached to a `CompletionStage`, enabling different functions once the code executes. In this way, non-blocking systems can be implemented among microservices in an application.
+For example, asynchronous clients might be implemented within a travel service app that makes REST calls to an airline service, hotel service, and car rental service to make reservations and determine the total cost of a trip. If the hotel service experiences a lag, the airline and car rental service are able to continue working. For an in-depth look at how to implement asynchronous clients in this travel app example, check out Andy McCright's blog post on link:/blog/2019/01/24/async-rest-jaxrs-microprofile.html[Asynchronous REST with JAX-RS and MicroProfile].
+
+Both MicroProfile Rest Client and JAX-RS can enable asynchronous clients, though the process is a little different in each case. With link:/guides/microprofile-rest-client.html[MicroProfile Rest Client], asynchronous clients rely on callbacks—functions that are executed after another function completes—to manage the transfer of data between microservices.  The return type of the interface method determines whether a RESTful service is invoked synchronously or asynchronously.  If the return type is a `CompletionStage`, the service is invoked asynchronously. A `CompletionStage` acts as a promise to the service that a particular piece of code will be executed. A wide range of callbacks can be attached to a `CompletionStage`, enabling different functions once the code executes. In this way, non-blocking systems can be implemented among microservices in an application.
 
 `<include a brief code example of sync w/ CompletionStage?>`
+
+With JAX-RS clients, you need to explicitly build an async client with an API call, as shown in the example below.
+
+```
+Client client = ClientBuilder.newClient();
+WebTarget target = client.target(url);
+Invoker.Builder builder = target.request();
+AsyncInvoker asyncInvoker = builder.async();
+```
+Then, you can choose whether to provide a callback or get a `Future`, as shown in the example below.
+```
+Future<MyResponseObject> future = asyncInvoker.get(MyResponseObject.class);
+// or
+Future<MyResponseObject> future = asyncInvoker.get( new InvocationCallback<MyResponseObject>() {
+    @Override
+    public void completed(MyResponseObject o) {
+        // do something with o
+    }
+
+    @Override
+    public void failed(Throwable t) {
+        // handle the failed request/response
+    }
+});
+```
 
 For example, asynchronous clients might be implemented within a travel service app that makes REST calls to an airline service, hotel service, and car rental service in order to make reservations and determine the total cost of a trip. If the hotel service experiences a lag, the airline and car rental service could still continue working. For an in-depth look at how to implement asynchronous clients in a travel app, check out Andy McCright's blog post on link:/blog/2019/01/24/async-rest-jaxrs-microprofile.html[Asynchronous REST with JAX-RS and MicroProfile].
 
