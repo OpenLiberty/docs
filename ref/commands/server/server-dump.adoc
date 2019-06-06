@@ -7,7 +7,6 @@
 // Contributors:
 //     IBM Corporation
 //
-// Example title: Creating a RESTful web service
 :page-layout: server-command
 :page-type: command
 = server dump command
@@ -26,6 +25,19 @@ For a running server, the following information is also included:
 * Information about registered OSGi services
 * Runtime environment settings such as Java virtual machine (JVM), heap size, operating system, thread information, and network status
 
+== Usage examples
+
+To create a dump file of thread information from the `myserver` server in a ZIP archive called `myserver.zip`:
+
+----
+server dump myserver --archive="myserver.zip" --include=thread
+----
+
+To create a snapshot of the `myserver` server status in a ZIP archive called `myserver.zip`:
+
+----
+server dump myserver --archive=myserver.zip --include=heap
+----
 
 == Syntax
 
@@ -36,21 +48,10 @@ server dump serverName [options]
 ----
 
 serverName::
-The name of the server to run the command against (if no server is specified, a server called `defaultServer` is automatically created to run the command against).
+The name of the server to run the command against. If no server is specified, a server called `defaultServer` is automatically created to run the command against.
+
 options::
 One or more optional parameters.
-
-== Usage
-
-To create a dump file of thread information from the `myserver` server in a ZIP archive called `myserver.zip`:
-----
-server dump myserver --archive="myserver.zip" --include=thread
-----
-
-To create a snapshot of the server status in a ZIP archive called `myserver.zip`:
-----
-server dump _servername_ --archive=myserver.zip --include=heap
-----
 
 == Options
 
@@ -60,34 +61,35 @@ server dump _servername_ --archive=myserver.zip --include=heap
 |Description
 
 |--archive="path_to_the_target_archive_file"
-|Specifies a target file for the package or dump operation. This path can be either a relative path, which is relative to the installation root directory of Open Liberty, or an absolute path. The default archive target is a compressed file with the server name, which is stored in the installation root directory. Use quotation marks if the value contains spaces. You can use this option for both package and dump operations.
+|Specifies a target file for the `package` or `dump` operation. This path can be either a relative path, which is relative to the installation root directory of Open Liberty, or an absolute path. The default archive target is a compressed file with the server name, which is stored in the installation root directory. Use quotation marks if the value contains spaces. You can use this option for both `package` and `dump` operations.
 
-If you specify a `.jar` extension for your archive file name, the server command creates a new self-extracting archive file from which the Open Liberty server can be installed by using the `java` command.
-//For more information, see Installing Liberty by extracting a Java archive file in the product documentation.
+If you specify a `.jar` extension for your archive file name, the `server` command creates a new self-extracting archive file from which the Open Liberty server can be installed by using the `java` command.
+// For more information, see Installing Liberty by extracting a Java archive file in the product documentation.
 
 |--include=diagnose_option,diagnose_option,...
-|Specifies the type of diagnostic information to be captured. The value of `--include` is a comma-delimited list, which can contain one or more of the following values:
+a|Specifies the type of diagnostic information to be captured. The value of `--include` is a comma-delimited list, which can contain one or more of the following values:
 
-* `heap` is used to help diagnose the excessive memory consumption and memory leaks, which shows live objects in the memory and references between them. On IBM J9 virtual machines, the resulting file is named `heapdump.date.time.processID.sequenceNumber.phd`. On HotSpot virtual machines, the resulting file is named `java.date.time.processID.sequenceNumber.hprof`.
-* `system` is also used to help diagnose the excessive memory consumption and memory leaks, but they are also useful for finding defects in the virtual machine. These dumps are only supported on IBM J9 virtual machines. The resulting file is named `core.date.time.processID.sequenceNumber.dmp`.
-* `thread` is used to help diagnose hung threads, deadlocks, and can sometimes be used for diagnose excessive CPU issues. On IBM J9 virtual machines, the resulting file is named `javacore.date.time.processID.sequenceNumber.txt`. On HotSpot virtual machines, the resulting file is named `javadump.date.time.processID.sequenceNumber.txt`.
+* `heap` is used to help diagnose excessive memory consumption and memory leaks. The dump shows live objects in the memory and references between them. On IBM J9 virtual machines, the resulting file is named `heapdump.date.time.processID.sequenceNumber.phd`. On HotSpot virtual machines, the resulting file is named `java.date.time.processID.sequenceNumber.hprof`.
+* `system` is also used to help diagnose excessive memory consumption and memory leaks, but a system dump also helps find defects in the virtual machine. System dumps are only supported on IBM J9 virtual machines. The resulting file is named `core.date.time.processID.sequenceNumber.dmp`.
+* `thread` is used to help diagnose hung threads and deadlocks. Thread dumps can sometimes be used to diagnose excessive CPU issues. On IBM J9 virtual machines, the resulting file is named `javacore.date.time.processID.sequenceNumber.txt`. On HotSpot virtual machines, the resulting file is named `javadump.date.time.processID.sequenceNumber.txt`.
 
 The thread dump type is supported only when the server is running on the Java SDK. If the server is started with a JRE, an error is reported indicating that the server does not support the dump type. This restriction applies to HotSpot virtual machines only; the thread Java dump type is supported on any IBM JVM (JRE or SDK).
-
 |===
-
-
 
 == See also
 
-* link:server-list.html[server list]
-* link:server-javadump.html[server javadump]
+* link:#server-javadump.html[server javadump]
+* link:#server-list.html[server list]
 
-// Include server script exit codes
-include::server-exitcodes.adoc[]
+== Exit codes
 
-// Include description of server process
-include::server-serverprocess.adoc[]
+The following exit codes are available for the `server dump` command and the equivalent executable JAR file `ws-server.jar`:
 
-
-// https://www.ibm.com/support/knowledgecenter/SSEQTP_liberty/com.ibm.websphere.wlp.doc/ae/twlp_setup_dump_server.html
+0::
+    OK. 0 indicates successful completion of the requested operation.
+1::
+    1 indicates that the JVM options that were used are not valid.
+2::
+    2 indicates that the server does not exist.
+>=20::
+    Exit codes greater than or equal to 20 indicate that an error occurred while performing the request. Messages are printed and captured in log files with more information about the error.
