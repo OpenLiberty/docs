@@ -23,33 +23,48 @@ The logging component can be controlled through the server configuration. The lo
 
 == Example logging configuration
 
-=== Disabling console log
+Some common logging configuration examples are given in the following sections.
+
+=== Managing log file storage
+
 
 The `console.log` file is created by redirecting the process `stdout` and `stderr` to a file, as a result Liberty is unable to offer the same level of management like log rollover as it offers for `messages.log`. If you are concerned about the increasing size of the `console.log` file, you can disable the `console.log` file and use the `messages.log` file instead. All the log messages sent to `console.log` are written to the `messages.log` file, and you can configure file rollover.
 
 To disable the console log, and configure `messages.log` to roll over 3 times at 100Mb configure
 
-  com.ibm.ws.logging.max.file.size=100
-  com.ibm.ws.logging.max.files=3
-  com.ibm.ws.logging.console.log.level=OFF
-  com.ibm.ws.logging.copy.system.streams=false
+[source,properties,linenums,role="code_column"]
+----
+com.ibm.ws.logging.max.file.size=100
+com.ibm.ws.logging.max.files=3
+com.ibm.ws.logging.console.log.level=OFF
+com.ibm.ws.logging.copy.system.streams=false
+----
 
-=== JSON Logging
+=== JSON logging
 When feeding log files into modern log aggregation and management tools it can be advantages to have the log files stored using JSON format. This could be done in one of three ways.
 
 1. Using `bootstrap.properties` file.
 +
-   com.ibm.ws.logging.message.format=json
-   com.ibm.ws.logging.message.source=message,trace,accessLog,ffdc,audit
+[source,properties,linenums,role="code_column"]
+----
+com.ibm.ws.logging.message.format=json
+com.ibm.ws.logging.message.source=message,trace,accessLog,ffdc,audit
+----
 +
 2. Using environment variables.
 +
-   WLP_LOGGING_MESSAGE_FORMAT=json
-   WLP_LOGGING_MESSAGE_SOURCE=message,trace,accessLog,ffdc,audit
+[source,properties,linenums,role="code_column"]
+----
+WLP_LOGGING_MESSAGE_FORMAT=json
+WLP_LOGGING_MESSAGE_SOURCE=message,trace,accessLog,ffdc,audit
+----
 +
 3. Using `server.xml` file.
 +
-    <logging messageFormat="json" messageSource="message,trace,accessLog,ffdc,audit" />
+[source,xml,linenums,role="code_column"]
+----
+<logging messageFormat="json" messageSource="message,trace,accessLog,ffdc,audit" />
+----
 +
 when using `server.xml` to configure json format some log lines will be written in the default non-json format prior to `server.xml` startup which can cause issues with some tools, for example https://stedolan.github.io/jq/[`jq`] will have trouble understanding the log files.
 
@@ -57,30 +72,45 @@ when using `server.xml` to configure json format some log lines will be written 
 
 It is common in docker environments to disable `messages.log` and instead format the console output as json. This can be done using environment variables:
 
-    WLP_LOGGING_MESSAGE_FORMAT=json
-    WLP_LOGGING_MESSAGE_SOURCE=
-    WLP_LOGGING_CONSOLE_FORMAT=json
-    WLP_LOGGING_CONSOLE_LOGLEVEL=info
-    WLP_LOGGING_CONSOLE_SOURCE=message,trace,accessLog,ffdc,audit
+[source,properties,linenums,role="code_column"]
+----
+WLP_LOGGING_MESSAGE_FORMAT=json
+WLP_LOGGING_MESSAGE_SOURCE=
+WLP_LOGGING_CONSOLE_FORMAT=json
+WLP_LOGGING_CONSOLE_LOGLEVEL=info
+WLP_LOGGING_CONSOLE_SOURCE=message,trace,accessLog,ffdc,audit
+----
 
 This can be simply set on a a `docker run` using `-e` to set the envrionment variables:
 
-   docker run -e "WLP_LOGGING_CONSOLE_SOURCE=message,trace,accessLog,ffdc" -e
-   "WLP_LOGGING_CONSOLE_FORMAT=json" -e "WLP_LOGGING_CONSOLE_LOGLEVEL=info" -e "WLP_LOGGING_MESSAGE_FORMAT=json" -e "WLP_LOGGING_MESSAGE_SOURCE=" open-liberty
+[role='command']
+```
+docker run -e "WLP_LOGGING_CONSOLE_SOURCE=message,trace,accessLog,ffdc"
+           -e "WLP_LOGGING_CONSOLE_FORMAT=json"
+           -e "WLP_LOGGING_CONSOLE_LOGLEVEL=info"
+           -e "WLP_LOGGING_MESSAGE_FORMAT=json"
+           -e "WLP_LOGGING_MESSAGE_SOURCE=" open-liberty
+```
 
-=== Binary Logging
+=== Binary logging
 
 Liberty has a high performance binary log format option that significantly reduces the overhead of writing trace files. Generally when configuring binary logging the `console.log` is disabled for best performance. This must be enabled via bootstrap.properties:
 
-    websphere.log.provider=binaryLogging-1.0
-    com.ibm.ws.logging.console.log.level=OFF
-    com.ibm.ws.logging.copy.system.streams=false
+[source,properties,linenums,role="code_column"]
+----
+websphere.log.provider=binaryLogging-1.0
+com.ibm.ws.logging.console.log.level=OFF
+com.ibm.ws.logging.copy.system.streams=false
+----
 
 The `binaryLog` command line tool can be used to convert the binary log to a text file.
 
-    binaryLog view defaultServer
+[role='command']
+```
+binaryLog view defaultServer
+```
 
-== Configuration Reference
+== Configuration settings by source
 
 The table below shows the `server.xml`, `bootstrap.properties` and environment variable equivalent configuration along with a brief description. Full configuration documentation is available in the config reference for the config:logging[] element.
 |===
@@ -123,7 +153,7 @@ The table below shows the `server.xml`, `bootstrap.properties` and environment v
 |
 |com.ibm.ws.logging.newLogsOnStart
 |
-|If set to true when Liberty starts, any existing `messages.log` or `trace.log` files are rolled over and logging writes to a new `messages.log` or `trace.log` file. If set to false `messages.log` or trace.log files only refresh when they hit the `maxFileSize`. The default is `true`.
+|If set to true when Liberty starts, any existing `messages.log` or `trace.log` files are rolled over and logging writes to a new `messages.log` or `trace.log` file. If set to false `messages.log` or trace.log files only refresh when they hit the `maxFileSize`. The default is `true`. This setting cannot be provided via the `logging` element in `server.xml` since it is only processed during server bootstrap.
 
 |isoDateFormat
 |com.ibm.ws.logging.isoDateFormat
