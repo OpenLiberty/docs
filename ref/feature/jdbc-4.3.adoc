@@ -1,11 +1,73 @@
 = Java Database Connectivity 4.3
-:linkcss: 
+:linkcss:
 :page-layout: feature
-:nofooter: 
+:nofooter:
 
 include::./gen/jdbc-4.3.gendoc[tag=description]
 
 include::./gen/jdbc-4.3.gendoc[tag=enable]
+
+== Examples
+
+=== Simple DataSource example
+To configure a DataSource, 2 configuration elements are typically required:
+
+1. Shared Library containing JDBC driver file(s)
+2. One or more DataSource elements using the the Shared Library
+
+The example below will create a DataSource that can be injected using the name `jdbc/myDataSource` if the feature:jndi-1.0[] feature is enabled then that name can be used as a JNDI name.
+
+[source=xml]
+----
+<library id="JdbcLib">
+    <fileset dir="${server.config.dir}/jdbc"/>
+</library>
+
+<dataSource jndiName="jdbc/myDataSource">
+   <jdbcDriver libraryRef="JdbcLib"/>
+   <properties databaseName="myDB" serverName="mydb.mycompany.com" portNumber="50000"/>
+</dataSource>
+----
+
+=== DataSource with authentication
+
+When connecting to remote databases credentials typically need to be provided.
+These can be configured using an `authData` element. The password can be in
+plain text, xor or aes encrypted. The `securityUtility encode` command can be
+used to create an encoded password. The example below encodes `password` as the
+password value.
+
+[source=xml]
+----
+<authData id="dbCreds" user="dbUser" password="{aes}AEJrzAGfDEmtxI18U/qEcv54kXmUIgUUV7b5pybw/BzH" />
+
+<dataSource jndiName="jdbc/myDataSource" containerAuthDataRef="dbCreds">
+   <jdbcDriver libraryRef="JdbcLib"/>
+   <properties databaseName="myDB" serverName="mydb.mycompany.com" portNumber="50000"/>
+</dataSource>
+----
+
+=== Using JDBC driver classes from an application
+
+Some applications make use of JDBC driver classes using `DataSource.unwrap`. This
+means the application needs to be able to view the JDBC driver classes. This is
+done by configuring the application classloader to see the JDBC driver classes.
+
+[source=xml]
+----
+<library id="JdbcLib">
+    <fileset dir="${server.config.dir}/jdbc"/>
+</library>
+
+<webApplication location="myweb.war" >
+    <classloader commonLibraryRef="JdbcLib" />
+</webApplication>
+
+<dataSource jndiName="jdbc/myDataSource">
+   <jdbcDriver libraryRef="JdbcLib"/>
+   <properties databaseName="myDB" serverName="mydb.mycompany.com" portNumber="50000"/>
+</dataSource>
+----
 
 include::./gen/jdbc-4.3.gendoc[tag=config]
 
@@ -15,15 +77,7 @@ include::./gen/jdbc-4.3.gendoc[tag=requirements]
 
 include::./gen/jdbc-4.3.gendoc[tag=java-versions]
 
-<<<<<<< HEAD
-* JavaSE-1.8
-* JavaSE-11.0
-* JavaSE-12.0
-// end::java-versions[]
-// tag::dependencies[]
-=======
 include::./gen/jdbc-4.3.gendoc[tag=dependencies]
->>>>>>> draft
 
 include::./gen/jdbc-4.3.gendoc[tag=feature-require]
 
