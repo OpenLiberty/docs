@@ -23,15 +23,19 @@ A self-check can assess anything that the service needs.
 - Endpoint connections
 - Resource availability
 
-Services report as either `UP` (available) or `DOWN` (unavailable) by implementing the API provided by MicroProfile Health. A service orchestrator can then use these status reports to decide how to manage and scale the services within an application.
+Services report as either `UP` (available) or `DOWN` (unavailable) by implementing the API provided by MicroProfile Health. A service orchestrator can then use these status reports to decide how to manage and scale the services within an application. Health checks can also interact directly with Kubernetes liveness and readiness probes.
 
-== MicroProfile Health provided endpoints
+For example, in a microservices-based banking application, health checks might be implemented on the login service, the balance transfer service, and the bill pay service. If a health check on the balance transfer service detects a bug or deadlock, it will report as DOWN. In this case, if the `/health/live` endpoint is configured in a Kubernetes liveness probe, the probe will restart the service automatically, saving the user from encountering downtime or an error and preserving the functionality of the other services in the application.
 
-MicroProfile Health Check provides three endpoints:
+== MicroProfile Health provided endpoints and annotations
+
+MicroProfile Health provides three endpoints:
 
 - `/health`: a one-stop check that can apply to any application, providing status information to load balancer requests
-- `/health/ready`: returns the readiness of a service, or whether it boots successfully. This endpoint corresponds to the Kubernetes readiness probe.
-- `/health/live`: returns the liveness of a service, or whether it has encountered a bug or deadlock. This endpoint corresponds to the Kubernetes liveness probe.
+- `/health/ready`: returns the readiness of a service, or whether if it is ready to process requests. This endpoint corresponds to the Kubernetes readiness probe.
+- `/health/live`: returns the liveness of a service, or whether it has encountered a bug or deadlock. If this check fails, the service is not running and can be terminated. This endpoint corresponds to the Kubernetes liveness probe, which will automatically restart the pod if the check fails.
+
+To implement readiness or liveness health checks, add the appropriate annotation for your needs, `@Liveness` or `@Readiness`. These annotations link the provided endpoints to Kubernetes liveness and readiness probes.
 
 ```
 supply endpoint code examples here?- particularly @live and @ready which are not addressed in the guides yet
