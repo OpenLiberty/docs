@@ -13,7 +13,7 @@
 :page-type: general
 = Microservice observability with metrics
 
-Building observability into microservices externalizes the internal status of a system to enable operations teams to monitor the microservice systems more effectively. It is important that microservices are written to produce metrics that can be used by operations teams when the microservices are running in production. MicroProfile Metrics provides a `/metrics` endpoint for your application from which you can access a wide range of metrics, such as counters, gauges, and timers. When the application is running, you can view your metrics from any browser by visiting, for example, `https://localhost:9443/metrics`. Operations teams can gather the metrics and store them in a database by using tools like Prometheus. They can then visualize the metrics in dashboards, such as Grafana, to analyze the data.
+Building observability into microservices externalizes the internal status of a system to enable operations teams to monitor the microservice systems more effectively. It is important that microservices are written to produce metrics that can be used by operations teams when the microservices are running in production. MicroProfile Metrics provides a `/metrics` endpoint for your application from which you can access a wide range of metrics, such as counters, timers, and gauges. When the application is running, you can view your metrics from any browser by visiting, for example, `https://localhost:9443/metrics`. Operations teams can gather the metrics and store them in a database by using tools like Prometheus. They can then visualize the metrics in dashboards, such as Grafana, to analyze the data.
 
 == Adding metrics to your applications
 
@@ -37,11 +37,13 @@ public String noDonation() {
 }
 ----
 
+'''
+
 === Timers
-Timer metrics are used to aggregate timing durations, in nanoseconds, and provide duration and throughput statistics. To time the portion of the code, you can call the timer.time() method, which returns a timer.context object. This context is used to stop the timer by calling the context.close() method. The information that is retrieved from the timer metric is a combination of a meter and a histogram of timed durations. 
+Timer metrics are used to aggregate timing durations, in nanoseconds, and provide duration and throughput statistics.
 
 ==== @Timed
-This annotation is used for marking a constructor or method of an annotated object as timed. The timer metric tracks how frequently the annotated object is started and tracks how long the invocations take to complete:
+This annotation is used for marking a constructor or method as timed. The timer tracks how frequently the annotated object is started and tracks how long the invocations take to complete:
 
 ----
 @POST
@@ -59,6 +61,8 @@ public String donateAmountViaCreditCard(@FormParam("amount") Long amount, @FormP
 }
 ----
 
+'''
+
 === Meters
 Meter metrics are used to track throughput.
 A meter metric provides the following information:
@@ -68,7 +72,7 @@ A meter metric provides the following information:
 * A count of the number of measurements
 
 ==== @Metered
-This annotation is used for marking a constructor or method as metered. The meter metric counts the invocations of the constructor or method and tracks how frequently they are called:
+This annotation is used for marking a constructor or method as metered. The meter counts the invocations of the annotated constructor or method and tracks how frequently they are called:
 
 ----
 @Metered(displayName="Rate of donations", description="Rate of incoming donations (the instances not the amount)")
@@ -78,6 +82,8 @@ public void addDonation(Long amount) {
     donationDistribution.update(amount);
 }
 ----
+
+'''
 
 === Gauges
 Gauge metrics are implemented by the developer in a way that allows them to be sampled to obtain a particular value. For example, you might use a gauge metric to measure CPU temperature or disk usage. 
@@ -97,8 +103,10 @@ public Long getTotalDonations(){
 }
 ----
 
+'''
+
 === Concurrent Gauges
-Concurrent gauge metrics are used to keep a count of concurrent invocations of an annotated element. Concurrent gauge metrics also track the high and low watermark of each invocation. For each invocation of an annotated element, the count increments upon entry and decrements upon exit.
+Concurrent gauge metrics are used to keep a count of concurrent invocations of an annotated element. Concurrent gauge metrics also track the high and low watermarks of each invocation. For each invocation of an annotated element, the count increments upon entry and decrements upon exit.
 
 ==== @ConcurrentGauge
 This annotation is used for marking a method as a concurrent gauge. The concurrent gauge increments when the annotated method is called and decrements when the annotated method returns, counting current invocations of the annotated method:
