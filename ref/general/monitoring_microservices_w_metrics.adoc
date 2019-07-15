@@ -11,7 +11,7 @@
 :seo-description: By implementing metrics, developers can build observability into microservices and externalize the internal status of a system to enable operations teams to monitor the microservice systems more effectively.
 :page-layout: general-reference
 :page-type: general
-= Observability and monitoring microservices with metrics
+= Microservice observability with metrics
 
 Building observability into microservices externalizes the internal status of a system to enable operations teams to monitor the microservice systems more effectively. It is important that microservices are written to produce metrics that can be used by operations teams when the microservices are running in production. MicroProfile Metrics provides a `/metrics` endpoint for your application from which you can access a wide range of metrics, such as counters, gauges, and timers. When the application is running, you can view your metrics from any browser by visiting, for example, `https://localhost:9443/metrics`. Operations teams can gather the metrics and store them in a database by using tools like Prometheus. They can then visualize the metrics in dashboards, such as Grafana, to analyze the data.
 
@@ -22,21 +22,11 @@ To add metrics to your applications, you must create and register metrics with t
 == Metrics and annotations
 The following are a few examples of types of metrics and their corresponding annotations.
 
-=== Concurrent Gauges
-Concurrent gauge metrics are used to keep a count of concurrent invocations of an annotated element. For each invocation of an annotated element, the count increments upon entry and decrements upon exit. An injected concurrent gauge metric can be incremented by using inc() or inc(long n) or decremented by using dec() or dec(long n).
-
-==== @ConcurrentGauge
-This annotation is used for marking a method as a concurrent gauge. The gauge increments when the annotated method is called and decrements when the annotated method returns, counting current invocations of the annotated method.
-
-----
-NEED EXAMPLE HERE
-----
-
 === Counters
-Counter metrics are used to keep an incremental count. The initial value of the counter is set to 0. The counter metric increments each time that an annotated element is hit. An injected counter metric can be incremented by using inc() or inc(long n).
+Counter metrics are used to keep an incremental count. The initial value of the counter is set to 0. The counter metric increments each time that an annotated element is hit.
 
 ==== @Counted
-This annotation is used for marking a method, constructor, or type as a counter. The counter increments monotonically, counting total invocations of the annotated method.
+This annotation is used for marking a method, constructor, or type as a counter. The counter increments monotonically, counting total invocations of the annotated method:
 
 ----
 @GET
@@ -47,49 +37,11 @@ public String noDonation() {
 }
 ----
 
-=== Gauges
-Gauge metrics are implemented by the developer in a way that allows them to be sampled to obtain a particular value. For example, you might use a gauge metric to measure CPU temperature or disk usage. 
-
-==== @Gauge
-This annotation is used for marking a method as a gauge.
-
-----
-@Gauge(
-    name="donations",
-    displayName="Total Donations",
-    description="Total amount of money raised for charity!",
-    unit = "dollars",
-    absolute=true)
-public Long getTotalDonations(){
-    return totalDonations;
-}
-----
-
-=== Meters
-Meter metrics are used to track throughput. To use a meter metric, you must call the meter.mark() method to mark an event. For multiple events, you can also use mark(long n) to mark multiple occurrences of events at the same time.
-A meter metric provides the following information:
-
-* Mean throughput 
-* One/five/fifteen minute exponentially weighted moving average throughput
-* A count of the number of measurements
-
-==== @Metered
-This annotation is used for marking a constructor or method as metered. The meter metric counts the invocations of the constructor or method and tracks how frequently they are called.
-
-----
-@Metered(displayName="Rate of donations", description="Rate of incoming donations (the instances not the amount)")
-public void addDonation(Long amount) {
-    totalDonations += amount;
-    donations.add(amount);
-    donationDistribution.update(amount);
-}
-----
-
 === Timers
 Timer metrics are used to aggregate timing durations, in nanoseconds, and provide duration and throughput statistics. To time the portion of the code, you can call the timer.time() method, which returns a timer.context object. This context is used to stop the timer by calling the context.close() method. The information that is retrieved from the timer metric is a combination of a meter and a histogram of timed durations. 
 
 ==== @Timed
-This annotation is used for marking a constructor or method of an annotated object as timed. The timer metric tracks how frequently the annotated object is started and tracks how long the invocations take to complete.
+This annotation is used for marking a constructor or method of an annotated object as timed. The timer metric tracks how frequently the annotated object is started and tracks how long the invocations take to complete:
 
 ----
 @POST
@@ -104,5 +56,58 @@ public String donateAmountViaCreditCard(@FormParam("amount") Long amount, @FormP
         return "Thanks for donating!";
  
     return "Sorry, please try again.";
+}
+----
+
+=== Meters
+Meter metrics are used to track throughput.
+A meter metric provides the following information:
+
+* Mean throughput 
+* One/five/fifteen minute exponentially weighted moving average throughput
+* A count of the number of measurements
+
+==== @Metered
+This annotation is used for marking a constructor or method as metered. The meter metric counts the invocations of the constructor or method and tracks how frequently they are called:
+
+----
+@Metered(displayName="Rate of donations", description="Rate of incoming donations (the instances not the amount)")
+public void addDonation(Long amount) {
+    totalDonations += amount;
+    donations.add(amount);
+    donationDistribution.update(amount);
+}
+----
+
+=== Gauges
+Gauge metrics are implemented by the developer in a way that allows them to be sampled to obtain a particular value. For example, you might use a gauge metric to measure CPU temperature or disk usage. 
+
+==== @Gauge
+This annotation is used for marking a method as a gauge:
+
+----
+@Gauge(
+    name="donations",
+    displayName="Total Donations",
+    description="Total amount of money raised for charity!",
+    unit = "dollars",
+    absolute=true)
+public Long getTotalDonations(){
+    return totalDonations;
+}
+----
+
+=== Concurrent Gauges
+Concurrent gauge metrics are used to keep a count of concurrent invocations of an annotated element. Concurrent gauge metrics also track the high and low watermark of each invocation. For each invocation of an annotated element, the count increments upon entry and decrements upon exit.
+
+==== @ConcurrentGauge
+This annotation is used for marking a method as a concurrent gauge. The concurrent gauge increments when the annotated method is called and decrements when the annotated method returns, counting current invocations of the annotated method:
+
+----
+@GET
+@Path("/livestream");
+@ConcurrentGauge(name = "liveStreamViewers", displayName="Donation live stream viewers", description="Number of active viewers for the donation live stream")
+public void donationLiveStream() {
+    launchLiveStreamConnection();
 }
 ----
