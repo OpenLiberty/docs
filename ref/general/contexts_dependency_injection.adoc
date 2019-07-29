@@ -1,0 +1,67 @@
+// Copyright (c) 2019 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description: Contexts and Dependency Injection (CDI) is a framework that improves the structure of application code. It connects different components of an application.
+:seo-description: Contexts and Dependency Injection (CDI) is a framework that improves the structure of application code. It connects different components of an application.
+:page-layout: general-reference
+:page-type: general
+= Dependency injection in microservices with MicroProfile
+Contexts and Dependency Injection (CDI) is a framework that improves the structure of application code.
+Following are the most fundamental services that are provided by CDI:
+-   Contexts. This service helps you bind the lifecycle and interactions of stateful components to well-defined, extensible contexts.
+-   Dependency injection. This service helps you inject components into an application in a type-safe way.
+CDI is an essential element in link:https://openliberty.io/docs/intro/microprofile.html[MicroProfile], Java EE, and Jakarta EE. It connects different components of an application. MicroProfile specifications take a CDI-first approach. They rely on the CDI extension mechanism, which implements more functionality, including enhancing existing standards with new capabilities.
+== CDI beans
+Beans are components that can be injected into each other with a dependency injection. Almost every Plain Old Java Object (POJO) with a constructor can be a bean. In CDI, a bean is a source of contextual objects that define application state and logic. The beans are managed by CDI containers by using bean-defining annotations. The container instantiates dependencies and controls when and how the components are instantiated and destroyed without your intervention.
+Annotations are metadata about code. Use them to decorate a class, method, field, parameter, variable, constructor, or package. You can use annotations to define the scope in which the bean is stored.
+== CDI scopes
+Use scopes to define the state of a bean. CDI scope annotations control the bean's lifecycle.
+- Use the `@ApplicationScoped` class-level annotation if an instance is to live while the application is active.
+- Use the `@RequestScoped` class-level annotation if a new instance of the bean is to be created for every request (a servlet request, for example).
+- Use the `@Dependent` class-level annotation if the new instance belongs to another object. A dependent bean instance is never shared between different clients or different injection points. It is instantiated when the object it belongs to is created, and then destroyed when the object it belongs is destroyed.
+If no class-level annotation is defined, `@Dependent` is the default.
+Annotations that define CDI beans must be discovered. CDI annotation scanning can be enabled by using a `beans.xml` file in the META-INF folder for a .jar archive, or in the WEB-INF folder for a .war archive. This file can be empty, or it can contain something like the following content:
+[source,xml]
+----
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee
+            http://xmlns.jcp.org/xml/ns/javaee/beans_1_1.xsd"
+      version="1.1" bean-discovery-mode="all">
+  // enable interceptors; decorators; alternatives
+</beans>
+----
+The presence of an empty `beans.xml` file or a `beans.xml` file with bean-discovery-mode=`"all"`, makes all of the potential objects CDI beans. Otherwise, only objects with CDI bean-defining annotations are CDI beans.
+== CDI bean injection
+CDI injects defined beans into other components through `@Inject`. For instance, the following POJO MyBean is a CDI bean:
+[source,java]
+----
+@ApplicationScoped
+public class MyBean {
+    int i=0;
+    public String sayHello() {
+        return "MyBean hello " + i++;
+    }
+}
+----
+As it is `@ApplicationScoped`, only one instance is created. MyRestEndPoint is `@RequestScoped` in the following code, which means an instance is created for each request. CDI injects the same MyBean instance into each:
+[source,java]
+----
+@RequestScoped
+@Path("/hello")
+public class MyRestEndPoint {
+    @Inject MyBean bean;
+    @GET
+    @Produces (MediaType.TEXT_PLAIN)
+    public String sayHello() {
+        return bean.sayHello();
+    }
+}
+----
+CDI is a comprehensive set of services that allows developers the flexibility to integrate various kinds of components in a loosely coupled but type-safe way.
