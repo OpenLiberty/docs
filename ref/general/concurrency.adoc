@@ -1,0 +1,59 @@
+---
+layout: post
+title: What is concurrency and why is it important?
+categories: blog
+author_picture: https://avatars3.githubusercontent.com/u/25179127
+seo-title: What is concurrency and why is it important? - OpenLiberty.io. 
+seo-description: Concurrency is being able to run multiple tasks in parallel, which can increase the efficiency of an application. Concurrency in Java EE enables you to run tasks from multiple applications at once, sharing thread pools and task scheduling.
+blog_description: "Concurrency is being able to run multiple tasks in parallel, which can increase the efficiency of an application. Concurrency in Java EE enables you to run tasks from multiple applications at once, sharing thread pools and task scheduling."
+---
+= What is concurrency and why is it important?
+Nathan Rauh <https://github.com/njr-11>
+
+
+Concurrency is being able to run multiple tasks in parallel, which can increase the efficiency of an application. Concurrency in Java EE enables you to run tasks from multiple applications at once, sharing thread pools and task scheduling.
+
+LC NOTE: Can you give a simple but realistic example of doing each of these?
+
+== Concurrency in Java SE and Java EE
+
+Java SE has long included a https://docs.oracle.com/javase/8/docs/technotes/guides/concurrency/[Concurrency Utilities specification]. The Concurrency Utilities specification standardizes an API for performing fundamental aspects of a concurrent programming model, such as:
+
+* Creating threads
+* Submitting tasks to run in parallel
+* Scheduling tasks for execution at a future time
+* Awaiting completion of tasks and obtaining the result of execution
+
+Java SE also includes various implementations, in some cases backed by thread pools, with varying degrees of extensibility and customization possible. These are well suited to the Java SE environment, where a single instance of an application services a single request and submits all of the tasks.
+
+In a Java EE environment, multiple applications, each servicing many requests at any given moment, may all wish to perform multiple tasks in parallel in order to improve throughput and decrease response time. Rather than having each application that wants to perform a task in parallel maintain its own pool of threads, it can be more efficient to have applications share thread pools and task scheduling.
+
+LC NOTE: Add here? In a MicroProfile application, .....
+
+== Sharing thread pools
+
+By making executors and thread factories into managed resources (available in the Java namespace and injectable into applications), the https://docs.oracle.com/javaee/7/tutorial/concurrency-utilities.htm[Concurrency Utilities for Java EE specification] makes it possible for these executors and thread factories to be shared across applications and application components. Furthermore, Concurrency Utilities for Java EE introduces a standard set of default resources (for example, `java:comp/DefaultManagedScheduledExecutorService`) that are available to every application. This makes it extremely convenient for applications to share a single threading and scheduling implementation, managed by the application server, that requires no configuration.
+
+Open Liberty takes this a step further because the default managed executors, all configured managed executors, and the core server implementation all share a single common thread pool. This thread pool is automatically tuned throughout the lifetime of the server by measuring the impact of incrementally increasing and decreasing the number of threads.
+
+== Commonalities between Java SE and Java EE concurrency
+
+The Concurrency Utilities for Java EE specification closely matches the Concurrency Utilities specification included in Java SE, so much so that it is often possible to write applications using only the Java SE APIs but still taking advantage of Concurrency Utilities for Java EE. Liberty further enables this by allowing you to inject executor services and thread factories under the Java SE interface names (for example, `java.util.concurrent.ExecutorService`) as well as the Java EE interface names (for example, `javax.enterprise.concurrent.ManagedExecutorService`).
+
+LC NOTE: Add in something about MicroProfile Concurrency?
+
+== Thread context awareness
+
+Another enhancement in Concurrency Utilities for Java EE beyond Java SE is that executors are aware of thread context and they propagate the context of the task submitter to the thread of execution upon which the task runs. This allows tasks to perform lookups in the `java:comp`, `java:module`, or `java:app` namespace of the submitting thread, as well as run with the security context of the submitting thread, load classes from its thread context classloader, and so on. Liberty allows you to configure which types of thread context are propagated.
+
+Thread factories are also aware of thread context and propagate the context of the thread that looked up or injected the thread factory to threads created by the thread factory. This has the effect of allowing thread pools that are created with these thread factories to create a pool of threads that all run under the same thread context; this largely avoids the costs of thread context switching. Managed executors and thread factories rely on another service provided by Concurrency Utilities for Java EE called the Context Service (`javax.enterprise.concurrent.ContextService`) for thread context propagation. Context Services are also available for direct usage, allowing you to achieve more flexible and fine grained control of thread context propagation. Context Services allow you to construct proxies that save the thread context at creation time and apply it upon invocation of interface methods.
+
+== Notifications and triggers
+
+Other advanced capabilities provided by Concurrency Utilities for Java EE are the ability to register for notifications of task lifecycle and a Trigger API that allows you to customize scheduling for complex business logic. A trigger allows you to recompute the next execution time each time the task runs. This means you are no longer limited to scheduling repeating tasks at fixed intervals and could, for example, schedule a task that only runs Monday through Friday, skipping weekend days. Or you could use Trigger to make the frequency of your task depend on other external stimuli, such as the weather or the rate at which sales are being made.
+
+== Try out the Liberty Concurrency feature
+
+LC NOTE: Update for MicroProfile Concurrency too?
+
+With the `concurrent-1.0` feature, Liberty provides a robust, fully spec-compliant implementation of Concurrency Utilities for Java EE. Try it out today, and start enjoying the advantages of parallelism and task scheduling in a Java EE environment.
