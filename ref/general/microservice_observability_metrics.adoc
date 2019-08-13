@@ -6,14 +6,18 @@
 // Contributors:
 //     IBM Corporation
 //
-:page-description: By implementing metrics, developers can build observability into microservices and externalize the internal status of a system to enable operations teams to monitor the microservice systems more effectively.
+:page-description: By implementing metrics, developers can build observability into microservices and externalize the internal status of a system to enable operations teams to monitor microservice systems more effectively.
 :seo-title: Monitoring microservices with metrics
-:seo-description: By implementing metrics, developers can build observability into microservices and externalize the internal status of a system to enable operations teams to monitor the microservice systems more effectively.
+:seo-description: By implementing metrics, developers can build observability into microservices and externalize the internal status of a system to enable operations teams to monitor microservice systems more effectively.
 :page-layout: general-reference
 :page-type: general
 = Microservice observability with metrics
 
-Building observability into microservices externalizes the internal status of a system to enable operations teams to monitor the microservice systems more effectively. It is important that microservices are written to produce metrics that can be used by operations teams when the microservices are running in production. MicroProfile Metrics provides a `/metrics` endpoint for your application from which you can access a wide range of metrics, such as counters, timers, and gauges. When the application is running, you can view your metrics from any browser by visiting, for example, `https://localhost:9443/metrics`. Operations teams can gather the metrics and store them in a database by using tools like Prometheus. They can then visualize the metrics in dashboards, such as Grafana, to analyze the data.
+Building observability into microservices externalizes the internal status of a system to enable operations teams to monitor microservice systems more effectively. It is important that microservices are written to produce metrics that can be used by operations teams when the microservices are running in production. link:https://github.com/eclipse/microprofile-metrics/[Microprofile Metrics] provides a `/metrics` endpoint from which you can access all metrics emitted by the Open Liberty server and deployed applications.
+
+When the application is running, you can view your metrics from any browser by visiting, for example, `https://localhost:9443/metrics`. You can further narrow down the scope of the metric data by accessing the `/metrics/base`, `/metrics/application`, and `/metrics/vendor` endpoints. By default, metric data is emitted in link:https://prometheus.io/docs/instrumenting/exposition_formats/[Prometheus format]. Metric data can be retrieved in JSON format by configuring the `Accept` header of your request to the `application/json` value. A `GET` request returns a list of metrics, and an `OPTIONS` request returns a list of metrics with their metadata.
+
+Operations teams can gather the metrics and store them in a database by using tools like Prometheus. They can then visualize the metrics in dashboards, such as Grafana, to analyze the data.
 
 == Adding metrics to your applications
 
@@ -28,6 +32,7 @@ Counter metrics are used to keep an incremental count. The initial value of the 
 ==== @Counted
 This annotation is used for marking a method, constructor, or type as a counter. The counter increments monotonically, counting total invocations of the annotated method:
 
+[source,java]
 ----
 @GET
 @Path("/no")
@@ -45,6 +50,7 @@ Timer metrics are used to aggregate timing durations, in nanoseconds, and provid
 ==== @Timed
 This annotation is used for marking a constructor or method as timed. The timer tracks how frequently the annotated object is started and tracks how long the invocations take to complete:
 
+[source,java]
 ----
 @POST
 @Path("/creditcard")
@@ -74,6 +80,7 @@ A meter metric provides the following information:
 ==== @Metered
 This annotation is used for marking a constructor or method as metered. The meter counts the invocations of the annotated constructor or method and tracks how frequently they are called:
 
+[source,java]
 ----
 @Metered(displayName="Rate of donations", description="Rate of incoming donations (the instances not the amount)")
 public void addDonation(Long amount) {
@@ -91,6 +98,7 @@ Gauge metrics are implemented by the developer in a way that allows them to be s
 ==== @Gauge
 This annotation is used for marking a method as a gauge:
 
+[source,java]
 ----
 @Gauge(
     name="donations",
@@ -111,6 +119,7 @@ Concurrent gauge metrics are used to keep a count of concurrent invocations of a
 ==== @ConcurrentGauge
 This annotation is used for marking a method as a concurrent gauge. The concurrent gauge increments when the annotated method is called and decrements when the annotated method returns, counting current invocations of the annotated method:
 
+[source,java]
 ----
 @GET
 @Path("/livestream");
@@ -122,4 +131,9 @@ public void donationLiveStream() {
 
 '''
 
-If you're interested in learning more about using MicroProfile Metrics to build observability into your microservices, head over to the Open Liberty guide for link:https://openliberty.io/guides/microprofile-metrics.html[Providing metrics from a microservice].
+These types of metrics are available to add to your applications to make them observable. In production, operations teams can use these metrics to monitor the application, along with metrics that are automatically emitted from the JVM and the Open Liberty server runtime. If you're interested in learning more about using MicroProfile Metrics to build observability into your microservices, see the Open Liberty guide for link:https://openliberty.io/guides/microprofile-metrics.html[Providing metrics from a microservice].
+
+=== See also
+* link:/docs/ref/microprofile/3.0/#package=org/eclipse/microprofile/metrics/annotation/package-frame.html&class=org/eclipse/microprofile/metrics/annotation/package-summary.html[MicroProfile Metrics Annotation Javadoc]
+* link:/blog/2019/07/24/microprofile-metrics-migration.html[Migrating applications from MicroProfile Metrics 1.x to MicroProfile Metrics 2.0]
+// * Link to Metrics catalog topic
