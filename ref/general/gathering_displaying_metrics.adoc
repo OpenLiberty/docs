@@ -42,6 +42,8 @@ The following steps use the fault tolerance metrics as an example to show you ho
 
 == Gather metrics using Prometheus
 
+Prometheus best practices recommend using counter metrics to gather your metric data. They are lightweight, flexible for graphing, and they cope gracefully with missing samples or server restarts. Prometheus stores the value of counter metrics at set intervals and can retrospectively process these values to calculate rates of change, moving averages, or ratios.
+
 . Configure your app to export metrics by adding the feature:mpMetrics-2.0[MicroProfile Metrics feature] in the `server.xml` file. You can also add features that allow extra metrics to be gathered. For example, if you want to gather fault tolerance metrics, add the `mpFaultTolerance-1.1` and `mpMetrics-1.1` features in the `server.xml` file:
 +
 [source,xml]
@@ -204,8 +206,6 @@ The rate is calculated by averaging the total number of invocations over the pre
 
 image::/docs/img/ftmetrics-invocations-rate-graph.png[Screenshot of Grafana showing the graph editing screen. The query from above has been entered in the query box. A line graph is above it. The line on the graph goes up and down over time, ranging between 0 and 1.2 requests per second.]
 
-Prometheus best practices recommend using counter metrics to gather your metric data. They are lightweight, flexible for graphing, and they cope gracefully with missing samples or server restarts. Prometheus stores the value of counter metrics at set intervals and can retrospectively process these values to calculate rates of change, moving averages, or ratios.
-
 Use fault tolerance metrics in a more complex query to graph the percentage of calls that timed out, averaged over the last minute. To display this information, divide the number of calls that timed out by the total number of calls to determine the percentage of calls that timed out. Then, average that percentage over the last minute:
 
 ----
@@ -221,10 +221,12 @@ image::/docs/img/ftmetrics-timeout-percentage-graph.png[Screenshot of Grafana sh
 
 In this example, you used the sum of the `calls_timed_out_total` and `calls_not_timed_out_total` metrics, rather than `invocations_total` metric. If the method is also annotated with the `@Retry` annotation, then each retry attempt would be considered its own timeout and would be counted towards either the `calls_timed_out_total` metric or the `calls_not_timed_out_total` metric.
 
-
+See the [Grafana documentation] for more information on setting up queries and configuring Grafana.
 
 === See also:
+* Guide: link:/guides/microprofile-metrics.html[Providing metrics from a microservice]
 * link:https://github.com/eclipse/microprofile-metrics[MicroProfile Metrics]
 * link:https://download.eclipse.org/microprofile/microprofile-fault-tolerance-2.0.1/microprofile-fault-tolerance-spec.pdf[MicroProfile Fault Tolerance]
 * link:/docs/ref/general/#microservice_observability_metrics.html[Microservice observability with metrics]
-* Guide: link:/guides/microprofile-metrics.html[Providing metrics from a microservice]
+* link:https://prometheus.io/docs/[Prometheus documentation]
+* link:https://grafana.com/docs/[Grafana documentation]
