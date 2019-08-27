@@ -68,6 +68,18 @@ WLP_LOGGING_MESSAGE_SOURCE=message,trace,accessLog,ffdc,audit
 +
 When using `server.xml` to configure json format some log lines are written in the default non-JSON format prior to `server.xml` startup which can cause issues with some tools. For example, https://stedolan.github.io/jq/[`jq`] would have trouble understanding the log files.
 
+=== Configuring JSON field names
+When logs are in JSON format, you can use the `jsonFields` attribute to replace default field names with new field names. The following examples show sample configurations for renaming a JSON field:
+
+- To configure a field name for all types, include the following in the `server.env.` file:
+----
+WLP_LOGGING_JSON_FIELDS=loglevel:level
+----
+- To configure a field name for a specific type, include the following in the `server.env.` file:
+----
+WLP_LOGGING_JSON_FIELDS=liberty_message:message:log
+----
+
 === Configuring logging for a Docker image
 
 It is common in Docker environments to disable `messages.log` and instead format the console output as JSON. This can be done using environment variables:
@@ -123,6 +135,11 @@ The table below shows the equivalent `server.xml`, `bootstrap.properties`, and e
 |
 |You can use this attribute to configure the messages keys that you want to hide from the `console.log` and `messages.log` files. If the messages are configured to be hidden, then they are redirected to the `trace.log` file.
 
+|jsonFields
+|com.ibm.ws.logging.json.fields
+|
+|When logs are in JSON format, use this attribute to replace default field names with new field names. Configure the new field name by using the following format: `defaultFieldName:newFieldName`. For field names that are associated with logs of a specified type (`liberty_message`, `liberty_trace`, `liberty_accesslog`, `liberty_ffdc`, `liberty_audit`), use the following format: `[eventType:]?defaultFieldName:newFieldName`. To rename multiple fields, specify a comma-separated list of field name mappings. 
+
 |logDirectory
 |com.ibm.ws.logging.log.directory
 |LOG_DIR
@@ -143,7 +160,7 @@ The table below shows the equivalent `server.xml`, `bootstrap.properties`, and e
 |consoleSource
 |com.ibm.ws.logging.console.source
 |WLP_LOGGING_CONSOLE_SOURCE
-|The list of comma-separated sources that route to the console. This property applies only when `consoleFormat="json"`. Valid values are `message`, `trace`, `accessLog`, `ffdc`, and `audit`. By default, `consoleSource` is set to `message`. To use the `audit` source, enable the Liberty feature:audit-1.0[] feature. To use the `accessLog` source you need to have configured config:httpAccessLogging[].d
+|The list of comma-separated sources that route to the console. This property applies only when `consoleFormat="json"`. Valid values are `message`, `trace`, `accessLog`, `ffdc`, and `audit`. By default, `consoleSource` is set to `message`. To use the `audit` source, enable the Liberty feature:audit-1.0[] feature. To use the `accessLog` source you need to have configured config:httpAccessLogging[].
 
 |copySystemStreams
 |com.ibm.ws.logging.copy.system.streams
