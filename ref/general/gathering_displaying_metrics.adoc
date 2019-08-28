@@ -6,9 +6,9 @@
 // Contributors:
 //     IBM Corporation
 //
-:page-description:
-:seo-title:
-:seo-description:
+:page-description: Learn how to gather metric data by using Prometheus and display that data by creating graphs in Grafana.
+:seo-title: Gathering and displaying Open Liberty metrics
+:seo-description: Learn how to gather metric data by using Prometheus and display that data by creating graphs in Grafana.
 :page-layout: general-reference
 :page-type: general
 = Gathering and displaying Open Liberty metrics
@@ -42,9 +42,7 @@ The following steps use the fault tolerance metrics as an example to show you ho
 
 == Gather metrics using Prometheus
 
-Prometheus best practices recommend using counter metrics to gather your metric data. They are lightweight, flexible for graphing, and they cope gracefully with missing samples or server restarts. Prometheus stores the value of counter metrics at set intervals and can retrospectively process these values to calculate rates of change, moving averages, or ratios.
-
-. Configure your app to export metrics by adding the feature:mpMetrics-2.0[MicroProfile Metrics feature] in the `server.xml` file. You can also add features that allow extra metrics to be gathered. For example, if you want to gather fault tolerance metrics, add the `mpFaultTolerance-1.1` and `mpMetrics-1.1` features in the `server.xml` file:
+. Configure your app to export metrics by adding the MicroProfile Metrics feature in the `server.xml` file. You can also add features that allow extra metrics to be gathered. For example, if you want to gather fault tolerance metrics, add the `mpFaultTolerance-1.1` and `mpMetrics-1.1` features in the `server.xml` file:
 +
 [source,xml]
 ----
@@ -120,6 +118,7 @@ Although Prometheus has a basic web UI that can draw graphs from collected metri
 The following image shows the Grafana dashboard that displays a graph of invocations per second and failure rate from the fault tolerance metrics:
 
 image::/docs/img/ftmetrics-imported-dashboard.png[The Grafana dashboard displaying a graph of the invocations per second and failure rate.]
+{empty} +
 
 This dashboard shows a selection of graphs for a single method at once. Because the dashboard shows only metrics for a single method, it isn't the best option to display an overview of the entire system. However, it does display all available details when you need to determine the cause of a problem.
 
@@ -127,7 +126,7 @@ This dashboard shows a selection of graphs for a single method at once. Because 
 
 Let's take a quick look at how to create your own graphs. When you create your own graphs, you can extract metric data from several different methods and display it all on the same dashboard.
 
-Metric names are passed to the MicroProfile Metrics API, which exports them in a format that conforms to {url-prom-best-practise}[Prometheus metrics best practices]. The MicroProfile Metrics API makes the following changes to metrics when they are exported to Prometheus:
+Metric names are passed to the MicroProfile Metrics API, which exports them in a format that conforms to {url-prom-best-practise}[Prometheus best practices]. The MicroProfile Metrics API makes the following changes to metrics when they are exported to Prometheus:
 
 * Metrics are put in the `application` namespace.
 * Dots are replaced with underscores.
@@ -166,23 +165,27 @@ For example, if you have the `callSlowService` method in the `com.example.TestSe
 
 '''
 
-Now, let's create graphs.
+Now, look at some examples of how to create graphs in Grafana.
 
 . In Grafana, create an empty dashboard:
 +
 image::/docs/img/ftmetrics-grafana-new-dashboard.png[Screenshot of Grafana highlighting the new dashboard button on the left sidebar menu]
+{empty} +
 
 . Add a new panel and choose Graph as the new panel type:
 +
 image::/docs/img/ftmetrics-grafana-new-graph.png[Screenshot of Grafana highlighting the new panel button and the graph button]
+{empty} +
 
 . Click Edit from the panel header menu:
 +
 image::/docs/img/ftmetrics-grafana-edit-graph.png[Screenshot of Grafana with the menu of the new panel open highlighting the edit button]
+{empty} +
 
 . Select the Metrics tab. You can write a query using {url-prom-ql}[Prometheus Query Language] in the query field:
 +
 image::/docs/img/ftmetrics-grafana-metrics-tab.png[Screenshot of Grafana showing the graph editing screen with the metrics tab open]
+{empty} +
 
 Now you have a new empty graph. You can graph the total number of calls to a particular method. For example, graph the total number of calls to the `callSlowService` method by using the following query:
 
@@ -193,6 +196,7 @@ application:ft_com_example_test_service_call_slow_service_invocations_total
 Load the page to generate traffic, and Grafana displays a graph of the number of times the method was called. A graph of the sample app looks similar to this example:
 
 image::/docs/img/ftmetrics-invocations-graph.png[Screenshot of Grafana showing the graph editing screen. The query from above has been entered in the query box. A line graph is above it with the line moving unevenly up and to the right.]
+{empty} +
 
 You can see that the graph trends upward as more requests are served.
 
@@ -205,6 +209,7 @@ rate(application:ft_com_example_test_service_call_slow_service_invocations_total
 The rate is calculated by averaging the total number of invocations over the preceding minute. The following example displays how many requests the `callSlowService` method receives per second:
 
 image::/docs/img/ftmetrics-invocations-rate-graph.png[Screenshot of Grafana showing the graph editing screen. The query from above has been entered in the query box. A line graph is above it. The line on the graph goes up and down over time, ranging between 0 and 1.2 requests per second.]
+{empty} +
 
 Use fault tolerance metrics in a more complex query to graph the percentage of calls that timed out, averaged over the last minute. To display this information, divide the number of calls that timed out by the total number of calls to determine the percentage of calls that timed out. Then, average that percentage over the last minute:
 
@@ -218,10 +223,11 @@ rate(application:ft_com_example_test_service_call_slow_service_timeout_calls_tim
 ----
 
 image::/docs/img/ftmetrics-timeout-percentage-graph.png[Screenshot of Grafana showing the graph editing screen. The query from above has been entered in the query box. A line graph is above it. The line graph shows the percentage of invocations which timed out over time. After an initial spike at 50%, it goes up and down ranging between 5% and 20% before dropping to 0%.]
+{empty} +
 
 In this example, you used the sum of the `calls_timed_out_total` and `calls_not_timed_out_total` metrics, rather than `invocations_total` metric. If the method is also annotated with the `@Retry` annotation, then each retry attempt would be considered its own timeout and would be counted towards either the `calls_timed_out_total` metric or the `calls_not_timed_out_total` metric.
 
-See the [Grafana documentation] for more information on setting up queries and configuring Grafana.
+See the link:https://grafana.com/docs/[Grafana documentation] for more information on setting up queries and configuring Grafana.
 
 === See also:
 * Guide: link:/guides/microprofile-metrics.html[Providing metrics from a microservice]
