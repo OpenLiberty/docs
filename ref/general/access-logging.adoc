@@ -1,0 +1,62 @@
+// Copyright (c) 2013, 2019 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-layout: general-reference
+:page-type: general
+= HTTP access logging
+
+You can configure access log settings for HTTP endpoints. An HTTP access log contains a record of all inbound client requests that are handled by HTTP endpoints. You can enable access logging in the HTTP server or the Liberty server in two modes: one log common to multiple endpoints, or one log for each endpoint.
+
+If you do not specify attributes, the defaults are used. To see a list of the default attributes, see link:/docs/ref/config/#httpAccessLogging[httpAccessLogging].
+
+== HTTP access log settings
+
+* Using a common log
++
+To enable logging for multiple endpoints with common settings, include `httpAccessLogging` as a top-level element in your `server.xml` file, and then reference it from multiple `httpEndpoint` elements, as shown in the following example:
+
+[source,properties,linenums,role="code_column"]
+----
+<httpAccessLogging id="accessLogging"/>
+<httpEndpoint id="defaultHttpEndpoint" accessLoggingRef="accessLogging"/>
+<httpEndpoint id="otherHttpEndpoint" accessLoggingRef="accessLogging" httpPort="9081" httpsPort="9444"/>
+----
+
+* Using distinct logs for each endpoint
++
+To enable logging for individual endpoints, use an `accessLogging` child element and specify a file path that does not conflict with other logs, as shown in the following example:
+
+[source,properties,linenums,role="code_column"]
+----
+<httpEndpoint id="defaultHttpEndpoint">
+    <accessLogging filepath="${server.output.dir}/logs/http_defaultEndpoint_access.log"/>
+</httpEndpoint>
+----
+
+* Using logs for the HTTP server
++
+For a list of the available HTTP server-side properties and their descriptions, see link:http://publib.boulder.ibm.com/httpserv/manual70/mod/mod_log_config.html[Apache Module mod_log_config]
+
+== HTTP access log format
+
+For a list of the available log format properties and their descriptions, see the 'accessLogFormat' configuration for WebSphere® Application Server in link:https://www.ibm.com/support/knowledgecenter/SSAW57_9.0.5/com.ibm.websphere.nd.multiplatform.doc/ae/rrun_chain_httpcustom.html[HTTP transport channel custom properties]. This log format string is specified by using the `logFormat` attribute of `httpAcccessLogging` or `accessLogging` elements in the `server.xml` file, as shown in the following examples:
+
+[source,properties,linenums,role="code_column"]
+----
+<httpAccessLogging logFormat='%h %u %{t}W "%r" %s %b'/>
+----
+
+or
+
+[source,properties,linenums,role="code_column"]
+----
+<httpEndpoint id="defaultHttpEndpoint">
+   <accessLogging filepath="${server.output.dir}/logs/http_defaultEndpoint_access.log"
+                  logFormat='%h %i %u %t "%r" %s %b' />
+</httpEndpoint>
+----
