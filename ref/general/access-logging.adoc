@@ -12,7 +12,7 @@
 
 You can configure access log settings for HTTP endpoints. An HTTP access log contains a record of all inbound client requests that are handled by HTTP endpoints. You can enable access logging in the HTTP server or the Liberty server in two modes: one log common to multiple endpoints, or one log for each endpoint.
 
-If you do not specify attributes, the defaults are used. To see a list of the default attributes, see link:/docs/ref/config/#httpAccessLogging[httpAccessLogging].
+If you do not specify attributes, the defaults are used. To see a list of the default attributes, see link:/docs/ref/config/#httpAccessLogging.html[httpAccessLogging].
 
 == HTTP access log settings
 
@@ -20,7 +20,7 @@ If you do not specify attributes, the defaults are used. To see a list of the de
 +
 To enable logging for multiple endpoints with common settings, include `httpAccessLogging` as a top-level element in your `server.xml` file, and then reference it from multiple `httpEndpoint` elements, as shown in the following example:
 
-[source,properties,linenums,role="code_column"]
+
 ----
 <httpAccessLogging id="accessLogging"/>
 <httpEndpoint id="defaultHttpEndpoint" accessLoggingRef="accessLogging"/>
@@ -31,7 +31,7 @@ To enable logging for multiple endpoints with common settings, include `httpAcce
 +
 To enable logging for individual endpoints, use an `accessLogging` child element and specify a file path that does not conflict with other logs, as shown in the following example:
 
-[source,properties,linenums,role="code_column"]
+
 ----
 <httpEndpoint id="defaultHttpEndpoint">
     <accessLogging filepath="${server.output.dir}/logs/http_defaultEndpoint_access.log"/>
@@ -40,23 +40,106 @@ To enable logging for individual endpoints, use an `accessLogging` child element
 
 * Using logs for the HTTP server
 +
-For a list of the available HTTP server-side properties and their descriptions, see link:http://publib.boulder.ibm.com/httpserv/manual70/mod/mod_log_config.html[Apache Module mod_log_config]
+For a list of the available HTTP server-side properties and their descriptions, see link:http://httpd.apache.org/docs/current/mod/mod_log_config.html[Apache Module mod_log_config]
 
 == HTTP access log format
 
-For a list of the available log format properties and their descriptions, see the `accessLogFormat` configuration for WebSphere® Application Server in link:https://www.ibm.com/support/knowledgecenter/SSAW57_9.0.5/com.ibm.websphere.nd.multiplatform.doc/ae/rrun_chain_httpcustom.html[HTTP transport channel custom properties]. This log format string is specified by using the `logFormat` attribute of `httpAcccessLogging` or `accessLogging` elements in the `server.xml` file, as shown in the following examples:
+Use the `accessLogFormat` property to specify the information  and format you want to include in the NCSA access log for an HTTP transport channel. The value for this property is a space separated list of options. The order that you specify the options determines the format of this information in the log.
 
-[source,properties,linenums,role="code_column"]
+This log format string is specified by using the `logFormat` attribute of `httpAcccessLogging` or `accessLogging` elements in the `server.xml` file, as shown in the following examples:
+
 ----
 <httpAccessLogging logFormat='%h %u %{t}W "%r" %s %b'/>
 ----
 
 or
 
-[source,properties,linenums,role="code_column"]
 ----
 <httpEndpoint id="defaultHttpEndpoint">
    <accessLogging filepath="${server.output.dir}/logs/http_defaultEndpoint_access.log"
                   logFormat='%h %i %u %t "%r" %s %b' />
 </httpEndpoint>
 ----
+
+The following table lists the available log format options.
+
+|===
+| Log format option|Description
+
+|%a
+|Remote IP address
+
+|%A
+|Local IP address
+
+|%b
+|Response size in bytes excluding headers
+
+|%B
+|Response size in bytes excluding headers
+`0` is printed instead of `-` if no value is found.
+
+|%{CookieName}C or %C
+|The request cookie specified within the brackets. If the brackets are not included, prints all of the request cookies.
+
+|%D
+|The elapsed time of the request - millisecond accuracy, microsecond precision
+
+|%h
+|Remote host
+
+|%i or %{HeaderName}i
+|`HeaderName` header value from the request
+
+|%m
+|Request method
+
+|%o or %{HeaderName}o
+|`HeaderName` header value from the response
+
+|%q
+|Output the query string with any password escaped
+
+|%r
+|First line of the request
+
+|%{R}W
+|Service time of the request from the moment the request is received until the first set of bytes of the response is sent - millisecond accuracy, microsecond precision
+
+|%s
+|Status code of the response
+
+|%t
+|NCSA format of the start time of the request
+
+|%(t)W
+|The current time when the message to the access log is queued to be logged in normal NCSA format.
+
+|%u
+|Remote user according to the WebSphere Application Server specific $WSRU header.
+
+|%U
+|URL Path, not including the query string
+
+|%{X}W
+|Cross Component Tracing (XCT) Context ID
+
+|===
+
+Each option can be enclosed in quotation marks, but the quotation marks are not required. Unless otherwise noted, a value of `-` is printed for an option if the requested information cannot be obtained for that option.
+
+For example, you might specify the following directives as the value for this property:
+
+----
+ %h %i %u %t "%r" %s %b
+----
+
+Based on this setting, the NCSA access log will include the following information for each request in the specified order:
+
+* The remote host
+* The HeaderName header value from the request
+* The remote user according to the WebSphere Specific $WSRU header
+* The NCSA format of the start time of the request
+* The first line of the request
+* The status code of the response
+* The response size in bytes excluding headers
