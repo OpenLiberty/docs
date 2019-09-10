@@ -1,0 +1,110 @@
+
+// Copyright (c) 2018 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-layout: general-reference
+:page-type: general
+= Using Liberty behind a proxy server
+// Choose a title that a developer would search for, given the subject of the article.
+// Pithy single sentence description of the command. What is it, and why is it important?
+
+// If relevant, more info.
+
+
+If you've written an app that requires login, it's important to think about how to prevent fradulent access logins. Identify the IP address, and that piece of data can help track the clients where invalid logins originate. Developers are doing just that by implementing HTTP Forwarded and X-Forwarded header support to recognize a user's IP address. The Forwarded and X-Forwarded-* header support in Open Liberty is the implementation of the Forwarded header spec https://tools.ietf.org/html/rfc7239[RFC 7239] and the de facto standard X-Forwarded-* header.
+
+== Overview
+
+The Forwarded header, or its de facto equivalent of X-Forwarded-*, has four parameters of
+interest. These parameters serve the following purpose:
+[horizontal]
+By:: identifies the user agent facing interface of the proxy
+For:: identifies the node making the request to the proxy
+Host:: is the host request header field as received by the proxy
+Proto:: indicates what protocol was used to make the request
+
+These headers can be used by intermediaries and origin servers to reveal the topology of the
+network that was involved for a specific request.
+
+The support of this feature allows programmers and applications to obtain the original client
+endpoint information that is presented by a proxy or a load balancer through Forwarded or X-Forwarded-*
+headers instead of the current TCP connected endpoint. This information can be retrieved by using
+certain servlet API calls or the NCSA Access Log.
+
+NOTE: The Forwarded headers are favored over X-Forwarded-*, implying that when both types of headers are parsed by the HTTP Channel, only the
+values of the Forwarded header are accounted for.
+
+== Configuration in Open Liberty
+
+To use the Forwarded and X-Forwarded-* header support, you need to configure the server.xml with a new element called ``<remoteIp>``.
+This can be enabled in two modes: one remoteIp for each endpoint or one common remoteIp for multiple endpoints.
+
+* Using distinct remoteIp for each endpoint:
+----
+<featureManager>
+        <feature>servlet-4.0</feature>
+    </featureManager>
+    <httpEndpoint id="defaultHttpEndpoint"
+                        httpPort="9080"
+                        httpsPort="9443">
+               <remoteIp proxies="<regular_expression>" useRemoteIpInAccessLog="<true/false>"/>
+    </httpEndpoint>
+----
+
+* Using a common remoteIp:
+----
+<featureManager>
+        <feature>servlet-4.0</feature>
+    </featureManager>
+    <httpEndpoint id="defaultHttpEndpoint"
+                        httpPort="9080"
+                        httpsPort="9443"
+                        remoteIpRef="myRemoteIp">
+    </httpEndpoint>
+    <httpEndpoint id="otherHttpEndpoint"
+                        httpPort="9081"
+                        httpsPort="9444"
+                        remoteIpRef="myRemoteIp">
+    </httpEndpoint>
+    <remoteIp id="myRemoteIp" proxies="<regular_expression>" useRemoteIpInAccessLog="<true/false>"/>
+----
+
+NOTE: Any of the servlet features supported by Liberty can be configured to retrieve either just the request protocol or also remote client IP, and the host.
+
+== Optional configuration of ``<remoteIp>``
+The ``<remoteIp>`` element can be optionally configured to provide a regular expression through a new configuration attribute called *proxies*. This attribute is used to declare trusted Proxy node identifiers that can be IPv4/IPv6 addresses, an obfuscated token (which always starts with the underscore character), or a token called 'unknown'. If the ``<httpEndpoint>`` is configured to use the headers, and no regular expression is provided, refer to the https://www.ibm.com/support/knowledgecenter/en/SSEQTP_liberty/com.ibm.websphere.liberty.autogen.base.doc/ae/rwlp_config_httpEndpoint.html[remoteIp] table to see the default regular expression.
+
+The ``<remoteIp>`` element can be optionally configured to provide a Boolean-type configuration attribute called *useRemoteIpInAccessLog*, defaulted to “false”. This means that by default, the NCSA Access Log (if configured) continues to reference the connected endpoint's TCP information when recording remote IP, host, request protocol, or all three. When set to “true”, the NCSA Access Log (if configured) reflects the X-Forwarded-* or Forwarded headers when recording the remote client IP, host, the request protocol, or all three if the HTTP Channel verifies remote client information.
+
+Enable the https://www.ibm.com/support/knowledgecenter/en/SSEQTP_liberty/com.ibm.websphere.wlp.doc/ae/rwlp_http_accesslogs.html[HTTP Access Log] when *useRemoteIpInAccessLog* is set to “true”.
+
+== Forwarded and X-Forwarded-* headers and verification
+
+A proxy or a load balancer can be configured to provide the Forwarded or X-Forwarded-* request headers. WebSphere Liberty will only utilize the Forwarded “for” (the “for” parameter can optionally include the port), “host” and “proto” parameters, or also X-Forwarded-For, X-Forwarded-Port, X-Forwarded-Host, and X-Forwarded-Proto headers. Note that the Forwarded “by” parameter or the X-Forwarded-By header is not used.
+
+When this feature is enabled, and either the Forwarded “for” parameter or X-Forwarded-For header is presented with a list of node identifiers (IP addresses), the HTTP Channel verifies the remote client information by processing the list in reversed ordering (right-to-left order). Each node identifier must match the regular expression pattern of trusted proxies. If each node identifier has been verified, then the first element in the list denotes the remote client IP address. As a result, the HTTP Channel is also able to verify the remote host and protocol information in the Forwarded or X-Forwarded-* headers (if and when present). This information is reflected in the ServletRequest API and in the NCSA Access Log.
+
+Verification or processing of these headers will only stop when a given node identifier is not trusted. In this case, the remote client IP address could not be verified. As a result, the ServletRequest APIs would return the values as if the feature was disabled. These values consider the presence of internal headers before returning the IP address of the remote TCP connection. Under this scenario, the NCSA Access Log records the information of the connected remote TCP connection only.
+
+== Affected Servlet APIs and NCSA Access Log directives
+
+link:/docs/ref/javaee/8/#class=javax/servlet/ServletRequest.html&package=allclasses-frame.html[ServletRequest] Java API:
+* getRemoteAddr()
+* getRemoteHost()
+* getRemotePort()
+* getScheme()
+* isSecure()
+
+NCSA Access Log directives:
+* %a – Remote IP address
+* %h – Remote host name
+* %H – Request protocol
+
+For more information, see https://www.ibm.com/support/knowledgecenter/en/SSEQTP_liberty/com.ibm.websphere.wlp.doc/ae/rwlp_http_accesslogs.html[HTTP access log settings].
+
+NOTE: These APIs and directives are only affected when the HTTP Channel is able to verify the remote client endpoint information.
