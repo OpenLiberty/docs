@@ -13,34 +13,11 @@
 :page-type: general
 = Gathering and displaying Open Liberty metrics
 
-:url-dashboard: https://grafana.com/dashboards/8022
-:url-dashboard-github: https://github.com/Azquelt/microprofile-faulttolerance11-dashboard
-:url-sample-app: https://github.com/Azquelt/faulttolerance-metrics-example
-:url-ft11-spec: https://github.com/eclipse/microprofile-fault-tolerance/releases/tag/1.1.2
-:url-ft11-spec-metrics: http://download.eclipse.org/microprofile/microprofile-fault-tolerance-1.1.2/microprofile-fault-tolerance-spec.html#_integration_with_microprofile_metrics
-:url-rate: https://prometheus.io/docs/prometheus/latest/querying/functions/#rate()
-:url-ol-download: https://openliberty.io/downloads/
-:url-ol-ft-guide: https://github.com/OpenLiberty/iguide-retry-timeout/tree/master/finish
-:url-prom-config: https://prometheus.io/docs/prometheus/latest/configuration/configuration/
-:url-admin-role: https://openliberty.io/docs/ref/config/#rwlp_config_administrator-role.html
-:url-7zip: https://www.7-zip.org/
-:url-metrics11-spec: https://github.com/eclipse/microprofile-metrics/releases/tag/1.1.1
-:url-prom-docs: https://prometheus.io/docs/introduction/overview/
-:url-prom-ql: https://prometheus.io/docs/prometheus/latest/querying/basics/
-:url-prom-best-practise: https://prometheus.io/docs/practices/naming/
-:url-prom-alerts: https://prometheus.io/docs/alerting/overview/
-:url-grafana-docs: http://docs.grafana.org/
-:url-grafana-alerts: http://docs.grafana.org/alerting/rules/
-:url-iguide-recover: https://openliberty.io/guides/retry-timeout.html
-:url-iguide-limit: https://openliberty.io/guides/bulkhead.html
-:url-guide-fallback: https://openliberty.io/guides/microprofile-fallback.html
-:url-guide-circuitbreaker: https://openliberty.io/guides/circuit-breaker.html
-
 After metrics are built into your application, you can gather the metric data by using Prometheus and display that data by creating graphs in Grafana.
 
-The following steps show you how to configure Prometheus and Grafana to gather and display metrics from Open Liberty. They assume that you already have metrics on the `/metrics` endpoint.
+The following steps show you how to configure Prometheus and Grafana to gather and display metrics from Open Liberty. To complete the outlined steps, you must already have metrics on the `/metrics` endpoint. If you already have an application with metrics exported, then you're ready to get started with Prometheus and Grafana. Otherwise, you can work through the link:https://openliberty.io/guides/microprofile-metrics.html[Providing metrics from a microservice] guide to learn how to configure the `server.xml` file and set up metrics for your microservice.
 
-== Gather metrics using Prometheus
+== Gather metrics with Prometheus
 
 . Download https://prometheus.io/download/#prometheus[Prometheus] and extract it.
 
@@ -64,11 +41,13 @@ The following steps show you how to configure Prometheus and Grafana to gather a
 
 ----
 +
-If you have a slightly different setup, check {url-prom-config}[Prometheus' configuration documentation] for the other options that can be specified.
+If you have a slightly different setup, check link:https://prometheus.io/docs/prometheus/latest/configuration/configuration/[Prometheus' configuration documentation] for the other options that can be specified.
 
 . Run the `./prometheus` command (or the `prometheus.exe` command on Windows), and you see logs that show that Prometheus is starting up. Go to http://localhost:9090/ to see the Prometheus web UI.
 
-== Display metrics using Grafana
+Metric names are exported to Prometheus in link:https://download.eclipse.org/microprofile/microprofile-metrics-2.0/microprofile-metrics-spec-2.0.html#_openmetrics_format[OpenMetrics format] to conform to link:https://prometheus.io/docs/practices/naming/[Prometheus best practices]. Use these exported metric names to write queries in Grafana.
+
+== Get started with Grafana
 
 Although Prometheus has a basic web UI that can draw graphs from collected metrics, Grafana has powerful features that can be used to display effective graphs.
 
@@ -76,31 +55,16 @@ Although Prometheus has a basic web UI that can draw graphs from collected metri
 
 . Start Grafana by using the `bin/grafana-server` command, and go to the web UI in your browser. The default web UI is http://localhost:3000, the default log in user is `admin`, and the default log in password is `admin`.
 
-This dashboard shows a selection of graphs for a single method. Because the dashboard shows only metrics for a single method, it isn’t the best option to display an overview of your entire system. However, because it does display all available details, it can be helpful when you need to determine the cause of a problem.
+== Create a graph
 
-== Create your own graphs
-
-When you create your own graphs, you can extract metric data from several different methods and display it all on the same dashboard.
-
-Metric names are passed to the MicroProfile Metrics API, which exports them in a format that conforms to {url-prom-best-practise}[Prometheus best practices]. The MicroProfile Metrics API makes the following changes to metrics when they are exported to Prometheus:
-
-* Metrics are put in the `application` namespace.
-* Dots are replaced with underscores.
-* `camelCase` words are separated by underscores.
-* The entire name is converted to lowercase.
-* Metrics that measure time are rescaled and reported in seconds, and `_seconds` is appended to the name.
-* Histogram metrics are split into percentiles, limits, mean, and standard deviation.
-
-'''
-
-Use the following steps to create a new empty graph and navigate to the query field:
+When you create your own graphs, you can extract metric data from several different methods and display it all on the same dashboard. Use the following steps to create a new empty graph and navigate to the query field:
 
 . In Grafana, create an empty dashboard:
 +
 image::/docs/img/ftmetrics-grafana-new-dashboard.png[Screenshot of Grafana highlighting the new dashboard button on the left sidebar menu]
 {empty} +
 
-. Add a new panel and choose Graph as the new panel type:
+. Add a panel and choose Graph as the new panel type:
 +
 image::/docs/img/ftmetrics-grafana-new-graph.png[Screenshot of Grafana highlighting the new panel button and the graph button]
 {empty} +
@@ -115,11 +79,23 @@ image::/docs/img/ftmetrics-grafana-edit-graph.png[Screenshot of Grafana with the
 image::/docs/img/ftmetrics-grafana-metrics-tab.png[Screenshot of Grafana showing the graph editing screen with the metrics tab open]
 {empty} +
 
-Now you can graph your metric data by using {url-prom-ql}[Prometheus Query Language] in the query field.
+Now you can graph your metric data by using link:https://prometheus.io/docs/prometheus/latest/querying/basics/[Prometheus Query Language] in the query field.
 
 '''
 
-You can graph the total number of calls to a particular method. For example, graph the total number of calls to the `exampleMethod` method by using the following query:
+One example of metric data that you can graph is the time elapsed since the start of the JVM. Graph `jvm.uptime` metric data by using the following query:
+
+----
+base:jvm_uptime_seconds
+----
+
+The following example graph displays the JVM uptime...:
+
+`INSERT EXAMPLE IMAGE`
+
+'''
+
+You can also graph the total number of calls to a particular method. For example, graph the total number of calls to the `exampleMethod` method by using the following query:
 
 ----
 application:example_method_invocations_total
@@ -127,11 +103,11 @@ application:example_method_invocations_total
 
 The following example graph displays the number of times the method was called:
 
-[INSERT EXAMPLE IMAGE]
+`INSERT EXAMPLE IMAGE`
 
 '''
 
-You can track the rate of requests to a method by using the `{url-rate}[rate]` query. The rate is calculated by averaging the total number of invocations over the preceding minute. For example, graph the rate of requests to the `exampleMethod` method by using the following query:
+You can track the rate of requests to a method by using the `link:https://prometheus.io/docs/prometheus/latest/querying/functions/#rate()[rate]` query. The rate is calculated by averaging the total number of invocations over the preceding minute. For example, graph the rate of requests to the `exampleMethod` method by using the following query:
 
 ----
 rate(application:example_method_invocations_total[1m])
@@ -139,9 +115,11 @@ rate(application:example_method_invocations_total[1m])
 
 The following example graph displays how many requests the method receives per second:
 
-[INSERT EXAMPLE IMAGE]
+`INSERT EXAMPLE IMAGE`
 
-See the link:https://grafana.com/docs/[Grafana documentation] for more information on configuring Grafana and depicting metric data.
+'''
+
+For more information on configuring Grafana and depicting metric data, see the link:https://grafana.com/docs/[Grafana documentation].
 
 === See also:
 * Guide: link:/guides/microprofile-metrics.html[Providing metrics from a microservice]
