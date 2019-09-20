@@ -1,0 +1,136 @@
+// Copyright (c) 2019 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description: MicroProfile Metrics 2.0 introduces multiple changes that must be considered when you migrate applications from MicroProfile Metrics 1.x. These changes include both architectural and API changes.
+:seo-title: Migrating applications from MicroProfile Metrics 1.x to MicroProfile Metrics 2.0
+:seo-description: MicroProfile Metrics 2.0 introduces multiple changes that must be considered when you migrate applications from MicroProfile Metrics 1.x. These changes include both architectural and API changes.
+:page-layout: general-reference
+:page-type: general
+= Migrating applications from MicroProfile Metrics 1.x to MicroProfile Metrics 2.0
+
+MicroProfile Metrics 2.0 introduces several changes that must be considered when you migrate applications from MicroProfile Metrics 1.x. These changes include both architectural and API changes.
+
+== Counter and Concurrent Gauge
+
+In MicroProfile Metrics 1.x, the behavior of the counter metric was either monotonic or non-monotonic. A monotonic counter was only able to count incrementally, whereas a non-monotonic counter was able to be both incremented and decremented. In MicroProfile Metrics 2.x, this dual behavior is separated. A counter in MicroProfile Metrics 2.x is inherently monotonic, and a new type of metric, called a concurrent gauge, is introduced with this release. The concurrent gauge metric exhibits the behavior of what was formerly the non-monotonic counter. Neither the counter metric nor the concurrent gauge metric has the monotonic parameter.
+
+The following example shows how a counter metric is used in MicroProfile Metrics 1.x:
+----
+@Counted(name=“countConcurrent") // monotonic = false by default
+void somethingToCountInParallel() {
+    // method logic here...
+}
+
+@Counted(name=“countSequential“, monotonic=true)
+void somethingToCount() {
+    // method logic here...
+}
+----
+
+The following example shows how a counter metric is used in MicroProfile Metrics 2.x:
+----
+@ConcurrentGauge(name=“countConcurrent ")
+void somethingToCountInParallel() {
+    // method logic here...
+}
+
+@Counted(name=“countSequential“)
+void somethingToCount() {
+    // method logic here...
+}
+----
+
+== Metadata
+
+With MicroProfile Metrics 2.x, the Metadata object cannot be directly constructed. It can be created only with the use of a MetadataBuilder object, and the Metadata object that is constructed is immutable. Additionally, tag values are no longer associated with Metadata objects.
+
+The following example shows how a Metadata object is constructed in MicroProfile Metrics 1.x:
+----
+Metadata servletCounterMetadata = new Metadata("servletCounter", "Servlet Counter Display Name", "This is a description", MetricType.Counter, MetricUnits.NONE, "tagKey=tagValue");
+servletCounterMetadata.setName("newName");
+----
+
+The following example shows how a Metadata object is constructed in MicroProfile Metrics 2.x:
+----
+Metadata servletCounterMetadata = Metadata.builder().withName("servletCounter").withDisplayName("Servlet Counter Display Name").withDescription("This is a description").withType(MetricType.Counter).withUnits(MetricUnits.NONE).build();
+----
+
+== Tags and MetricRegistry
+
+The metric tags are no longer associated with Metadata objects. With MicroProfile Metrics 2.x, tags are independent entities within the MetricRegistry. This change comes along with the introduction of multi-dimensional metrics. In Microprofile Metrics 1.x, each metric must use a unique name. In MicroProfile Metrics 2.x, there can be multiple metrics with the same name and of the same type if the metrics have a different set of tags. The Java API introduced a Tag object that must be created and passed into the MetricRegistry when you register a metric programmatically.
+
+The following example shows how a Tag object is constructed and used in MicroProfile Metrics 2.x:
+----
+Tag firstTag = new Tag("TagOneName", "TagOneValue");
+Tag secondTag = new Tag("TagTwoName", "TagTwoValue");
+metricRegistry.counter(servletCounterMetadata, firstTag, secondTag);
+----
+
+== JSON output
+
+In MicroProfile Metrics 2.x, the JSON-formatted output of metrics is modified to accommodate the changes introduced with the multi-dimensional tags. Because multiple metrics can now use the same name, the JSON format for both the GET and OPTIONS requests was modified.
+
+For the endpoint to return JSON-formatted data, the `Accept` header of the request must include the `application/json` value.
+
+When you start a GET request, tag values are appended to the metric name as ``";<tagName>=<tagValue>"``. When you start an OPTIONS request, tags are listed as a nested list of `<key>=<value>` string values.
+
+The following examples show how GET and OPTIONS requests are used in MicroProfile Metrics 1.x:
+
+GET request:
+----
+{
+  "shapeCounter"
+}
+----
+
+OPTIONS request:
+----
+{
+  “shapeCounter": {
+    "unit": “none",
+    "type": “counter",
+    "description": “Counts shapes”
+    "displayName": “shape counter”
+    “tags”: "color=red,shape=triangle",
+  }
+}
+----
+
+The following examples show how GET and OPTIONS requests are used in MicroProfile Metrics 2.x:
+
+GET request:
+----
+{
+  "shapeCounter;color=red;shape=triangle",
+  "shapeCounter;color=blue;shape=square"
+}
+----
+
+OPTIONS request:
+----
+{
+  “shapeCounter": {
+    "unit": “none",
+    "type": “counter",
+    "description": “Counts shapes”
+    "displayName": “shape counter”
+    “tags”: [
+      [
+        “color=red”,
+        "shape=triangle"
+      ]
+      [
+        “color=blue”,
+        "shape=square"
+      ]
+    ]
+  }
+}
+----
+
+To review a detailed list of updates that are included in MicroProfile Metrics 2.x, see the https://github.com/eclipse/microprofile-metrics/releases[MicroProfile Metrics specification]. If you want to learn more about how to build metrics into your code, check out link:/docs/ref/general/#monitoring_microservices_w_metrics.html[Microservice observability with metrics].
