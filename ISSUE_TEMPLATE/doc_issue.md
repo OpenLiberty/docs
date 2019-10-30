@@ -1,10 +1,10 @@
 ### Does the doc update apply to a doc bug? 
-- Yes __
+- Yes ____
   - Add the Doc bug label.
   - Does the doc bug apply to a code bug?
-     - Yes ___ Specify the issue number for the code bug ____.
-     - No  ___
-- No __
+     - Yes ____ Specify the issue number for the code bug ______.
+     - No  ____
+- No ____
 
 ### Does the documentation apply to a particular release?
 - Yes ____
