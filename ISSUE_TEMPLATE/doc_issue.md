@@ -1,7 +1,8 @@
-### Does the doc defect  apply to a code bug? 
+### Does the doc update apply to a doc bug? 
 - Yes __
-  - Specify the issue for the code bug ____.
-  - Add the Doc bug label.
+   - Add the Doc bug label.
+   - Does the doc bug apply to a code bug?
+    - Specify the issue for the code bug ____.
 - No __
 
 ### Does the documentation apply to a particular release?
