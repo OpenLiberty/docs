@@ -24,7 +24,7 @@ Complete the following information:
 - If you are verifying steps in a task, complete the following items:
   - Read the steps in the topic and complete each step as written.
   - When you are satisfied that the steps are correct, add a comment that the documented steps work as written.
-  - Add the "Doc tested" label.
+  - Add the **Doc tested** label.
 - When you are satisfied with the documentation updates, complete the following items:
   - Add a comment indicating that you approve the documentation.
-  - Add the *Doc approved* label.
+  - Add the **Doc approved** label.
