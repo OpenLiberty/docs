@@ -2,8 +2,8 @@
 - Yes __
   - Add the Doc bug label.
   - Does the doc bug apply to a code bug?
-   - Yes ___ Specify the issue number for the code bug ____.
-   - No  ___
+     - Yes ___ Specify the issue number for the code bug ____.
+     - No  ___
 - No __
 
 ### Does the documentation apply to a particular release?
