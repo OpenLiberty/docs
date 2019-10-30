@@ -21,7 +21,7 @@ Complete the following information:
 - Include a copy of the current text and the exact text to which it will change. For example: Change ABC to XYZ:
 
 ### Reviewer approvals:
-Reviewers need to complete the following items for audit purposes:
+Reviewers need to complete the following items for audit purposes to indicate that you are satisfied with the documentation:
 - If you are verifying steps in a task, complete the following items:
   - Read the steps in the topic and complete each step as written.
   - When you are satisfied that the steps are correct, add a comment that the documented steps work as written.
