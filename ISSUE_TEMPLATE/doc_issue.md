@@ -22,7 +22,7 @@ Complete the following information:
 
 ### Reviewer approvals:
 A reviewer needs to complete the following items for audit purposes to indicate that they are satisfied with the documentation:
-- If you are verifying steps in a task, complete the following items:
+- If you are verifying steps in a topic, complete the following items:
   - Read the steps in the topic and complete each step as written.
   - When you are satisfied that the steps are correct, add a comment that the documented steps work as written.
   - Add the **Doc tested** label.
