@@ -1,0 +1,130 @@
+// Copyright (c) 2019 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description: Learn how to gather metric data by using Prometheus and display that data by creating graphs in Grafana.
+:seo-title: Gathering and displaying Open Liberty metrics
+:seo-description: Learn how to gather metric data by using Prometheus and display that data by creating graphs in Grafana.
+:page-layout: general-reference
+:page-type: general
+= Gathering and displaying Open Liberty metrics
+
+After metrics are built into your application, you can gather the metric data by using Prometheus and display that data by creating graphs in Grafana.
+
+The following steps show you how to configure Prometheus and Grafana to gather and display metrics from Open Liberty. To complete the outlined steps, you must already have metrics on the `/metrics` endpoint. If you already have an application with metrics exported, then you're ready to get started with Prometheus and Grafana. Otherwise, you can work through the link:https://openliberty.io/guides/microprofile-metrics.html[Providing metrics from a microservice] guide to learn how to configure the `server.xml` file and set up metrics for your microservice.
+
+== Gather metrics with Prometheus
+
+. Download https://prometheus.io/download/#prometheus[Prometheus] and extract it.
+
+. Edit the `prometheus.yml` file to configure Prometheus to gather metrics from your Open Liberty server. The `scrape_configs` section at the bottom of the file has one job that is configured for Prometheus. After that information, add the following new job information for Open Liberty:
++
+[source, yaml]
+----
+  - job_name: 'openliberty'
+
+    basic_auth:
+      username: 'adminusername'
+      password: 'adminpassword'
+
+    scheme: 'https'
+
+    tls_config:
+            insecure_skip_verify: true
+
+    static_configs:
+            - targets: ['localhost:9443']
+
+----
++
+If you have a slightly different setup, check link:https://prometheus.io/docs/prometheus/latest/configuration/configuration/[Prometheus' configuration documentation] for the other options that can be specified.
+
+. Run the `./prometheus` command (or the `prometheus.exe` command on Windows), and you see logs that show that Prometheus is starting up. Go to http://localhost:9090/ to see the Prometheus web UI.
+
+Metric names are exported to Prometheus in link:https://download.eclipse.org/microprofile/microprofile-metrics-2.0/microprofile-metrics-spec-2.0.html#_openmetrics_format[OpenMetrics format] to conform to link:https://prometheus.io/docs/practices/naming/[Prometheus best practices]. Use these exported metric names to write queries in Grafana.
+
+== Get started with Grafana
+
+Although Prometheus has a basic web UI that can draw graphs from collected metrics, Grafana has powerful features that can be used to display effective graphs.
+
+. Download link:https://grafana.com/grafana/download[Grafana] and extract it.
+
+. Start Grafana by using the `bin/grafana-server` command, and go to the web UI in your browser. The default web UI is http://localhost:3000, the default log in user is `admin`, and the default log in password is `admin`.
+
+== Create a graph
+
+When you create your own graphs, you can extract metric data from several different methods and display it all on the same dashboard. Use the following steps to create a new empty graph and navigate to the query field:
+
+. In Grafana, create an empty dashboard:
++
+image::/docs/img/ftmetrics-grafana-new-dashboard.png[Screenshot of Grafana highlighting the new dashboard button on the left sidebar menu]
+{empty} +
+
+. Add a panel and choose Graph as the new panel type:
++
+image::/docs/img/ftmetrics-grafana-new-graph.png[Screenshot of Grafana highlighting the new panel button and the graph button]
+{empty} +
+
+. Click Edit from the panel header menu:
++
+image::/docs/img/ftmetrics-grafana-edit-graph.png[Screenshot of Grafana with the menu of the new panel open highlighting the edit button]
+{empty} +
+
+. Select the Metrics tab:
++
+image::/docs/img/ftmetrics-grafana-metrics-tab.png[Screenshot of Grafana showing the graph editing screen with the metrics tab open]
+{empty} +
+
+Now you can graph your metric data by using link:https://prometheus.io/docs/prometheus/latest/querying/basics/[Prometheus Query Language] in the query field.
+
+'''
+
+One example of metric data that you can graph is the time elapsed since the start of the JVM. Graph `jvm.uptime` metric data by using the following query:
+
+----
+base:jvm_uptime_seconds
+----
+
+The following example graph displays the JVM uptime...:
+
+`INSERT EXAMPLE IMAGE`
+
+'''
+
+You can also graph the total number of calls to a particular method. For example, graph the total number of calls to the `exampleMethod` method by using the following query:
+
+----
+application:example_method_invocations_total
+----
+
+The following example graph displays the number of times the method was called:
+
+`INSERT EXAMPLE IMAGE`
+
+'''
+
+You can track the rate of requests to a method by using the `link:https://prometheus.io/docs/prometheus/latest/querying/functions/#rate()[rate]` query. The rate is calculated by averaging the total number of invocations over the preceding minute. For example, graph the rate of requests to the `exampleMethod` method by using the following query:
+
+----
+rate(application:example_method_invocations_total[1m])
+----
+
+The following example graph displays how many requests the method receives per second:
+
+`INSERT EXAMPLE IMAGE`
+
+'''
+
+For more information on configuring Grafana and depicting metric data, see the link:https://grafana.com/docs/[Grafana documentation].
+
+=== See also:
+* Guide: link:/guides/microprofile-metrics.html[Providing metrics from a microservice]
+* link:/docs/ref/genera/#metrics-catalog.html[Metrics reference list]
+* link:/docs/ref/general/#microservice_observability_metrics.html[Microservice observability with metrics]
+* link:https://github.com/eclipse/microprofile-metrics[MicroProfile Metrics]
+* link:https://prometheus.io/docs/[Prometheus documentation]
+* link:https://grafana.com/docs/[Grafana documentation]

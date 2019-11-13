@@ -1,0 +1,164 @@
+== Examples
+
+= Audit feature configuration content to add
+
+To enable the Audit 1.0 feature, add the following element declaration inside the featureManager element in your server.xml file:
+
+[source,xml]
+----
+<feature>audit-1.0</feature>
+----
+
+This will enable the default audit file handler implementation without the need to explicitly configure the audit file handler. By specifying only the feature itself, all supported audit events with all possible outcomes will be emitted to the file-based audit log in readable format, i.e., neither encrypted nor signed.
+
+
+== Audit File Handler
+
+The audit file handler is made available by specifying the audit-1.0 feature.
+
+The audit file handler can be customized by specifying any of the attributes below, along with the <auditFileHandler> element:
+
+[cols=",,,,",options="header",]
+|===
+|*Attribute* |*Description* |*Value type* |*Default value* |
+|maxFileSize |The maximum size (in MB) of each file-based audit log. maxFileSize=0 generates an unlimited sized single log |Integer |20 |
+|maxFiles |The maximum number of archived file-based audit logs before the oldest archived log is overwritten. maxFiles=0 generates an unlimited number of logs |Integer |100 |
+|logDirectory |The location of the audit logs |String |WLP_OUTPUT_DIR/serverName/logs |
+|sign |Enable signing audit records |Boolean |false |
+|encrypt |Enable encrypting audit records |Boolean |false |
+|encryptAlias |Alias of the certificate used to encrypt audit records |String |n/a |
+|encryptKeyStoreRef |Reference to key store containing the certificate to encrypt audit records |String |n/a |
+|signingAlias |Alias of the certificate used to sign audit records |String |n/a |
+|signingKeyStoreRef |Reference to key store containing the certificate to sign audit records |String |n/a |
+|compact |Provides ability to produce compact JSON formatted audit records, one line per audit event |Boolean |false |
+|===
+
+
+When the maximum number of archived audit logs is reached, once the audit.log that is currently being written to reaches its maximum size, then the oldest archived audit log is overwritten.
+
+Example: server.xml: Audit file handler with maxFiles, maxFileSize and compact mode specified:
+
+[source,xml]
+----
+<featureManager>
+
+<feature>appSecurity-2.0</feature>
+
+<feature>[.underline]#jsp#-2.2</feature>
+
+<feature>[.underline]#servlet#-3.1</feature>
+
+<feature>audit-1.0</feature>
+
+<feature>[.underline]#timedexit#-1.0</feature>
+
+</featureManager>
+
+<auditFileHandler maxFiles="50" maxFileSize="100" compact=”true”>
+
+</auditFileHandler>
+----
+
+In this example, the audit logs will be written to the default $\{server.output.dir}/logs. Each audit file will have a maximum 100MB size before being archived and new audit records written to a new audit.log. The maximum number of archived audit logs will be 50. Once 50 audit logs are archived, and the current audit.log being written to reaches the 100MB size, then the oldest archived audit.log will be overwritten.
+
+All audit events and possible outcomes will be emitted to the audit logs.
+
+== Events
+
+To specify only those audit events and outcomes that may be of relevance in an environment, the <event> element may be defined with the audit event name and outcome:
+
+Example: server.xml: Specifying audit events and outcomes
+
+----
+<featureManager>
+
+<feature>appSecurity-2.0</feature>
+
+<feature>[.underline]#servlet#-4.0</feature>
+
+<feature>audit-1.0</feature>
+
+</featureManager>
+
+<auditFileHandler
+
+maxFiles="5"
+
+maxFileSize="20"
+
+compact="true">
+
+<events name="AuditEvent_1" eventName="SECURITY_AUTHN" outcome="SUCCESS"/>
+
+<events name="AuditEvent_2" eventName="SECURITY_AUTHN" outcome="REDIRECT"/> <events name="AuditEvent_3" eventName="SECURITY_AUTHN" outcome="FAILURE"/> <events name="AuditEvent_4" eventName="SECURITY_AUTHZ"/>
+
+</auditFileHandler>
+----
+
+In this example, we will only be capturing security authentication events whose outcome is success, redirect or failure; and security authorization events whose outcome includes all supported outcomes.
+
+Note that if an event is specified with only an outcome attribute, i.e., with no eventName specified, then no audit records will be produced. However, an eventName may be specified without an outcome attribute, in which case all possible outcomes for that eventName will be emitted.
+
+== Encrypting and Signing Audit
+
+It is important for the recorded audit data to be preserved in such a way that not only can the access be restricted but also so that the data itself is tamper-proof.
+
+The ability to both encrypt and sign the audit records data is provided.
+
+To encrypt audit records, the encrypt attribute must be specified in the auditFileHandler element, along with the alias name of the certificate used to encrypt the audit data, and the keystore in which that certificate exists.
+
+To sign audit records, the sign attribute must be specified in the auditFileHandler element, along with the alias name of the certificate used to sign the audit data, and the keystore in which that certificate exists.
+
+Note that SHA256withRSA is used as the default crypto algorithm for both encryption and signing.
+
+Example: server.xml: Audit file handler with encryption and signing enabled
+
+----
+<featureManager>
+
+<feature>appSecurity-2.0</feature>
+
+<feature>[.underline]#jsp#-2.2</feature>
+
+<feature>[.underline]#servlet#-3.1</feature>
+
+<feature>audit-1.0</feature>
+
+</featureManager>
+
+<keyStore
+
+id="auditEncKeyStore”
+
+password="Liberty" location="$\{server.config.dir}/resources/security/AuditEncryptionKeyStore.jks"
+
+type="JKS" />
+
+<keyStore
+
+id="auditSignKeyStore"
+
+password="\{[.underline]#xor#}EzY9Oi0rJg=="
+
+location="$\{server.config.dir}/resources/security/AuditSigningKeyStore2.[.underline]#jks#"
+
+type="JKS" />
+
+<auditFileHandler
+
+encrypt="true"
+
+encryptAlias="[.underline]#auditencryption#"
+
+encryptKeyStoreRef="auditEncKeyStore"
+
+sign="true"
+
+signingAlias="auditsigning2"
+
+signingKeyStoreRef="auditSignKeyStore"
+
+</auditFileHandler>
+----
+
+All audit events and possible outcomes will be emitted to the audit logs.
