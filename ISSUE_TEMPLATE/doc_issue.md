@@ -1,6 +1,6 @@
 ### Does the doc update apply to a doc bug? 
 - Yes ____
-  - Add the Doc bug label.
+  - Add the doc bug label.
   - Does the doc bug apply to a code bug?
      - Yes ____ Specify the issue number for the code bug ______.
      - No  ____
