@@ -15,7 +15,7 @@
 
 Monitoring the health of the microservices that make up your application is crucial to providing your users with reliable performance. A _health check_ is a special REST API implementation that you can use to validate the status of a microservice and its dependencies. link:https://github.com/eclipse/microprofile-health[MicroProfile Health] enables services in an application to self-check their health and then publishes the overall health status to a defined endpoint.
 
-A self-check can assess anything that the service needs, including the following factors:
+A self-check can assess anything that the service needs:
 
 - Dependencies
 - System properties
@@ -25,15 +25,15 @@ A self-check can assess anything that the service needs, including the following
 
 Services report as either `UP` (available) or `DOWN` (unavailable) by implementing the API provided by MicroProfile Health. A service orchestrator can then use these status reports to decide how to manage and scale the services within an application. Health checks can also interact directly with link:https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/[Kubernetes liveness and readiness probes].
 
-For example, in a microservices-based banking application, you might implement health checks on the login service, the balance transfer service, and the bill pay service. If a health check on the balance transfer service detects a bug or deadlock, it reports as DOWN. In this case, if the `/health/live` endpoint is configured in a Kubernetes liveness probe, the probe restarts the service automatically. This feature saves the user from encountering downtime or an error and preserves the functions of the other services in the application.
+For example, in a microservices-based banking application, you might implement health checks on the login service, the balance transfer service, and the bill pay service. If a health check on the balance transfer service detects a bug or deadlock, it reports as DOWN. In this case, if the `/health/live` endpoint is configured in a Kubernetes liveness probe, the probe restarts the service automatically. Restarting the service saves the user from encountering downtime or an error and preserves the functions of the other services in the application.
 
 == MicroProfile Health provided endpoints and annotations
 
-MicroProfile Health provides the following three endpoints:
+MicroProfile Health provides three endpoints:
 
 - `/health/ready`: returns the readiness of a service, or whether it is ready to process requests. This endpoint corresponds to the Kubernetes readiness probe.
 - `/health/live`: returns the liveness of a service, or whether it encountered a bug or deadlock. If this check fails, the service is not running and can be stopped. This endpoint corresponds to the Kubernetes liveness probe, which automatically restarts the pod if the check fails.
-- `/health`: aggregates the responses from `/health/live` and `/health/ready`. This endpoint corresponds to the deprecated `@Health` annotation and is only available to provide compatibility with MicroProfile 1.0. Developers who are using MicroProfile 2.0 or higher can use the `/health/ready` or `/health/live` endpoints instead.
+- `/health`: aggregates the responses from `/health/live` and `/health/ready`. This endpoint corresponds to the deprecated `@Health` annotation and is only available to provide compatibility with MicroProfile 1.0. If you are are using MicroProfile 2.0 or higher, use the `/health/ready` or `/health/live` endpoints instead.
 
 To implement readiness or liveness health checks, add the appropriate annotation for your needs, `@Liveness` or `@Readiness`. These annotations link the provided endpoints to Kubernetes liveness and readiness probes.
 
