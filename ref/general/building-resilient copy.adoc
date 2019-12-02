@@ -179,9 +179,9 @@ For more information, see link:https://github.com/eclipse/microprofile-fault-tol
 [#asynchronous]
 === Asynchronous
 
-You can use the Asynchronous policy to configure the execution of a request so that it occurs on a separate thread from where the request was received. With this policy, a thread can continue to receive requests while it waits for execution to complete on a separate thread. When you use this notation together with other fault tolerance policies, any fault tolerance processing occurs on a different thread.
+You can use the Asynchronous policy to configure the completion of a request so that it occurs on a separate thread from where the request was received. With this policy, a thread can continue to receive requests while it waits for execution to complete on a separate thread. When you use this notation together with other fault tolerance policies, any fault tolerance processing occurs on a different thread.
 
-This configuration helps build resiliency into a microservice because fault tolerance policies such as Retry and Fallback can run on a different thread from where the initial call was received. That initial thread can continue receiving calls rather than having to wait for fault tolerance to resolve. The initial thread returns either a `Future` or `CompletionStage` object, which is completed after the execution thread is finished, whether successfully or by exception.
+This configuration helps build resiliency into a microservice because fault tolerance policies such as Retry and Fallback can run on a different thread from where the initial call was received. That initial thread can continue receiving calls rather than having to wait for fault tolerance to resolve. The initial thread returns a `CompletionStage` object, which is completed after the execution thread is finished, whether successfully or by exception.
 
 The following example shows an `@Asynchronous` annotation that is implemented on the `serviceA` method. In this configuration, a request to the `serviceA` method returns a `CompletionStage` object immediately while the execution of the method occurs on a different thread.
 
@@ -198,35 +198,32 @@ public CompletionStage<Connection> serviceA() {
 
 For more information, see link:https://github.com/eclipse/microprofile-fault-tolerance/blob/master/spec/src/main/asciidoc/asynchronous.asciidoc[the Asynchronous specification].
 
-=== Differences between MicroProfile Fault Tolerance 1.0 and 2.0
+== Coordinating multiple fault tolerance polices
 
-MicroProfile Fault Tolerance 2.0 contains changes that can cause an application that is written for an earlier version to fail when it uses the 2.0 feature. These changes were needed due to new requirements in the Fault Tolerance 2.0 specification.
+You can maximize the resiliency of your application by configuring multiple fault tolerance policies to work together. In the following example, an airline ticket application can recover from an outage in a ticket pricing microservice (`priceService`) by implementing the timeout, asynchronous and fallback policies. In this configuration, the `@Asynchronous` annotation immediately returns a CompletionStage object while the request to the pricing microservice is handled on a new thread. If the request waits for longer than 300 milliseconds, a TimeoutException is thrown on the new thread. Then, the TimeoutException triggers the fallback policy, which calls a method that might either display an error message or return the most recent cached pricing information. The result is then returned to the CompletionStage object.
 
-==== Interactions between Fault Tolerance annotations
+[source,java]
+----
+@Asynchronous
+@Timeout(300)
+​@Fallback(fallbackMethod= "fallbackForpriceService")
+public CompletionStage<Connection> priceService() {
+   CompletableFuture<U> future = new CompletableFuture<>();
+   future.completeExceptionally(new TimeoutException("Failure"));
+   return future;
+}
 
-The Fault Tolerance 2.0 specification defines how fault tolerance annotations interact when used together on the same method or class. In particular:
+private String fallbackForpriceService() {
+        return "myFallback";
+}
 
-* When `@Asynchronous` is used, a method call doesn't throw an exception. Any exception that occurs is instead propagated through the returned 'Future' or 'CompletionStage' object.
-
-** Fault Tolerance 1.0 and 1.1 throw an exception from an @Asynchronous method call if the exception occurs before the asynchronous task is started. In this configuration,  a `BulkheadException` error is always  thrown directly from the method call.
-
-* When @Asynchronous, @Bulkhead and @Retry are used together, each retry attempt checks whether there is space in the Bulkhead to execute before it runs and releases its space when it finishes. Any Retry attempt fails with a `BulkheadException` error.
-
-** In Fault Tolerance 1.0 and 1.1, when an execution acquires a space on the Bulkhead, it does not release it until all retry attempts finish running.
-
-==== Fault Tolerance interceptor priority
-
-In Fault Tolerance 2.0, Fault Tolerance is implemented by using an interceptor with a priority of `4010`, as required by the specification. Fault Tolerance 1.0 and 1.1 use an interceptor with a priority of `1000`.
-
-If you want to revert to the previous behavior, Fault Tolerance 2.0 allows the priority of the interceptor to be configured by setting the `mp.fault.tolerance.interceptor.priority` property to `1000` by using link:https://github.com/eclipse/microprofile-config[Microprofile Config].
-
-For more information, see link:https://download.eclipse.org/microprofile/microprofile-fault-tolerance-2.0/microprofile-fault-tolerance-spec.html#fault-tolerance-interceptor[Fault Tolerance Interceptors].
+----
 
 == What to do next
 
 Ready to start building more resilient microservices with MicroProfile Fault Tolerance? Check out the following guides to learn how different fault tolerance policies can work together to make your microservices resilient, reliable, and robust.
 
-* To explore how to use the Fallback policy to reduce the impact of failures and ensure continued operation, see link:https://www.openliberty.io/guides/microprofile-fallback.html[Building fault-tolerant microservices with the `@Fallback` annotation].
+* To explore how to use the Fallback policy to reduce the impact of failures and ensure continued operation, see link:https://www.openliberty.io/guides/microprofile-fallback.html[Building fault-tolerant microservices with the @Fallback annotation].
 
 * To learn how to use the Timeout and Retry policies to make your microservices more resilient to common network problems, see link:https://www.openliberty.io/guides/retry-timeout.html[Failing fast and recovering from errors].
 

@@ -1,0 +1,38 @@
+// Copyright (c) 2019 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description: You can build resilient microservices by including fault tolerance policies in your code.
+:seo-title: Building resilient microservices
+:seo-description: You can build resilient microservices by including fault tolerance policies, such as Timeout, Fallback, Bulkhead and Circuit Breaker, in your code.
+:page-layout: general-reference
+:page-type: general
+
+
+= Differences between MicroProfile Fault Tolerance 1.0 and 2.0
+
+MicroProfile Fault Tolerance 2.0 contains changes that can cause an application that is written for an earlier version to fail when it uses the 2.0 feature. These changes were needed due to new requirements in the Fault Tolerance 2.0 specification.
+
+== Interactions between Fault Tolerance annotations
+
+The Fault Tolerance 2.0 specification defines how fault tolerance annotations interact when used together on the same method or class. In particular:
+
+* When `@Asynchronous` is used, a method call doesn't throw an exception. Any exception that occurs is instead propagated through the returned 'Future' or 'CompletionStage' object.
+
+** Fault Tolerance 1.0 and 1.1 throw an exception from an @Asynchronous method call if the exception occurs before the asynchronous task is started. In this configuration,  a `BulkheadException` error is always  thrown directly from the method call.
+
+* When @Asynchronous, @Bulkhead and @Retry are used together, each retry attempt checks whether there is space in the Bulkhead to execute before it runs and releases its space when it finishes. Any Retry attempt fails with a `BulkheadException` error.
+
+** In Fault Tolerance 1.0 and 1.1, when an execution acquires a space on the Bulkhead, it does not release it until all retry attempts finish running.
+
+== Fault Tolerance interceptor priority
+
+In Fault Tolerance 2.0, Fault Tolerance is implemented by using an interceptor with a priority of `4010`, as required by the specification. Fault Tolerance 1.0 and 1.1 use an interceptor with a priority of `1000`.
+
+If you want to revert to the previous behavior, Fault Tolerance 2.0 allows the priority of the interceptor to be configured by setting the `mp.fault.tolerance.interceptor.priority` property to `1000` by using link:https://github.com/eclipse/microprofile-config[Microprofile Config].
+
+For more information, see link:https://download.eclipse.org/microprofile/microprofile-fault-tolerance-2.0/microprofile-fault-tolerance-spec.html#fault-tolerance-interceptor[Fault Tolerance Interceptors].
