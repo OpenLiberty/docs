@@ -101,10 +101,6 @@ For more information, see link:https://openliberty.io/docs/ref/microprofile/3.0/
 
 The Bulkhead policy prevents faults in one part of an application from cascading to the entire system and causing widespread failure. The `@Bulkhead` annotation limits the number of concurrent requests and saves an unresponsive service from wasting system resources. There are two different approaches to apply the Bulkhead policy: semaphore and thread pool.
 
-==== Semaphore style Bulkhead
-
-The semaphore isolation approach to the Bulkhead policy sets a hard limit on the number of concurrent calls to a service. After the limit is reached, all successive calls fail until the number of concurrent calls no longer exceeds the limit.
-
 In the following example, the `@Bulkhead` annotation is configured on the `serviceA` method to limit the number of concurrent calls to five. After the total number of concurrent calls reaches five, any additional calls fail with a `BulkheadException` error. Use the semaphore approach to apply the bulkhead to a synchronous service implementation.
 
 [source,java]
@@ -118,26 +114,7 @@ public Connection serviceA() {
 }
 ----
 
-==== Thread pool style Bulkhead
-
-The thread pool isolation approach to the Bulkhead policy uses a thread pool to separate the service from the caller and provides a waiting queue. Requests do not fail until both the pool and the queue are full. This approach is configured by using the `value` parameter to set the maximum number of active concurrent calls and the `waitingTaskQueue` parameter to set the size of the waiting queue. After both the thread pool and the queue are full, any additional calls fail with a `BulkheadException` error. The thread pool isolation approach must be used when the Bulkhead policy is applied to an asynchronous service implementation or in combination with the `@Asynchronous` notation.
-
-In the following example, the `@Bulkhead` annotation is applied to the `serviceA` method. The maximum concurrent requests are limited to five with a waiting queue of eight.
-
-[source,java]
-----
-// maximum 5 concurrent requests allowed, maximum 8 requests allowed in the waiting queue
-@Asynchronous
-@Bulkhead(value = 5, waitingTaskQueue = 8)
-public Future<Connection> serviceA() {
-   Connection conn = null;
-   counterForInvokingServiceA++;
-   conn = connectionService();
-   return CompletableFuture.completedFuture(conn);
-}
-----
-
-For more information, see link:https://github.com/eclipse/microprofile-fault-tolerance/blob/master/spec/src/main/asciidoc/bulkhead.asciidoc[the Bulkhead specification].
+For more information, see link:https://openliberty.io/docs/ref/microprofile/3.0/#package=org/eclipse/microprofile/faulttolerance/package-frame.html&class=org/eclipse/microprofile/faulttolerance/Bulkhead.html[the Bulkhead annotation].
 
 [#fallback]
 === Fallback
@@ -146,19 +123,7 @@ The Fallback policy provides an alternative solution when a request does not suc
 
 The `@Fallback` annotation can be used as a last line of defense when other policies fail to solve an issue. The fallback starts after any other fault tolerance processing is complete. For example,  if you use the `@Fallback` annotation together with the `@Retry` annotation, the fallback is invoked only after the maximum number of retries is exceeded.
 
-The following example shows a `@Fallback` annotation that calls the `StringFallbackHandler` class after one retry fails.
-
-[source,java]
-----
-@Retry(maxRetries = 1)
-@Fallback(StringFallbackHandler.class)
-public String serviceA() {
-       counterForInvokingServiceA++;
-       return nameService();
-}
-----
-
-The following example shows a `@Fallback` notation that is configured to call the `fallbackForServiceB` method after the maximum two retries are exceeded.
+The following example shows the `@Fallback` annotation configured to call the `fallbackForServiceB` method after the maximum two retries are exceeded.
 
 [source,java]
 ----
@@ -174,7 +139,7 @@ The following example shows a `@Fallback` notation that is configured to call th
   }
 ----
 
-For more information, see link:https://github.com/eclipse/microprofile-fault-tolerance/blob/master/spec/src/main/asciidoc/fallback.asciidoc[the Fallback specification].
+For more information, see link:https://openliberty.io/docs/ref/microprofile/3.0/#package=org/eclipse/microprofile/faulttolerance/package-frame.html&class=org/eclipse/microprofile/faulttolerance/Fallback.html[the Fallback annotation].
 
 [#asynchronous]
 === Asynchronous
@@ -196,7 +161,7 @@ public CompletionStage<Connection> serviceA() {
 }
 ----
 
-For more information, see link:https://github.com/eclipse/microprofile-fault-tolerance/blob/master/spec/src/main/asciidoc/asynchronous.asciidoc[the Asynchronous specification].
+For more information, see link:https://openliberty.io/docs/ref/microprofile/3.0/#package=org/eclipse/microprofile/faulttolerance/package-frame.html&class=org/eclipse/microprofile/faulttolerance/Asynchronous.html[the Asynchronous annotation].
 
 == Coordinating multiple fault tolerance polices
 
@@ -206,11 +171,11 @@ You can maximize the resiliency of your application by configuring multiple faul
 ----
 @Asynchronous
 @Timeout(300)
-​@Fallback(fallbackMethod= "fallbackForpriceService")
-public CompletionStage<Connection> priceService() {
-   CompletableFuture<U> future = new CompletableFuture<>();
-   future.completeExceptionally(new TimeoutException("Failure"));
-   return future;
+​ @Fallback(fallbackMethod= "fallbackForpriceService")
+ public CompletionStage<Connection> priceService() {
+     CompletableFuture<U> future = new CompletableFuture<>();
+     future.completeExceptionally(new TimeoutException("Failure"));
+     return future;
 }
 
 private String fallbackForpriceService() {
