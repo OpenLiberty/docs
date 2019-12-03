@@ -15,11 +15,11 @@
 
 You can build resilient microservices by including fault tolerance policies in your code.
 
-Microservice-based applications are resilient when they can continue operating if there is a failure or error in some part of the system. Fault tolerance helps applications fail fast and recover smoothly by guiding how and when certain requests occur and by providing fallback strategies to handle common errors. For example, in an airline ticketing application, different microservices might support scheduling, purchasing, and customer preferences. If there was a delay or error in the scheduling microservice, fault tolerance policies can guide how long the application waits for a response, when to retry the service, and what to do if the service fails.
+Microservice-based applications are resilient when they can continue operating if there is a failure or error in some part of the system. Fault tolerance helps applications fail fast and recover smoothly by guiding how and when certain requests occur and by providing fallback strategies to handle common errors. For example, in an airline ticket application, different microservices might support scheduling, purchasing, and customer preferences. If one service fails, fault tolerance policies help contain the error and keep it from taking down the whole application.
 
 == MicroProfile Fault Tolerance
 
-The link:https://download.eclipse.org/microprofile/microprofile-fault-tolerance-2.0/microprofile-fault-tolerance-spec.html[MicroProfile Fault Tolerance feature] defines a standard API to implement a set of fault tolerance policies. The policies you implement in your code guide how long executions run, when they retry after an error, and and what they do to recover when certain executions fail. MicroProfile Fault Tolerance makes it easy to build resilient microservices that provide reliable function, even when errors occur.
+The link:https://download.eclipse.org/microprofile/microprofile-fault-tolerance-2.0/microprofile-fault-tolerance-spec.html[MicroProfile Fault Tolerance feature] defines a standard API to implement a set of fault tolerance policies. The policies that you implement in your code guide how long requests run, when they retry after an error, and what they do to recover when certain requests fail. MicroProfile Fault Tolerance makes it easy to build resilient microservices that provide reliable function, even when errors occur.
 
 MicroProfile Fault Tolerance supports the following policies:
 
@@ -33,9 +33,9 @@ MicroProfile Fault Tolerance supports the following policies:
 [#timeout]
 === Timeout
 
-The Timeout policy prevents an execution from running forever by setting a time limit on how long it can run. If the execution exceeds the time limit, the timeout policy fails the execution, even if it returns successfully. This policy saves an application from allocating resources to an unresponsive service.
+The Timeout policy prevents a request from waiting forever by setting a time limit on how long it can run. If the request exceeds the time limit, the timeout policy fails the request, even if it returns successfully. This policy saves an application from allocating resources to an unresponsive service.
 
-The following example shows the `@Timeout` annotation applied to the method `serviceA`, with a time limit of 400 ms.
+The following example shows a `@Timeout` annotation that is applied to the method `serviceA`, with a time limit of 400 ms.
 
 [source,java]
 ----
@@ -53,11 +53,11 @@ For more information, see link:https://openliberty.io/docs/ref/microprofile/3.0/
 [#retry]
 === Retry
 
-In some cases, the underlying causes of an error or delay are momentary. The Retry policy saves an operation from failing on a momentary error by invoking the operation again and giving it another chance to succeed.
+In some cases, the underlying causes of an error or delay are momentary. The Retry policy saves an operation from failing on a momentary error by trying the operation again and giving it another chance to succeed.
 
 The Retry policy can be applied at either the class or method level.  If it is applied to a class, all the methods in that class receive the same retry policy. If different retry policies are applied at a class level and at a method level within that class, the method level `@Retry` annotation overrides the class level policy for that particular method.
 
-In the following example, the @Retry annotation is applied to retry an underlying service if the service throws an exception.
+The following example shows a @Retry that is annotation is configured to retry an underlying service if the service throws an exception.
 
 [source,java]
 ----
@@ -73,7 +73,7 @@ For more information, see link:https://openliberty.io/docs/ref/microprofile/3.0/
 [#circuit]
 === Circuit Breaker
 
-The circuit breaker policy prevents repeated failures by setting conditions under which an operation fails immediately. If these conditions are met, the Circuit Breaker opens and fails the operation, which prevents repeated calls that are likely to fail.
+The circuit breaker policy prevents repeated failures by setting conditions under which an operation fails immediately. If these conditions are met, the circuit breaker opens and fails the operation, which prevents repeated calls that are likely to fail.
 
 There are three possible circuit states that are set by the circuit breaker. The transition between these states is determined by how the failure condition parameters are configured on the `@CircuitBreaker` annotation.
 
@@ -81,7 +81,7 @@ There are three possible circuit states that are set by the circuit breaker. The
 - Open: When the configured error conditions are met, the circuit breaker opens and calls to the service that is operating under the circuit breaker fail immediately.
 - Half-open: After the configured delay period, an open circuit moves to a half-open state. In this state, the circuit accepts a configured number of trial calls. If any of these calls fail, the circuit breaker returns to the open state. If the configured number of trial calls succeed, the circuit moves to the closed state, which resumes normal operations.
 
-The following example shows the circuit breaker policy configured on the `serviceA` method to open the circuit after three failures occur during a rolling window of four consecutive invocations. The circuit stays open for 1000 ms before it moves to half-open. After 10 consecutive successful invocations, the circuit moves back to the closed state.
+The following example shows a circuit breaker policy that is configured on the `serviceA` method to open the circuit after three failures occur during a rolling window of four consecutive invocations. The circuit stays open for 1000 ms before it moves to half-open. After 10 consecutive successful invocations, the circuit moves back to the closed state.
 
 [source,java]
 ----
@@ -99,9 +99,9 @@ For more information, see link:https://openliberty.io/docs/ref/microprofile/3.0/
 [#bulkhead]
 === Bulkhead
 
-The Bulkhead policy prevents faults in one part of an application from cascading to the entire system and causing widespread failure. The `@Bulkhead` annotation limits the number of concurrent requests and saves an unresponsive service from wasting system resources. There are two different approaches to apply the Bulkhead policy: semaphore and thread pool.
+The Bulkhead policy prevents faults in one part of an application from cascading to the entire system and causing widespread failure. The `@Bulkhead` annotation limits the number of concurrent requests and saves an unresponsive service from wasting system resources.
 
-In the following example, the `@Bulkhead` annotation is configured on the `serviceA` method to limit the number of concurrent calls to five. After the total number of concurrent calls reaches five, any additional calls fail with a `BulkheadException` error. Use the semaphore approach to apply the bulkhead to a synchronous service implementation.
+In the following example, the `@Bulkhead` annotation is configured on the `serviceA` method to limit the number of concurrent calls to five. After the total number of concurrent calls reaches five, any additional calls fail with a `BulkheadException` error.
 
 [source,java]
 ----
@@ -119,11 +119,9 @@ For more information, see link:https://openliberty.io/docs/ref/microprofile/3.0/
 [#fallback]
 === Fallback
 
-The Fallback policy provides an alternative solution when a request does not succeed. You can specify a class or method that is called when a request fails. For example, if a service that provides flight departure times fails, the fallback might either send a message that the times are unavailable or post the most recently cached times.
+The `@Fallback` annotation can be used as a last line of defense when other policies fail to solve an issue. The fallback starts after any other fault tolerance processing is complete. For example,  if you use the `@Fallback` annotation together with the `@Retry` annotation, the fallback is called only after the maximum number of retries is exceeded.
 
-The `@Fallback` annotation can be used as a last line of defense when other policies fail to solve an issue. The fallback starts after any other fault tolerance processing is complete. For example,  if you use the `@Fallback` annotation together with the `@Retry` annotation, the fallback is invoked only after the maximum number of retries is exceeded.
-
-The following example shows the `@Fallback` annotation configured to call the `fallbackForServiceB` method after the maximum two retries are exceeded.
+The following example shows a `@Fallback` annotation that is configured to call the `fallbackForServiceB` method after the maximum two retries are exceeded.
 
 [source,java]
 ----
@@ -144,11 +142,11 @@ For more information, see link:https://openliberty.io/docs/ref/microprofile/3.0/
 [#asynchronous]
 === Asynchronous
 
-You can use the Asynchronous policy to configure the completion of a request so that it occurs on a separate thread from where the request was received. With this policy, a thread can continue to receive requests while it waits for execution to complete on a separate thread. When you use this notation together with other fault tolerance policies, any fault tolerance processing occurs on a different thread.
+You can use the Asynchronous policy to configure the completion of a request so that it occurs on a separate thread from where the request was received. With this policy, a thread can continue to receive new requests while it waits for the initial request to complete on a separate thread. When you use this notation together with other fault tolerance policies, any fault tolerance processing occurs on a different thread.
 
 This configuration helps build resiliency into a microservice because fault tolerance policies such as Retry and Fallback can run on a different thread from where the initial call was received. That initial thread can continue receiving calls rather than having to wait for fault tolerance to resolve. The initial thread returns a `CompletionStage` object, which is completed after the execution thread is finished, whether successfully or by exception.
 
-The following example shows an `@Asynchronous` annotation that is implemented on the `serviceA` method. In this configuration, a request to the `serviceA` method returns a `CompletionStage` object immediately while the execution of the method occurs on a different thread.
+The following example shows an `@Asynchronous` annotation that is implemented on the `serviceA` method. In this configuration, a request to the `serviceA` method returns a `CompletionStage` object immediately while the completion of the method occurs on a different thread.
 
 [source,java]
 ----
@@ -165,7 +163,9 @@ For more information, see link:https://openliberty.io/docs/ref/microprofile/3.0/
 
 == Coordinating multiple fault tolerance polices
 
-You can maximize the resiliency of your application by configuring multiple fault tolerance policies to work together. In the following example, an airline ticket application can recover from an outage in a ticket pricing microservice (`priceService`) by implementing the timeout, asynchronous and fallback policies. In this configuration, the `@Asynchronous` annotation immediately returns a CompletionStage object while the request to the pricing microservice is handled on a new thread. If the request waits for longer than 300 milliseconds, a TimeoutException is thrown on the new thread. Then, the TimeoutException triggers the fallback policy, which calls a method that might either display an error message or return the most recent cached pricing information. The result is then returned to the CompletionStage object.
+You can maximize the resiliency of your application by configuring multiple fault tolerance policies to work together. In the following example, an airline ticket application can recover from an outage in a ticket pricing microservice (`priceService`) by implementing the timeout, asynchronous and fallback policies.
+
+In this configuration, the `@Asynchronous` annotation immediately returns a `CompletionStage` object while the request to the pricing microservice is handled on a new thread. If the request waits for longer than 300 milliseconds, a `TimeoutException` is thrown on the new thread. Then, the `TimeoutException` triggers the fallback policy, which calls a method that might either display an error message or return the most recent cached pricing information. The result is then returned to the `CompletionStage` object.
 
 [source,java]
 ----
@@ -196,4 +196,4 @@ Ready to start building more resilient microservices with MicroProfile Fault Tol
 
 * To learn how to use the Circuit Breaker and Fallback policies to prevent repeated failed calls to a service, see link:/guides/circuit-breaker.html[Preventing repeated failed calls to microservices].
 
-* MicroProfile Fault Tolerance 2.0 contains changes that can cause an application that is written for an earlier version to fail when it uses the 2.0 feature. For more information, see link:/docs/ref/general/#fault-tolerance-dif[Differences between MicroProfile Fault Tolerance 1.0 and 2.0]
+* MicroProfile Fault Tolerance 2.0 contains changes that can cause an application that is written for an earlier version to fail when it uses the 2.0 feature. For more information, see link:/docs/ref/general/#fault-tolerance-dif[Differences between MicroProfile Fault Tolerance 1.0 and 2.0].
