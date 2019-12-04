@@ -1,0 +1,69 @@
+// Copyright (c) 2018 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description: OpenAPI is a standardized mechanism for developers to describe REST APIs  for generating structured documentation in a microservice.
+:seo-description: OpenAPI is a standardized mechanism for developers to describe REST APIs  for generating structured documentation in a microservice.
+:page-layout: general-reference
+:page-type: general
+= OpenAPI documentation for microservices
+
+OpenAPI is a standardized mechanism for developers to describe REST APIs. With OpenAPI you can describe REST APIs and generate API documentation from the APIs themselves. MicroProfile OpenAPI is a specification outlined as an official set of annotations and interfaces that help developers successfully generate OpenAPI documentation for their Java RESTful APIs.
+
+You can generate the OpenAPI document in multiple ways.
+
+== Annotations
+
+All JAX-RS annotations are processed by default. You can augment the existing code with OpenAPI annotations without rewriting portions of the OpenAPI document that are already covered by the JAX-RS framework.
+
+== Static OpenAPI files
+
+Take the initial output from /openapi as a starting point to document your APIs with Static OpenAPI files. The static files can also be written before any code, which is an approach often adopted by enterprises that want to lock-in the contract of the API. In this case, we refer to the OpenAPI document as the "source of truth", by which the client and provider must abide.
+
+== Programming model
+
+Use the API interfaces to provide a bootstrap (or complete) OpenAPI model tree.
+
+table
+
+For a quick overview of annotations, see org.eclipse.microprofile.openapi.annotations package.
+
+When the same annotation is used on a class and a method, the values from the method instance will take precedence for that particular method. This commonly occurs with the @Server and @Tag annotations.
+
+In other cases, such as with @Parameter and @RequestBody, the annotation values from the method’s parameters takes precedence over corresponding annotation values from the method itself - in this scenario the combined usage of these annotations is allowed but discouraged, as it is error prone.
+
+The @Schema annotation has a complex set of possible combinations. It can placed on POJOs (and their fields / methods) and referenced from many other annotations. In the event that a @Schema#implementation value points to a POJO that also contains a @Schema annotation, the values are merged but with precedence given to the referrer annotation (i.e. the one that contains the implementation key). This allows POJO models to be reusable and configurable.
+
+== Static OpenAPI files
+
+Take the initial output from /openapi as a starting point to document your APIs via Static OpenAPI files. The static files can be written before any code, which is an approach often adopted by enterprises that want to lock-in the contract of the API. In this case, we refer to the OpenAPI document as the "source of truth", by which the client and provider must abide.
+
+
+== Programming model
+
+Use the API interfaces to provide a bootstrap (or complete) OpenAPI model tree. Application developers are able to provide OpenAPI elements via Java POJOs. The OASFactory is used to create all of the elements of an OpenAPI tree. Vendors are required to call the OASReader a single time, in the order defined by the Processing rules section. Only a single OASReader instance is allowed per application.
+
+The OASModelReader interface allows application developers to bootstrap the OpenAPI model tree used by the processing framework. To use it, simply create an implementation of this interface and register it using the mp.openapi.model.reader configuration key, where the value is the fully qualified name of the reader class. Similar to static files, the model reader can be used to provide either complete or partial model trees. If providing a complete OpenAPI model tree, application developers should set the mp.openapi.scan.disable configuration to true. Oherwise this partial model will be used as the base model during the processing of the other Documentation Mechanisms.
+
+
+== Filter
+
+Additionally, a Filter is described which can update the OpenAPI model after it has been built from the previously described documentation mechanisms.
+
+
+
+There are many scenarios where application developers may wish to update or remove certain elements and fields of the OpenAPI document. This is done via a filter, which is called once after all other documentation mechanisms have completed.
+
+The OASFilter interface allows application developers to receive callbacks for various key OpenAPI elements. The interface has a default implementation for every method, which allows application developers to only override the methods they care about. To use it, simply create an implementation of this interface and register it using the mp.openapi.filter configuration key, where the value is the fully qualified name of the filter class.
+
+Vendors are required to call the registered filter once for each filtered element. For example, the method filterPathItem is called for each corresponding PathItem element in the model tree. This allows application developers to filter the element and any of its descendants.
+
+The order of filter methods called is undefined, with two exceptions:
+
+All filterable descendant elements of a filtered element must be called before its ancestor.
+
+The filterOpenAPI method must be the last method called on a filter (which is just a specialization of the first exception).
