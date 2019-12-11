@@ -1,0 +1,87 @@
+== Examples
+
+Social login is a form of single sign-on (SSO) that enables users to sign in to a secured website by using their existing social media account instead of creating an account specifically for the website. For example, you can configure social login so that users can log in to your website with their Facebook or Twitter accounts. You can enable social login for any social media platform that uses the OAuth 2.0 or OpenID Connect 1.0 standard for authorization.
+
+The server.xml below lets you authenticate with any of the preconfigured social media providers,
+after you've registered your application with them and obtained your client Id and secret.
+
+A selection page will be presented so the user can choose which provider they prefer to sign in with.
+
+[source,xml]
+----
+<server description="new server">
+    <featureManager> 
+       <feature>transportSecurity-1.0</feature>
+        <feature>jsp-2.3</feature>
+        <feature>appSecurity-3.0</feature>
+        <feature>socialLogin-1.0</feature>
+    </featureManager> 
+
+    <logging  traceSpecification="com.ibm.ws.security.social.*=all" traceFileName="trace.log" maxFileSize="20" maxFiles="10" />
+    
+    <httpEndpoint host="localhost" httpPort="8011" httpsPort="8020" id="defaultHttpEndpoint"/>  
+    <ssl id="defaultSSLConfig" keyStoreRef="defaultKeyStore" trustStoreRef="defaulKeyStore" trustDefaultCerts="true" /> 
+    <keyStore id="defaultKeyStore" password="keyspass" />
+
+    <githubLogin   clientid="your_app_id"          clientSecret="your_app_secret"  />
+    <facebookLogin clientId="your_app_id"          clientSecret="your_app_secret"  />    
+    <linkedinLogin clientId="your_app_id"          clientSecret="your_app_secret"  /> 
+    <twitterLogin  consumerKey="your_app_id"       consumerSecret="your_app_secret"/>
+    <googleLogin   clientId="your_app_id"          clientSecret="your_app_secret"  />
+
+    <!-- protected apps need to have a security constraint defined -->
+    <application type="war" id="formlogin" name="formlogin" location="${server.config.dir}/apps/formlogin.war">
+        <application-bnd>         
+            <security-role name="Employee">
+                <special-subject type="ALL_AUTHENTICATED_USERS" />
+            </security-role>
+        </application-bnd>
+    </application>
+ 
+</server>
+----
+
+To restrict users to those who are also in a local registry, add the mapToUserRegistry attribute, then add the users you want to allow to the local registry.
+
+[source,xml]
+----
+ <googleLogin  mapToUserRegistry="true" clientId="your app id goes here"  clientSecret="your app secret goes here"   />
+
+ <basicRegistry id="basic" realm="OpBasicRealm">        
+         <user name="mytech_employee1@gmail.com" password="n/a" />
+         <user name="mytech_employee2@gmail.com" password="n/a" />
+ </basicRegistry>
+----
+
+To protect only a subset of applications, URLs, or IP addresses, use an authentication filter. 
+
+[source,xml]
+----
+<googleLogin  authFilterRef="authFilter1" clientId="your app id goes here"  clientSecret="your app secret goes here"   />
+<authFilter id="authFilter1">
+	<requestUrl
+		id="myRequestUrla"
+		urlPattern="helloworld"
+		matchType="contains" />		
+</authFilter>
+----
+
+To authenticate with a social media provider that is not preconfigured, use either the 
+OAuth2Login or oidcLogin server.xml elements to supply configuration. Here is an example for Instagram:
+
+[source,xml]
+----
+<oauth2Login id="instagramLogin" clientId="client_id" clientSecret="client_secret" 
+    scope="basic public_content"   responseType="code" 
+    tokenEndpointAuthMethod="client_secret_post"
+    authorizationEndpoint="https://api.instagram.com/oauth/authorize"
+    tokenEndpoint="https://api.instagram.com/oauth/access_token"
+    userApi="https://api.instagram.com/v1/users/self"
+    userNameAttribute="username"
+    website="https://www.instagram.com/developer/authentication/"> 
+</oauth2Login> 
+----
+
+More information on using the socialLogin feature is available https://www.ibm.com/support/knowledgecenter/en/SSEQTP_liberty/com.ibm.websphere.wlp.doc/ae/twlp_sec_sociallogin.html[here].
+
+More information on using authentication filters is available https://www.ibm.com/support/knowledgecenter/en/SSEQTP_liberty/com.ibm.websphere.wlp.doc/ae/rwlp_auth_filter.html[here]. 
