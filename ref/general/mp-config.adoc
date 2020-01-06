@@ -1,0 +1,54 @@
+// Copyright (c) 2018 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description: MicroProfile Config is an API that externalizes the configuration from microservices, keeping it separate from the source code. MicroProfile Config can be used by applications as a single API that can retrieve configuration information from different sources.
+:seo-description: MicroProfile Config is an API that externalizes the configuration from microservices, keeping it separate from the source code. MicroProfile Config can be used by applications as a single API that can retrieve configuration information from different sources.
+:page-layout: general-reference
+:page-type: general
+= Externalizing the configuration in microservices
+
+:MP: MicroProfile
+
+:JWT: Java Web Token
+
+:FT: Fault Tolerance
+
+Microservices are designed to move around in multiple environments. Externalizing the configuration helps microservices to run in different environments without a change in code.
+
+== Separating the configuration and code
+
+During their lifecycle, microservices are deployed repeatedly across development, test, and production environments. They need different configurations, for example, deployment-specific external URLs or credentials that change regularly. Microservices must run in these conditions without a change in code.
+
+Backing services require changes in connection details in the application source code, for example, in databases, messaging services, SMTP services, API accessible consumer services, and so on. Your application must swap among local and external services without a code change.
+
+In the cloud, microservices deployed to Kubernetes clusters must communicate. Therefore, port binding, or knowing which port to connect to, is important. As instances of microservices are created and destroyed in Kubernetes to scale the application up and down, port numbers can change. You need to assign new port numbers to the microservices and inject information during startup. For more information, see link:https://openliberty.io/guides/kubernetes-microprofile-config.html[Configuring microservices running in Kubernetes].
+
+Thus, it is important to change the configuration of microservices without updating or recompiling the code.
+
+== MicroProfile Config
+
+The MicroProfile Config API separates configuration from code. With MicroProfile Config, you can inject external configuration into services in the containers without repackaging them.
+
+Applications can use MicroProfile Config as a single API to retrieve configuration information from different sources such as system properties, system environment variables, properties files, XML files, or data sources. – link:/docs/ref/config/[system properties], link:/docs/ref/config/[system environment variables], properties files, XML files, or data sources. In MicroProfile Config, these data sources are called ConfigSources. The same configuration property can be defined in multiple ConfigSources. You can prioritize which ConfigSource to use for the property value. Each ConfigSource has a specified priority, which is defined by its ordinal value. A higher ordinal means that the values taken from this ConfigSource override ConfigSources with a lower ordinal value.
+
+=== Default configsources
+
+MicroProfile Config has three default configsources. The following table describes the default configsources in MicroProfile Config and their corresponding values.
+
+[cols=",",options="header"]
+|===
+|ConfigSource |Default ordinal values
+|All `META-INF/microprofile-config.properties` found on the class path |100
+|Environment variables |300
+|System properties |400
+|===
+
+
+An optional default value can be specified by using link:https://www.openliberty.io/docs/ref/microprofile/3.0/#package=org/eclipse/microprofile/config/inject/package-frame.html&class=org/eclipse/microprofile/config/inject/ConfigProperty.html[Java annotations] and applies if the application does not find  the configuration values in any of the ConfigSources. For more information, see link:https://openliberty.io/guides/microprofile-config-intro.html[Separating configuration from code in microservices].
+
+MicroProfile Config can configure other MicroProfile capabilities. It externalizes the configuration of keystores when microservices are secured. For example, in {MP} {JWT}, the public key location and verification can be set in properties files so that if the location of the key repository changes, it can easily be updated. MicroProfile Config is also used in configuration of channel attributes. For example, in {MP} Reactive Messaging, it can set the connection details of messaging channels and connectors, and the topic names that are used by the application to use and produce messages. MicroProfile Config helps override values in fault tolerance. For example, in {MP} {FT}, it can set the value of an annotation so that you can change the value if the tolerance is too low or too high.
