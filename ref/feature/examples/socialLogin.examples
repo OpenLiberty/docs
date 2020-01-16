@@ -1,75 +1,103 @@
-== About this feature
-
-Social login is a form of single sign-on (SSO) that enables users to sign in to a secured website by using their existing social media account instead of creating an account specifically for the website. For example, you can configure social login so that users can log in to your website with their Facebook or Twitter accounts. You can enable social login for any social media platform that uses the OAuth 2.0 or OpenID Connect 1.0 standard for authorization.
-
 == Examples
 
-The server.xml below lets your users authenticate with any of the preconfigured social media providers,
-after you've registered your application with the providers and obtained a client Id and secret from each provider.
+You can require that users log in with a specific social media provider, or you can give them a list of providers so that they can choose which they prefer to log in with. You can also restrict when they have certain log in options based on browser type, the application, and so on. The following examples show how to configure different scenarios in your `server.xml`.
 
-A customizable selection page will be presented so the user can choose which provider they prefer to sign in with.
+=== Request log in with a social media ID
+
+A customizable selection form is presented so the user can choose which provider they prefer to sign in with. The following example shows how to configure your application to request that the user logs in with their Google ID:
 
 [source,xml]
 ----
-<server description="new server">
-    <featureManager> 
-       <feature>transportSecurity-1.0</feature>
-        <feature>jsp-2.3</feature>
-        <feature>appSecurity-3.0</feature>
-        <feature>socialLogin-1.0</feature>
-    </featureManager> 
+<googleLogin clientId="your_app_id" clientSecret="your_app_secret"  />
 
-    <logging  traceSpecification="com.ibm.ws.security.social.*=all" traceFileName="trace.log" maxFileSize="20" maxFiles="10" />
-    
-    <httpEndpoint host="*" httpPort="8011" httpsPort="8020" id="defaultHttpEndpoint"/>  
-    <ssl id="defaultSSLConfig" keyStoreRef="defaultKeyStore" trustStoreRef="defaultKeyStore" trustDefaultCerts="true" /> 
-    <keyStore id="defaultKeyStore" password="keyspass" />
-
-    <githubLogin   clientid="your_app_id"          clientSecret="your_app_secret"  />
-    <facebookLogin clientId="your_app_id"          clientSecret="your_app_secret"  />    
-    <linkedinLogin clientId="your_app_id"          clientSecret="your_app_secret"  /> 
-    <twitterLogin  consumerKey="your_app_id"       consumerSecret="your_app_secret"/>
-    <googleLogin   clientId="your_app_id"          clientSecret="your_app_secret"  />
-
-    <!-- protected apps need to have a security constraint defined -->
-    <application type="war" id="formlogin" name="formlogin" location="${server.config.dir}/apps/formlogin.war">
-        <application-bnd>         
-            <security-role name="Employee">
-                <special-subject type="ALL_AUTHENTICATED_USERS" />
-            </security-role>
-        </application-bnd>
-    </application>
- 
-</server>
+<!-- protected apps need to have a security constraint defined -->
+<application type="war" id="formlogin" name="formlogin" location="${server.config.dir}/apps/formlogin.war">
+    <application-bnd>         
+        <security-role name="Employee">
+            <special-subject type="ALL_AUTHENTICATED_USERS" />
+        </security-role>
+    </application-bnd>
+</application>
 ----
 
-To further restrict users to those who are also in a local registry, add the mapToUserRegistry attribute, then add the users you want to allow to the local registry.
+=== Provide a choice of social media providers to the user
+
+If you provide the user with a choice of social media providers, they are presented with a selection form so that they can choose which provider they prefer to log in with. The following example presents the user with the choice of Google, GitHub, Facebook, LinkedIn, and Twitter with which to log in:
+
+[source,xml]
+----
+<googleLogin clientId="your_app_id" clientSecret="your_app_secret"  />
+<githubLogin   clientid="your_app_id"          clientSecret="your_app_secret"  />
+<facebookLogin clientId="your_app_id"          clientSecret="your_app_secret"  />    
+<linkedinLogin clientId="your_app_id"          clientSecret="your_app_secret"  /> 
+<twitterLogin  consumerKey="your_app_id"       consumerSecret="your_app_secret"/>
+
+<!-- protected apps need to have a security constraint defined -->
+<application type="war" id="formlogin" name="formlogin" location="${server.config.dir}/apps/formlogin.war">
+    <application-bnd>         
+        <security-role name="Employee">
+            <special-subject type="ALL_AUTHENTICATED_USERS" />
+        </security-role>
+    </application-bnd>
+</application>
+----
+
+=== Restrict social media log in to users also present in a configured registry
+
+To further restrict users to those who are also in a configured registry, add the `mapToUserRegistry` attribute.
 
 [source,xml]
 ----
  <googleLogin  mapToUserRegistry="true" clientId="your app id"  clientSecret="your app secret"   />
 
- <basicRegistry id="basic" realm="OpBasicRealm">        
-         <user name="mytech_employee1@gmail.com" password="n/a" />
-         <user name="mytech_employee2@gmail.com" password="n/a" />
- </basicRegistry>
+ <ldapRegistry ...> ... </ldapRegistry>        
+ 
 ----
 
-To protect only a subset of applications, URLs, or IP addresses, use an authentication filter. 
+
+=== Use configured registry as an additional choice
+
+To let users choose either a social media provider or the server's configured registry to log in, use "enableLocalAuthentication".
 
 [source,xml]
 ----
-<googleLogin  authFilterRef="authFilter1" clientId="your app id"  clientSecret="your app secret"   />
+<!-- user will be presented choice menu of either Google or ldap -->
+<googleLogin  clientId="your app id"  clientSecret="your app secret" />
+
+<socialLoginWebapp enableLocalAuthentication="true">
+
+<ldapRegistry id="ldap" ...> ... </ldapRegistry>     
+ 
+----
+
+=== Request log in with social media ID for only a subset of applications, URL's, browsers, or IP addresses
+
+To protect only a subset of applications, URLs, or IP addresses, use an authentication filter. 
+The security configuration only takes effect when the conditions in the filter are met. For example,
+you might want a web app to be secured with the social login feature and a microservice app to be secured with mp-jwt feature. 
+For more information, see https://www.openliberty.io/docs/ref/config/#authFilter.html. 
+
+
+[source,xml]
+----
+<!-- only requests with "/mywebapp" in them will be authenticated using Google. --> 
+<googleLogin  authFilterRef="authFilter1" clientId="your app id"  clientSecret="your app secret" />
+
 <authFilter id="authFilter1">
-	<requestUrl
-		id="myRequestUrla"
-		urlPattern="helloworld"
-		matchType="contains" />		
+    <requestUrl
+        id="myUrlFilter"
+        urlPattern="/mywebapp"
+        matchType="contains" />     
 </authFilter>
 ----
 
-To authenticate with a social media provider that is not preconfigured, use either the 
-oauth2Login or oidcLogin server.xml elements to supply configuration. Here is an example for Instagram:
+=== Provide other social media logins as options to the user
+
+// LC: out-of-the-box might be a dated  expression, preconfigured might be better, whatever you think.
+To authenticate with a social media provider that is not configured out-of-the-box with Open Liberty, use a
+`oauth2Login` (for OAuth providers) or `oidcLogin` (for OpenID Connect providers) element.
+These elements supply the configuration details needed to work with the provider. These details can usually be
+obtained from the social media provider's developer instructions.  Here is an example for Instagram:
 
 [source,xml]
 ----
@@ -84,6 +112,6 @@ oauth2Login or oidcLogin server.xml elements to supply configuration. Here is an
 </oauth2Login> 
 ----
 
-More information on using the socialLogin feature is available https://www.ibm.com/support/knowledgecenter/en/SSEQTP_liberty/com.ibm.websphere.wlp.doc/ae/twlp_sec_sociallogin.html[here].
-
-More information on using authentication filters is available https://www.ibm.com/support/knowledgecenter/en/SSEQTP_liberty/com.ibm.websphere.wlp.doc/ae/rwlp_auth_filter.html[here]. 
+// LC: Leaving the following links in the source for now to show where this topic should link to when the relevant equivalent topics are published in the Open Liberty docs (do not link to the KC from Open Liberty docs). Remove this commented section when the relevant links are added in future.
+//More information on using the socialLogin feature is available https://www.ibm.com/support/knowledgecenter/en/SSEQTP_liberty/com.ibm.websphere.wlp.doc/ae/twlp_sec_sociallogin.html[here].
+//More information on using authentication filters is available https://www.ibm.com/support/knowledgecenter/en/SSEQTP_liberty/com.ibm.websphere.wlp.doc/ae/rwlp_auth_filter.html[here]. 
