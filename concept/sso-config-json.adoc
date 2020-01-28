@@ -12,15 +12,94 @@
 :seo-description:
 = SSO configuration with JSON Web Tokens
 
-JSON Web Tokens are used to propagate the user identity that is established by SSO between different microservice applications. By configuring SSO user authentication with JSON Web Tokens, you can verify the security of the requests between applications.
+JSON Web Tokens (JWT) are used to propagate the user identity that is established by SSO between different microservice applications. By configuring Single sign-on (SSO) user authentication with JSON Web Tokens, you manage the identity that is shared between applications.
 
 == Propagating user identity with JSON Web Tokens
 
-After the user identity is established, you can use JSON Web Tokens to ensure the security of your microservice applications. To secure applications, the following details are verified with JSON Web Tokens when the user identity is shared between the applications:
+After the user identity is established with an SSO method, such as OpenID Connect (OIDC), you can use JWT to propagate the identity to back-end services. With a signed JWT, you can verify who the user is, when the user requests were made, and any other types of information that the user agreed to you handling. Each consumer of the token can verify that they can trust the claims by it, by verifying that they trust the signature of the token. After consumer verifies the signature, they know the content of the token has not been altered since it was created.
 
-* The request initiated from a user request
-* The identity that the request was made on behalf of
-* The request isn't a malicious replay of a previous request.
 
 == Securing microservices with MicroProfile JSON Web Tokens
-The MicroProfile JWT feature provides the standard format that is needed to secure microservices. To understand how JSON Web Tokens enable authorization and authentication across different services, some key terms must be defined.
+The MicroProfile JWT feature provides the standard format that is needed to secure microservices. The JWT format is designed to verify claims between two services. To enable authorization and authentication across different services, the JWT consists of the following sections:
+
+* The header section of the ID token contains information on the type of object and the specific signature algorithm used to protect the integrity of the claims in the payload
+* The payload section contains the claims about a user and the authentication event.
+* The signature section contains a digital signature based on the payload section of the token and a secret key known to the OpenID Provider (OP).
+
+The following example shows the creation of a signed JWT with Java:
+----
+import java.security.SignatureException;
+import com.google.gson.JsonObject;
+import net.oauth.jsontoken.crypto.HmacSHA256Signer;
+
+import net.oauth.jsontoken.SystemClock;
+import net.oauth.jsontoken.JsonToken;
+import org.joda.time.Duration;
+import org.joda.time.Instant;
+
+public class SampleJWTToken {
+        private static final Duration SKEW = Duration.standardMinutes(5);
+
+        JsonToken jwtToken = null;
+        String[] allPayloadKeys = { "iss", "sub", "aud", "exp", // required
+                                    "nbf", "iat", "jti" }; // optional
+
+        public SampleJWTToken(String clientId,
+                              String keyId,
+                              String signKey,
+                              String audience,
+                              String subject, // user
+                              String jtiId) throws Exception { // InvalidKeyException
+
+                byte[] hs256Key = signKey.getBytes();
+                HmacSHA256Signer hmacSha256Signer = new HmacSHA256Signer(
+                                clientId, keyId, hs256Key);
+                // _rsaSha256Signer = new RsaSHA256Signer(clientId, _keyId,
+                //                                        _privateKey);
+                SystemClock clock = new SystemClock(SKEW);
+                jwtToken = new JsonToken(hmacSha256Signer, clock);
+                JsonObject headerObj = jwtToken.getHeader();
+                JsonObject payloadObj = jwtToken.getPayloadAsJsonObject();
+
+                headerObj.addProperty("alg", "HS256");
+
+                Instant instantExp = clock.now().plus(600000); // 10 minutes
+                jwtToken.setExpiration(instantExp);
+                jwtToken.setAudience(audience);
+                payloadObj.addProperty("iss", clientId);
+                payloadObj.addProperty("sub", subject);
+
+                // optional
+                payloadObj.addProperty("jti", jtiId);
+                jwtToken.setIssuedAt(clock.now()); // issued at time
+        }
+
+        public String getJWTTokenString() throws Exception {
+                String signedAndSerializedString = null;
+                try {
+                        signedAndSerializedString = jwtToken.serializeAndSign();
+                } catch (SignatureException e) {
+                        throw e;
+                }
+                return signedAndSerializedString;
+        }
+}
+----
+
+== Enabling identity management with OpenID Connect
+OpenID Connect (OIDC) is a SSO method that enables applications to assign user authentication to authorization servers that return the application claims about the authenticated user and authentication event in a standard format. The OIDC format contains designated roles that enable the identity management for secure applications.
+
+=== Roles
+
+The OIDC format consists of three roles that are involved with the identity management for applications.
+
+End User::
+The user is the agent that is authenticated. After a user accesses an application, the application redirects the user's browser to an authorization server that implements OIDC.
+OpenID Provider::
+The OpenID provider (OP) is an authorization server that implements OIDC, can authenticate a user, return claims about the authenticated user, and the authentication event to a relying party or application.
+Relying Party::
+The Relying Party is the application that delegates user authentication to an OP and requests claims about the user from the OP.
+
+=== OIDC standard format
+
+The OP interacts with the user to authenticate them. After authentication, the user's browser is redirected back to the application. The application can request the return of claims about the authenticated user in a JWT. An application can use an OP for user authentication and authorization to call the OP's API.
