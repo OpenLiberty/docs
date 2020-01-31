@@ -1,0 +1,48 @@
+// Copyright (c) 2019 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description: Authentication verifies the user identity based on the user credentials while authorization determines user access to restricted resources.
+:seo-description: Authentication verifies the user identity based on the user credentials while authorization determines user access to restricted resources.
+:page-layout: general-reference
+:page-type: general
+= Securing cloud native microservices
+
+You can configure cloud native applications in Open Liberty to use external security providers for authentication and authorization.
+
+Authentication verifies the user identity based on user credentials while authorization determines user access to restricted resources.
+
+Jakarta EE Security configures authentication and authorization with annotations in servlets and provides `SecurityContext` API for programmatic security.
+
+== Authentication
+
+Authentication verifies the user identity. Credentials are gathered. Cache is checked to see if any user subject is available. If no subject is found, then the Java Authentication and Authorization Service (JAAS) is called. The JAAS calls a set of login modules. One or more login modules create the subject based on credentials. The login module then calls the configured user registry for validation of credentials. Upon successful validation, relevant user information is collected and stored in the subject as credentials in the form of an SSO token. After successful authentication, the SSO is sent back to the browser in a cookie.
+The default name of the configurable cookie is ltpaToken2.
+
+On subsequent calls, the token information is used to authenticate the user. If this authentication fails, the authentication service tries to use other authentication data, such as the user ID and password, if they still exist in the request.
+
+== Authorization
+
+Authorization decides whether a user has the permissions to access resources. Authorization usually follows authentication.
+
+The web container calls the authorization service to determine whether a user has permission to access a certain resource. The authorization service establishes how the required role is mapped. If the required role is mapped to `EVERYONE` , then the authorization service returns immediately to allow anyone access. If the role is mapped to `ALL_AUTHENTICATED_USERS`  and the user is authenticated, then the authorization service grants access to the user. If none of these conditions are met, then the authorization service determines what users and groups are mapped to the required role. The authorization service grants access to the resource if the user is mapped to the required role or if the user is part of a group that is mapped to the role. The authorization service returns a result back to the web container to indicate whether the user is granted or denied access.
+
+== Jakarta EE security
+
+You can configure an application in Open Liberty to use external security providers for authentication and authorization. This configuration ensures that the application never directly accesses or stores the user credentials. External security providers also save the application developers and administrators of the effort of managing user accounts.
+
+Jakarta EE Security provides the capability to configure authentication and authorization in Open Liberty. Jakarta EE Security also provides the `SecurityContext` API for programmatic security checks in application code.
+
+Open Liberty conforms to the Jakarata EE specification for application security.  It also complies with additional  specifications and provides additional features that are useful for securing microservices.
+
+- mpjwt-1.1 - This feature allows securing microservices with Json Web Tokens sent in an HTTP header.  It complies with the microprofile-jwt specification . 
+
+- jwt-1.0 - This feature provides convenience APIs for building and consuming JSON web tokens, so you can build one to send downstream to a secured microservice, or inspect one that has been received.
+
+- socialLogin-1.0, openIdConnectClient-1.0, samlWeb-2.0, spnego-1.0 - These features allow use of external security providers to authenticate users.  OpenID Connect providers issue a JWT that can be propagated downstream to secured microservices using API’s these features provide.
+
+For more information see, https://openliberty.io/guides/security-intro.html.
