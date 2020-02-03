@@ -1,0 +1,34 @@
+:page-layout: general-reference
+:page-type: general
+:page-description: Microservice architecture is a popular approach for building cloud-native applications in which each capability is developed as an independent service. It enables small, autonomous teams to develop, deploy, and scale their respective services independently.
+:page-categories: MicroProfile
+:seo-title: MicroProfile simplifies developing cloud-native Java microservices
+:seo-description: Microservice architecture is a popular approach for building cloud-native applications in which each capability is developed as an independent service. It enables small, autonomous teams to develop, deploy, and scale their respective services independently.
+= Configuring Open Liberty as an SSO provider in a dev/test environment
+
+In an increasingly fragile world of the Internet, user credentials are precious commodities that need to be protected. With Single Sign On (SSO), users can not only sign up easily but also don’t need to be worried that that their details can be accessed by anyone. Open Liberty is a lightweight framework to help you build fast and efficient cloud-native apps while at the same time perform identity management for you.
+
+You can configure Open Liberty as an SSO provider, so that web users can authenticate once when accessing Liberty resources such as HTML, JavaServer Pages (JSP) files, and servlets, or accessing resources in multiple Liberty servers that share the same Lightweight Third Party Authentication (LTPA) keys.
+
+== Open IDConnect
+
+OpenID Connect (OIDC) is a simple identity protocol over OAuth 2.0 and is becoming the accepted Internet Single Sign-on (SSO) protocol. OIDC works well with cloud, mobile, and native applications. OIDC lets a client  request the identity of the user as an ID token in a standardized, REST-like manner.
+
+The client application here operates as an OpenID Connect Relying Party (RP); and relies on Open Liberty as the Liberty OpenID Connect Provider (OP) to do its user authentication. The RP receives user identity information from the OP and passes the identity information in the ID token to the back-end Liberty application server in the HTTP Request header. The application server can extract user identity information from the HTTP header to perform further authorization.
+
+Some of the benefits of using Liberty as the OP are, Liberty OP can be integrated with the Liberty LDAP user registry.(linking), Liberty OP can be configured as token services by delegating user authentication to SAML identity provider or another OpenID Connect provider, Liberty OP is highly customizable, and you can customize the claims in ID Token, userinfo, login form, consent form.( https://developer.ibm.com/wasdev/docs/configuring-an-http-server-to-use-liberty-as-openid-connect-provider/
+
+
+
+
+== Configuring Open Liberty as an SSO provider
+
+Add the openidConnectServer-1.0 Liberty feature and any other needed features to the server.xml file. The transportSecurity-1.0 feature is also required for the openidConnectServer-1.0 feature.
+
+<feature>openidConnectServer-1.0</feature>
+<feature>transportSecurity-1.0</feature>
+Copy
+
+Define an OAuth service provider. OpenID Connect is built on top of the OAuth 2.0 protocol and you must configure a valid OAuth service provider. The configuration of an OAuth service provider includes the appropriate oauth-roles, oauthProvider, and user registry elements. Any user that is authorized to use OpenID Connect must also be mapped to the authenticated oauth-role. For more information, see Defining an OAuth service provider.
+
+[18.0.0.4 and later]The OAuth metadata is updated for OpenID Connect, and the main additions are in the client metadata. If you use the persistent mode for client registration, see Configuring an OpenID Connect Provider to accept client registration requests. It is suggested that you follow the document to manage clients. For more information, see Configuring persistent OAuth services. If you use the non-persistent mode for client registration, you can register the scope, preAuthorizedScope, grantTypes, responseTypes, introspectTokens, and functionalUserId, as well as other attributes.
