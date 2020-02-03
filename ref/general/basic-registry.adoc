@@ -15,7 +15,7 @@
 
 A user registry is a database that contains account information, such as usernames and passwords, that can be retrieved by applications to link:/docs/ref/general/#authentication.html[authenticate] and link:/docs/ref/general/#authorization.html[authorize] users and services.
 
-Typically, microservice-based applications in production run on an application server that is configured to use an external registry, such as a Lightweight Directory Access Protocol (LDAP) registry. Applications access information in the registry by using APIs, such as link:docs/ref/javaee/8/#package=javax/annotation/security/package-frame.html&class=overview-summary.html[the Jakarta EE Security API]. However, in test environments, a developer might want to set up a basic, file-based user registry within the application server to simplify security operations during the development process. Open Liberty provides an easy-to-use basic user registry for developers.
+Typically, microservice-based applications in production run on an application server that is configured to use an external registry, such as a Lightweight Directory Access Protocol (LDAP) registry. However, in test environments, a developer might want to set up a basic, file-based user registry within the application server to simplify security operations during the development process. Open Liberty provides an easy-to-use basic user registry for developers.
 
 == The Application Security feature
 
@@ -30,7 +30,7 @@ To configure a basic registry, first add the `appSecurity` feature to the `serve
 [source, java]
 ----
 <basicRegistry id="basic1" realm="SampleRealm">
-     <user name="Asha" password="ashapwd" />
+     <user name="Asha" password="{hash}ATAAAAAIu0Kjh/T0SRpAAAAAIPegp4brAzavJkJ0HYdK2M7Iu5M1KvZCOAYKeTN0WeZ1" />
      <user name="Hiro" password="hiropwd" />
      <group name="admin">
        <member name="Asha" />
@@ -48,11 +48,17 @@ Adding this element automatically configures a registry with only one user (in t
 
 The registry that is configured by this element is limited to a single user and is not sufficiently secure for production environments. However, it is useful in test scenarios, particularly for secured JMX connections that require an administrator to access.
 
-== Encrypting user passwords
+== Hashing user passwords
 
-To encrypt the passwords in your basic user registry, use the hash option of the encode task on the `securityUtility` command, as shown in the following example:
+To help keep your user registry secure, do not store user passwords in plain text. You can encode the passwords in your basic user registry with the hash option of the encode task on the `securityUtility` command, as shown in the following example:
 
 `securityUtility encode --encoding=hash ashapwd`
+
+After you run the command, the server returns an encoded password, as shown in the following example:
+
+`{hash}ATAAAAAIu0Kjh/T0SRpAAAAAIPegp4brAzavJkJ0HYdK2M7Iu5M1KvZCOAYKeTN0WeZ1`
+
+You can then copy this encoded password into your `basicRegistry` element.
 
 This command can be used regardless of whether the registry is configured with the `basicRegistry` element or the `quickStartSecurity` element. For more information, see (link pending).
 
