@@ -1,0 +1,77 @@
+:page-layout: general-reference
+:page-type: general
+:page-description: OpenID Connect (OIDC) is an identity protocol based on OAuth 2.0 that is widely used in SSO technologies. OIDC works well with cloud, mobile, and native applications.
+:page-categories: OpenID Connect
+:seo-title: OpenID Connect (OIDC) is an identity protocol based on OAuth 2.0.
+:seo-description: OpenID Connect (OIDC) is an identity protocol based on OAuth 2.0 that is widely used in SSO technologies. OIDC works well with cloud, mobile, and native applications.
+
+= Configuring Open Liberty as a single sign-on provider
+
+In an increasingly fragile world of the internet, user credentials are precious resources that need to be protected. With single sign-on (SSO), users can log in easily without worrying that their credentials are being disclosed. Open Liberty helps you with identity management.
+
+You can configure Open Liberty as an SSO provider. Users need one time authentication to access Open Liberty resources such as HTML, JavaServer Pages (JSP) files, and servlets. Users can also access resources in multiple Open Liberty servers that share Lightweight Third Party Authentication (LTPA) keys with a single sign-on.
+
+== OpenID Connect
+
+OpenID Connect (OIDC) is a simple identity protocol based on OAuth 2.0 that is widely used in SSO technologies. OIDC works well with cloud, mobile, and native applications. With OIDC, a client can request the identity of the user as an ID token in a standardized, REST-like manner.
+
+The client application operates as an OpenID Connect Relying Party (RP) that relies on Open Liberty as the OpenID Connect Provider (OP) for user authentication. The RP receives user identity information from the OP and passes the identity information in the ID token to the back-end Open Liberty application server in the HTTP Request header. The application server can extract user identity information from the HTTP header for further authorization.
+
+Using Open Liberty as an OP provides the following benefits:
+
+- Open Liberty OP can be integrated with the Liberty LDAP user registry.
+- Open Liberty OP can be configured as token services by delegating user authentication to a SAML identity provider or another OpenID Connect provider
+- Open Liberty OP is highly customizable. You can customize the claims in ID Token, user info, login form, consent form.
+
+== The OpenID Connect Provider (openidConnectServer-1.0) feature
+
+You can configure an Open Liberty server to act as an OpenID Connect Provider by enabling the https://openliberty.io/docs/ref/feature/#openidConnectServer-1.0.html[openidConnectServer-1.0] feature in Liberty.
+
+
+== Configuring Open Liberty as an SSO provider
+
+The OpenID Connect Provider (openidConnectServer-1.0) feature can be configured to manage user authentication for OpenID Connect clients and microservices. The OpenID Connect Provider can work directly with a user registry such as LDAP or act as an identity broker and delegate to another security provider.
+
+Add the `openidConnectServer-1.0` Liberty feature and any other needed features to the `server.xml` file. The `transportSecurity-1.0` feature is also required for the `openidConnectServer-1.0` feature.
+
+[source, java]
+----
+<feature>openidConnectServer-1.0</feature>
+<feature>transportSecurity-1.0</feature>
+----
+
+Define an `OAuth` service provider. The configuration of an `OAuth` service provider includes the appropriate `oauth-roles`, `oauthProvider`, and user registry elements. Any user that is authorized to use OpenID Connect must also be mapped to the authenticated `oauth-role`.
+
+In the following example, the OP expects the client's SSL port to be set to 443.
+
+[source, java]
+----
+<openidConnectProvider id="OidcConfigSample" oauthProviderRef="OAuthConfigSample" />
+
+<oauthProvider id="OAuthConfigSample">
+<localStore>
+<client name="client01" secret="{xor}LDo8LTor"
+displayname="client01"
+scope="openid profile email">
+   <redirect>https://server.example.com:443/oidcclient/redirect/client01</redirect>
+   <redirect>https://server2.example.com:443/oidcclient/redirect/client01</redirect>
+</client>
+</localStore>
+</oauthProvider>
+----
+
+Add an `openidConnectProvider` element with the `oauthProviderRef` attribute references the configured `oauthProvider`. Each `oauthProvider` can be referenced by only one `openidConnectProvider`. Two or more `openidConnectProvider` elements cannot reference to the same `oauthProvider`. The name attribute and the secret attribute of the client element must match the client ID and the client secret of the corresponding OpenID Connect Client.
+
+Configure the truststore of the server to include the signer certificates of the OpenID Connect Relying Parties, or clients, that are supported.
+
+Modify the SSL configuration of the server to use the configured truststore.
+
+[source, java]
+----
+<sslDefault sslRef="DefaultSSLSettings" />
+<ssl id="DefaultSSLSettings" keyStoreRef="myKeyStore" trustStoreRef="myTrustStore" />
+<keyStore id="myKeyStore" password="{xor}Lz4sLCgwLTs=" type="jks" location="${server.config.dir}/resources/security/BasicKeyStore.jks" />
+<keyStore id="myTrustStore" password="{xor}Lz4sLCgwLTs=" type="jks" location="${server.config.dir}/resources/security/BasicTrustStore.jks" />
+----
+
+OpenID Connect is configured to use the default SSL configuration that is specified by the server. Therefore, the default SSL configuration for the server must use the truststore that is configured for OpenID Connect.
