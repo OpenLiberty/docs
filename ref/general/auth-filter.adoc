@@ -1,0 +1,115 @@
+// Copyright (c) 2020 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description: v
+:seo-title: Using authentication filters
+:seo-description: You can use authentication filters to specify how Open Liberty processes authentication requests from different users and sources.
+:page-layout: general-reference
+:page-type: general
+= Using authentication filters
+
+You can use authentication filters to specify how Open Liberty processes authentication requests from different users and sources.
+
+In cases where different kinds of protected resources in an application are available to different users, authentication filters can control what types of authentication are available for which users. For example, in a banking application, a customer might authenticate by using social media credentials while an administrator must sign in with SPNEGO.
+
+Alternatively, you might want to secure a web application with the Social Login feature, while an associated microservice application is secured with MicroProfile JSON Web Token feature. In this case, you can configure an authentication filter so that the specified security configuration takes effect only when the conditions in the filter are met.
+
+To specify an authentication filter for a security feature, configure link:/docs/ref/config/#authFilter.html[the `authFilter` element] in your `server.xml` file. The `authFilter` element is available for the following Open Liberty features:
+
+* link:/docs/ref/feature/#jwtSso-1.0.html[JSON Web Token Single Sign-On]
+* link:/docs/ref/feature/#mpJwt-1.1.html[MicroProfile JSON Web Token]
+* link:/docs/ref/feature/#openid-2.0.html[OpenID]
+* link:/docs/ref/feature/#openidConnectClient-1.0.html[OpenID Connect Client]
+* link:/docs/ref/feature/#samlWeb-2.0.html[SAML web single sign-on]
+* link:/docs/ref/feature/#spnego-1.0.html[Simple and Protected GSSAPI Negotiation Mechanism (SPNEGO)]
+* link:/docs/ref/feature/#socialLogin-1.0.html[Social Login]
+
+== Authentication filter examples
+
+=== Request URL contains a pattern
+The following example shows a typical configuration for an authentication filter. In this configuration, any incoming request with a request URL that contains the `/SimpleServlet` pattern is processed by the service that is configured to use this filter.
+
+[source,java]
+----
+<authFilter id="myAuthFilter">
+         <requestUrl id="myRequestUrl" urlPattern="/SimpleServlet" matchType="contains"/>
+</authFilter>
+----
+
+=== Request URL contains one of a set of patterns
+In the following example, a piped list of request URL patterns is specified. To process an incoming request with the service that is configured to use this filter, the request URL must contain any one of the  `/SimpleServlet`, `/EmployeeRoleServlet`, or `/AllRoleServlet` patterns.
+
+[source,java]
+----
+<authFilter id="myAuthFilter">
+         <requestUrl id="myURL" urlPattern="/SimpleServlet|/EmployeeRoleServlet|/AllRoleServlet" matchType="contains" />
+</authFilter>
+----
+
+=== Web application name contains a pattern
+In the following example, a web application name is specified in the authentication filter. Incoming requests must target the `myApp` application in order to be processed by the service that is configured to use this filter.
+
+[source,java]
+----
+<authFilter id="myAuthFilter">
+         <webApp id="myWebApp" name="myApp" matchType="contains"/>
+</authFilter>
+----
+
+=== Web application name contains one of a set of patterns
+In the following example, a piped list of web applications is specified. To process an incoming request with the service that is configured to use this filter, the request must target  `myApp1`, `myApp2`, or `myApp3` applications.
+
+[source,java]
+----
+<authFilter id="myAuthFilter">
+         <webApp id="myWebApp" name="myApp1|myApp2|myApp3" matchType="contains"/>
+</authFilter>
+----
+
+=== Request originates from a certain IP address
+The following example shows how to use wildcards in the `remoteAddress` element. With this configuration, the service that is configured to use this filter processes the incoming request if the request comes from an IP address anywhere in the `127.0.0.*` range.
+
+[source,java]
+----
+<authFilter id="myAuthFilter">
+         <remoteAddress id="myRemoteAddress" ip="127.0.0.*" matchType="equals"/>
+</authFilter>
+----
+
+=== Excluding patterns
+The following example shows how to use a piped list of values for the `requestUrl` element. If the request URL matches any of the patterns in the list, it satisfies the requirements of that particular element. In this example, the request URL must contain either `/SimpleServlet,` `/EmployeeRoleServlet`, or `/AllRoleServlet`. In addition, the request URL must not contain `/ManagerRoleServlet` and  it must come from an Internet Explorer user agent.
+
+[source,java]
+----
+<authFilter id="myAuthFilter">
+         <requestUrl id="myURL1" urlPattern="/SimpleServlet|/EmployeeRoleServlet|/AllRoleServlet" matchType="contains" />
+         <requestUrl id="myURL2" urlPattern="/ManagerRoleServlet" matchType="notContain" />
+         <userAgent id="myAgent" agent="IE" matchType="contains" />
+</authFilter>
+----
+== Using all sub-elements
+To process an incoming request with the service configured to use this filter, the request must meet the following conditions:
+
+* Contains the `/SimpleServlet` pattern in the request URL
+* Targets a domain that contains `host.example.com`
+* Comes from the IP address `127.0.0.1`
+* Comes from a Firefox browser
+* Target application is named `myApp`
+
+[source,java]
+----
+<authFilter id="myAuthFilter">
+         <requestUrl id="myRequestUrl" urlPattern="/SimpleServlet" matchType="contains"/>
+         <host id="myHost" name="host.example.com" matchType="contains"/>
+         <remoteAddress id="myAddress" ip="127.0.0.1" matchType="equals" />
+         <userAgent id="myUserAgent" agent="Firefox" matchType="equals"/>
+         <webApp id="myWebApp" name="myApp" matchType="contains"/>
+</authFilter>
+----
+
+Authentication filters give you nuanced control over how you manage authentication to the protected resources in your application. For a full list of configuration attributes, see link:/docs/ref/config/#authFilter.html[Authentication Filter].
