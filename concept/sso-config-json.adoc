@@ -12,21 +12,24 @@
 :seo-description:
 = SSO configuration with JSON Web Tokens
 
-JSON Web Tokens (JWT) are used to propagate the user identity that is established by SSO between different microservice applications. By configuring Single sign-on (SSO) user authentication with JSON Web Tokens, you manage the identity that is shared between applications.
+JSON Web Tokens (JWT) are used to propagate the user identity that is established by Single sign-on (SSO) between different microservice applications. By configuring SSO user authentication with JWT, you can manage the identity that is shared between applications.
+
+== Enabling identity management with SSO
+To propagate user identity across different services with JWT, the identity must first be established with an SSO method. The OpenID Connect (OIDC) standard for authentication provides the framework that enables identity management with SSO. Within this framework, the Social Login SSO method provides a simplified process that estabishes user identity. For more information, see 
 
 == Propagating user identity with JSON Web Tokens
-
-After the user identity is established with an SSO method, such as OpenID Connect (OIDC), you can use JWT to propagate the identity to back-end services. With a signed JWT, you can verify who the user is, when the user requests were made, and any other types of information that the user agreed to you handling. Each consumer of the token can verify that they can trust the claims by it, by verifying that they trust the signature of the token. After consumer verifies the signature, they know the content of the token has not been altered since it was created.
+//Provide link to Social Login topic here
+After the user identity is established with an SSO method, such as Social Login, you can use JWT to propagate the identity to back-end services. With a signed JWT, you can verify who the user is, when the user requests were made, and any other types of information that the user agreed to you handling, which is called claims. Each consumer of the token can verify that they can trust the claims in it, by verifying that they trust the issuer's signature of the token. After the consumer verifies the signature, they know the content of the token has not been altered since it was created.
 
 
 == Securing microservices with MicroProfile JSON Web Tokens
 The MicroProfile JWT feature provides the standard format that is needed to secure microservices. The JWT format is designed to verify claims between two services. To enable authorization and authentication across different services, the JWT consists of the following sections:
 
-* The header section of the ID token contains information on the type of object and the specific signature algorithm used to protect the integrity of the claims in the payload
+* The header section of the ID token contains information on the type of object and the specific signature algorithm that is used to protect the integrity of the claims in the payload.
 * The payload section contains the claims about a user and the authentication event.
-* The signature section contains a digital signature based on the payload section of the token and a secret key known to the OpenID Provider (OP).
+* The signature section contains a digital signature based on the payload section of the token and a secret key known to the creator of the JWT.
 
-The following example shows the creation of a signed JWT with Java:
+The following example shows the creation of a signed JWT with Java. The following example shows the creation of a signed JWT with Java. Multiple open source libraries for creating and consuming JWT's exist. Liberty also provides API's to complete those actions in the `Jwt-1.0` feature:
 ----
 import java.security.SignatureException;
 import com.google.gson.JsonObject;
@@ -85,21 +88,3 @@ public class SampleJWTToken {
         }
 }
 ----
-
-== Enabling identity management with OpenID Connect
-OpenID Connect (OIDC) is a SSO method that enables applications to assign user authentication to authorization servers that return the application claims about the authenticated user and authentication event in a standard format. The OIDC format contains designated roles that enable the identity management for secure applications.
-
-=== Roles
-
-The OIDC format consists of three roles that are involved with the identity management for applications.
-
-User::
-The user is the agent that is authenticated. After a user accesses an application, the application redirects the user's browser to an authorization server that implements OIDC.
-OpenID Provider::
-The OpenID provider (OP) is an authorization server that implements OIDC, can authenticate a user, return claims about the authenticated user, and the authentication event to a relying party or application.
-Relying Party::
-The Relying Party is the application that delegates user authentication to an OP and requests claims about the user from the OP.
-
-=== OIDC standard format
-
-The OP interacts with the user to authenticate them. After authentication, the user's browser is redirected back to the application. The application can request the return of claims about the authenticated user in a JWT. An application can use an OP for user authentication and authorization to call the OP's API.
