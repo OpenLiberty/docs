@@ -30,10 +30,10 @@ The term _server config_ can be used to refer to all of the files that make up t
 
 The server config files are processed in the following order:
 
-. <<server-env,`server.env`>>
-. <<jvm-options,`jvm.options`>>
-. <<bootstrap-properties,`bootstrap.properties`>>
-. <<server-xml,`server.xml`>>
+. <<server-env,`server.env`>> - Commonly used to set environment variables.
+. <<jvm-options,`jvm.options`>> - Used to set options for the JVM.
+. <<bootstrap-properties,`bootstrap.properties`>> - Used to influence the start-up of the {projectName} server.
+. <<server-xml,`server.xml`>> - The most important and only mandatory config file.
 
 [#server-env]
 === server.env
@@ -193,10 +193,10 @@ There are a number of predefined variables:
   other runtime-generated files. The default is `${server.config.dir}`.
 
 == Config merging
-Since the config can consist of multiple files, it is possible that two files provide the same config. In these situations, the server config is merged according to a set of simple rules. In {projectName}, config is separated into Singleton and factory config, each of which has its own rules for merging. Singleton config is used to configure a single element (for example, logging). Factory config is used to configure multiple entities, such as an entire application or data source.
+Since the config can consist of multiple files, it is possible that two files provide the same config. In these situations, the server config is merged according to a set of simple rules. In {projectName}, config is separated into singleton and factory config, each of which has its own rules for merging. Singleton config is used to configure a single element (for example, logging). Factory config is used to configure multiple entities, such as an entire application or data source.
 
-=== Merging Singleton config
-For Singleton config elements that are specified more than once, the config is merged. If two elements exist with different attributes, both attributes are used. For example:
+=== Merging singleton config
+For singleton config elements that are specified more than once, the config is merged. If two elements exist with different attributes, both attributes are used. For example:
 
 [source,xml]
 ----
@@ -234,7 +234,7 @@ is treated as:
 </server>
 ----
 
-In some cases, config is provided by using child elements that take text. In these cases, the config is merged by using all of the values specified. The most common scenario is configuring features. For example:
+Config is sometimes provided by using child elements that take text. In these cases, the config is merged by using all of the values specified. The most common scenario is configuring features. For example:
 
 [source,xml]
 ----
@@ -261,7 +261,7 @@ is treated as:
 ----
 
 === Merging factory config
-Factory config merges use the same rules as Singleton config except elements are not automatically merged just because the names match. Unlike Singleton config, with factory config it is valid to configure the same element and mean two different logical objects. Therefore, each element is assumed to configure a distinct object. If the logical object is configured by two instances, the `id` attribute must be set on each of them to indicate they are the same thing. Variable substitution on an `id` attribute is not supported.
+Factory config merges use the same rules as singleton config except elements are not automatically merged just because the element names match. With factory config, it is valid to configure the same element and mean two different logical objects. Therefore, each element is assumed to configure a distinct object. If the logical object is configured by two instances, the `id` attribute must be set on each of them to indicate they are the same thing. Variable substitution on an `id` attribute is not supported.
 
 The following example configures two applications. The first application is `myapp.war`, which has a
 context root of `myawesomeapp`. The other application is `myapp2.war`, which has `myapp2` as
@@ -278,7 +278,7 @@ the context root:
 
 == Include processing
 
-In addition to the default locations, more config files can be brought in by using the `include` element. When a server config file contains an include reference to another file, the server processes the contents of the referenced file as if they were included inline in place of the `include` element. In the following example, the server processes the contents of the `other.xml` file before it processes the contents of the `other2.xml` file:
+In addition to the default locations, additional config files can be brought in by using the `include` element. When a server config file contains an include reference to another file, the server processes the contents of the referenced file as if they were included inline in place of the `include` element. In the following example, the server processes the contents of the `other.xml` file before it processes the contents of the `other2.xml` file:
 
 [source,xml]
 ----
@@ -288,7 +288,7 @@ In addition to the default locations, more config files can be brought in by usi
 </server>
 ----
 
-By default, the specified include file must exist. If the include file might not be present, set the `optional` attribute to `true`, as shown in the following example:
+By default, the include file must exist. If the include file might not be present, set the `optional` attribute to `true`, as shown in the following example:
 
 [source,xml]
 ----
@@ -311,7 +311,7 @@ You can set the `location` attribute to a relative or absolute file path, or to 
 
 
 == Config references
-Most config in {projectName} is self-contained but it can be useful to share config. For example, the JDBC driver config might be shared by multiple data sources. You can refer to any factory config element that is defined as a direct child of the `server` element.
+Most config in {projectName} is self-contained but it is often useful to share config. For example, the JDBC driver config might be shared by multiple data sources. You can refer to any factory config element that is defined as a direct child of the `server` element.
 
 A reference to config always uses the `id` attribute of the element that is being referenced. The config element that makes the reference uses an attribute that always ends with `Ref`, as shown in the following example:
 
