@@ -26,7 +26,7 @@ A user registry is a database that contains information about a set of users and
 
 Open Liberty also supports link:/docs/ref/general/#federated-registries.html[federated user registries] so that a server can be configured to authenticate from multiple registries from a single logical view. Information from LDAP, basic, and custom user registries can be federated into a common registry to manage application security.
 
-If your application needs to reference a security database that cannot move to the local operating system or an external LDAP registry, you can configure a custom registry by implementing the `com.ibm.websphere.security.UserRegistry` interface in the Open Liberty Server. The `UserRegistry` interface is a Service Programming Interface (SPI) that enables support to virtually any type of account repository.
+If your application needs to reference a database other than a basic or LDAP registry, you can configure a custom registry by implementing the `UserRegistry` interface. The `UserRegistry` interface is a Service Programming Interface (SPI) that enables support to virtually any type of account repository.
 
 == Single sign-on (SSO)
 SSO enables users to authenticate at one location and access multiple servers or services without being repeatedly prompted to log in. SSO is especially important for microservice-based applications, where a single user request might require authentication to several different microservices. SSO for applications that run on Open Liberty is supported by using the Lightweight Third Party Access (LTPA) protocol. The LTPA protocol uses cryptographic keys to share user data between servers that use the same user registry. When the link:/docs/ref/feature/#appSecurity-3.0.html[appSecurity-2.0] (or later) feature is enabled in Open Liberty, LTPA keys are automatically created if they do not exist.
@@ -38,11 +38,14 @@ Open Liberty supports the following options for SSO authentication:
 - link:/docs/ref/feature/#socialLogin-1.0.html[Social Media Login] +
 Users can authenticate to websites that are hosted on the Open Liberty server by logging in with their social media accounts. When the `socialLogin-1.0` feature is enabled, login with Facebook, Twitter, Google, Linkedin, and GitHub is automatically configured. You can also define your own configuration for any social media platform that is based on the OAuth 2.0 or OpenID Connect 1.0 standards.
 
+- link:/docs/ref/general/#/docs/concept/sso-config-json.html[JSON Web Tokens] +
+JSON Web Tokens (JWT) are used to propagate the user identity that is established by Single sign-on (SSO) between different microservice applications. By configuring SSO user authentication with JWT, you can manage the identity that is shared between applications.
+
 - link:/docs/ref/general/#/docs/concept/sso-config-ltpa.html[LTPA cookies] +
 Lightweight Third Party Authentication (LTPA) provides SSO configuration support to authenticate users when they are accessing application servers. With LTPA enabled, you can encrypt, digitally sign, and securely transmit authentication-related data between servers.
 
 - link:/docs/ref/feature/#openidConnectServer-1.0.html[OpenID Connect]  +
-OIDC is a popular internet SSO protocol that works well with cloud-native applications. This protocol enables a client application to request the identity of the user as an ID token in a standardized, REST-like manner. The client application, or Relying Party, requests information about a user from an authorization server, known as an OpenID Connect Provider. After users are authenticated by an OpenID Provider, they can access any Relying Party that is configured for that Provider, without having to manage unique accounts for each application or website.
+OIDC is a popular internet SSO protocol that works well with cloud-native applications. This protocol enables a client application to request the identity of the user as an ID token in a standardized, REST-like manner. The client application, or Relying Party, requests information about a user from an authorization server, which is known as an OpenID Connect Provider. After users are authenticated by an OpenID Provider, they can access any Relying Party that is configured for that Provider, without having to manage unique accounts for each application or website.
 
 - link:/docs/ref/general/#/docs/concept/sso-config-saml.html[Security Assertion Markup Language (SAML 2.0)] +
 SAML Web Browser SSO enables web applications to delegate user authentication to a SAML identity provider instead of a configured user registry.
@@ -50,6 +53,15 @@ SAML Web Browser SSO enables web applications to delegate user authentication to
 - link:/docs/ref/feature/#spnego-1.0.html[Simple and Protected GSS-API Negotiation Mechanism (SPNEGO)] +
 With SPNEGO SSO, users log in to the Microsoft Domain controller once to access and move between protected resources on Open Liberty servers without getting prompted for additional logins.
 
+= JAAS authentication with Open Liberty
+
+Open Liberty relies on the Java Authentication and Authorization Service (JAAS) framework to determine a user's identity and access roles. JAAS authentication is suited to microservice-based applications because it separates the authentication process from the rest of the application so that authentication can be managed independently. New or updated authentication processes can be plugged in to an application without otherwise modifying the application itself.
+
+The JAAS framework defines a `Subject` object to represent the source of a request to an application. The subject can be any entity that makes a request, such as a user or another microservice. The subject contains a set of principals, or details about the identity of the entity that made the request, which is used for authentication. The subject also contains sets of credentials, or security attributes that are used for authorization. By creating a subject to represent a user or service, Open Liberty provides an efficient and easily configurable means for authentication data to pass between microservices in an application.
+
+With JAAS in Open Liberty, each stage in the authentication process operates independently and can be updated or reconfigured with minimal impact on the other stages in the process. The `LoginContext` class determines the methods that are used for authentication, according to the `LoginModule` interfaces that are configured. Each `LoginModule` interface represents a particular type of authentication service. For example, one `LoginModule` interface can handle basic username and password authentication, while another processes SSO tokens.
+
+`LoginModule` interfaces communicate with the user by using a `CallbackHandler` interface. The `CallbackHandler` interface can both gather authentication data from the user (such as a username and password) and return information from the `LoginModule` interface to the user (such as login status). Since the particular `CallbackHandler` interface is specified by the application, the authentication method (or `LoginModule`) remains independent from whatever ways the user interacts with the application. For example, one `CallbackHandler` interface in an application might display a login window for the user, while another might prompt the user to log in from the command line. Either of these `CallbackHandler` interfaces might interact with the `LoginModule` that processes username and password authentication.
 == Secure your applications with Open Liberty
 
 Ready to try out authentication with Open Liberty for yourself? Check out these guides for securing applications.
