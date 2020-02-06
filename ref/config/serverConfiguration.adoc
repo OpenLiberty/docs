@@ -47,9 +47,9 @@ If the same property is set in multiple locations, then the last value found is 
 
 The most common use of these files is to set the following environment variables:
 
-* `JAVA_HOME`: Indicates which JVM to use. If this is not set, the system default is used.
-* `WLP_USER_DIR`: Indicates the location of the `usr` directory that contains the server config. This can only be set in the `etc/server.env` file because the other locations are relative to the `usr` directory.
-* `WLP_OUTPUT_DIR`: Indicates where the server writes files to. By default, the server writes to the directory structure that the config is read from. However, in some secure profiles the server config needs to be read-only so the server must write files to another location.
+* `JAVA_HOME` - Indicates which JVM to use. If this is not set, the system default is used.
+* `WLP_USER_DIR` - Indicates the location of the `usr` directory that contains the server config. This can only be set in the `etc/server.env` file because the other locations are relative to the `usr` directory.
+* `WLP_OUTPUT_DIR` - Indicates where the server writes files to. By default, the server writes to the directory structure that the config is read from. However, in some secure profiles the server config needs to be read-only so the server must write files to another location.
 
 The `server.env` file is in `KEY=value` format, as shown in the following example:
 
@@ -59,7 +59,7 @@ JAVA_HOME=/opt/ibm/java
 WLP_USER_DIR=/opt/wlp-usr
 ----
 
-Key values must not contain spaces. The values are interpreted literally so you don't need escape spaces or other special characters. These files don't support variable substitution.
+Key values must not contain spaces. The values are interpreted literally so you don’t need to escape special characters, such as spaces. These files don't support variable substitution.
 
 [#jvm-options]
 === jvm.options
@@ -86,7 +86,7 @@ The `jvm.options` file format uses one line per JVM option, as shown in the foll
 -Dmy.system.prop=This is the value.
 ----
 
-You don’t need escape spaces or other special characters. Options are read and provided to the JVM in order. If you provide multiple options, then they are all seen by the JVM. These files do not support variable substitution.
+You don’t need to escape special characters, such as spaces. Options are read and provided to the JVM in order. If you provide multiple options, then they are all seen by the JVM. These files do not support variable substitution.
 
 [#bootstrap-properties]
 === bootstrap.properties
@@ -112,22 +112,22 @@ Server config files are read from the following locations in order:
 The `${server.config.dir}/server.xml` file must be present, but the other files are optional. You can flexibly compose config by dropping server-formatted XML files into directories. Files are read in alphabetical order in each of the two `configDropins` directories.
 
 == Variable substitution
-You can use variables to parameterize the server config. To resolve variable names, the following sources are consulted:
+You can use variables to parameterize the server config. To resolve variable references to their values, the following sources are consulted in order:
 
-* `server.xml` default variable values
-* Environment variables
-* `bootstrap.properties`
-* Java System Properties
-* `server.xml` config
+. `server.xml` config
+. Java System Properties
+. `bootstrap.properties`
+. Environment variables
+. `server.xml` default variable values
 
-In this list, each source takes precedence over the previous source, so that the `server.xml` config takes the highest precedence and the  `server.xml` default variable values take the lowest precedence. Variables are referenced by using the `${variableName}` syntax. You can specify variables in the server config by using the  `variable` element, as shown in the following example:
+Variables are referenced by using the `${variableName}` syntax. Specify variables in the server config, as shown in the following example:
 
 [source,xml]
 ----
 <variable name="variableName" value="some.value" />
 ----
 
-Default values, which are specified in the `server.xml` file, are used only if no other value is specified. These values are specified by using the `variable` element and the `defaultValue` attribute:
+Default values, which are specified in the `server.xml` file, are used only if no other value is specified:
 
 [source,xml]
 ----
@@ -136,14 +136,14 @@ Default values, which are specified in the `server.xml` file, are used only if n
 
 Environment variables can be accessed as variables. As of version 19.0.0.3, you can reference the environment variable name directly. If the variable cannot be resolved as specified, the `server.xml` file looks for the following variations on the environment variable name:
 
-* Replacing all non-alphanumeric characters with the underscore character (`_`)
-* Changing all characters to uppercase
+* Replace all non-alphanumeric characters with the underscore character (`_`)
+* Change all characters to uppercase
 
 For example, if you enter `${my.env.var}` in the `server.xml` file, it looks for environment variables with the following names:
 
-* my.env.var
-* my_env_var
-* MY_ENV_VAR
+. my.env.var
+. my_env_var
+. MY_ENV_VAR
 
 For versions 19.0.0.3 and earlier, you can access environment variables by adding `env.` to the start of the environment variable name, as shown in the following example:
 
@@ -175,21 +175,21 @@ operator can be `+`, `-`, `*`, or `/`, as shown in the following example:
 <variable name="threeagain" value="${six/two}" />
 ----
 
-The following predefined variables are supported:
+There are a number of predefined variables:
 
-* `wlp.install.dir`: the location where the {projectName} runtime is installed.
-* `wlp.server.name`: the name of the server.
-* `wlp.user.dir`: the location of the `usr` folder. The default is
+* `wlp.install.dir` - the location where the {projectName} runtime is installed.
+* `wlp.server.name` - the name of the server.
+* `wlp.user.dir` - the location of the `usr` folder. The default is
   `${wlp.install.dir}/usr`.
-* `shared.app.dir`: the location of shared applications. The default is
+* `shared.app.dir` - the location of shared applications. The default is
   `${wlp.user.dir}/shared/apps`.
-* `shared.config.dir`: the directory that contains the server config. The default is
+* `shared.config.dir` - the location of shared config files. The default is
   `${wlp.user.dir}/shared/config`.
-* `shared.resource.dir`: the location of shared resource files. The default is
+* `shared.resource.dir` - the location of shared resource files. The default is
   `${wlp.user.dir}/shared/resources`.
-* `server.config.dir`: the directory that server config is stored in.
+* `server.config.dir` - the directory that server config is stored in.
   The default is `${wlp.user.dir}/servers/${wlp.server.name}`.
-* `server.output.dir`: the directory where the server writes the workarea, logs, and
+* `server.output.dir` - the directory where the server writes the workarea, logs, and
   other runtime-generated files. The default is `${server.config.dir}`.
 
 == Configuration merging
