@@ -13,7 +13,7 @@
 :page-type: general
 = Authentication in Open Liberty
 
-In order for an application to be secure, it must be able to determine who its users are. Authentication is the process by which an application server confirms a user’s identity.
+In order for an application to be secure, it must be able to determine who its users are. Authentication is the process of confirming a user’s identity.
 
 Open Liberty authenticates users by collecting credentials from them, such as a username and password, and checking these credentials against a configured registry of users. There are a number of different ways that authentication can be carried out, depending on the details of an application and the resources that are available to it. For microservice-based applications, it’s important that authentication is lightweight and configurable, since any user request might need to authenticate to multiple services. In many cases, a user's credentials are placed in a token that can be passed from the server to different microservices to authenticate requests for protected resources.
 
@@ -22,7 +22,11 @@ For example, a user of a music streaming service might want to listen to a song,
 image::/docs/img/Authentication.png[Authentication diagram,align="center"]
 
 == User registries
-A user registry is a database that contains information about a set of users and their associated roles. When a user requests a protected resource in an application, the user's credentials are checked against the information in one or more user registries. Open Liberty provides an easy-to-use link:/docs/ref/general/#basic-registry.html[basic user registry] for developers to use in test environments. Typically, application servers are configured to use an external registry, such as a link:/docs/ref/general/#LDAP-registry.html[Lightweight Directory Access Protocol (LDAP) registry]. Open Liberty also supports federated registries so that a server can be configured to authenticate from multiple registries.
+A user registry is a database that contains information about a set of users and their associated roles. When a user requests a protected resource in an application, the user's credentials are checked against the information in one or more user registries. Open Liberty provides an easy-to-use link:/docs/ref/general/#basic-registry.html[basic user registry] for developers to use in test environments. Typically, applications in production are configured to use an external registry, such as a link:/docs/ref/general/#LDAP-registry.html[Lightweight Directory Access Protocol (LDAP) registry].
+
+Open Liberty also supports link:/docs/ref/general/#federated-registries.html[federated user registries] so that a server can be configured to authenticate from multiple registries from a single logical view. Information from LDAP, basic, and custom user registries can be federated into a common registry to manage application security.
+
+If your application needs to reference a security database that cannot move to the local operating system or an external LDAP registry, you can configure a custom registry by implementing the `com.ibm.websphere.security.UserRegistry` interface in the Open Liberty Server. The `UserRegistry` interface is a Service Programming Interface (SPI) that enables support to virtually any type of account repository.
 
 == Single sign-on (SSO)
 SSO enables users to authenticate at one location and access multiple servers or services without being repeatedly prompted to log in. SSO is especially important for microservice-based applications, where a single user request might require authentication to several different microservices. SSO for applications that run on Open Liberty is supported by using the Lightweight Third Party Access (LTPA) protocol. The LTPA protocol uses cryptographic keys to share user data between servers that use the same user registry. When the link:/docs/ref/feature/#appSecurity-3.0.html[appSecurity-2.0] (or later) feature is enabled in Open Liberty, LTPA keys are automatically created if they do not exist.
