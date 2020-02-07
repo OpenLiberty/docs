@@ -6,15 +6,9 @@
 :seo-description: Microservice architecture is a popular approach for building cloud-native applications in which each capability is developed as an independent service. It enables small, autonomous teams to develop, deploy, and scale their respective services independently.
 = Testing in a container
 
-MicroShed Testing helps you to write integration tests using testcontainers. offers a fast and simple way of writing and running true-to-production integration tests for Java microservice applications. MicroShed Testing exercises your containerized application from outside the container so you are testing the exact same image that runs in production.
+MicroShed testing helps you to write integration tests using testcontainers for Java microservice applications. With microShed testing you can test your Open Liberty application from outside the container so you are testing the exact same image that runs in production.
 
-MicroShed Testing aims to:
-
-- be easy to get started with
-- work with any Java EE, Jakarta EE or MicroProfile runtime
-- provide true-to-production tests
-
-You can use MicroShed Testing to develop integration tests for your Open Liberty application. You test your application from outside its container so that the tests run against the same image that you use in production.
+Integration testing looks as microservices as a group and tests them as a whole unit. Intergration testing offers significant advantages over other types of testing like...
 
 == Why integration testing
 
@@ -37,3 +31,50 @@ Running tests in development mode is convenient for local development, but it ca
 You can use MicroShed Testing to develop integration tests for your Open Liberty application. You test your application from outside its container so that the tests run against the same image that you use in production.
 
 To write a test with MircoShed testing, first add microshed-testing-testcontainers and junit-jupiter artifact IDs as test-scoped dependencies, as shown in the following example:
+
+[source,java]
+----
+<dependency>
+    <groupId>org.microshed</groupId>
+    <artifactId>microshed-testing-testcontainers</artifactId>
+    <version>0.4.1</version>
+    <scope>test</scope>
+</dependency>
+
+<!-- Any compatible version of JUnit Jupiter 5.X will work -->
+<dependency>
+    <groupId>org.junit.jupiter</groupId>
+    <artifactId>junit-jupiter</artifactId>
+    <version>5.4.2</version>
+    <scope>test</scope>
+</dependency>
+----
+
+Next, create a test class with the `MicroShedTest` annotation. Then, create a public `static MicroProfileApplication` method and inject one or more `public static JAX-RS` resources, as shown in the following example:
+
+[source,java]
+----
+@MicroShedTest
+public class MyTest {
+
+    @Container
+    public static MicroProfileApplication app = new MicroProfileApplication()
+                    .withAppContextRoot("/myservice");
+
+    @Inject
+    public static MyService mySvc;
+
+    // write @Test methods as normal
+----
+
+    In cases where a Dockerfile or container image is not available, use the microshed-testing-liberty adapter. This adapter produces a container image that is similar to the following Dockerfile:
+
+[source,java]
+----
+    FROM open-liberty:microProfile3
+ADD build/libs/$APP_FILE /config/dropins
+COPY src/main/liberty/config /config
+----
+
+
+Ready to try how to use MicroShed Testing to test a MicroProfile or Jakarta EE application? Check out our guide https://openliberty.io/guides/microshed-testing.html[Testing a MicroProfile or Jakarta EE application]
