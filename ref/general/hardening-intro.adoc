@@ -22,15 +22,16 @@ Hardening is a general term that is used to describe the measures that are taken
 
 [#operating-system]
 == Operating system
-Operating system intrusions occur when users with local access attempt to cause damage or extract sensitive information. One example of this type of intrusion is malware. If malware is introduced into a system, unauthorized users might be able to access the operating system and its contents.
+Operating system (OS) intrusions occur when users with local access attempt to cause damage or extract sensitive information. One example of this type of intrusion is malware. If malware is introduced into a system, unauthorized users might be able to access the OS and its contents.
 
-To learn more about operating system vulnerabilities and ways to prevent operating system intrusions, go to <link pending>.
+To learn more about OS vulnerabilities and ways to prevent OS intrusions, go to <link pending>.
 
 ==== Best practices
 
-* *Keep Open Liberty up to date*: To reduce operating system vulnerabilities, it's important to keep your version of Open Liberty up to date. Open Liberty fix packs are compatible with later versions, and the zero migration policy means that you can move to a newer fix pack without changing anything in your server configuration. Keeping Open Liberty up to date helps ensure that you have the most recent link:/docs/ref/general/#security-vulnerabilities.html[critical security fixes]. To get the latest version of Open Liberty, go to the link:https://openliberty.io/downloads/[downloads page].
+* *Stay up to date with Open Liberty*: To reduce OS vulnerabilities, it's important to keep your version of Open Liberty up to date. Open Liberty fix packs are compatible with later versions, and the zero migration policy means that you can move to a newer fix pack without changing anything in your server configuration. Keeping Open Liberty up to date helps ensure that you have the most recent link:/docs/ref/general/#security-vulnerabilities.html[critical security fixes]. To get the latest version of Open Liberty, go to the link:https://openliberty.io/downloads/[downloads page].
 * *Use user registries that are safe for production*: Basic and Quick Start Security user registries are useful for development environments, but they are not acceptable for readiness testing, QA, or production use. Instead, use an LDAP user registry, federated repositories, or create a custom user registry. If you use an LDAP user registry, maintain your bind password in a separate `include` file, not in the `server.xml` file. If you use a custom registry, use the `UserRegistry` class to implement the registry, and make sure that the registry is thoroughly reviewed before you use it in production.
-* *Carefully configure file permissions*: When you configure file permissions, ensure that the users who want access to the configuration fall into the appropriate permission bit. Users that are not the owner and are not part of the authorized group fall into the `other` permission bit, which is marked as `0`.
+* *Use web single-sign on*: For user authentication, it is common to use single-sign on (SSO) technologies (such as SAML, JWT, or OpenID Connect) instead of directly accessing user registries from Open Liberty. SSO provides better security and regulatory compliance. If you use SSO, maintain your SSO configuration in a separate include file, not in the `server.xml` file. For more information about configuring SSO, go to <link pending>.
+* *Carefully configure file permissions*: When you configure file permissions, ensure that the users who want access to the configuration fall into the appropriate permission bit. Users that aren't owners and aren't part of the authorized group fall into the `other` permission bit, which is indicated with `0`.
 * *Encrypt passwords*: Use encryption for passwords instead of Base64 encoding. You can use the `securityUtility` command, which provides plain text encryption for Open Liberty. For more information about the `securityUtility` command, go to <link pending>.
 
 
@@ -43,7 +44,9 @@ To learn more about network vulnerabilities and ways to prevent network intrusio
 ==== Best practices
 
 * *Use a firewall*: Use a firewall to shield production Open Liberty servers so that they don't run in the DMZ. The DMZ is an unsecured network segment that exists between internal and external networks. Firewalls help prevent security intrusions by monitoring network traffic and blocking specific traffic based on security rules.
-* *Enable the `transportSecurity` feature*: The link:/docs/ref/feature/#transportSecurity.html[Transport Security feature] enables the link:/docs/ref/feature/#ssl.html[SSL feature] to support SSL connections and adds the ability to configure outbound transports. Additionally, disable non-SSL ports by setting them to `-1` in the `server.xml` file, and use only certificates that are signed by a certificate authority for public-facing production servers. Also, enable SSL in your client and web server. Using SSL connections throughout your network communication flow helps protect your server from network intrusions.
+* *Enable the Transport Security feature*: The link:/docs/ref/feature/#transportSecurity.html[Transport Security feature] enables the link:/docs/ref/feature/#ssl.html[SSL feature] to support SSL connections and adds the ability to configure outbound transports. Additionally, disable non-SSL ports by setting them to `-1` in the `server.xml` file, and use only certificates that are signed by a certificate authority for public-facing production servers. Also, enable SSL in your client and web server. Using SSL connections throughout your network communication flow helps protect your server from network intrusions.
++
+If you use SSO for user authentication, all SSO endpoint URLs must use an HTTPS scheme, and the client must perform a TLS server certificate check.
 * *Run applications on a virtual host*: Configure applications to run on a virtual host. Open Liberty admin traffic comes in on the default host, so configuring your applications to run on a virtual host keeps Open Liberty admin traffic separate from application requests.
 
 
