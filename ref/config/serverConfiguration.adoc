@@ -3,7 +3,10 @@
 :page-layout: config
 :page-type: overview
 
-The {projectName} server config is made up of one mandatory file, the `server.xml` file, and a set of optional files. The `server.xml` file must be well-formed XML and the root element must be `server`. When the `server.xml` file is processed, any elements or attributes that are not understood are ignored. The default `server.xml` file might look like the following example:
+The {projectName} server config is made up of one mandatory file, the `server.xml` file, and a set of optional files.
+The `server.xml` file must be well-formed XML and the root element must be `server`.
+When the `server.xml` file is processed, any elements or attributes that are not understood are ignored.
+The default `server.xml` file might look like the following example:
 
 [source,xml]
 ----
@@ -24,7 +27,8 @@ This `server.xml` file configures the server to do the following things:
 <2> Listen to incoming traffic to `localhost` on port `9080`
 <3> Automatically expand WAR files when they are deployed
 
-The term _server config_ can be used to refer to all of the files that make up the server config, or specifically to the config that's in the XML files. If it's not clear in context, the term _server XML config_ might be used to refer to the config in the XML files.
+The term _server config_ can be used to refer to all of the files that make up the server config, or specifically to the config that's in the XML files.
+If it's not clear in context, the term _server XML config_ might be used to refer to the config in the XML files.
 
 == Config files
 
@@ -37,7 +41,9 @@ The server config files are processed in the following order:
 
 [#server-env]
 === server.env
-The `server.env` files are optional. These files are read by the `bin/server` shell script and specify environment variables that are primarily used to influence the behavior of the `bin/server` script. `server.env` files are read from the following locations in order:
+The `server.env` files are optional.
+These files are read by the `bin/server` shell script and specify environment variables that are primarily used to influence the behavior of the `bin/server` script.
+`server.env` files are read from the following locations in order:
 
 . `${wlp.install.dir}/etc/`
 . `${wlp.user.dir}/shared/`
@@ -47,9 +53,13 @@ If the same property is set in multiple locations, then the last value found is 
 
 The most common use of these files is to set the following environment variables:
 
-* `JAVA_HOME` - Indicates which JVM to use. If this is not set, the system default is used.
-* `WLP_USER_DIR` - Indicates the location of the `usr` directory that contains the server config. This can only be set in the `etc/server.env` file because the other locations are relative to the `usr` directory.
-* `WLP_OUTPUT_DIR` - Indicates where the server writes files to. By default, the server writes to the directory structure that the config is read from. However, in some secure profiles the server config needs to be read-only so the server must write files to another location.
+* `JAVA_HOME` - Indicates which JVM to use.
+If this is not set, the system default is used.
+* `WLP_USER_DIR` - Indicates the location of the `usr` directory that contains the server config.
+This can only be set in the `etc/server.env` file because the other locations are relative to the `usr` directory.
+* `WLP_OUTPUT_DIR` - Indicates where the server writes files to.
+By default, the server writes to the directory structure that the config is read from.
+However, in some secure profiles the server config needs to be read-only so the server must write files to another location.
 
 The `server.env` file is in `KEY=value` format, as shown in the following example:
 
@@ -59,11 +69,15 @@ JAVA_HOME=/opt/ibm/java
 WLP_USER_DIR=/opt/wlp-usr
 ----
 
-Key values must not contain spaces. The values are interpreted literally so you don’t need to escape special characters, such as spaces. These files don't support variable substitution.
+Key values must not contain spaces.
+The values are interpreted literally so you don’t need to escape special characters, such as spaces.
+These files don't support variable substitution.
 
 [#jvm-options]
 === jvm.options
-The `jvm.options` files are optional. These files are read by the `bin/server` shell script to determine what options to use when the JVM is launched for {projectName}. `jvm.options` files are read from the following locations in order:
+The `jvm.options` files are optional.
+These files are read by the `bin/server` shell script to determine what options to use when the JVM is launched for {projectName}.
+`jvm.options` files are read from the following locations in order:
 
 . `${wlp.user.dir}/shared/jvm.options`
 . `${server.config.dir}/configDropins/defaults/`
@@ -86,22 +100,32 @@ The `jvm.options` file format uses one line per JVM option, as shown in the foll
 -Dmy.system.prop=This is the value.
 ----
 
-You don’t need to escape special characters, such as spaces. Options are read and provided to the JVM in order. If you provide multiple options, then they are all seen by the JVM. These files do not support variable substitution.
+You don’t need to escape special characters, such as spaces.
+Options are read and provided to the JVM in order.
+If you provide multiple options, then they are all seen by the JVM.
+These files do not support variable substitution.
 
 [#bootstrap-properties]
 === bootstrap.properties
-The `bootstrap.properties` file is optional. This file is read during {projectName} bootstrap to provide config for the earliest stages of the server start-up. It is read by the server earlier than the `server.xml` file so it
-can affect the start-up and behavior of the {projectName} kernel from the start. The `bootstrap.properties` file is a simple Java properties file and is located in `${server.config.dir}`. A common use of the `bootstrap.properties` file is to configure logging because it can affect logging behavior before the `server.xml` file is read.
+The `bootstrap.properties` file is optional.
+This file is read during {projectName} bootstrap to provide config for the earliest stages of the server start-up.
+It is read by the server earlier than the `server.xml` file so it can affect the start-up and behavior of the {projectName} kernel from the start.
+The `bootstrap.properties` file is a simple Java properties file and is located in `${server.config.dir}`.
+A common use of the `bootstrap.properties` file is to configure logging because it can affect logging behavior before the `server.xml` file is read.
 
-The `bootstrap.properties` file supports a special optional property, `bootstrap.include`, which specifies another properties file to also be read during the bootstrap stage. For example, this `boostrap.include` file can contain a common set of bootstrap properties for multiple servers to use. Set the `bootstrap.include` file to an absolute or relative file path.
+The `bootstrap.properties` file supports a special optional property, `bootstrap.include`, which specifies another properties file to also be read during the bootstrap stage.
+For example, this `boostrap.include` file can contain a common set of bootstrap properties for multiple servers to use.
+Set the `bootstrap.include` file to an absolute or relative file path.
 
 [#server-xml]
 === server.xml
+The most important and only required config file is the `server.xml` file.
+The `server.xml` file must be well-formed XML and the root element must be `server`.
+The exact elements that are supported by a server depend on which features are configured, and any unknown config is ignored.
 
-The most important and only required config file is the `server.xml` file. The `server.xml` file must be well-formed XML and the root element must be `server`. The exact elements that are supported by a server depend on which features are configured, and any unknown config is ignored.
-
-{projectName} uses a principle of configuration by exception, which allows for succinct config files. The runtime environment operates from a set of built-in config default settings. You only specify config that overrides
-those default settings.
+{projectName} uses a principle of configuration by exception, which allows for succinct config files.
+The runtime environment operates from a set of built-in config default settings.
+You only specify config that overrides those default settings.
 
 Server config files are read from the following locations in order:
 
@@ -109,10 +133,13 @@ Server config files are read from the following locations in order:
 . `${server.config.dir}/server.xml`
 . `${server.config.dir}/configDropins/overrides/`
 
-The `${server.config.dir}/server.xml` file must be present, but the other files are optional. You can flexibly compose config by dropping server-formatted XML files into directories. Files are read in alphabetical order in each of the two `configDropins` directories.
+The `${server.config.dir}/server.xml` file must be present, but the other files are optional.
+You can flexibly compose config by dropping server-formatted XML files into directories.
+Files are read in alphabetical order in each of the two `configDropins` directories.
 
 == Variable substitution
-You can use variables to parameterize the server config. To resolve variable references to their values, the following sources are consulted in order:
+You can use variables to parameterize the server config.
+To resolve variable references to their values, the following sources are consulted in order:
 
 . `server.xml` default variable values
 . environment variables
@@ -120,7 +147,8 @@ You can use variables to parameterize the server config. To resolve variable ref
 . Java system properties
 . `server.xml` config
 
-Variables are referenced by using the `${variableName}` syntax. Specify variables in the server config, as shown in the following example:
+Variables are referenced by using the `${variableName}` syntax.
+Specify variables in the server config, as shown in the following example:
 
 [source,xml]
 ----
@@ -134,7 +162,9 @@ Default values, which are specified in the `server.xml` file, are used only if n
 <variable name="variableName" defaultValue="some.default.value"/>
 ----
 
-Environment variables can be accessed as variables. As of version 19.0.0.3, you can reference the environment variable name directly. If the variable cannot be resolved as specified, the `server.xml` file looks for the following variations on the environment variable name:
+Environment variables can be accessed as variables.
+As of version 19.0.0.3, you can reference the environment variable name directly.
+If the variable cannot be resolved as specified, the `server.xml` file looks for the following variations on the environment variable name:
 
 * Replace all non-alphanumeric characters with the underscore character (`_`)
 * Change all characters to uppercase
@@ -154,7 +184,9 @@ For versions 19.0.0.3 and earlier, you can access environment variables by addin
               httpPort="9080" />
 ----
 
-Variable values are always interpreted as a string with simple type conversion. Therefore, a list of ports (such as `80,443`) might be interpreted as a single string rather than as two port numbers. You can force the variable substitution to split on the `,` by using a `list` function, as shown in the following example:
+Variable values are always interpreted as a string with simple type conversion.
+Therefore, a list of ports (such as `80,443`) might be interpreted as a single string rather than as two port numbers.
+You can force the variable substitution to split on the `,` by using a `list` function, as shown in the following example:
 
 [source,xml]
 ----
@@ -162,8 +194,8 @@ Variable values are always interpreted as a string with simple type conversion. 
 ----
 
 Simple arithmetic is supported for variables with integer values.
-The left and right sides of the operator can be either a variable or a number. The
-operator can be `+`, `-`, `*`, or `/`, as shown in the following example:
+The left and right sides of the operator can be either a variable or a number.
+The operator can be `+`, `-`, `*`, or `/`, as shown in the following example:
 
 [source,xml]
 ----
@@ -179,24 +211,30 @@ There are a number of predefined variables:
 
 * `wlp.install.dir` - the location where the {projectName} runtime is installed.
 * `wlp.server.name` - the name of the server.
-* `wlp.user.dir` - the location of the `usr` folder. The default is
-  `${wlp.install.dir}/usr`.
-* `shared.app.dir` - the location of shared applications. The default is
-  `${wlp.user.dir}/shared/apps`.
-* `shared.config.dir` - the location of shared config files. The default is
-  `${wlp.user.dir}/shared/config`.
-* `shared.resource.dir` - the location of shared resource files. The default is
-  `${wlp.user.dir}/shared/resources`.
+* `wlp.user.dir` - the location of the `usr` folder.
+The default is `${wlp.install.dir}/usr`.
+* `shared.app.dir` - the location of shared applications.
+The default is `${wlp.user.dir}/shared/apps`.
+* `shared.config.dir` - the location of shared config files.
+The default is `${wlp.user.dir}/shared/config`.
+* `shared.resource.dir` - the location of shared resource files.
+The default is `${wlp.user.dir}/shared/resources`.
 * `server.config.dir` - the directory that server config is stored in.
-  The default is `${wlp.user.dir}/servers/${wlp.server.name}`.
-* `server.output.dir` - the directory where the server writes the workarea, logs, and
-  other runtime-generated files. The default is `${server.config.dir}`.
+The default is `${wlp.user.dir}/servers/${wlp.server.name}`.
+* `server.output.dir` - the directory where the server writes the workarea, logs, and other runtime-generated files.
+The default is `${server.config.dir}`.
 
 == Config merging
-Since the config can consist of multiple files, it is possible that two files provide the same config. In these situations, the server config is merged according to a set of simple rules. In {projectName}, config is separated into singleton and factory config, each of which has its own rules for merging. Singleton config is used to configure a single element (for example, logging). Factory config is used to configure multiple entities, such as an entire application or data source.
+Since the config can consist of multiple files, it is possible that two files provide the same config.
+In these situations, the server config is merged according to a set of simple rules.
+In {projectName}, config is separated into singleton and factory config, each of which has its own rules for merging.
+Singleton config is used to configure a single element (for example, logging).
+Factory config is used to configure multiple entities, such as an entire application or data source.
 
 === Merging singleton config
-For singleton config elements that are specified more than once, the config is merged. If two elements exist with different attributes, both attributes are used. For example:
+For singleton config elements that are specified more than once, the config is merged.
+If two elements exist with different attributes, both attributes are used.
+For example:
 
 [source,xml]
 ----
@@ -215,7 +253,8 @@ is treated as:
 </server>
 ----
 
-If the same attribute is specified twice, then the last instance takes precedence. For example:
+If the same attribute is specified twice, then the last instance takes precedence.
+For example:
 
 [source,xml]
 ----
@@ -234,7 +273,10 @@ is treated as:
 </server>
 ----
 
-Config is sometimes provided by using child elements that take text. In these cases, the config is merged by using all of the values specified. The most common scenario is configuring features. For example:
+Config is sometimes provided by using child elements that take text.
+In these cases, the config is merged by using all of the values specified.
+The most common scenario is configuring features.
+For example:
 
 [source,xml]
 ----
@@ -261,11 +303,14 @@ is treated as:
 ----
 
 === Merging factory config
-Factory config merges use the same rules as singleton config except elements are not automatically merged just because the element names match. With factory config, it is valid to configure the same element and mean two different logical objects. Therefore, each element is assumed to configure a distinct object. If the logical object is configured by two instances, the `id` attribute must be set on each of them to indicate they are the same thing. Variable substitution on an `id` attribute is not supported.
+Factory config merges use the same rules as singleton config except elements are not automatically merged just because the element names match.
+With factory config, it is valid to configure the same element and mean two different logical objects.
+Therefore, each element is assumed to configure a distinct object.
+If the logical object is configured by two instances, the `id` attribute must be set on each of them to indicate they are the same thing.
+Variable substitution on an `id` attribute is not supported.
 
-The following example configures two applications. The first application is `myapp.war`, which has a
-context root of `myawesomeapp`. The other application is `myapp2.war`, which has `myapp2` as
-the context root:
+The following example configures two applications.
+The first application is `myapp.war`, which has a context root of `myawesomeapp`. The other application is `myapp2.war`, which has `myapp2` as the context root:
 
 [source,xml]
 ----
@@ -278,7 +323,9 @@ the context root:
 
 == Include processing
 
-In addition to the default locations, additional config files can be brought in by using the `include` element. When a server config file contains an include reference to another file, the server processes the contents of the referenced file as if they were included inline in place of the `include` element. In the following example, the server processes the contents of the `other.xml` file before it processes the contents of the `other2.xml` file:
+In addition to the default locations, additional config files can be brought in by using the `include` element.
+When a server config file contains an include reference to another file, the server processes the contents of the referenced file as if they were included inline in place of the `include` element.
+In the following example, the server processes the contents of the `other.xml` file before it processes the contents of the `other2.xml` file:
 
 [source,xml]
 ----
@@ -288,7 +335,8 @@ In addition to the default locations, additional config files can be brought in 
 </server>
 ----
 
-By default, the include file must exist. If the include file might not be present, set the `optional` attribute to `true`, as shown in the following example:
+By default, the include file must exist.
+If the include file might not be present, set the `optional` attribute to `true`, as shown in the following example:
 
 [source,xml]
 ----
@@ -297,7 +345,8 @@ By default, the include file must exist. If the include file might not be presen
 </server>
 ----
 
-When you include a file, you can specify the `onConflict` attribute to change the normal merge rules. You can set the value of the `onConflict` attribute to `IGNORE` or `REPLACE` any conflicting config:
+When you include a file, you can specify the `onConflict` attribute to change the normal merge rules.
+You can set the value of the `onConflict` attribute to `IGNORE` or `REPLACE` any conflicting config:
 
 [source,xml]
 ----
@@ -311,9 +360,12 @@ You can set the `location` attribute to a relative or absolute file path, or to 
 
 
 == Config references
-Most config in {projectName} is self-contained but it is often useful to share config. For example, the JDBC driver config might be shared by multiple data sources. You can refer to any factory config element that is defined as a direct child of the `server` element.
+Most config in {projectName} is self-contained but it is often useful to share config.
+For example, the JDBC driver config might be shared by multiple data sources.
+You can refer to any factory config element that is defined as a direct child of the `server` element.
 
-A reference to config always uses the `id` attribute of the element that is being referenced. The config element that makes the reference uses an attribute that always ends with `Ref`, as shown in the following example:
+A reference to config always uses the `id` attribute of the element that is being referenced.
+The config element that makes the reference uses an attribute that always ends with `Ref`, as shown in the following example:
 
 [source,xml]
 ----
@@ -324,7 +376,10 @@ A reference to config always uses the `id` attribute of the element that is bein
 ----
 
 == Dynamic updates
-The server monitors the server XML config for updates and dynamically reloads when changes are detected. Changes to non-XML files (`server.env`, `bootstrap.properties`, and `jvm.options`) are not dynamic because they are only read at start-up. Any server XML config file on the local disk is monitored for updates every 500ms. You can configure the frequency of XML config file monitoring.  For example, to configure the server to monitor every 10 minutes, specify:
+The server monitors the server XML config for updates and dynamically reloads when changes are detected.
+Changes to non-XML files (`server.env`, `bootstrap.properties`, and `jvm.options`) are not dynamic because they are only read at start-up.
+Any server XML config file on the local disk is monitored for updates every 500ms. You can configure the frequency of XML config file monitoring.
+For example, to configure the server to monitor every 10 minutes, specify:
 
 [source,xml]
 ----
@@ -339,7 +394,11 @@ To disable file system polling and reload only when an MBean is notified, specif
 ----
 
 == Log messages
-When the server runs, it might output log messages that reference config. The references in the log use an XPath-like structure to specify config elements. The element name is given with the value of the `id` attribute inside square brackets. If no `id` is specified in the server config, an `id` is automatically generated. Based on the following server XML config example, the `dataStore` element and the child `dataSource` are identified in the logs as `dataStore[myDS]` and `dataStore[myDS]/dataSource[default-0]`.
+When the server runs, it might output log messages that reference config.
+The references in the log use an XPath-like structure to specify config elements.
+The element name is given with the value of the `id` attribute inside square brackets.
+If no `id` is specified in the server config, an `id` is automatically generated.
+Based on the following server XML config example, the `dataStore` element and the child `dataSource` are identified in the logs as `dataStore[myDS]` and `dataStore[myDS]/dataSource[default-0]`.
 
 [source,xml]
 ----
