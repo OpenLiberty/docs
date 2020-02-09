@@ -15,77 +15,37 @@
 JSON Web Tokens (JWT) are used to propagate the user identity that is established by Single sign-on (SSO) between different microservice applications. By configuring SSO user authentication with JWT, you can manage the identity that is shared between applications.
 
 == Enabling identity management with SSO
-To propagate user identity across different services with JWT, the identity must first be established with an SSO method. The OpenID Connect (OIDC) standard for authentication provides the framework that enables identity management with SSO. Within this framework, the Social Login SSO method provides a simplified process that estabishes user identity. For more information, see https://draft-openlibertyio.mybluemix.net/docs/ref/general/#oidc.html[Configuring Open Liberty as a single sign-on provider].
+To propagate user identity across different services with JWT, the identity must first be established with an SSO method. The OpenID Connect (OIDC) standard for authentication provides the framework that enables identity management with SSO. Within this framework, the Social Login SSO method provides a simplified process that establishes user identity. For more information, see https://draft-openlibertyio.mybluemix.net/docs/ref/general/#oidc.html[Configuring Open Liberty as a single sign-on provider].
 
 
 == Propagating user identity with JSON Web Tokens
 //Provide link to Social Login topic here
-After the user identity is established with an SSO method, such as Social Login, you can use JWT to propagate the identity to back-end services. With a signed JWT, you can verify who the user is, when the user requests were made, and any other types of information that the user agreed to you handling, which is called claims. Each consumer of the token can verify that they can trust the claims in it, by verifying that they trust the issuer's signature of the token. After the consumer verifies the signature, they know the content of the token has not been altered since it was created.
+After the user identity is established with an SSO method, such as Social Login, you can use JWT to propagate the identity to back-end services. JWT use claims to transfer authentication and authorization information about a user between services. The claims can verify who the user is, when the user requests were made, and any other types of information that the user agreed to you handling. Each consumer of the token can verify that they can trust the claims in it, by verifying that they trust the issuer's signature of the token. After the consumer verifies the signature, they know that the content of the token isn't altered since it was created. This JWT format allows each of the involved parties to easily agree on a specific set of claims that facilitate the propagation of the user's identity. This propagation of the user's identity can be further defined by the MicroProfile JWT feature (MP-JWT).
 
 
 == Securing microservices with MicroProfile JSON Web Tokens
-The MicroProfile JWT feature provides the standard format that is needed to secure microservices. The JWT format is designed to verify claims between two services. To enable authorization and authentication across different services, the JWT consists of the following sections:
+The MP-JWT feature extends the capabilities of the standard JWT format by providing more support to secure microservices. The MP-JWT feature is designed to verify claims between two services. This verification depends on the agreement between identity providers and service providers. By using the MP-JWT format, the identity providers issue tokens in a way that the service providers can understand to gather information about a user. For more information, see https://openliberty.io/guides/microprofile-jwt.html#adding-the-securesystemclient-class[Securing microservices with JSON Web Tokens].
 
-* The header section of the ID token contains information on the type of object and the specific signature algorithm that is used to protect the integrity of the claims in the payload.
-* The payload section contains the claims about a user and the authentication event.
-* The signature section contains a digital signature based on the payload section of the token and a secret key known to the creator of the JWT.
+=== MicroProfile JSON Web Token required claims
+The MP-JWT feature contains https://www.eclipse.org/community/eclipse_newsletter/2017/september/article2.php#Minimum%20MP-JWT%20Required%20Claims[required claims] that must be specified to propagate user identity. The following example shows the required claims that are specified in a JSON file:
 
-The following example shows the creation of a signed JWT with Java. The following example shows the creation of a signed JWT with Java. Multiple open source libraries for creating and consuming JWT's exist. Liberty also provides API's to complete those actions in the `Jwt-1.0` feature:
 ----
-import java.security.SignatureException;
-import com.google.gson.JsonObject;
-import net.oauth.jsontoken.crypto.HmacSHA256Signer;
-
-import net.oauth.jsontoken.SystemClock;
-import net.oauth.jsontoken.JsonToken;
-import org.joda.time.Duration;
-import org.joda.time.Instant;
-
-public class SampleJWTToken {
-        private static final Duration SKEW = Duration.standardMinutes(5);
-
-        JsonToken jwtToken = null;
-        String[] allPayloadKeys = { "iss", "sub", "aud", "exp", // required
-                                    "nbf", "iat", "jti" }; // optional
-
-        public SampleJWTToken(String clientId,
-                              String keyId,
-                              String signKey,
-                              String audience,
-                              String subject, // user
-                              String jtiId) throws Exception { // InvalidKeyException
-
-                byte[] hs256Key = signKey.getBytes();
-                HmacSHA256Signer hmacSha256Signer = new HmacSHA256Signer(
-                                clientId, keyId, hs256Key);
-                // _rsaSha256Signer = new RsaSHA256Signer(clientId, _keyId,
-                //                                        _privateKey);
-                SystemClock clock = new SystemClock(SKEW);
-                jwtToken = new JsonToken(hmacSha256Signer, clock);
-                JsonObject headerObj = jwtToken.getHeader();
-                JsonObject payloadObj = jwtToken.getPayloadAsJsonObject();
-
-                headerObj.addProperty("alg", "HS256");
-
-                Instant instantExp = clock.now().plus(600000); // 10 minutes
-                jwtToken.setExpiration(instantExp);
-                jwtToken.setAudience(audience);
-                payloadObj.addProperty("iss", clientId);
-                payloadObj.addProperty("sub", subject);
-
-                // optional
-                payloadObj.addProperty("jti", jtiId);
-                jwtToken.setIssuedAt(clock.now()); // issued at time
-        }
-
-        public String getJWTTokenString() throws Exception {
-                String signedAndSerializedString = null;
-                try {
-                        signedAndSerializedString = jwtToken.serializeAndSign();
-                } catch (SignatureException e) {
-                        throw e;
-                }
-                return signedAndSerializedString;
-        }
+{
+    "typ": "JWT",
+   "alg": "RS256",
+   "kid": "abc-1234567890"
+}
+{
+      "iss": "https://server.example.com",
+      "aud": "s6BhdRkqt3",
+      "jti": "a-123",
+      "exp": 1311281970,
+      "iat": 1311280970,
+      "sub": "24400320",
+      "upn": "jdoe@server.example.com",
+      "groups": ["red-group", "green-group", "admin-group", "admin"],
 }
 ----
+
+=== Mapping JAX-RS methods to MicroProfile JSON Web Tokens
+To verify token claims, the MP-JWT feature maps JWT token claims to Java EE container APIs such as JAX-RS. JAX-RS methods enable the MP-JWT feature to retrieve confidential information and verify claims from the security token.
