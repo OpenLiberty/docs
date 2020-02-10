@@ -6,7 +6,7 @@
 :seo-description: OpenID Connect (OIDC) is an identity protocol based on OAuth 2.0 that is widely used in SSO technologies. OIDC works well with cloud, mobile, and native applications.
 = Configuring Open Liberty as a single sign-on provider
 
-In an increasingly fragile world of the internet, user credentials are precious resources that need to be protected. With single sign-on (SSO), users can log in easily without worrying that their credentials are being disclosed. Open Liberty helps you with identity management.
+Single sign-on is a process to sign in once with your credentials to access multiple applications. OpenID Connect (OIDC) is a protocol that helps developers to authenticate users without the need to manage user credentials.
 
 You can configure Open Liberty as an SSO provider. Users need one time authentication to access Open Liberty resources such as HTML, JavaServer Pages (JSP) files, and servlets. Users can also access resources in multiple Open Liberty servers that share Lightweight Third Party Authentication (LTPA) keys with a single sign-on.
 
@@ -22,26 +22,18 @@ Using Open Liberty as an OP provides the following benefits:
 - Open Liberty OP can be configured as token services by delegating user authentication to a SAML identity provider or another OpenID Connect provider
 - Open Liberty OP is highly customizable. You can customize the claims in ID Token, user info, login form, consent form.
 
-== The OpenID Connect Provider (openidConnectServer-1.0) feature
+== The OpenID Connect Provider feature
 
-You can configure an Open Liberty server to act as an OpenID Connect Provider by enabling the https://openliberty.io/docs/ref/feature/#openidConnectServer-1.0.html[openidConnectServer-1.0] feature in Liberty.
+You can configure an Open Liberty server to act as an OpenID Connect Provider by enabling the https://openliberty.io/docs/ref/feature/#openidConnectServer-1.0.html[OIDC provider] feature.
 
 
 == Configuring Open Liberty as an SSO provider
 
 The OpenID Connect Provider (openidConnectServer-1.0) feature can be configured to manage user authentication for OpenID Connect clients and microservices. The OpenID Connect Provider can work directly with a user registry such as LDAP or act as an identity broker and delegate to another security provider.
 
-Add the `openidConnectServer-1.0` Liberty feature and any other needed features to the `server.xml` file. The `transportSecurity-1.0` feature is also required for the `openidConnectServer-1.0` feature.
+Add the OP Liberty feature and any other needed features to the `server.xml` file. Define an `OAuth` service provider. Any user that is authorized to use OpenID Connect must also be mapped to the authenticated `oauth-role`.
 
-[source, java]
-----
-<feature>openidConnectServer-1.0</feature>
-<feature>transportSecurity-1.0</feature>
-----
-
-Define an `OAuth` service provider. The configuration of an `OAuth` service provider includes the appropriate `oauth-roles`, `oauthProvider`, and user registry elements. Any user that is authorized to use OpenID Connect must also be mapped to the authenticated `oauth-role`.
-
-In the following example, the OP expects the client's SSL port to be set to 443.
+In the following example, the OP expects the client's SSL port to be set to `443`:
 
 [source, java]
 ----
@@ -60,11 +52,7 @@ scope="openid profile email">
 </oauthProvider>
 ----
 
-Add an `openidConnectProvider` element with the `oauthProviderRef` attribute references the configured `oauthProvider`. Each `oauthProvider` can be referenced by only one `openidConnectProvider`. Two or more `openidConnectProvider` elements cannot reference to the same `oauthProvider`. The name attribute and the secret attribute of the client element must match the client ID and the client secret of the corresponding OpenID Connect Client.
-
 Configure the truststore of the server to include the signer certificates of the OpenID Connect Relying Parties, or clients, that are supported.
-
-Modify the SSL configuration of the server to use the configured truststore.
 
 [source, java]
 ----
