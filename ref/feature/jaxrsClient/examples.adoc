@@ -18,30 +18,30 @@ public Widget getRemoteWidget(String id) {
 }
 ----
 
-When this application is deployed in a production environment, however, it might be necessary to modify these settings. This can be accomplished by adding the following configuration to the server config (`server.xml`):
+When this application is deployed in a production environment, however, it might be necessary to add new settings. This can be accomplished by adding the following configuration to the server config (`server.xml`):
 
 **LC: I think this implies that you can override the Java values with the server.xml values when that isn't what happens. Can you change how this is explained? I assume you need to leave the values out of the Java code for this to work?**
 
 [source,xml]
 ----
 <webTarget uri="https://somehost:9443/WidgetStore*" proxyHost="myProxyHost" proxyPort="55555" proxyType="HTTP"
-           connectionTimeout="30000" receiveTimeout="30000" />
+           connectionTimeout="60000" receiveTimeout="60000" />
 ----
 
-This changed configuration alters the `WebTarget` in the Java code to use the specified HTTP proxy server (`myProxyHost:55555`) and use connection and receive timeouts of 30 seconds (30,000 milliseconds).
+This configuration alters the `WebTarget` in the Java code to use the specified HTTP proxy server (`myProxyHost:55555`) and use connection and receive timeouts of 60 seconds (60,000 milliseconds) instead of the default timeouts.
 
 === Simplifying SSL configuration in development
 
-During development, an SSL certificate might not match the server hostname on which the application is being tested because it matches the server hostname on which the application will ultimately be deployed in production. The configuration can be changed during development to use a different SSL configuration or to disable hostname verification of SSL certificates (this is not recommended in production environments). You can or update a custom property:
+During development, an SSL certificate might not match the server hostname on which the application is being tested because it matches the server hostname on which the application will ultimately be deployed in production. The configuration can be changed during development to use a different SSL configuration or to disable hostname verification of SSL certificates (this is not recommended in production environments):
 
 [source,xml]
 ----
 <webTarget uri="https://somehost:9443/WidgetStore*" sslConfig="mySSLRef" disableCNCheck="true" />
 ----
 
-**LC: Needs an example for why and how you'd use custom properties here, and maybe a sub-heading...**
+If your application uses providers such as a `ClientRequestFilter`, `ClientResponseFilter`, etc. then they could read and react to custom properties specified on the JAX-RS Client or WebTarget.  It is also possible to change Open Liberty's client implementation behavior by specifying custom properties.  These would normally be specified programmatically via `webTarget.property("myCustomProperty", "someValue")`.
 
-You can also specify custom properties for the `WebTarget`:
+You can also specify custom properties for the `WebTarget` in the configuration:
 
 [source,xml]
 ----
