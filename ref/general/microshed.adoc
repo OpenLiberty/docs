@@ -1,0 +1,80 @@
+:page-layout: general-reference
+:page-type: general
+:page-description: MicroShed testing helps you to write integration tests using testcontainers for Java microservice applications. With MicroShed testing you can test your Open Liberty application from outside the container so you are testing the exact same image that runs in production.
+:page-categories: MicroShed testing
+:seo-title: Testing in a container with MicroShed testing
+:seo-description:  MicroShed testing helps you to write integration tests using testcontainers for Java microservice applications. With MicroShed testing you can test your Open Liberty application from outside the container so you are testing the exact same image that runs in production.
+= Testing in a container
+
+MicroShed testing helps you to write integration tests by using Testcontainers for Java microservice applications. With MicroShed testing you test your application in the same container that you use in production, thus reducing the risk of test failure.
+
+Integration testing looks at microservices as a group and tests them as a whole unit. Intergration testing offers advantages over other types of testing, for example, detecting bugs earlier in the cycle.
+
+== Why integration testing
+
+In integration testing, you can put together individual pre-tested modules and test them as a group. Integration testing follows unit testing. The modules used are previously unit tested, but now they are now tested as a whole to evaluate compliance and functionality.
+
+
+== What challenges does MicroShed resolve
+
+An application might run differently in production as compared to test/dev environment. This can cause a test to fail in production though it passed in  dev/test. You can address this issue by testing your application in the same container that you’ll use in production.
+
+Running tests in development mode is convenient for local development, but it can be tedious to test against a running Open Liberty server in non-development scenarios such as CI/CD pipelines. For this reason, MicroShed Testing can start and stop the application runtime before and after the tests are run. This process is primarily accomplished by using Docker and Testcontainers.
+
+
+
+
+== How it works
+
+
+
+You can use MicroShed Testing to develop integration tests for your Open Liberty application. You test your application from outside its container so that the tests run against the same image that you use in production.
+
+To write a test with MircoShed testing, first add `microshed-testing-testcontainers` and `junit-jupiter` artifact IDs as test-scoped dependencies, as shown in the following example:
+
+[source,java]
+----
+<dependency>
+    <groupId>org.microshed</groupId>
+    <artifactId>microshed-testing-testcontainers</artifactId>
+    <version>0.4.1</version>
+    <scope>test</scope>
+</dependency>
+
+<!-- Any compatible version of JUnit Jupiter 5.X will work -->
+<dependency>
+    <groupId>org.junit.jupiter</groupId>
+    <artifactId>junit-jupiter</artifactId>
+    <version>5.4.2</version>
+    <scope>test</scope>
+</dependency>
+----
+
+Next, create a test class with the `MicroShedTest` annotation. Then, create a public `static MicroProfileApplication` method and inject one or more `public static JAX-RS` resources, as shown in the following example:
+
+[source,java]
+----
+@MicroShedTest
+public class MyTest {
+
+    @Container
+    public static MicroProfileApplication app = new MicroProfileApplication()
+                    .withAppContextRoot("/myservice");
+
+    @Inject
+    public static MyService mySvc;
+
+    // write @Test methods as normal
+----
+
+    In cases where a Dockerfile or container image is not available, use the `microshed-testing-liberty` adapter. This adapter produces a container image that is similar to the following Dockerfile:
+
+[source,java]
+----
+    FROM open-liberty:microProfile3
+ADD build/libs/$APP_FILE /config/dropins
+COPY src/main/liberty/config /config
+----
+
+
+Ready to try using MicroShed Testing to test a MicroProfile or Jakarta EE application? Check out our guide https://openliberty.io/guides/microshed-testing.html[Testing a MicroProfile or Jakarta EE application]
