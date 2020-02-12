@@ -1,0 +1,78 @@
+== Examples
+
+=== Config example for OIDC server
+
+[source,xml]
+----
+<server>
+    <featureManager>
+        <!-- The jdbc-4.0 feature is needed if using a database to store OAuth clients, as shown in this example. A database is the recommended storage type to use in production. -->
+        <feature>jdbc-4.0</feature>
+        <feature>openidConnectServer-1.0</feature>
+    </featureManager>
+
+    <openidConnectProvider
+        id="OP"
+        oauthProviderRef="OAuth"
+        jwkEnabled="true" />
+
+    <oauthProvider id="OAuth"  tokenFormat="mpjwt" >
+        <!-- This indicates that the OAuth provider will use a database to store OAuth clients instead of manually configuring them in the server configuration. -->
+        <databaseStore
+            dataSourceRef="OAuthFvtDataSource"
+            user="dbuser"
+            password="dbpwd" />
+    </oauthProvider>
+
+    <!-- This example uses Derby as the configured database, but any database type that is supported by Liberty can be used. -->
+    <dataSource
+        id="OAuthFvtDataSource"
+        jndiName="jdbc/OAuth2DB"
+        jdbcDriverRef="DerbyEmbedded"
+    >
+        <properties.derby.embedded databaseName="memory:oAuthDB" createDatabase="create" />
+    </dataSource>
+    <jdbcDriver id="DerbyEmbedded">
+        <library>
+            <fileset dir="${server.config.dir}/derby" includes="derby.jar" />
+        </library>
+    </jdbcDriver>
+
+    <oauth-roles>
+        <authenticated>
+            <special-subject type="ALL_AUTHENTICATED_USERS" />
+        </authenticated>
+    </oauth-roles>
+
+    <!-- An OpenID Connect server needs a user registry to authenticate users. This example points to an external LDAP server that maintains the user registry. -->
+    <ldapRegistry id="bluepages" realm="w3" host="bluepages.ibm.com" port="389" ignoreCase="true" baseDN="o=ibm.com" ldapType="IBM Tivoli Directory Server" >
+        <idsFilters
+            userFilter="(&amp;(emailAddress=%v)(objectclass=person))"
+            groupFilter="(&amp;(cn=%v)(objectclass=groupOfUniqueNames))"
+            userIdMap="*:emailAddress"
+            groupIdMap="*:cn"
+            groupMemberIdMap="groupOfUniqueNames:uniquemember" />
+    </ldapRegistry>
+
+    <!-- In order to communicate with OpenID Connect clients over TLS, the trust store used by the OpenID Connect server must contain the appropriate SSL certificates of the respective OpenID Connect clients. -->
+    <sslDefault sslRef="DefaultSSLSettings" />
+    <ssl
+        id="DefaultSSLSettings"
+        keyStoreRef="myKeyStore"
+        trustStoreRef="myTrustStore"
+        clientAuthenticationSupported="true" />
+    <keyStore
+        id="myKeyStore"
+        password="Liberty"
+        type="jks"
+        location="${server.config.dir}/commonBasicKeyStore.jks" />
+    <keyStore
+        id="myTrustStore"
+        password="Liberty"
+        type="jks"
+        location="${server.config.dir}/commonTrustStore.jks" />
+
+    <httpEndpoint id="defaultHttpEndpoint" host="*" httpPort="29080" httpsPort="29443" />
+
+</server>
+----
