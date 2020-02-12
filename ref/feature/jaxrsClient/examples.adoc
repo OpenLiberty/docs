@@ -1,26 +1,22 @@
 == Examples
 
-**LC: Could do with an introductory sentence here...**
-
-=== Overriding JAX-RS Client configuration when moving to production
 The JAX-RS Client APIs allow you to specify properties on the client that configure settings like timeouts, proxy
-hosts, SSL properties, and so on. If the application is deployed in a different environment, these settings might need to change. For example, an application might initially be written to run in a development environment, where all remote RESTful services are available without a proxy server and can connect very quickly:
+hosts, SSL properties, and so on. You can set these properties in the Java code or in the server configuration. The following examples show how you can set `webTarget` values in the `server.xml` so that you can change them without having to edit and recompile the Java code.
+
+=== Changing values when moving from development to production environments
+If the application is deployed in a different environment, these settings might need to change. For example, an application might initially be written to run in a development environment, where all remote RESTful services are available without a proxy server and can connect very quickly:
 
 [source,java]
 ----
 public Widget getRemoteWidget(String id) {
     Client client = ClientBuilder.newClient();
     WebTarget target = client.target("https://somehost:9443/WidgetStore/widgets/");
-    target.property("com.ibm.ws.jaxrs.client.connection.timeout", 5000); // 5 seconds
-    target.property("myCustomProperty", "dev");
     Widget widget = target.path(id).request().get(Widget.class);
     return widget;
 }
 ----
 
 When this application is deployed in a production environment, however, it might be necessary to add new settings. This can be accomplished by adding the following configuration to the server config (`server.xml`):
-
-**LC: I think this implies that you can override the Java values with the server.xml values when that isn't what happens. Can you change how this is explained? I assume you need to leave the values out of the Java code for this to work?**
 
 [source,xml]
 ----
@@ -38,6 +34,8 @@ During development, an SSL certificate might not match the server hostname on wh
 ----
 <webTarget uri="https://somehost:9443/WidgetStore*" sslConfig="mySSLRef" disableCNCheck="true" />
 ----
+
+=== Setting custom properties
 
 If your application uses providers such as a `ClientRequestFilter`, `ClientResponseFilter`, etc. then they could read and react to custom properties specified on the JAX-RS Client or WebTarget.  It is also possible to change Open Liberty's client implementation behavior by specifying custom properties.  These would normally be specified programmatically via `webTarget.property("myCustomProperty", "someValue")`.
 
