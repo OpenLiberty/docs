@@ -1,0 +1,32 @@
+The OpenID Connect Provider (openidConnectServer-1.0) feature can be configured to manage user authentication for OpenID Connect clients and microservices during development.
+The OpenID Connect Provider can work directly with a user registry such as LDAP or act as an identity broker and delegate to another security provider.
+In production, the application uses a cloud-hosted SSO provider.
+
+Add the OP Open Liberty feature and any other needed features to the server.xml file.
+Define an OAuth service provider.
+Any user that is authorized to use OpenID Connect must also be mapped to the authenticated OAuth-role.
+
+In the following example, the OP expects the client’s SSL port to be set to 443:
+
+<openidConnectProvider id="OidcConfigSample" oauthProviderRef="OAuthConfigSample" />
+
+<oauthProvider id="OAuthConfigSample">
+<localStore>
+<!-- localstore is for test/dev use and not for production -->
+<client name="client01" secret="{xor}LDo8LTor"
+displayname="client01"
+scope="openid profile email">
+   <redirect>https://server.example.com:443/oidcclient/redirect/client01</redirect>
+   <redirect>https://server2.example.com:443/oidcclient/redirect/client01</redirect>
+</client>
+</localStore>
+</oauthProvider>
+
+Configure the truststore of the server to include the signer certificates of the OpenID Connect Relying Parties, or clients, that are supported.
+
+<sslDefault sslRef="DefaultSSLSettings" />
+<ssl id="DefaultSSLSettings" keyStoreRef="myKeyStore" trustStoreRef="myTrustStore" />
+<keyStore id="myKeyStore" password="{xor}Lz4sLCgwLTs=" type="jks" location="${server.config.dir}/resources/security/BasicKeyStore.jks" />
+<keyStore id="myTrustStore" password="{xor}Lz4sLCgwLTs=" type="jks" location="${server.config.dir}/resources/security/BasicTrustStore.jks" />
+
+OpenID Connect is configured to use the default SSL configuration that is specified by the server. Therefore, the default SSL configuration for the server must use the truststore that is configured for OpenID Connect.
