@@ -10,7 +10,7 @@ MicroShed testing helps you to write integration tests for Java microservice app
 With MicroShed testing, you reduce the risk of test failure by testing your application in the same container that you use in production.
 
 Integration testing looks at microservices as a group and tests them as a whole unit.
-Intergration testing offers advantages over other types of testing, for example, detecting bugs earlier in the cycle.
+Integration testing offers advantages over other types of testing, for example, detecting bugs earlier in the cycle.
 
 == Why integration testing
 
@@ -20,15 +20,11 @@ After individual modules are unit tested, integration testing looks at the modul
 == What challenges does MicroShed resolve
 
 An application might run differently in production as compared to the development and testing environment.
-This can cause a test to fail in production though it passed in  development.
+Differences between the environments can cause a test to fail in production, even though it passed in development.
 You can address this issue by testing your application in the same container that you use in production.
 
-Running tests in development mode is convenient for local development, but it can be tedious to test against a running Open Liberty server in non-development scenarios, such as CI/CD pipelines.
+Running tests in development mode is convenient for local development, but it can be tedious to test against a running Open Liberty server in production scenarios, such as CI/CD pipelines.
 For this reason, MicroShed Testing can start and stop the application runtime before and after the tests are run.
-This process is primarily accomplished by using Docker and Testcontainers.
-
-
-
 
 == How it works
 
@@ -37,7 +33,7 @@ You test your application from outside its container so that the tests run again
 
 To write a test with MircoShed testing, first add `microshed-testing-testcontainers` and `junit-jupiter` artifact IDs as test-scoped dependencies, as shown in the following example:
 
-[source,java]
+[source,xml]
 ----
 <dependency>
     <groupId>org.microshed</groupId>
@@ -58,7 +54,7 @@ To write a test with MircoShed testing, first add `microshed-testing-testcontain
 Next, create a test class with the `MicroShedTest` annotation.
 Then, create a public `static MicroProfileApplication` method and inject one or more `public static JAX-RS` resources, as shown in the following example:
 
-[source,java]
+[source,xml]
 ----
 @MicroShedTest
 public class MyTest {
@@ -73,13 +69,12 @@ public class MyTest {
     // write @Test methods as normal
 ----
 
-[source,java]
-----
-
 In cases where a Dockerfile or container image is not available, use the `microshed-testing-liberty` adapter.
 This adapter produces a container image that is similar to the following Dockerfile:
 
-    FROM open-liberty:microProfile3
+[source,xml]
+----
+FROM open-liberty:microProfile3
 ADD build/libs/$APP_FILE /config/dropins
 COPY src/main/liberty/config /config
 ----
