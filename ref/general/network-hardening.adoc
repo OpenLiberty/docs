@@ -1,0 +1,208 @@
+// Copyright (c) 2020 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description:
+:seo-title: Network security hardening
+:seo-description:
+:page-layout: general-reference
+:page-type: general
+= Network security hardening
+
+Network intrusions occur when unauthorized users gain access to network activity.
+With this access, they can alter traffic and steal network resources.
+
+// General questions
+// What's the advice for where to put things in the cloud? Is this determined by the cloud or do you have to decide for yourself?
+
+== Firewalls
+Your production environment needs to run inside a firewall so your applications don't run in the demilitarized zone (DMZ).
+The DMZ is an intermediary zone where proxy and web servers run that is located between public and private networking zones.
+Typically, your network setup includes two firewalls, a perimeter firewall and a backend firewall.
+The perimeter firewall exists between the public zone and the DMZ, and the backend firewall exists between the DMZ and the private zone.
+
+== TLS connectivity
+Open Liberty provides a simple TLS configuration with the link:/docs/ref/feature/#transportSecurity.html[Transport Security feature].
+The Transport Security feature enables the link:/docs/ref/feature/#ssl.html[SSL feature] to support SSL connections and adds the ability to configure outbound transports.
+TLS uses signed public keys to protect HTTP, IIOP, LDAP, MQ, JDBC, and messaging traffic between Open Liberty messaging engines, J2C, and SOAP traffic.
+The default TLS config is simple and easy to configure, but it is not suitable for use in production because it generates a self-signed certificate.
+The auto-generated certificate is convenient for development purposes, but certificates used in production should be signed by a trusted authority, such as Verisign.
+
+With Open Liberty, proxies are configurable and no proxies are trusted by default.
+For protection at the transport level when traffic comes in by proxy, make required Open Liberty servers accessible to only trusted proxies.
+Disable non-TLS ports wherever possible.
+Exposing only TLS-enabled ports requires careful consideration of the `server.xml` file because some features may automatically enable non-TLS ports.
+Disable non-TLS ports by setting them to `-1`, as shown in the following example:
+
+[source,xml]
+----
+<httpEndpoint id="defaultHttpEndpoint" httpPort="-1" httpsPort="9445" />
+----
+
+=== Mutual authentication
+Methods of authentication are configurable by application, meaning that applications running on the same server can use different means of authentication.
+For example, if two applications are running on an Open Liberty server, one might use client authentication while the other uses basic authentication.
+Open Liberty has two modes for client certificate authentication:
+
+* *Supported*: The client might present a TLS certificate, but it is not required.
+If the client presents an untrusted certificate, the certificate is ignored.
+If the certificate is trusted, it can be used for application authentication.
+* *Required*: The client must present a trusted TLS certificate.
+If the certificate isn't sent or an untrusted certificate is sent, the connection is rejected.
+
+For production environments, use mutual (2-way) TLS authentication whenever possible.
+Mutual authentication is certificate-based authentication for clients.
+If you use mutual authentication in conjunction with a proxy, consider using the link:/docs/ref/config/#httpDispatcher.html[`httpDispatcher`] parameter with the link:/docs/ref/config/#httpDispatcher.html#trustedHeaderOrigin[`trustedHeaderOrigin`] option.
+This parameter ensures that only specified IP origins are permitted to authenticate:
+
+[source,xml]
+----
+<httpDispatcher trustedHeaderOrigin=“10.20.30.40, 10.20.50.60” />
+----
+
+// What does setting these parameters do?
+When you use mutual authentication and users log in directly to an Open Liberty server without a proxy, set the following parameters in the `server.xml` file:
+
+[source,xml]
+----
+<webcontainer trusted=“false” /> or
+<httpDispatcher trustedHeaderOrigin=“none” />
+----
+
+=== LDAP servers
+Ensure that any links from the Open Liberty server to LDAP servers are secured by TLS.
+
+The following snippet shows an example of how to enable TLS for an LDAP connection:
+
+[source,xml]
+----
+<ssl id="ldapSSLConfig" keyStoreRef="ldapTrustStore" trustStoreRef="ldapTrustStore" /> // <1>
+
+<keyStore id="ldapTrustStore" location="ldapTrustStore.jks" type="JKS"
+  password="{xor}BQUFbm1sa2o=" />
+
+<ldapRegistry id="MyLdap" realm="SampleLdapRealm"
+  host="host.domain.com" port="636" ignoreCase="true" baseDN="o=domain,c=us"
+  ldapType="OpenLDAP" idsFilters="myidsfilters"
+  sslEnabled="true" // <2>
+  sslRef="ldapSSLConfig" /> // <3>
+----
+<1> Sets the TLS `id`
+<2> Enables TLS for the LDAP registry
+<3> `sslRef` attribute references the TLS `id`
+
+== LTPA best practices
+Lightweight Third-Party Authentication (LTPA) is a single sign-on (SSO) technology that uses cookies or binary tokens for authentication.
+For more information about how to use LTPA for SSO, see link:/docs/ref/general/#sso-config-ltpa.html[SSO configuration with LTPA cookies].
+
+There are several measures that you can take to harden your network when you use LTPA with SSO.
+By default, LTPA cookies are sent over HTTPS or HTTP connections.
+For production purposes, the cookie that carries the LTPA token (`ltpaToken2`) must be protected.
+If it's stolen, an intruder can act in place of the authenticated user until the token expires.
+Cookies support the `secure` attribute, which tells the browser to send a cookie over HTTPS connections only.
+Set the option in the `server.xml` file to require that LTPA cookies are sent over TLS connections:
+
+[source,xml]
+----
+<webAppSecurity ssoRequiresSSL='true' />
+----
+
+// Why do you replace LTPA keys regularly?
+Replace LTPA keys regularly.
+To replace the keys, delete the `ltpa.keys` file and wait for the server to automatically regenerate them.
+Then, copy the new keys file to the file systems for other servers that share the keys.
+
+In production environments, the cookie for LTPA should be used only for HTTP requests and not for anything else, such as JavaScript applications.
+The following example restricts the use of LTPA cookies to only HTTP connections:
+
+// Does this include HTTPS?
+[source,xml]
+----
+<webAppSecurity httpOnlyCookies='true' />
+----
+
+You can also use the `cookieHttpOnly` attribute to help prevent cross-site scripting attacks.
+When set to `true`, this attribute specifies that session cookies must include the `HttpOnly` field.
+Browsers that support the `HttpOnly` field don't allow client-side scripts to access cookies:
+
+[source,xml]
+----
+<httpSession cookieHttpOnly='true' />
+----
+
+== Automated updates
+Config updates must be carefully controlled in production environments to reduce the possibility that unknown changes or vulnerabilities are deployed to users.
+By default, each server contains a monitored application directory named `dropins/configDropins`.
+When an application is placed in this directory, the server automatically deploys and starts the application.
+If you update config in the `server.xml` file or `configDropins` directory, the server automatically deploys the config changes.
+
+To ensure that you deploy only explicitly configured applications, you can disable monitoring of the `dropins/configDropins` directory:
+
+[source,xml]
+----
+<appliciationMonitor updateTrigger="mbean" dropinsEnabled="false" />
+----
+
+You can also disable automatic config updates by using the following config:
+
+[source,xml]
+----
+<config updateTrigger="mbean" />
+----
+
+// Do we need this section? Was this supposed to be done by 2013? Would we still need transition mode information?
+== SP 800-131a
+You can set up Open Liberty to meet the SP 800-131a requirements that are defined by the National Institute of Standards and Technology (NIST).
+SP 800-131a strengthens security by defining stronger cryptographic keys and more robust algorithms.
+This specification supports strict and transition modes.
+The transition mode allows for a phased adoption of strict mode.
+
+== Welcome page and headers
+For production, you can disable Open Liberty's welcome page.
+The welcome page is enabled by default, and accessing the `/` root context displays the Open Liberty homepage.
+Disable this homepage by setting the `enableWelcomePage` custom property to `false` in the `server.xml` file:
+
+[source,xml]
+----
+<httpDispatcher enableWelcomePage="false" />
+----
+
+// Why would you disable these headers?
+Open Liberty server headers are also enabled by default.
+Setting the `removeServerHeader` custom property to `true` removes server implementation information from HTTP headers:
+
+[source,xml]
+----
+<httpOptions removeServerHeader="true" />
+----
+
+You can disable the _X-Powered-By_ header if you don't want to reveal which server is running.
+Setting the `disableXPoweredBy` custom property to `true` disables the _X-Powered-By_ header, which prevents the header from being sent on the HTTP response:
+
+[source,xml]
+----
+<webContainer disableXPoweredBy="true" />
+----
+
+== Session overflow
+Restrict the number of sessions that can be created for applications that use in-memory sessions by disabling HTTP session overflow.
+Restricting sessions can help prevent denial-of-service attacks in which attackers continually generate new sessions until all JVM memory is exhausted:
+
+[source,xml]
+----
+<httpSession allowOverflow="false" maxInMemorySessionCount="1000" alwaysEncodeURL="true" cookieSecure="true" cookieHttpOnly="true" />
+----
+
+// Why must you secure this connector?
+== JMX connector
+You can secure access to the Open Liberty JMX connector for remote admin services in the web server plug-in by removing or commenting out the following entries:
+
+[source,xml]
+----
+<!-- <Uri AffinityCookie="JSESSIONID" AffinityURLIdentifier="jsessionid" Name="/ibm/api/*" />
+<Uri AffinityCookie="JSESSIONID" AffinityURLIdentifier="jsessionid" Name="/IBMJMXConnectorREST/*" /> -->
+----

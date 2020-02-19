@@ -1,0 +1,51 @@
+// Copyright (c) 2020 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-layout: general-reference
+:page-type: general
+:seo-title: SSO configuration with JSON Web Tokens - OpenLiberty.io
+:seo-description:
+= SSO configuration with JSON Web Tokens
+
+JSON Web Tokens (JWT) are used to propagate the user identity that is established by Single sign-on (SSO) between different microservice applications. By configuring SSO user authentication with JWT, you can manage the identity that is shared between applications.
+
+== Enabling identity management with SSO
+To propagate user identity across different services with JWT, the identity must first be established with an SSO method. The OpenID Connect (OIDC) standard for authentication provides the framework that enables identity management with SSO. Within this framework, the Social Login SSO method provides a simplified process that establishes user identity. For more information, see https://draft-openlibertyio.mybluemix.net/docs/ref/general/#oidc.html[Configuring Open Liberty as a single sign-on provider].
+
+
+== Propagating user identity with JSON Web Tokens
+//Provide link to Social Login topic here
+After the user identity is established with an SSO method, such as Social Login, you can use JWT to propagate the identity to back-end services. JWTs use claims to transfer authentication and group membership information about a user between services. The claims can verify who the user is, when the user requests were made, and any other types of information that the user agreed to be handled by you. Each consumer of the token can verify that they can trust the claims in it, by verifying that they trust the issuer's signature of the token. After the consumer verifies the signature, they know that the content of the token isn't altered since it was created. This JWT format allows each of the involved parties to easily agree on a specific set of claims that facilitate the propagation of the user's identity. This propagation of the user's identity can be further defined by the MicroProfile JWT feature (MP-JWT).
+
+
+== Securing microservices with MicroProfile JSON Web Tokens
+The MP-JWT feature extends the capabilities of the standard JWT format by providing more support to secure microservices. The MP-JWT feature is designed to verify claims between two services and make accessing claim information easy for application developers. This verification depends on the agreement between identity providers and service providers. By using the MP-JWT format, the identity providers issue tokens in a way that the service providers can understand to gather information about a user. For more information, see https://openliberty.io/guides/microprofile-jwt.html[Securing microservices with JSON Web Tokens].
+
+=== MicroProfile JSON Web Token required claims
+The MP-JWT feature contains https://www.eclipse.org/community/eclipse_newsletter/2017/september/article2.php#Minimum%20MP-JWT%20Required%20Claims#Minimum%20MP-JWT%20Required%20Claims[required claims] that must be specified to propagate user identity. The following example shows the required claims that are specified in a JSON file:
+
+----
+{
+    "typ": "JWT",
+   "alg": "RS256",
+   "kid": "abc-1234567890"
+}
+{
+      "iss": "https://server.example.com",
+      "aud": "s6BhdRkqt3",
+      "jti": "a-123",
+      "exp": 1311281970,
+      "iat": 1311280970,
+      "sub": "24400320",
+      "upn": "jdoe@server.example.com",
+      "groups": ["red-group", "green-group", "admin-group", "admin"],
+}
+----
+
+=== Using JSON Web Tokens with JAX-RS applications
+The MP-JWT specification defines how JWTs interact with Jave EE container security so they are easily used with JAX-RS applications. For more information, see the https://ftp.fau.de/eclipse/microprofile/microprofile-jwt-auth-1.1/microprofile-jwt-auth-spec.pdf[Eclipse MicroProfile Interoperable JWT RBAC specification].
