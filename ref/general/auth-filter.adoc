@@ -31,6 +31,8 @@ To specify an authentication filter, configure link:/docs/ref/config/#authFilter
 
 == Authentication filter examples
 
+The following examples demonstrate how to configure authentication filters for different kinds of requests and applications.
+
 === Request URL contains a pattern
 The following example shows a typical configuration for an authentication filter. In this configuration, any incoming request with a request URL that contains the `/SimpleServlet` pattern is processed by the service that is configured to use this filter.
 
@@ -81,25 +83,25 @@ The following example shows how to use wildcards in the `remoteAddress` element.
 </authFilter>
 ----
 
-=== Excluding patterns
-The following example shows how to use a piped list of values for the `requestUrl` element. If the request URL matches any of the patterns in the list, it satisfies the requirements of that particular element. In this example, the request URL must contain either `/SimpleServlet,` `/EmployeeRoleServlet`, or `/AllRoleServlet`. In addition, the request URL must not contain `/ManagerRoleServlet` and  it must come from an Internet Explorer user agent.
+=== Request must not contain certain patterns or originate from a certain IP address
+The following example shows how to exclude certain requests by setting the `matchType` attribute to `notContain`. If values in the request match elements in the filter for which the `matchType` attribute is set to `notContain`, the request fails to satisfy the filter requirements. In this example, the request URL must not contain the `/ManagerRoleServlet` pattern and it must not come from an Internet Explorer user agent.
 
 [source,java]
 ----
 <authFilter id="myAuthFilter">
-         <requestUrl id="myURL1" urlPattern="/SimpleServlet|/EmployeeRoleServlet|/AllRoleServlet" matchType="contains" />
          <requestUrl id="myURL2" urlPattern="/ManagerRoleServlet" matchType="notContain" />
-         <userAgent id="myAgent" agent="IE" matchType="contains" />
+         <userAgent id="myAgent" agent="IE" matchType="notContain" />
 </authFilter>
 ----
-== Using all sub-elements
+
+=== Request contains a specified set of sub elements
 To process an incoming request with the service configured to use this filter, the request must meet the following conditions:
 
 * Contains the `/SimpleServlet` pattern in the request URL
 * Targets a domain that contains `host.example.com`
 * Comes from the IP address `127.0.0.1`
 * Comes from a Firefox browser
-* Target application is named `myApp`
+* Targets an application that is named `myApp`
 
 [source,java]
 ----
