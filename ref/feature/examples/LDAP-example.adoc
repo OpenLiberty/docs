@@ -1,0 +1,75 @@
+
+== Examples
+
+=== Simple LDAP registry configuration example
+
+Configure the LDAP user registry by adding the `<ldapRegistry>` element to your `server.xml` file.
+Then, specify the base Distinguished Name, the host, LDAP type, port number and realm attributes.
+Customize the group and user filters that are used to perform searches by adding the `<idsFilters>` sub-element.
+Use the `%v` variable for attribute value assertions to be replaced by the login name.
+The following example shows a simple configuration for using the IBM Tivoli Directory Server as an LDAP registry, with user and group filters specified:
+
+[source,java]
+----
+
+<ldapRegistry baseDN="o=acme.com" host="ldap.acme.com"
+		ldapType="IBM Tivoli Directory Server" port="389" realm="AcmeLdap">
+		<idsFilters
+			  groupFilter="(&amp;(cn=%v)(objectclass=groupofnames))"
+			  userFilter="(&amp;(objectclass=inetorgperson)(|(uid=%v)(mail=%v)))" />
+</ldapRegistry>
+
+----
+
+=== LDAPS example
+
+To enable a secure connection to the LDAP server for encrypted communication via transport layer security (TLS) or secure sockets layer (SSL) protocols, configure the `<ldapRegistry>` element for Lightweight Directory Access Protocol Over Secure Socket Links (LDAPS).
+Set the `sslEnabled` attribute to `true` and the `sslRef` attribute to your `ssl id` value.
+Make sure to add the `<ssl>` element to your `server.xml` file and specify values for `id`, `keyStoreRef`, and `trustStoreRef` attributes.
+
+[source,java]
+----
+
+<ldapRegistry baseDN="o=acme.com" host="ldap.acme.com"
+		ldapType="IBM Tivoli Directory Server" port="636" realm="AcmeLdap"
+    sslEnabled="true" sslRef="LDAPSSLSettings" >
+      <idsFilters
+          groupFilter="(&amp;(cn=%v)(objectclass=groupofnames))"
+          userFilter="(&amp;(objectclass=inetorgperson)(|(uid=%v)(mail=%v)))" />
+</ldapRegistry>
+
+    <ssl id="LDAPSSLSettings" keyStoreRef="LDAPKeyStore" trustStoreRef="LDAPTrustStore" />
+----
+
+=== Custom LDAP schema classes example
+
+Customize the object classes and search bases for users and groups if desired.
+The search base must be a branch of the baseDN.
+More specific search bases can help reduce search times.
+Include all object classes that should be considered groups or users.
+Define group membership. The following example defines group membership based on the `member` attribute on the group.
+
+----
+
+<ldapRegistry baseDN="o=acme.com" host="ldap.acme.com"
+		ldapType="IBM Tivoli Directory Server" port="389" realm="AcmeLdap">
+		<ldapEntityType name="PersonAccount">
+			<objectClass>inetorgperson</objectClass>
+			<objectClass>customuser</objectClass>
+			<searchBase>ou=users,o=acme.com</searchBase>
+		</ldapEntityType>
+		<ldapEntityType name="Group">
+			<objectClass>groupofnames</objectClass>
+			<objectClass>customgroup</objectClass>
+			<searchBase>ou=groups,o=acme.com</searchBase>
+		</ldapEntityType>
+		<idsFilters
+			groupFilter="(&amp;(cn=%v)(|(objectclass=groupofnames)(objectclass=customgroup)))"
+			userFilter="(&amp;(|(objectclass=inetorgperson)(objectclass=customuser))(|(uid=%v)(mail=%v)))" />
+        <groupProperties>
+            <memberAttribute name="member" objectClass="groupofnames" />
+            <memberAttribute name="custommember" objectClass="customgroup" />
+        </groupProperties>
+	</ldapRegistry>
+
+----
