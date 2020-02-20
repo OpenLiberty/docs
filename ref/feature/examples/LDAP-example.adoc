@@ -5,20 +5,31 @@
 
 Configure the LDAP user registry by adding the `<ldapRegistry>` element to your `server.xml` file.
 Then, specify the base Distinguished Name, the host, LDAP type, port number and realm attributes.
-Customize the group and user filters that are used to perform searches by adding the `<idsFilters>` sub-element.
-Use the `%v` variable for attribute value assertions to be replaced by the login name.
 The following example shows a simple configuration for using the IBM Tivoli Directory Server as an LDAP registry, with user and group filters specified:
 
 [source,java]
 ----
 
 <ldapRegistry baseDN="o=acme.com" host="ldap.acme.com"
-		ldapType="IBM Tivoli Directory Server" port="389" realm="AcmeLdap">
-		<idsFilters
-			  groupFilter="(&amp;(cn=%v)(objectclass=groupofnames))"
-			  userFilter="(&amp;(objectclass=inetorgperson)(|(uid=%v)(mail=%v)))" />
-</ldapRegistry>
+		ldapType="IBM Tivoli Directory Server" port="389" realm="AcmeLdap"/>
 
+----
+
+=== Search filters example
+
+If you need configure search behavior to include custom classes or attributes, you can customize the group and user filters that are used to perform searches.
+The configuration for specifying filters varies depending on what LDAP type you specify. Each available LDAP type has a different set of filter properties.
+Use the `%v` variable for attribute value assertions to be replaced by a particular login name or group name at runtime.
+The following example shows custom and group filters specified for the IBM Tivoli Directory Server LDAP type.
+
+[source,java]
+----
+<ldapRegistry baseDN="o=acme.com" host="ldap.acme.com"
+		ldapType="IBM Tivoli Directory Server" port="389" realm="AcmeLdap">
+    <idsFilters
+		    groupFilter="(&amp;(cn=%v)(objectclass=groupofnames))"
+		    userFilter="(&amp;(objectclass=inetorgperson)(|(uid=%v)(mail=%v)))" />
+</ldapRegistry>
 ----
 
 === LDAPS example
@@ -45,11 +56,10 @@ Make sure to add the `<ssl>` element to your `server.xml` file and specify value
 
 === Custom LDAP schema classes example
 
-Customize the object classes and search bases for users and groups if desired.
-The search base must be a branch of the baseDN.
-More specific search bases can help reduce search times.
-Include all object classes that should be considered groups or users.
-Define group membership. The following example defines group membership based on the `member` attribute on the group.
+If you need to configure support for custom or non-default object classes, you can specify an LDAP entity type.
+An entity type groups different object classes as a single entity so that the server recognizes them under the same entity name.
+You can also customize the search base for an entity type to improve search times for the classes it contains.
+The following example shows entity types for for users and groups, with custom search bases.
 
 ----
 
@@ -65,13 +75,6 @@ Define group membership. The following example defines group membership based on
 			<objectClass>customgroup</objectClass>
 			<searchBase>ou=groups,o=acme.com</searchBase>
 		</ldapEntityType>
-		<idsFilters
-			groupFilter="(&amp;(cn=%v)(|(objectclass=groupofnames)(objectclass=customgroup)))"
-			userFilter="(&amp;(|(objectclass=inetorgperson)(objectclass=customuser))(|(uid=%v)(mail=%v)))" />
-        <groupProperties>
-            <memberAttribute name="member" objectClass="groupofnames" />
-            <memberAttribute name="custommember" objectClass="customgroup" />
-        </groupProperties>
-	</ldapRegistry>
+</ldapRegistry>
 
 ----
