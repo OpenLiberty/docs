@@ -4,14 +4,15 @@
 === Simple LDAP registry configuration example
 
 Configure the LDAP user registry by adding the `<ldapRegistry>` element to your `server.xml` file.
-Then, specify the base Distinguished Name, the host, LDAP type, port number and realm attributes.
-The following example shows a simple configuration for using the IBM Tivoli Directory Server as an LDAP registry, with user and group filters specified:
+Then, specify the base Distinguished Name, the host, LDAP type, port number and realm attributes. Most LDAP servers require bind credentials to authenticate a client to the server. Bind Distinguished name and and password are specified in the `ladpRegistry` element.
+The following example shows a simple configuration for using the IBM Tivoli Directory Server as an LDAP registry:
 
 [source,java]
 ----
 
 <ldapRegistry baseDN="o=acme.com" host="ldap.acme.com"
-		ldapType="IBM Tivoli Directory Server" port="389" realm="AcmeLdap"/>
+		ldapType="IBM Tivoli Directory Server" port="389" realm="AcmeLdap"
+		bindDN="cn=testuser,o=domain,c=us" bindPassword="mypassword"/>
 
 ----
 
@@ -25,7 +26,8 @@ The following example shows custom and group filters specified for the IBM Tivol
 [source,java]
 ----
 <ldapRegistry baseDN="o=acme.com" host="ldap.acme.com"
-		ldapType="IBM Tivoli Directory Server" port="389" realm="AcmeLdap">
+		ldapType="IBM Tivoli Directory Server" port="389" realm="AcmeLdap"
+		bindDN="cn=testuser,o=domain,c=us" bindPassword="mypassword">
     <idsFilters
 		    groupFilter="(&amp;(cn=%v)(objectclass=groupofnames))"
 		    userFilter="(&amp;(objectclass=inetorgperson)(|(uid=%v)(mail=%v)))" />
@@ -43,7 +45,8 @@ Make sure to add the `<ssl>` element to your `server.xml` file and specify value
 
 <ldapRegistry baseDN="o=acme.com" host="ldap.acme.com"
 		ldapType="IBM Tivoli Directory Server" port="636" realm="AcmeLdap"
-    sslEnabled="true" sslRef="LDAPSSLSettings" >
+    bindDN="cn=testuser,o=domain,c=us" bindPassword="mypassword"
+		sslEnabled="true" sslRef="LDAPSSLSettings" >
       <idsFilters
           groupFilter="(&amp;(cn=%v)(objectclass=groupofnames))"
           userFilter="(&amp;(objectclass=inetorgperson)(|(uid=%v)(mail=%v)))" />
@@ -59,12 +62,14 @@ Make sure to add the `<ssl>` element to your `server.xml` file and specify value
 If you need to configure support for custom or non-default object classes, you can specify an LDAP entity type.
 An entity type groups different object classes as a single entity so that the server recognizes them under the same entity name.
 You can also customize the search base for an entity type to improve search times for the classes it contains.
-The following example shows entity types for for users and groups, with custom search bases.
+If you create custom object classes for users or groups, make sure to update your group and user filters to include the new classes.
+The following example shows entity types for for users and groups, with custom search bases. The user and group filters are updated to include the custom object classes. Although this example shows configuration for the IBM Tivoli Directory Server LDAP type, each filter type includes the `userFilter` and `groupFilter` attributes.
 
 ----
 
 <ldapRegistry baseDN="o=acme.com" host="ldap.acme.com"
-		ldapType="IBM Tivoli Directory Server" port="389" realm="AcmeLdap">
+		ldapType="IBM Tivoli Directory Server" port="389" realm="AcmeLdap"
+		bindDN="cn=testuser,o=domain,c=us" bindPassword="mypassword">
 		<ldapEntityType name="PersonAccount">
 			<objectClass>inetorgperson</objectClass>
 			<objectClass>customuser</objectClass>
@@ -75,6 +80,9 @@ The following example shows entity types for for users and groups, with custom s
 			<objectClass>customgroup</objectClass>
 			<searchBase>ou=groups,o=acme.com</searchBase>
 		</ldapEntityType>
+		<idsFilters
+			groupFilter="(&amp;(cn=%v)(|(objectclass=groupofnames)(objectclass=customgroup)))"
+			userFilter="(&amp;(|(objectclass=inetorgperson)(objectclass=customuser))(|(uid=%v)(mail=%v)))" />
 </ldapRegistry>
 
 ----
