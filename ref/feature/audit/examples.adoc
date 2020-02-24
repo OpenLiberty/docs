@@ -2,22 +2,14 @@
 
 === Audit File Handler
 
-The audit file handler is made available by specifying the audit-1.0 feature. It can be customized by specifying any of the config attributes, along with the <auditFileHandler> element. For more information, see link:https://www.openliberty.io/docs/ref/config/#auditFileHandler.html[Default Audit File Handler].
+The audit file handler can be customized by specifying any of the config attributes, along with the <auditFileHandler> element. For more information, see link:https://www.openliberty.io/docs/ref/config/#auditFileHandler.html[Default Audit File Handler].
 
 When the maximum number of archived audit logs is reached, after the audit.log file that is being written to reaches its maximum size, then the oldest archived audit log is overwritten.
 
-The following example shows an Audit file handler with maxFiles, maxFileSize, and compact mode specified:
+By default, the audit file handler writes audit records to an audit log file until the file reaches 20 MB size. The audit log file is then archived and a new audit log file is started. By default, the maximum number of archived audit log files is 100, after which the oldest archived log file is overwritten. The following example shows how to increase the individual file size to 100 MB and reduce the maximum number of archived audit log files to 50. The example also specifies the `compact` attribute, which makes the log file that is written in JSON write the audit records all on the same line in the log file. an Audit file handler with `maxFiles`, `maxFileSize`, and `compact` mode specified:
 
 [source,xml]
 ----
-<featureManager>
-    <feature>appSecurity-2.0</feature>
-    <feature>[.underline]#jsp#-2.2</feature>
-    <feature>[.underline]#servlet#-3.1</feature>
-    <feature>audit-1.0</feature>
-    <feature>[.underline]#timedexit#-1.0</feature>
-</featureManager>
-
 <auditFileHandler maxFiles="50" maxFileSize="100" compact=”true”>
 </auditFileHandler>
 ----
@@ -26,19 +18,14 @@ In the example, the audit logs are written to the default $\{server.output.dir}/
 
 All audit events and possible outcomes are emitted to the audit logs.
 
-=== Events
+=== Specifying the logging of events
 
 To specify only those audit events and outcomes that may be of relevance in an environment, the <event> element can be defined with the audit event name and outcome:
 
 The following example specifies audit events and outcomes:
 
+[source,xml]
 ----
-<featureManager>
-    <feature>appSecurity-2.0</feature>
-    <feature>[.underline]#servlet#-4.0</feature>
-    <feature>audit-1.0</feature>
-</featureManager>
-
 <auditFileHandler maxFiles="5" maxFileSize="20" compact="true">
     <events name="AuditEvent_1" eventName="SECURITY_AUTHN" outcome="SUCCESS"/>
     <events name="AuditEvent_2" eventName="SECURITY_AUTHN" outcome="REDIRECT"/>
@@ -51,30 +38,23 @@ In the example, only the security authentication events whose outcome is success
 
 If an event is specified with only an outcome attribute, with no eventName specified, then no audit records are produced. However, an eventName can be specified without an outcome attribute, in which case all possible outcomes for that eventName are emitted.
 
-=== Encrypting and Signing Audit
+=== Encrypting and Signing Audit data
 
 It is important for the recorded audit data to be preserved in such a way that not only can the access be restricted but also so that the data itself is tamper-proof. The ability to both encrypt and sign the audit records data is provided.
 
-To encrypt audit records, the encrypt attribute must be specified in the auditFileHandler element, along with the alias name of the certificate that is used to encrypt the audit data, and the keystore in which that certificate exists.
+To encrypt audit records, the encrypt attribute must be specified in the `auditFileHandler` element, along with the alias name of the certificate that is used to encrypt the audit data, and the keystore in which that certificate exists:
 
-To sign audit records, the sign attribute must be specified in the auditFileHandler element, along with the alias name of the certificate that is used to sign the audit data, and the keystore in which that certificate exists.
+To sign audit records, the `sign` attribute must be specified in the `auditFileHandler` element, along with the alias name of the certificate that is used to sign the audit data, and the keystore in which that certificate exists.
 
-SHA256withRSA is used as the default crypto algorithm for both encryption and signing. The following example shows the audit file handler with encryption and signing enabled:
 
+[source,xml]
 ----
-<featureManager>
-    <feature>appSecurity-2.0</feature>
-    <feature>[.underline]#jsp#-2.2</feature>
-    <feature>[.underline]#servlet#-3.1</feature>
-    <feature>audit-1.0</feature>
-</featureManager>
-
 <keyStore id="auditEncKeyStore” password="Liberty" location="$\{server.config.dir}/resources/security/AuditEncryptionKeyStore.jks" type="JKS" />
 
-<keyStore id="auditSignKeyStore" password="\{[.underline]#xor#}EzY9Oi0rJg==" location="$\{server.config.dir}/resources/security/AuditSigningKeyStore2.[.underline]#jks#" type="JKS" />
+<keyStore id="auditSignKeyStore" password="\{#xor#}EzY9Oi0rJg==" location="$\{server.config.dir}/resources/security/AuditSigningKeyStore2.#jks#" type="JKS" />
 
-<auditFileHandler encrypt="true" encryptAlias="[.underline]#auditencryption#" encryptKeyStoreRef="auditEncKeyStore" sign="true" signingAlias="auditsigning2" signingKeyStoreRef="auditSignKeyStore"
+<auditFileHandler encrypt="true" encryptAlias="#auditencryption#" encryptKeyStoreRef="auditEncKeyStore" sign="true" signingAlias="auditsigning2" signingKeyStoreRef="auditSignKeyStore"
 </auditFileHandler>
 ----
 
-All audit events and possible outcomes are emitted to the audit logs.
+SHA256withRSA is used as the default crypto algorithm for both encryption and signing. The following example shows the audit file handler with encryption and signing enabled:
