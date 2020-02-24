@@ -1,0 +1,88 @@
+
+== Examples
+
+=== Simple LDAP registry configuration example
+
+Configure the LDAP user registry by adding the `<ldapRegistry>` element to your `server.xml` file.
+Then, specify the base Distinguished Name, the host, LDAP type, port number, and realm attributes. Most LDAP servers require bind credentials to authenticate a client to the server. Bind Distinguished name and password are specified in the `ladpRegistry` element.
+The following example shows a simple configuration for using the IBM Tivoli Directory Server as an LDAP registry:
+
+[source,java]
+----
+
+<ldapRegistry baseDN="o=acme.com" host="ldap.acme.com"
+		ldapType="IBM Tivoli Directory Server" port="389" realm="AcmeLdap"
+		bindDN="cn=testuser,o=acme.com" bindPassword="mypassword"/>
+
+----
+
+=== Search filters example
+
+If you need configure search behavior to include custom classes or attributes, you can customize the group and user filters that are used for searches.
+The configuration for specifying filters varies depending on what LDAP type you specify. Each available LDAP type has a different set of filter properties.
+Use the `%v` variable for attribute value assertions to be replaced by a particular login name or group name at run time.
+The following example shows custom and group filters that are specified for the IBM Tivoli Directory Server LDAP type.
+
+[source,java]
+----
+<ldapRegistry baseDN="o=acme.com" host="ldap.acme.com"
+		ldapType="IBM Tivoli Directory Server" port="389" realm="AcmeLdap"
+		bindDN="cn=testuser,o=acme.com" bindPassword="mypassword">
+    <idsFilters
+		    groupFilter="(&amp;(cn=%v)(objectclass=groupofnames))"
+		    userFilter="(&amp;(objectclass=inetorgperson)(|(uid=%v)(mail=%v)))" />
+</ldapRegistry>
+----
+
+=== LDAPS example
+
+To enable a secure connection to the LDAP server for encrypted communication via transport layer security (TLS) or secure sockets layer (SSL) protocols, configure the `<ldapRegistry>` element for Lightweight Directory Access Protocol Over Secure Socket Links (LDAPS).
+Set the `sslEnabled` attribute to `true` and the `sslRef` attribute to your `ssl id` value.
+Make sure to add the `<ssl>` element to your `server.xml` file and specify values for `id`, `keyStoreRef`, and `trustStoreRef` attributes.
+
+[source,java]
+----
+
+<ldapRegistry baseDN="o=acme.com" host="ldap.acme.com"
+		ldapType="IBM Tivoli Directory Server" port="636" realm="AcmeLdap"
+    bindDN="cn=testuser,o=acme.com" bindPassword="mypassword"
+		sslEnabled="true" sslRef="LDAPSSLSettings" >
+      <idsFilters
+          groupFilter="(&amp;(cn=%v)(objectclass=groupofnames))"
+          userFilter="(&amp;(objectclass=inetorgperson)(|(uid=%v)(mail=%v)))" />
+</ldapRegistry>
+
+<ssl id="LDAPSSLSettings" keyStoreRef="LDAPKeyStore" trustStoreRef="LDAPTrustStore" />
+<keyStore id="LDAPKeyStore" location="${server.config.dir}/resources/security/key.jks" type="JKS" password="password" />
+<keyStore id="LDAPTrustStore" location="${server.config.dir}resources/security/trust.jks" type="JKS" password="password" />
+----
+
+=== Custom LDAP schema classes example
+
+If you need to configure support for custom or non-default object classes, you can specify an LDAP entity type.
+An entity type groups different object classes as a single entity so that the server recognizes them under the same entity name.
+You can also customize the search base for an entity type to improve search times for the classes it contains.
+If you create custom object classes for users or groups, make sure to update your group and user filters to include the new classes.
+The following example shows entity types for users and groups, with custom search bases. The user and group filters are updated to include the custom object classes. Although this example shows configuration for the IBM Tivoli Directory Server LDAP type, each filter type includes the `userFilter` and `groupFilter` attributes.
+
+----
+
+<ldapRegistry baseDN="o=acme.com" host="ldap.acme.com"
+		ldapType="IBM Tivoli Directory Server" port="389" realm="AcmeLdap"
+		bindDN="cn=testuser,o=acme.com" bindPassword="mypassword">
+		<ldapEntityType name="PersonAccount">
+			<objectClass>inetorgperson</objectClass>
+			<objectClass>customuser</objectClass>
+			<searchBase>ou=users,o=acme.com</searchBase>
+		</ldapEntityType>
+		<ldapEntityType name="Group">
+			<objectClass>groupofnames</objectClass>
+			<objectClass>customgroup</objectClass>
+			<searchBase>ou=groups,o=acme.com</searchBase>
+		</ldapEntityType>
+		<idsFilters
+			groupFilter="(&amp;(cn=%v)(|(objectclass=groupofnames)(objectclass=customgroup)))"
+			userFilter="(&amp;(|(objectclass=inetorgperson)(objectclass=customuser))(|(uid=%v)(mail=%v)))" />
+</ldapRegistry>
+
+----
