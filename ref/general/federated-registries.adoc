@@ -1,0 +1,117 @@
+// Copyright (c) 2020 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description:
+:seo-title: Federated user registries
+:seo-description: You can configure an LDAP user registry to manage authentication and authorization for your applications that run on Open Liberty.
+:page-layout: general-reference
+:page-type: general
+= Federated user registries
+
+You can combine multiple user registries into a single federated registry to manage authentication and authorization. Federated registries provide a single logical view of multiple user registries and repositories.
+
+In cases where user and group information is spread across multiple registries, federation enables Open Liberty to use this distributed user information in a unified manner with continuous store of information. Different types of registries can be federated to combine information from Lightweight Directory Access Protocol (LDAP), basic, and custom user registries and repositories into a common registry to manage application security. However, user registries that are configured with the `quickStartSecurity` element cannot be federated with other registries.
+
+== Federation of LDAP registries
+
+LDAP registries are federated by default. If you configure more than one LDAP registry in your `server.xml` file, then the registries are automatically federated with no additional configuration required. This federation occurs by default, regardless of whether the LDAP registries are separate, or two subtrees of the same LDAP registry.
+Similarly, if one or more LDAP registries are configured with one or more basic or custom registries in the `server.xml file`, they are federated with no additional configuration required.
+
+Although federation of LDAP registries occurs by default, you can adjust the configuration by enabling the link:/docs/ref/feature/#federatedRegistry-1.0.html[Federated User Registry] feature and configuring the `federatedRepository` element. For more information, see link:/docs/ref/config/#federatedRepository.html[User Registry Federation].
+
+The following example shows a basic registry that is federated with an LDAP registry, with configuration specified in the `federatedRepository` element.
+
+[source,java]
+----
+<server description="Federation">
+    <featureManager>
+        <feature>appSecurity-3.0</feature>
+	      <feature>ldapRegistry-3.0</feature>
+    </featureManager>
+
+    <basicRegistry id="basic" realm="SampleBasicRealm">
+        <user name="admin" password="password" />
+        <user name="user1" password="password" />
+            <user name="user2" password="password" />
+        <group name="memberlessGroup" />
+        <group name="adminGroup">
+            <member name="admin"/>
+        </group>
+        <group name="users">
+            <member name="user1"/>
+            <member name="user2"/>
+        </group>
+    </basicRegistry>
+
+    <ldapRegistry realm="LdapRealm" host="LDAPHOST1.ibm.com" port="389"
+	baseDN="o=ibm,c=us"
+	ldapType="IBM Security Directory Server"/>
+
+    <federatedRepository>
+        <primaryRealm name="FederatedRealm" allowOpIfRepoDown="true">
+            <participatingBaseEntry name="o=SampleBasicRealm"/>
+            <participatingBaseEntry name="o=ibm,c=us"/>
+        </primaryRealm>
+   </federatedRepository>
+</server>
+----
+
+== Federation of basic and custom registries
+
+To federate two or more basic registries, you must enable both link:/docs/ref/feature/#appSecurity-3.0.html[the Application Security feature] and the Federated User Registry feature, as shown in the following example.
+
+[source,java]
+----
+<server description="Federation">
+    <featureManager>
+        <feature>appSecurity-3.0</feature>
+        <feature>federatedRegistry-1.0</feature>
+    </featureManager>
+
+    <basicRegistry id="basic1" realm="SampleBasicRealm1">
+        <user name="admin" password="password" />
+        <user name="user1" password="password" />
+            <user name="user2" password="password" />
+        <group name="memberlessGroup" />
+        <group name="adminGroup">
+            <member name="admin"/>
+        </group>
+        <group name="users">
+            <member name="user1"/>
+            <member name="user2"/>
+        </group>
+    </basicRegistry>
+
+    <basicRegistry id="basic2" realm="SampleBasicRealm2">
+        <user name="user3" password="password123" />
+        <user name="user4" password="password123" />
+        <group name="memberlessGroup2" />
+        <group name="users2">
+            <member name="user3"/>
+            <member name="user4"/>
+        </group>
+    </basicRegistry>
+</server>
+----
+
+You can add basic or custom registries to a custom federated repository by defining the `participatingBaseEntry` name field in the `federatedRepository` element. The participating base entry for a custom or basic registry is the `o` organization attribute set to equal the realm name of that registry (`"o=RealmName"`). The realm name for a user registry is the value that is returned from the `getRealm()` method of that registry. For an LDAP registry, the realm name is the base Distinguished Name (`baseDN`) from the registry configuration. The participating base entry for a custom repository is one of the base entries that is returned by the `getRepositoryBaseEntries()` method for that repository.
+
+The following example shows the federation of a basic registry and a custom registry:
+
+[source,java]
+----
+<federatedRepository>
+    <primaryRealm name="PrimaryRealm">
+        <participatingBaseEntry name="o=SampleBasicRealm1"/>
+        <participatingBaseEntry name="o=customRegistryRealm1"/>
+    </primaryRealm>
+</federatedRepository>
+----
+
+
+Federation of user registries provides flexibility in how you secure your application. Whether you are working with LDAP, basic, or custom registries, federation unifies distributed data sources into a common resource for authentication and authorization.
