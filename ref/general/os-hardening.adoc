@@ -20,14 +20,13 @@ Before you run a container in production, harden the container image to remove a
 A container that runs in production should have only the tools and packages that you need to run your application. You can find Open Liberty Docker images and related information in link:https://hub.docker.com/_/open-liberty[Docker Hub].
 
 The simplest way to securely run Open Liberty is to start with an existing Open Liberty Docker image, which is already set up with basic security protocols.
-Although Open Liberty Docker images have basic security already configured, you still need to harden an image if you intend to use it in production.
-Check the following things about your Open Liberty image to check that it's hardened for production:
+Although Open Liberty Docker images have basic security already configured, it is recommended that you take steps to harden an image if you intend to use it in production.
+Check the following things about your Open Liberty image to verify it's hardened for production:
 
 * Confirm that the Open Liberty server's identity doesn't own the server's config and only has read access to it.
-Use the `WLP_OUTPUT_DIR` environment variable to point to the logs.
-The server ID only owns the directory or file where `WLP_OUTPUT_DIR` points.
+Use the `WLP_OUTPUT_DIR` environment variable to point to the logs. The server ID only owns the directory or file where `WLP_OUTPUT_DIR` points.
 * Ensure that any sensitive information in the `server.xml` file is AES encrypted.
-* Disable all non-TLS ports by setting ports to `-1` in the `httpEndpoint` stanza.
+* Disable all non-TLS ports by setting ports to `-1` in the `httpEndpoint` stanza's 'httpPort' argument.
 * Use the link:/docs/ref/feature/#transportSecurity.html[Transport Security feature] instead of the link:/docs/ref/feature/#ssl.html[SSL feature].
 * Add `webAppSecurity ssoRequiresSSL=’true’ to the `server.xml` file.
 * Add `webAppSecurity httpOnlyCookies=’true’ to the `server.xml` file.
@@ -51,33 +50,35 @@ This command uses an MD5 checksum to check your installation for errors or poten
 The output message that you receive indicates whether Open Liberty was validated successfully.
 
 == UNIX file permissions
-A critical aspect of OS security is ensuring that users have the correct permissions, which means that files must appropriately indicate levels of users' access.
-UNIX file permissions are calculated with three bits that represent the access levels of *owner*, *group*, and *other* users.
-`7` indicates that a user has read, write, and execute access.
-`5` indicates that a user has read and execute access.
-`0` indicates that a user has no access, meaning they are not part of the group.
+A critical aspect of OS security is ensuring that files and directories have the appropriate permissions, and users and groups for the file are configured properly.
+All UNIX files have the following attributes where permissions are assigned: *owner*, *group*, and *other*.
+For each of these three, there are 3 bits assigned as an octal digit. The first bit indicates Read access, the second, Write access and the third, Execute access.
+For example, when all three bits are on for an attribute, this is represented as a `7` which indicates all access: read, write, and execute.
+A file with '770' permissions means that the file owner and any user in the file's group have read, write, and execute. All others have no permissions.
+Generally, the last digit file permission should end in a `0` because other shouldn't have access to protected information.
 
-For example, `7,5,0` indicates that the owner has read, write, and execute access; the group has read and execute access; and the other has no access.
-Generally, file permissions always end in `0` because other shouldn't have access to protected information.
-By default, Open Liberty Docker images run with the `USER 1001` non-root user as other indicated by the `0` permissions bit.
+By default, Open Liberty Docker images run with `USER 1001` (non-root) as part of group 0. This is to ensure these images do not run as root by default. For more information on Open Liberty docker images, refer to :
+https://hub.docker.com/_/open-liberty
 
 == Access control
-It is critical to control users' access levels so that all users fall into the appropriate UNIX file permissions bits.
-Limit users to have minimal required access based on their needs.
-Different types of users might try to access the config:
+It is critical to control users' access levels so that all users have the appropriate access to Open Liberty files. Users should have minimal access, based on their needs.
+Different types of users (ie: Administrators, Developers, Database support, etc.) might have a need to access the config and/or logs. The following provides guidance on this:
 
-* *The ID that the Open Liberty server uses to run*: This ID needs to read its config and write to logs, but it shouldn't be able to write to its own config.
+* *The ID that the Open Liberty server uses to run*: This ID needs to read its config and write to logs, but when hardening a server, this ID should be configured with only read access to its own configuration files.
 This ID can also own files, or it can be a separate ID from the file owner.
-* *Users who are responsible for administering the server*: These users need read and write access.
-Don't share login IDs or passwords among administrators.
+
+* *Users who are responsible for administering the server*: These users likely require read and write access to the server's configuration files.
+Best practice: Don't share login IDs or passwords among administrators and instead set up the server configuration file system owner with a dedicated ID and permit administrators to use SUDO to switch user to this ID in order to update the configuration.
+
 * *Users who are involved in server-related activities*: Some of these users need read access to view the logs, while other users might need limited write access.
-* *Unauthorized users*: These users shouldn't have access to the config or product file systems and fall into the other UNIX file permissions bit.
+
+* *Unauthorized users*: These users shouldn't have access to the config or product file systems and be treated as part of the other group. 
 
 == Processing include files
 Include files can hold portions of the config outside of the `server.xml` file.
 These files are helpful in two primary situations:
 
-* When sensitive information needs to be available for select users but not the entire group with read access.
+* When sensitive information needs to be available for select users/groups (ie: database admins) but not the larger group with read access to the server's configuration.
 * When a user needs to update only their portion of the server config.
 In this situation, it is important to ensure that the user can't override config in the `server.xml` file by using the `onConflict` tag in the `<include>` element, as shown in the following example:
 +
