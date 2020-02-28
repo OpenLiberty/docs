@@ -1,4 +1,4 @@
-// Copyright (c) 2018 IBM Corporation and others.
+// Copyright (c) 2018, 2020 IBM Corporation and others.
 // Licensed under Creative Commons Attribution-NoDerivatives
 // 4.0 International (CC BY-ND 4.0)
 //   https://creativecommons.org/licenses/by-nd/4.0/
@@ -10,16 +10,26 @@
 :page-type: general
 = Runnable JAR files
 
-// Pithy single sentence description of the command.
-Runnable JAR files contain applications, server configurations, and a Liberty installation.
+Runnable JAR files contain applications, server configurations, and an Open Liberty installation.
 
-// If relevant, more info.
-For information about packaging the JAR, see link:/docs/ref/command/#server-package.html[server package].
+For information about packaging a JAR, see the link:/docs/ref/command/#server-package.html[`server package`] command.
 
-When a JAR file runs, it gets extracted to a temporary location and the server runs in the foreground. By default, files are extracted to `wlpExtract/<jar file name>_nnnnnnnnnnnnnnnnnnn` in the user home directory. You can control the output location by using the `WLP_JAR_EXTRACT_ROOT` or `WLP_JAR_EXTRACT_DIR` environment variables (see <<Environment variables>>).
+When a JAR file runs, it gets extracted to a temporary location and the server runs in the foreground.
+By default, files are extracted to `wlpExtract/<jar file name>_nnnnnnnnnnnnnnnnnnn` in the user home directory.
+You can control the output location by using the `WLP_JAR_EXTRACT_ROOT` or `WLP_JAR_EXTRACT_DIR` environment variables.
+
+== Variable syntax
+When you run Open Liberty from a runnable JAR file you can define variables at startup by using the following syntax:
+
+----
+java -jar myServer.jar --variable1_name=variable1_value --variable2_name=variable2_value
+----
+
+You can specify multiple variables with this format.
+Variables that are specified on the command line override all other sources of variables and can't be changed after the server starts.
 
 == Environment variables
-For information about specifying environment variables, see link:/docs/ref/config/[Server configuration].
+For information about specifying environment variables, see link:/docs/ref/config/[Server configuration overview].
 
 [%header,cols=2*]
 |===
@@ -33,35 +43,41 @@ For information about specifying environment variables, see link:/docs/ref/confi
 |Extracts the JAR file to the `${WLP_JAR_EXTRACT_DIR}` directory.
 
 |`WLP_OUTPUT_DIR`
-|Writes Liberty server output files to the `${WLP_OUTPUT_DIR}` directory.
+|Writes Open Liberty server output files to the `${WLP_OUTPUT_DIR}` directory.
 
-By default, server output is written to the extraction directory, which is deleted when the server stops. If you want to save the output, specify a durable output location by using the `WLP_OUTPUT_DIR` environment variable before you start the server.
+By default, server output is written to the extraction directory, which is deleted when the server stops.
+If you want to save the output, specify a durable output location by using the `WLP_OUTPUT_DIR` environment variable before you start the server.
 
 |`WLP_JAR_DEBUG`
-|Runs Liberty server by using `server debug <server name>` instead of `server run <server name>`. You can run the Liberty server in debug mode if you set the `WLP_JAR_DEBUG` environment variable before you start the server.
+|Runs an Open Liberty server by using `server debug <server name>` instead of `server run <server name>`.
+You can run the server in debug mode if you set the `WLP_JAR_DEBUG` environment variable before you start the server.
 
 |`WLP_JAR_ENABLE_2PC`
 |Set to value `true` to enable two-phase commit transactions when the runnable JAR file runs.
 
-By default, two-phase commit transactions are disabled because the transaction logs are in the expansion directory and are deleted when the Liberty server stops. Therefore, transaction recovery is not possible.
+By default, two-phase commit transactions are disabled because the transaction logs are in the expansion directory and are deleted when the Open Liberty server stops.
+Therefore, transaction recovery is not possible.
 
 To enable two-phase commit transactions, configure the transaction log to be in a durable location in the file system or an RDBMS, and set the `WLP_JAR_ENABLE_2PC` environment variable.
 
-To configure the transaction log, use either the `transactionLogDirectory` or `dataSourceRef` attributes on the transaction element in your `server.xml` configuration.
+To configure the transaction log, use either the `transactionLogDirectory` or `dataSourceRef` attributes on the transaction element in your `server.xml` config.
 
 |`WLP_JAR_CYGWIN`
-|Set to value `true` if you are running the JAR file under CYGWIN. This variable causes the Liberty server JAR runner to do UNIX-style file and UNIX-style process handling when it is running in the CYGWIN environment.
+|Set to value `true` if you are running the JAR file under CYGWIN.
+This variable causes the Open Liberty server JAR runner to do UNIX-style file and UNIX-style process handling when it is running in the CYGWIN environment.
 
-Run under the bash shell, not mintty. Automatic extraction file deletion occurs only when you run under the bash shell. You can run under mintty, but you must delete the extraction files manually. Mintty does not forward the necessary signal that is required to trigger Java shutdown hooks.
+Run under the bash shell, not mintty.
+Automatic extraction file deletion occurs only when you run under the bash shell.
+You can run under mintty, but you must delete the extraction files manually.
+Mintty does not forward the necessary signal that is required to trigger Java shutdown hooks.
+
 |===
 
 == See also
 
 * link:/docs/ref/command/#server-package.html[server package]
 
-
-//NOTE: Info taken from the following sources:
-
-//* https://www.ibm.com/support/knowledgecenter/SSEQTP_liberty/com.ibm.websphere.wlp.doc/ae/twlp_admin_script.html
-//* https://www.ibm.com/support/knowledgecenter/SSEQTP_liberty/com.ibm.websphere.wlp.doc/ae/twlp_setup_package_server.html
-//* https://www.ibm.com/support/knowledgecenter/SSEQTP_liberty/com.ibm.websphere.wlp.doc/ae/rwlp_setup_jarserver.html
+// NOTE: Info taken from the following sources:
+// https://www.ibm.com/support/knowledgecenter/SSEQTP_liberty/com.ibm.websphere.wlp.doc/ae/twlp_admin_script.html
+// https://www.ibm.com/support/knowledgecenter/SSEQTP_liberty/com.ibm.websphere.wlp.doc/ae/twlp_setup_package_server.html
+// https://www.ibm.com/support/knowledgecenter/SSEQTP_liberty/com.ibm.websphere.wlp.doc/ae/rwlp_setup_jarserver.html
