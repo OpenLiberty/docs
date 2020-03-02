@@ -1,0 +1,108 @@
+// Copyright (c) 2020 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description: Transport Layer Security (TLS) is a security protocol that uses verified certificates and encryption keys to secure communications over the internet.
+:page-layout: general-reference
+:seo-title: Secure communication with TLS
+:seo-description: Transport Layer Security (TLS) is a security protocol that uses verified certificates and encryption keys to secure communications over the internet.
+:page-layout: general-reference
+:page-type: general
+= Secure communication with Transport Layer Security (TLS)
+
+Transport Layer Security (TLS) is a security protocol that uses verified certificates and encryption keys to secure communications over the internet. TLS is an update to the Secure Sockets Layer (SSL) protocol.
+
+With TLS, client and server applications can authenticate each other and communicate with confidentiality and data integrity.
+TLS is a widely adapted protocol that is designed to address the security challenges of the modern internet.
+Although SSL is still used, it entails many known security vulnerabilities that can be avoided by using TLS instead.
+Most websites now use TLS, which can be easily identified by the presence of the padlock icon in the address bar of an internet browser.
+In order for a website to comply with the secure HTTPS protocol, its communications must be encrypted according to the TLS protocol. Most web browsers flag sites that do not comply with this protocol as `not secure`.
+
+== The TLS protocol
+
+The TLS protocol is made up of two component protocols: the TLS handshake and the TLS record.
+The TLS handshake sets the terms for secure communication between client and server during the session.
+The TLS record secures and verifies the integrity of the data that is exchanged.
+
+TLS provides authentication, confidentiality, and integrity for internet communications.
+Authentication confirms that each communicating party is who they claim to be through the exchange of asymmetrically encrypted keys and digitally signed certificates.
+This exchange takes place before any message data is transmitted, during the TLS handshake.
+
+TLS ensures confidentiality through a combination of symmetric and asymmetric encryption.
+During the TLS handshake, the client and server agree upon an encryption algorithm and a shared secret key that are used for that session only.
+All messages that are transmitted between the client and server are encrypted by using that algorithm and key, which only the communicating parties can access.
+This configuration helps ensure that even if messages are intercepted, they remain private.
+
+TLS-secured messages establish data integrity by creating a digital signature that is used to verify that a message was not tampered with. A digital signature is formed by computing and encrypting a message digest, which is transmitted together with the full encrypted message.
+Upon receipt and decryption of the message, the receiver also computes a message digest, which is compared with the decrypted digest from the sender.
+If the two digests match, the sender knows that the message was not modified during transmission.
+
+=== TLS and SSL
+
+TLS updates and replaces SSL, which is now deprecated though still in use in some older devices.
+TLS is more secure than SSL, thanks to stronger encryption algorithms and better message authentication.
+TLS addresses many known security vulnerabilities from SSL, and adds extra capabilities, such as secure remote passwords and Kerberos support.
+Although TLS replaces SSL for most websites, the term SSL is still widely used as a colloquialism and in many cases can refer to either SSL or TLS-enabled connections.
+TLS and SSL are not interoperable, though TLS does provide compatibility support for older devices that still use SSL.
+
+=== The TLS handshake
+
+The TLS handshake is a process by which a client and server set the terms for secure communications during a connection.
+The handshake occurs before any data is exchanged.
+Through this process, the client and server agree on the version of the TLS protocol they to use, select cryptographic algorithms (CypherSuites), and authenticate one another by exchanging and verifying digital certificates.
+They also generate a shared secret key to encrypt and decrypt messages during the session.
+
+The TLS handshake uses a combination of asymmetric and symmetric encryption.
+The initial exchanges of the handshake are asymmetrically encrypted by the client and server by using a pair of keys, public and private.
+The client uses the server's public key to encrypt the data it sends, but only the server's private key can decrypt the data.
+The same is true for data that the server sends to the client.
+However, asymmetric encryption requires considerable computing resources.
+Therefore, client and server use these initial exchanges to generate a shared secret key that is used to symmetrically encrypt communications for the remainder of the session.
+Since this shared key is privately generated by each party, rather than being exchanged between them, there is less chance for key to be exposed to eavesdroppers.
+
+A basic TLS handshake comprises the following high-level steps:
+
+. The TLS client sends a `client hello` message, which includes the TLS version, a list of preferred CypherSuites, and a random bite string that is used in subsequent computations.
+. The TLS server responds with a `server hello` message, which includes the CypherSuite, the session ID, another random byte string, and the server's digital certificate. The client can use this certificate to verify the server's authentication. If the server requires the client's certificate, it sends a client certificate request that lists the types of certificates it can accept.
+. The client verifies the server's digital certificate and sends an encrypted random byte string that is used to generate the shared secret key. If the server requested the client's certificate, the client sends either the certificate or a `no certificate alert`. This alert can cause the handshake to fail if the certificate is configured as mandatory by the server. If a certificate is sent, the server verifies the client's certificate.
+. The client sends a `finished` message, which is encrypted with the shared secret key and indicates that the client side of the handshake is complete.
+. The server sends a `finished` message, which is encrypted with the shared secret key and indicates that the server side of the handshake is complete.
+. For the remainder of the session, client and server can exchange symmetrically encrypted messages by using the shared secret key.
+
+=== The TLS record
+
+Once the TLS handshake establishes authentication and encryption details, the TLS record protocol handles the transmission and verification of encrypted messages during the session.
+The TLS record reads the messages to be transmitted, breaks them into manageable chunks, and encrypts them according to the terms agreed on during the TLS handshake.
+The TLS record also specifies a means to compute the message digest so that message integrity can be verified by both parties.
+On the receiving side, the record decrypts the messages and verifies their integrity by comparing the message digests.
+
+== TLS and Open Liberty
+
+You can enable support for TLS in Open Liberty by adding the Transport Security feature to your `server.xml` file.
+You can specify the details of your TLS settings by adding the  `ssl`, `sslDefault`, and `keyStore` elements to your `server.xml` file.
+For more information, see the link:/docs/ref/feature/#transportSecurity.html[Transport Security feature].
+
+In addition to adding the Transport Security feature, you must add the `keystore` element to your `server.xml` file.
+The following example shows the minimum configuration to enable TLS.
+
+[source,java]
+----
+<feature>transportSecurity-1.0</feature>
+
+<keyStore id="defaultKeyStore" password="yourPassword" />
+----
+
+Open liberty creates a keystore password during profile creation and puts it in the `server.env` file that is in the server's home directory.
+If there is no `keystore` element for the `defaultKeyStore` file, this password is used to create a keystore file.
+This keystore file is then used as the `defaultKeyStore` file.
+Likewise, if a `defaultKeyStore` entry exists without a password in the `server.xml` file when the server starts, the password from the `server.env` file is used to open the file.
+If you don't want to use the generated keystore password, remove the `keystore_password` entry from the `server.env` file.
+If a default keystore file was already generated with the password from the `server.env` file, you might need to remove it.
+
+In this configuration, the server creates the keystore and certificate if it does not exist during SSL initialization.
+The certificate is a self-signed certificate with a validity period of 365 days and a signature algorithm of `SHA256withRSA`.
+The certified name (CN) value of the certificate's `subjectDN` attribute is the host name of the machine where the server is running.
