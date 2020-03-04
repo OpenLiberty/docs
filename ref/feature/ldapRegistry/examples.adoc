@@ -1,10 +1,9 @@
 
 == Examples
 
-=== Simple LDAP registry configuration example
+=== Simple LDAP registry configuration
 
-Configure the LDAP user registry by adding the `ldapRegistry` element to your `server.xml` file.
-Then, specify the base Distinguished Name, host, LDAP type, port number, and realm attributes.
+Specify the base distinguished name, host, LDAP type, port number, and realm attributes.
 Most LDAP servers require bind credentials to authenticate a client to the server.
 Bind Distinguished name and password are specified in the `ladpRegistry` element.
 The following example shows a simple configuration for using the IBM Tivoli Directory Server as an LDAP registry:
@@ -18,7 +17,7 @@ The following example shows a simple configuration for using the IBM Tivoli Dire
 
 ----
 
-=== Search filters example
+=== Search filters
 
 If you need configure search behavior to include custom classes or attributes, you can customize the group and user filters that are used for searches.
 The configuration for specifying filters varies depending on what LDAP type you specify. Each available LDAP type has a different set of filter properties.
@@ -36,11 +35,15 @@ The following example shows custom and group filters that are specified for the 
 </ldapRegistry>
 ----
 
-=== LDAPS example
+=== LDAPS
 
 To enable a secure connection to the LDAP server for encrypted communication via TLS or SSL protocols, configure the `<ldapRegistry>` element for Lightweight Directory Access Protocol Over Secure Socket Links (LDAPS).
-Set the `sslEnabled` attribute to `true` and the `sslRef` attribute to your `ssl id` value.
-Make sure to add the `ssl` element to your `server.xml` file and specify values for `id`, `keyStoreRef`, and `trustStoreRef` attributes, as shown in the following example:
+Set the `sslEnabled` attribute to `true` and the `sslRef` attribute to your `ssl id` value. In order to enable a secure TLS or SSL connection, you must have these connections configured in the `ssl` element.
+
+The following example shows both the `ldapRegistry` element and the `ssl` element that the LDAP connection references.
+In the `ssl` element, the `id` parameter identifies the configuration so it can be referenced by the `sslRef` parameter of the `ldapRegistry` element.
+The `keyStoreRef` and `trustStoreRef` parameters establish the data sources that are used in the TLS or SSL handshake that enables a secure connection.
+For more information about TLS and SSL connections, see link:/docs/ref/config/#ssl.html[SSL Repertoire].
 
 [source,java]
 ----
@@ -49,9 +52,6 @@ Make sure to add the `ssl` element to your `server.xml` file and specify values 
 		ldapType="IBM Tivoli Directory Server" port="636" realm="AcmeLdap"
     bindDN="cn=testuser,o=acme.com" bindPassword="mypassword"
 		sslEnabled="true" sslRef="LDAPSSLSettings" >
-      <idsFilters
-          groupFilter="(&amp;(cn=%v)(objectclass=groupofnames))"
-          userFilter="(&amp;(objectclass=inetorgperson)(|(uid=%v)(mail=%v)))" />
 </ldapRegistry>
 
 <ssl id="LDAPSSLSettings" keyStoreRef="LDAPKeyStore" trustStoreRef="LDAPTrustStore" />
@@ -59,7 +59,7 @@ Make sure to add the `ssl` element to your `server.xml` file and specify values 
 <keyStore id="LDAPTrustStore" location="${server.config.dir}resources/security/trust.jks" type="JKS" password="password" />
 ----
 
-=== Custom LDAP schema classes example
+=== Custom LDAP schema classes
 
 If you need to configure support for custom or non-default object classes, you can specify an LDAP entity type.
 An entity type groups different object classes as a single entity so that the server recognizes them under the same entity name.
@@ -88,4 +88,45 @@ The following example shows entity types for users and groups, with custom searc
 			userFilter="(&amp;(|(objectclass=inetorgperson)(objectclass=customuser))(|(uid=%v)(mail=%v)))" />
 </ldapRegistry>
 
+----
+
+=== Federation of LDAP registries
+
+Although federation of LDAP registries occurs by default, you can adjust the configuration by enabling the link:/docs/ref/feature/#federatedRegistry-1.0.html[Federated User Registry] feature and configuring the `federatedRepository` element.
+
+The following example shows a basic registry that is federated with an LDAP registry, with configuration specified in the `federatedRepository` element. The participating base entry for a custom or basic registry is the `o` organization attribute set to equal the realm name of that registry (`"o=RealmName"`). The realm name for a user registry is the value that is returned from the `getRealm()` method of that registry. For an LDAP registry, the realm name is the base distinguished name (`baseDN`) from the registry configuration. For more information, see link:/docs/ref/config/#federatedRepository.html[User Registry Federation].
+
+[source,java]
+----
+<server description="Federation">
+    <featureManager>
+        <feature>appSecurity-3.0</feature>
+	      <feature>ldapRegistry-3.0</feature>
+    </featureManager>
+
+    <basicRegistry id="basic" realm="SampleBasicRealm">
+        <user name="admin" password="password" />
+        <user name="user1" password="password" />
+            <user name="user2" password="password" />
+        <group name="memberlessGroup" />
+        <group name="adminGroup">
+            <member name="admin"/>
+        </group>
+        <group name="users">
+            <member name="user1"/>
+            <member name="user2"/>
+        </group>
+    </basicRegistry>
+
+    <ldapRegistry realm="LdapRealm" host="LDAPHOST1.ibm.com" port="389"
+	baseDN="o=ibm,c=us"
+	ldapType="IBM Security Directory Server"/>
+
+    <federatedRepository>
+        <primaryRealm name="FederatedRealm" allowOpIfRepoDown="true">
+            <participatingBaseEntry name="o=SampleBasicRealm"/>
+            <participatingBaseEntry name="o=ibm,c=us"/>
+        </primaryRealm>
+   </federatedRepository>
+</server>
 ----
