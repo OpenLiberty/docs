@@ -12,22 +12,33 @@
 :seo-description:
 = SSO configuration with LTPA cookies
 
-Lightweight Third Party Authentication (LTPA) provides single sign-on (SSO) configuration support to authenticate users when they are accessing applications. With LTPA enabled, you can encrypt, digitally sign, and securely transmit authentication-related data between microservice applications.
+Lightweight Third Party Authentication (LTPA) provides single sign-on (SSO) configuration support to authenticate users only once when they are accessing applications. With LTPA enabled, you can encrypt, digitally sign, and securely transmit authentication-related data between microservice applications.
 
 == LTPA protocol
-Secure communication between applications is enabled by using the LTPA protocol. The LTPA protocol provides the SSO feature that requires a user to authenticate their identity only when they are connected to a domain name system. After the connection to the DNS is established, the user can access resources in other servers that exist in the same domain without getting prompted to authenticate. The realm names on each system in the DNS domain are case-sensitive and must match identically.
+Secure communication between microservices is enabled by using the LTPA protocol. The LTPA protocol provides the SSO feature that requires a user to authenticate their identity only once when they are connected to a microservice. After the connection to the microservice is established, the user can access resources in other services that exist in the same microservice architecture without getting prompted to authenticate.
 
-To enable the SSO feature, cryptographic keys are used to encrypt and decrypt user data that passes between servers with the LTPA protocol. When all the servers that are involved use the same user registry, the keys must be shared between different servers for the resources in one server to access resources in other servers. The configured user registry that is required with must be a centrally shared repository so that users and groups are the same, regardless of the server.
+To enable the SSO feature, cryptographic keys are used to encrypt and decrypt user data that passes between microservices with the LTPA protocol. When all the services that are involved use the same user registry, the keys must be shared between different services for the resources in one service to access resources in other services. The configured user registry that is required with must be a centrally shared repository so that users and groups are the same, regardless of the service.
+
+=== Configuring LTPA
+When security is enabled for an Open Liberty service, LTPA is configured by default during the service start time. The default location of the automatically generated LTPA keys files is `${server.output.dir}/resources/security/ltpa.keys`. The LTPA keys are encrypted with a randomly generated key and a default password of `WebAS` is initially used to protect the keys. The password is required when you import the LTPA keys into another service. To protect the security of the LTPA keys, you must change the password. When the LTPA keys are exchanged between services, this password must match across each service to enable SSO. You can also configure a service to use a custom LTPA keys file and expiration time in addition to your user-defined password. The following example shows the configuration of a `<ltpa>` element in a server.xml file with sample values:
+----
+<ltpa keysFileName="yourLTPAKeysFileName.keys" keysPassword="keysPassword" expiration="120" />
+----
+
+LTPA creates a token that contains user information, an expiration time, and is signed by the keys that exist within the service. The LTPA token is time-sensitive with a default expiration time of 120 minutes. Each of the involved services must have their time and date synchronized. If this is not achieved, LTPA tokens are prematurely expired and cause authentication or validation failures. Coordinated Universal Time (UTC) is used by default, and all other services must have the same UTC time.
+
+If the receiving service use the same keys as the originating service, the token can be decrypted to obtain the user information, which then is validated to make sure that the token is not expired and that the user information in the token is valid in its registry. On successful validation, the resources in the receiving services are accessible after the authorization check.
+
+Each service must have valid credentials. When the credentials expire, the service is required to communicate to the user registry to authenticate. Extending the time that the LTPA token remains cached presents an increased security risk that must be considered when you are defining your security policies.
+
+If key sharing is required between different services, you can copy the keys from one service to another. For security purposes, the keys are encrypted with a randomly generated key, and a user-defined password is used to protect the keys. This same password is needed when you are importing the keys into another service. The password is used only to protect the keys, and is not used to generate the keys.
 
 === Customizing SSO configuration with LTPA cookies
-When a user passes authentication on one of the servers that is accessed, authentication information that is generated by the server is transported to the web browser in a cookie. The server uses the cookie to propagate the authentication information to other servers. When SSO is enabled, the LTPA token passes to other servers through cookies for web resources.
+With SSO configuration support, you must authenticate only once when you access resources such as HTML, JavaServer Pages (JSP) files, and servlets or access resources in multiple services that share LTPA keys.
 
-LTPA creates a token that contains user information, an expiration time, and is signed by the keys that exist on the server. The LTPA token is time-sensitive with a default expiration time of 120 minutes. Each of the involved servers must have their time and date synchronized. If this is not achieved, LTPA tokens are prematurely expired and cause authentication or validation failures. Coordinated Universal Time (UTC) is used by default, and all other servers must have the same UTC time.
+When a user passes authentication on one of the services that are accessed, authentication information that is generated by the service is transported to the web browser in a cookie. The service uses the cookie to propagate the authentication information to other services. When SSO is enabled, the LTPA token passes to other services through cookies for web resources.
 
-If the receiving servers use the same keys as the originating server, the token can be decrypted to obtain the user information, which then is validated to make sure that the token is not expired and that the user information in the token is valid in its registry. On successful validation, the resources in the receiving servers are accessible after the authorization check.
-
-Each server must have valid credentials. When the credentials expire, the server is required to communicate to the user registry to authenticate. Extending the time that the LTPA token remains cached presents an increased security risk that must be considered when you are defining your security policies.
-
-If key sharing is required between different servers, copy the keys from one server to another. For security purposes, the keys are encrypted with a randomly generated key, and a user-defined password is used to protect the keys. This same password is needed when you are importing the keys into another server. The password is used only to protect the keys, and is not used to generate the keys.
-
-When security is enabled, LTPA is configured by default during the server start time.
+The default cookie name that is used to store the SSO token is `ltpaToken2`. If you want to use a different name for the cookie, you can customize the cookie name by using the `ssoCookieName` attribute of the `<webAppSecurity>` element. If you customize the cookie name, you must ensure that all the services that participate in SSO use the same cookie name. The following example specifies that the user logs out after the HTTP session expires and sets the name of the SSO cookie as `myCookieName`:
+----
+<webAppSecurity logoutOnHttpSessionExpire="true"  ssoCookieName="myCookieName" />
+----
