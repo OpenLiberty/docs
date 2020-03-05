@@ -26,22 +26,22 @@ The simplest way to securely run Open Liberty is to start with an existing Open 
 Although Open Liberty Docker images have basic security already configured, it is recommended that you take steps to harden an image if you intend to use it in production.
 Check the following things about your Open Liberty image to verify that it's hardened for production:
 
-* Confirm that the Open Liberty server's identity doesn't own the server's config and only has read access to it.
+* Confirm that the Open Liberty server identity doesn't own the server config and only has read access to it.
 Use the `WLP_OUTPUT_DIR` environment variable to point to the logs so that the server ID owns only the directory or file where `WLP_OUTPUT_DIR` points.
-* Ensure that any sensitive information in the `server.xml` file is AES encrypted.
-* Disable all non-TLS ports by setting ports to `-1` in the `httpEndpoint` stanza's `httpPort` argument.
+* Ensure that any sensitive information in the `server.xml` file is link:/docs/ref/general/#securityUtility.html[AES encrypted].
+* Disable all non-TLS ports by setting ports to `-1` in the `httpPort` argument of the `httpEndpoint` stanza.
 * Use the link:/docs/ref/feature/#transportSecurity.html[Transport Security feature] instead of the link:/docs/ref/feature/#ssl.html[SSL feature].
 * Add `webAppSecurity ssoRequiresSSL=’true’` to the `server.xml` file.
 * Add `webAppSecurity httpOnlyCookies=’true’` to the `server.xml` file.
 * Set `httpOptions removeServerHeader="true"` in the `server.xml` file.
 * Set `webContainer disableXPoweredBy="true"` in the `server.xml` file.
 
-If you extend an Open Liberty image for production use, opt for the leanest possible configuration by adding only tools and packages that are essential to your application.
+If you extend an Open Liberty image for use in production, opt for the leanest possible configuration by adding only tools and packages that are essential to your application.
 Using a minimal image reduces the number of OS vulnerabilities that you bundle with your application.
 
-== Stay current with Open Liberty
+== Current Open Liberty version
 Keep your version of Open Liberty up to date.
-Open Liberty's zero migration policy means that you can move to a later version without changing anything in your server config.
+The zero migration policy means that you can move to a later version without changing anything in your server config.
 Staying on the latest version also ensures that you get the latest link:/docs/ref/general/#security-vulnerabilities.html[security fixes] because updates are first released in the current version.
 After security fixes are released for the current version of Open Liberty, they are rolled back to older releases.
 Container images in Docker Hub are updated every time a new version of Open Liberty is released.
@@ -53,22 +53,23 @@ This command uses an MD5 checksum to check your installation for errors or poten
 The output message that you receive indicates whether Open Liberty was validated successfully.
 
 == UNIX file permissions
-A critical aspect of OS security is ensuring that files and directories have the appropriate permissions, and users and groups for a file are configured properly.
-All UNIX files have the following attributes where permissions are assigned: *owner*, *group*, and *other*.
+A critical aspect of OS security is ensuring that files and directories have the appropriate permissions, and users and groups of a file are configured properly.
+All UNIX files where permissions are assigned have the following attributes: *owner*, *group*, and *other*.
 For each of these attributes, there are three bits assigned as an octal digit.
 The first bit indicates read access, the second indicates write access, and the third indicates execute access.
 For example, when all three bits are on for an attribute, this is represented as a `7`, which indicates all access (read, write, and execute).
-A file with `770` permissions means that the file owner and any user in the file's group have read, write, and execute access. All others have no permissions.
+A file with `770` permissions means that the file owner and any user in the group have read, write, and execute access. All others have no permissions.
 Generally, the last digit file permission should end in `0` because others shouldn't have access to protected information.
 
 By default, Open Liberty Docker images run with `USER 1001` (non-root) as part of group `0`.
-This ensures that these images don't run as root by default.
+This setting ensures that these images don't run as root by default.
 For more information about Open Liberty Docker images, go to link:https://hub.docker.com/_/open-liberty[Docker Hub].
 
 == Access control
 It is critical to control users' access levels so that all users have the appropriate access to Open Liberty files.
 Users should have minimal access, based on their needs.
-Different types of users (for example, administrators, developers, database support, etc.) might need to access the config or logs.
+Different types of users might need to access the config or logs.
+These users might include administrators, developers, or database support personnel.
 The following points provide guidance on controlling users' access:
 
 * *The ID that the Open Liberty server uses to run*:
@@ -76,7 +77,7 @@ This ID needs to read its config and write to logs, but when hardening a server,
 This ID can also own files, or it can be a separate ID from the file owner.
 
 * *Users who are responsible for administering the server*:
-These users likely require read and write access to the server's config files.
+These users likely require read and write access to the server config files.
 A best practice is to not share login IDs or passwords among administrators.
 Instead, set up the server config file system owner with a dedicated ID, and permit administrators to use sudo to switch to this ID to update the config.
 
@@ -86,13 +87,14 @@ Some of these users need read access to view the logs, while other users might n
 * *Unauthorized users*:
 These users shouldn't have access to the config or product file systems, and are treated as part of the other group.
 
-== Processing include files
+== Process include files
 Include files can hold portions of the config outside of the `server.xml` file.
 These files are helpful in two primary situations:
 
-* When sensitive information needs to be available for select users or groups (for example, database administrators) but not the larger group with read access to the server's config.
+* When sensitive information needs to be available for select users or groups (for example, database administrators) but not the larger group with read access to the server config.
 * When a user needs to update only their portion of the server config.
-In this situation, it is important to ensure that the user can't override config in the `server.xml` file by using the `onConflict` tag in the `<include>` element, as shown in the following example:
+In this situation, it is important to ensure that a user can't override config in the `server.xml` file.
+To prevent users from overriding config in the `server.xml` file, use the `onConflict` tag in the `<include>` element:
 +
 [source,xml]
 ----
@@ -109,3 +111,9 @@ AES encryption is also preferable to XOR encryption because any XOR-encoded pass
 With AES encryption, the default encryption key that is used for decrypting can be overridden by setting the `wlp.password.encryption.key` property.
 This property must not be set in the `server.xml` file, but in a separate config file that is included by the `server.xml` file.
 This separate config file must contain only a single property declaration, and must be stored outside the normal config directory for the server.
+
+== Other potential vulnerabilities
+
+Hardening your server config is crucial to sealing off vulnerabilities and preventing attackers from gaining access to sensitive resources in your config file system.
+Protecting these points of attack hardens your server config for use in production, but there are other security vulnerabilities to consider before your container and application are production-ready.
+You must also ensure that you harden your link:/docs/ref/general/#network-hardening.html[network] and link:/docs/ref/general/#application-hardening.html[application configuration] to keep your application and users safe in production.
