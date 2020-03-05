@@ -14,16 +14,21 @@
 :page-type: general
 = securityUtility command
 
-The `securityUtility` command supports plain text encryption and TLS certificate creation for Open Liberty.
-
-You can call the tool directly from the command line or allow the server to call it to create a default TLS certificate and keystore on server startup.
+The `securityUtility` command supports plain text obfuscation and TLS certificate creation for Open Liberty.
+You can call the tool directly from the command line.
 
 == Usage examples
 
-Encode the `GiveMeLiberty` password with AES encryption:
+Encrypt a password with AES encryption. After you enter this command, interactive mode prompts you for a password:
 
 ----
-securityUtility encode --encoding=aes GiveMeLiberty
+securityUtility encode --encoding=aes
+----
+
+Hash a password. After you enter this command, interactive mode prompts you for a password:
+
+----
+securityUtility encode --encoding=hash
 ----
 
 Create a TLS certificate for the `myserver` server that is valid for 365 days with the `mypassword` password:
@@ -40,7 +45,6 @@ securityUtility help createSSLCertificate
 
 == Syntax
 
-// Question for Ajay: Where should this command be run from?
 Run the command from the `path_to_liberty/bin` directory.
 
 ----
@@ -55,13 +59,21 @@ One or more optional parameters that are different based on the value of *task*.
 
 == Tasks and options
 
+Use the following tasks with the `securityUtility` command to get help information, encode passwords, and generate TLS certificates.
+Some tasks can also be used with optional parameters, depending on what you need to accomplish.
+
+=== help
+
+This task prints help information for a specified task.
+
 === encode
 
-This task encodes the provided text by using Base64.
+This task obfuscates the provided text based on the type that is specified.
 If no options are specified, the command enters interactive mode.
+Interactive mode prompts you to enter and confirm your text input, rather than providing text on the command line.
 Otherwise, the provided text is encoded.
 Text with spaces must be put in quotation marks.
-The options included in the following table are available for the *encode* task:
+The following options are available for the *encode* task:
 
 [%header,cols=2*]
 |===
@@ -98,6 +110,8 @@ If this option is not specified, space characters from the beginning and end of 
 
 a|_text_
 |The text to be encoded.
+It is optional to provide password text on the command line.
+If no text is provided, the command enters interactive mode and prompts you for a password.
 
 |===
 
@@ -121,8 +135,9 @@ Certificate details::
 * signature algorithm: SHA256withRSA, can be customized with the `--sigAlg` option.
 * validity: 365 days, can be customized with the `--validity` option.
 * SubjectDN: `CN=<hostname>,OU=<client or server name>,O=ibm,C=us`, can be customized with the `--subject` option.
+* Subject Alternate Name (SAN): hostname
 
-The options included in the following table are available for the *createSSLCertificate* task:
+The following options are available for the *createSSLCertificate* task:
 
 [%header,cols=2*]
 |===
@@ -137,7 +152,7 @@ This option cannot be used if the `--client` option is specified.
 |Specifies the name of the Open Liberty client for which the keystore and certificate is created.
 This option cannot be used if the `--server` option is specified.
 
-|--keyType=keystore type
+|--keyType=keystore_type
 |This option is available starting in 19.0.0.5.
 Specifies the keystore type to generate.
 To generate a JKS keystore, specify the `--keyType` option with the value of `JKS`.
@@ -172,7 +187,7 @@ If this option is not provided, a default key is used.
 If this option is not provided, a default value of `365` is used.
 
 |--subject=DN
-|Specifies the Distinguished Name (DN) for the certificate subject and issuer.
+|Specifies the distinguished name (DN) for the certificate subject and issuer.
 If this option is not provided, a default value of `CN=<hostname>,OU=<server or client name>,O=ibm,C=us` is used.
 {empty} +
 {empty} +
@@ -200,7 +215,3 @@ If the `--extInfo` option is used, the value is passed directly to the `keytool`
 Use the syntax of the `--ext` flag on the `keytool` command.
 
 |===
-
-=== help
-
-This task prints help information for a specified task.
