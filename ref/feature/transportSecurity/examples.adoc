@@ -1,0 +1,97 @@
+
+== Examples
+
+=== Basic TLS configuration with keystore
+
+The following example shows a minimal TLS configuration, including TLS `keyStore` and `trustStore` files that are used in the TLS handshake. The `ssl` element can enable SSL or TLS connections. In this example, client-side authentication is enabled by setting the `clientAuthentication` attribute to `true`. The default setting for this attribute is `false`.
+
+[source,java]
+----
+<ssl id="mySSLSettings"
+     keyStoreRef="myKeyStore"
+     trustStoreRef="myTrustStore"
+     clientAuthentication="true" />
+<keyStore id="LDAPKeyStore"
+          location="${server.config.dir}/myKey.p12"
+          type="PKCS12"
+          password="{xor}CDo9Hgw=" />
+<keyStore id="LDAPTrustStore"
+          location="${server.config.dir}/myTrust.p12"
+          type="PKCS12"
+          password="{xor}CDo9Hgw=" />
+----
+
+For more information, see link:/docs/ref/config/#ssl.html[SSL Repertoire].
+
+=== Multiple TLS configurations
+
+You can set multiple TLS configurations. If more than one TLS configuration is configured, then the default TLS configuration must be specified in the `server.xml` file that uses the `sslDefault` service configuration. The default configuration is specified by setting the `sslRef` attribute on the `sslDefault` element to equal the ID of the default configuration, as shown in the following example:
+
+
+[source,java]
+----
+<sslDefault sslRef="defaultSSLSettings" />
+<ssl id="defaultSSLSettings"
+     keyStoreRef="defaultKeyStore"
+     trustStoreRef="defaultTrustStore"
+     clientAuthenticationSupported="true" />
+<keyStore id="defaultKeyStore"
+          location="key.jks"
+          type="JKS" password="defaultPWD" />
+<keyStore id="defaultTrustStore"
+          location="trust.jks"
+          type="JKS" password="defaultPWD" />
+
+<ssl id="mySSLSettings"
+     keyStoreRef="myKeyStore"
+     trustStoreRef="myTrustStore"
+     clientAuthentication="true" />
+<keyStore id="LDAPKeyStore"
+          location="${server.config.dir}/myKey.p12"
+          type="PKCS12"
+          password="{xor}CDo9Hgw=" />
+<keyStore id="LDAPTrustStore"
+          location="${server.config.dir}/myTrust.p12"
+          type="PKCS12"
+          password="{xor}CDo9Hgw=" />
+----
+
+=== Java virtual machine (JVM) Default truststore configuration
+
+You can set the `trustDefaultCert` attribute to `true` to specify that the JVM default truststore can be used, in addition to the configured truststore, as shown in the following example:
+
+[source,java]
+----
+<ssl id="myDefaultSSLConfig"
+      keyStoreRef="defaultKeyStore"
+      trustStoreRef="defaultTrustStore"
+      trustDefaultCert="true" />
+----
+
+=== Outbound TLS configuration
+
+By default, Liberty uses the default TLS configuration for both inbound and outbound TLS connections. You can configure Liberty to have a global outbound default that allows you to configure one TLS configuration for the outbound default. Outbound TLS filters are configured on the `outboundConnection` element that is nested in the `ssl` element. You can specify either a host or a host and port to indicate where the outbound SSL connection is going by setting attributes on the `outboundConnection` element.
+
+In the following example, outbound TLS connections that go to any port on the `otherhost` host use the `defaultSSLConfig` TLS configuration. Outbound connections that are going to the `server99.ibm.com` host and either port 9443 or 8020 use the `alternateSSLSettings` TLS configuration. All other outbound TLS connections use the outbound default TLS configuration that is specified by the `outboundSSLRef` attribute called `outboundSSLSettings`.
+
+[source,java]
+----
+<sslDefault outboundSSLRef=”outboundSSLSettings” />
+<ssl id="defaultSSLConfig" keyStoreRef="defaultKeyStore" trustStoreRef="defaultTrustStore" >
+	<outboundConnection host=”otherhost”  />
+</ssl>
+<keyStore id="defaultKeyStore" location="key.p12" type="PKCS12" password=”yourpassword” />
+<keyStore id="defaultTrustStore" location="trust.p12" type="PKCS12" password="yourpassword" />
+
+<ssl id="alternateSSLSettings" keyStoreRef="alternateKeyStore" trustStoreRef="alternateTrustStore" >
+	<outboundConnection host=”server99.ibm.com” port=”8020” />
+	<outboundConnection host=”server99.ibm.com” port=”9443” />
+</ssl>
+
+	<keyStore id="alternateKeyStore" location="${server.config.dir}/alternateServerKeyFile.p12" type="PKCS12" password="yourpassword" />
+	<keyStore id="alternateTrustStore" location="${server.config.dir}/alternateServerTrustFile.p12" type="PKCS12" password="yourpassword" />
+
+<ssl id="outboundSSLSettings" keyStoreRef="outboundKeyStore" trustStoreRef="outboundTrustStore" >
+</ssl>
+	<keyStore id="outboundKeyStore" location="${server.config.dir}/outboundKeyFile.p12" password="yourpassword" />
+	<keyStore id="outboundTrustStore" location="${server.config.dir}/outboundTrustFile.p12" password="yourpassword" />
