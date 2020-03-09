@@ -14,36 +14,21 @@
 
 SAML Web Browser Single-Sign-On (SSO) enables web applications to delegate user authentication to a centralized location for enterprises to manage and control identities.
 
-Security Assertion Markup Language (SAML) is an OASIS open standard that represents and exchanges user identity, authentication, and attribute information between services. To achieve this standard, SAML provides cross-domain SSO and identity federation. Cross-domain SSO and identity federation are enabled by the following features:
+Security Assertion Markup Language (SAML) is an OASIS open standard that represents and exchanges user identity, authentication, and attribute information between services. Within the SAML Web Browser SSO flow, the identity provider authenticates a user and returns a security token that is called a SAML assertion. A SAML assertion is an XML formatted token that is used to transfer user identity and attribute information from the identity provider of a user to a trusted service provider as part of the completion of an authentication request. The SAML assertion provides a vendor neutral way of transferring information between federation business partners. By using SAML, an enterprise service provider can contact a separate enterprise identity provider to authenticate users who are trying to access secure content.
 
-Subject::
-Typically, the subject is the user of an application but can be any entity that is capable of authentication such as an application
-SAML Profile::
-A specification that defines how to use SAML messages for business use cases such as SSO
-SAML Assertion::
-A message based in XML that contains security information about a subject
-Identity Provider::
-A server that issues SAML assertions about an authenticated subject
-Service Provider::
-Delegates authentication to an identity provider and relies on information about an authenticated subject in a SAML assertion that is issued by an identity provider
-Trust Relationship::
-An agreement between a SAML service provider and a SAML identity provider whereby the service provider trusts assertions that are issued by the identity provider
-SAML Protocol Binding::
-A description of how SAML message elements are mapped onto standard communication protocols, such as HTTP, for transmission between service providers and identity providers
+== SAML Web Browser SSO flow
 
-With SAML Web Browser SSO configuration, the identity provider authenticates a user and returns a security token known as a SAML assertion. A SAML assertion is an XML formatted token that is used to transfer user identity and attribute information from the identity provider of a user to a trusted service provider as part of the completion of a single sign-on request. A SAML assertion provides a vendor neutral means of transferring information between federation business partners. By using SAML, an enterprise service provider can contact a separate enterprise identity provider to authenticate users who are trying to access secure content.
+The SAML Web Browser SSO flow includes three components:
 
-The server supports the SAML web browser single sign-on profile with HTTP Post bindings, and acts as a SAML service provider. A web user authenticates to a SAML identity provider, which produces a SAML assertion, and the SAML service provider uses the SAML assertion to establish a security context for the web user. The SAML web SSO flow includes three components:
-
-* The end user
+* The user
 * The identity provider (IdP)
 * The service provider (SP)
 
-The user always authenticates to the IdP, and the SP relies on IdP assertion to identify the user as shown in the following example:
+The IdP is an entity that issues SAML assertions about an authenticated user. The SP delegates authentication to an IdP and relies on information about an authenticated user that exists in a SAML assertion that is issued by an identity provider. Within the SAML Web Browser SSO flow, the user always authenticates to the IdP, and the SP relies on the IdP assertion to identify the user as shown in the following example:
 
 image::/docs/img/saml_actor.gif[Key Concepts in Web Single-Sign-On]
 
-== SAML Web Browser SSO Scenarios
+The SAML Web Browser SSO flow usually begins with a user's request for a secured web application at the service provider, which is called SP-initiated SSO. It is also possible that SSO starts from the IdP. In this scenario, the user authenticates to the IdP, and the IdP redirects the user to the SP with a SAML response message, which is called IdP-initiated SSO.
 
 === SP-initiated solicited Web SSO
 The simplest form of cross-domain SSO is the SP-initiated SSO in which the user starts at the SP. In the following scenario, a user attempts to access a protected resource directly on an SP Web site without being logged on. The user does not have an account on the SP site, but does have a federated account managed by a third-party IdP. The SP sends an authentication request to the IdP. Both the request and the returned SAML assertion are sent through the user’s browser where the user request is verified.
@@ -55,7 +40,26 @@ With the IdP-intiated SSO, the user starts at the IdP. In the following scenario
 
 image::/docs/img/saml_idp_sso.gif[dP-Initiated unsolicited Web SSO (End user starting at IdP)]
 
-=== OpenID Connect provider and SAML service provider
-The protocols that are used to enable identity federation, such as OpenID Connect and SAML, provide the delegation of user authentication. In the following scenario, the process of identity federation establishes a shared identifier that is used between an application and a user. This action enables an application to delegate authentication of the user and receive back authentication details that confirm the user identity. 
+== SAML Single Logout
+Single Logout (SLO) is a near-simultaneous logout of a user from a specific authentication session and all active SP sessions that are associated with the authentication session. SLO can be initiated by both the SP and the IdP.
 
-image::/docs/img/saml_oidc.gif[OpenID Connect provider and SAML service provider]
+=== SP-initiated SLO
+With the SP-initiated SLO, a user clicks a logout link in the SP to start a global logout. The logout request is fulfilled with the following process:
+
+1. The SP sends a logout request to the SAML through a web browser.
+2. The IdP requests all active SP sessions to log out.
+3. The IdP logs out the user and sends the response back to the log out request of the SP.
+4. The SP ends the user's local security session.
+
+=== IdP-initiated SLO
+With the IdP-initiated SLO, the user clicks a logout link in the IdP to start a global logout. The logout request is fulfilled with the following process:
+
+1. The IdP sends a logout request to every SP that shares a login session through a web browser.
+2. The SP ends the local user login session.
+3. The IdP ends the user's IdP login session.
+
+== SAML metadata
+SAML metadata is configuration data that is required to automatically negotiate agreements between the SP and the IdP. The metadata consists of identifiers, binding support and endpoints, certificates, keys, cryptographic capabilities, and security and privacy policies.
+
+=== Open Liberty and SAML
+Open Liberty supports the SAML Web browser SSO profile with HTTP post binding, Single Logout, and SAML metadata.
