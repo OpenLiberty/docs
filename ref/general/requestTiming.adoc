@@ -1,27 +1,31 @@
 :page-layout: general-reference
 :page-type: general
-:page-description: Microservice architecture is a popular approach for building cloud-native applications in which each capability is developed as an independent service. It enables small, autonomous teams to develop, deploy, and scale their respective services independently.
+:page-description: The request timing feature automatically detects slow requests and logs the information when the request is completed.
 :page-categories: MicroProfile
-:seo-title: MicroProfile simplifies developing cloud-native Java microservices
-:seo-description: Microservice architecture is a popular approach for building cloud-native applications in which each capability is developed as an independent service. It enables small, autonomous teams to develop, deploy, and scale their respective services independently.
+:seo-title: The request timing feature automatically detects slow and hung requests
+:seo-description: The request timing feature automatically detects slow and hung requests and logs the information when the request is completed.
 = Slow and hung request detection
 
-Slow or hung requests can happen, and your application needs a continuous monitoring tool to detect the  cause.
-The request timing feature in automatically detects slow requests and logs the information when the request is completed.
+Slow or hung requests can happen, and your application needs a continuous monitoring tool to detect the cause.
+The request timing feature automatically detects slow  and hung requests and logs the information when the request is completed.
 
 The `requestTiming` feature monitors requests with respect to time and automatically detects and diagnoses slow and hung requests.
 In addition to the previous capability of detecting the slow request, the updated feature now also logs when the request is completed, thus improving the monitoring efficiency.
 The users can view the information about a completed slow request with the request id and time of completion.
+Similarly, in the case of a hung request, a message is logged if a request hung initially, gets completed.
 
 == Configure slow and hung request detection
 
 You can enable the request timing the feature by adding the `requestTiming` to the list of features in the `server.xml` file.
 
+[source,java]
+----
 <featureManager>
       ...
       <feature>requestTiming-1.0</feature>
       ...
 </featureManager>
+----
 
 The slow and hung request thresholds are configured by setting `slowRequestThreshold` and `hungRequestThreshold` in the `<requestTiming/>` configuration in the `server.xml` file.
 This setting sets a single slow and hung request threshold for all requests that are timed.
@@ -30,12 +34,16 @@ This setting sets a single slow and hung request threshold for all requests that
 
 When a request runs for longer than the `slowRequestThreshold` or any configured threshold, the `requestTiming` feature generates a warning message in the messages log file.
 The message includes details about the request and events that made up the request.
+The default threshold value is 10 seconds.
 
 Following is an example of the format of the log messages.
 
+[source,java]
+----
 TRAS0112W: Request <(Request ID)> has been running on thread <THREADID> for at least <DURATION>. The following stack trace shows what this thread is currently running.
 <STACK TRACE>
 <DURATION AND OPERATIONS Table>
+----
 
 The message helps you analyze the reason behind the slow request, though it is difficult to determine whether the request is stuck at that point or is still running slowly.
 To address this issue, three messages are displayed for any slow request at the interval of specified `<slowRequestThreshold>`.
@@ -49,10 +57,15 @@ If the request exceeds the default `hungRequestThreshold` or the configured thre
 A series of three thread dumps (javacores) is taken with a 1-minute delay between them.
 Further thread dumps are created only if the new requests are detected to be hanging.
 
-The following log message sample shows the log messages for a request that crossed the hung request detection threshold. The default duration value is 10 min. The value that is configured in the following example is 4 min.
+The following log message sample shows the log messages for a request that crossed the hung request detection threshold.
+The default duration value is 10 min.
+The value that is configured in the following example is 4 min.
 
+[source,java]
+----
 [WARNING ] TRAS0114W: Request AAA7WlpP7l7_AAAAAAAAAAA was running on thread 00000021 for at least 240001.015ms. The following table shows the events that have run during this request.
 Duration       Operation
 240001.754ms + websphere.servlet.service | TestWebApp | TestServlet?sleepTime=480000
      0.095ms       websphere.session.setAttribute | mCzBMyzMvAEnjMJJx9zQYIw | userID
      0.007ms       websphere.session.setAttribute | mCzBMyzMvAEnjMJJx9zQYIw | visitCount
+----
