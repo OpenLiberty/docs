@@ -19,7 +19,22 @@ An authentication filter sets certain criteria that determine how a request for 
 
 Similarly, in a single application where different kinds of protected resources require different types of authentication, filters can control how authentication is managed for each resource. For example, in a banking application, resources for customers might be accessible through social media login while resources for administrators are secured by SPNEGO authentication.
 
-To specify an authentication filter, configure link:/docs/ref/config/#authFilter.html[the `authFilter` element] in your `server.xml` file. Then, specify a reference to the `authFilter id` attribute within the feature that manages the designated authentication mechanism. The following Open Liberty features support authentication filters:
+Authentication mechanisms in Open Liberty are managed by the feature configuration. To specify an authentication filter, configure link:/docs/ref/config/#authFilter.html[the `authFilter` element] in your `server.xml` file. Then, specify a reference to the `authFilter id` attribute within the feature that manages the designated authentication mechanism by using the `authFilterRef` attribute.
+
+The following example shows an authentication filter that is configured so that authentication requests that contain the `/mywebapp` URL pattern are processed by the OpenID feature. This example assumes the OpenID feature is enabled in the `server.xml` file.
+
+[source,java]
+----
+<openId authFilterRef="authFilter1">
+
+<authFilter id="authFilter1">
+    <requestUrl
+        id="myUrlFilter"
+        urlPattern="/mywebapp"
+        matchType="contains" />
+</authFilter>
+----
+The following Open Liberty features support authentication filters:
 
 * link:/docs/ref/feature/#jwtSso-1.0.html[JSON Web Token Single Sign-On]
 * link:/docs/ref/feature/#mpJwt-1.1.html[MicroProfile JSON Web Token]
@@ -54,7 +69,7 @@ In the following example, a piped list of request URL patterns is specified. To 
 ----
 
 === Web application name contains a pattern
-In the following example, a web application name is specified in the authentication filter. Incoming requests must target the `myApp` application in order to be processed by the service that is configured to use this filter.
+In the following example, a web application name is specified in the authentication filter. Incoming requests must target the `myApp` application to be processed by the service that is configured to use this filter.
 
 [source,java]
 ----
