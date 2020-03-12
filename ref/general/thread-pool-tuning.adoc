@@ -26,13 +26,14 @@ However, these threads are not directly relevant to application performance and 
 == Autonomic thread pool tuning
 The Open Liberty thread pool autonomic tuning process runs every 1.5 seconds.
 The thread pool controller maintains a set of data about the thread pool performance since the server was started.
-The controller records the throughput (tasks that are completed by the thread pool per controller cycle) at the various pool sizes that were previously tried.
+The throughput is determined by the number tasks that are completed by the controller each cycle.
+The controller records the throughput at the various pool sizes that were previously tried.
 This historical throughput data is then compared to the current cycle’s throughput to decide the optimal pool size.
 At each cycle, the pool size can be incrementally increased or decreased, or left unchanged.
 
 In some cases, there is no historical data to guide the decision.
 For example, if the pool is growing with each cycle and the current cycle is at the largest size so far, there is no data about throughput for larger pool sizes.
-In such a case, the controller flips a coin to decide whether to grow the pool.
+In such a case, the controller flips a coin to decide whether to increase the size of the pool.
 Then, it readjusts for the next cycle based on the results of that decision.
 This process is analogous to a human thread pool tuner who tries various thread pool sizes to see how they perform and decides on an optimal value for the configuration and workload.
 
@@ -42,9 +43,9 @@ During each 1.5-second cycle, the thread pool controller runs through the follow
 
 . Updates the historical data set with the number of tasks completed in the most recent controller cycle. Performance is recorded as a weighted moving average for each pool size, so it reflects historical results but adjusts quickly to changing workload characteristics.
 
-. Uses historical data to predict whether performance would be better at smaller or larger pool sizes. If there is no historical data for the smaller or larger pool size, decides whether to grow or shrink the pool.
+. Uses historical data to predict whether performance would be better at smaller or larger pool sizes. If there is no historical data for the smaller or larger pool size, decides whether to increase or shrink the size of the pool.
 
-. Adjusts pool size (increase, decrease, or unchanged) based on predicted performance, within bounds specified in settings.
+. Increases, decreases, or leaves the pool size unchanged based on predicted performance, within bounds specified in settings.
 
 . Goes back to sleep.
 
@@ -75,9 +76,9 @@ However, there are some situations in which setting the `coreThreads` or `maxThr
 The following configuration settings are available for the Open Liberty default executor pool:
 
 * `coreThreads` +
-This setting specifies the minimum number of threads in the pool (minimum 4).
+This setting specifies the minimum number of threads in the pool. The  minimum value for this setting is 4.
 Open Liberty creates a new thread for each piece of offered work until the number of threads equals the value of this attribute.
-If `coreThreads` is not configured, it defaults to a multiple of the number of CPUs (hardware threads) available to the Open Liberty process.
+If `coreThreads` is not configured, it defaults to a multiple of the number of hardware threads available to the Open Liberty process.
 +
 If Open Liberty is running in a shared environment, the thread pool controller cannot account for other processes with which it is sharing the available CPUs.
 In these cases, the default `coreThreads` value might cause Open Liberty to spin up more threads than is optimal, considering the other processes that are competing for CPU resources.
