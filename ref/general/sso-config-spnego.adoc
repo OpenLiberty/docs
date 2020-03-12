@@ -19,9 +19,39 @@ SPNEGO is an extension of the Kerberos Protocol that enables the secure negotiat
 
 When the service receives this token, the SPNEGO web authentication decodes and retrieves the user identity from the SPNEGO token. The identity is then used to make authorization decisions for the application.
 
-== Kerberos Protocol
-The Kerberos protocol provides a secure method of authentication between the user and the service that is being accessed. The protocol uses cryptography to enable both the user and the service to establish identities for secure web authentication. To enable the cryptography, Kerbero uses a trusted authority to issue secret keys for the encryption and decryption of credentials that is called the Key Distribution Center (KDC). The KDC contains a database of usernames and passwords for both users and Kerberos-enabled services to manage identities.
+== Kerberos authentication protocol
+The Kerberos authentication protocol provides a secure method of authentication between the user and the service that is being accessed. The protocol uses cryptography to enable both the user and the service to establish identities for secure web authentication. To enable the cryptography, Kerbero uses a trusted authority to issue secret keys for the encryption and decryption of credentials that is called the Key Distribution Center (KDC). The KDC contains a database of usernames and passwords for both users and Kerberos-enabled services to manage identities.
 
-This Kerberos database is stored in the Microsoft Active Directory. The Microsoft Active Directory stores the identity information of users, applications, and resources in a centralized data repository. You can use the Microsoft domain controller to access this data to manage the authentication and authorization of different identities from a centralized location. The Microsoft Active Directory and the associated KDC are required to enable the operation of SPNEGO.
+The KDC is stored in the Microsoft Active Directory. The Microsoft Active Directory stores the identity information of users, applications, and resources in a centralized data repository. Within the Microsoft Active Directory, the Active Directory domain contains the components that are necessary to manage the identification data that exists in the Active directory. Among these components is the the Microsoft domain controller that you can use to access this data to manage the authentication and authorization of different identities from a centralized location. The Microsoft Active Directory and the associated KDC are required to enable the operation of SPNEGO.
 
 == SPNEGO web authentication flow
+SPNEGO web authentication is supported in both a single Kerberos realm and a trusted Kerberos realm. A Kerberos realm is a set of principals that share the same KDC. within same Active Directory domain that define an administrative area of control over identifying data within the repository. While each Kerberos realm provides the same basic functions, a trusted Kerberos realm provides an additional layer of administration that allows users in the realm to access resources in another domain as if the resources in that domain belonged to the same realm. This trust is created by a shared key for a principal that exists in both domains.
+
+=== SPNEGO web authentication in a single Kerberos realm
+The following information explains the process for SPNEGO web authentication in a single Kerberos realm:
+
+1. To begin, the user logs on to the Microsoft domain controller MYDOMAIN.EXAMPLE.COM from the workstation.
+2. Next, the user attempts to access the Web application. The user requests a protected Web resource using a client browser, which sends an HTTP GET request to the Liberty Server.
+3. SPNEGO authentication in the Liberty server answers the client browser with an HTTP 401 challenge header that contains the Authenticate: Negotiate status.
+4. The client browser recognizes the negotiate header because the client browser is configured to support integrated Windows authentication. The client parses the requested URL for the host name. The client uses the host name to form the target Kerberos service principal name (SPN) HTTP/myLibertyMachine.example.com to request a Kerberos service ticket from the Kerberos ticket-granting service (TGS) in the Microsoft Kerberos KDC (TGS_REQ). The TGS then issues a Kerberos service ticket (TGS_REP) to the client. The Kerberos service ticket (SPNEGO token) proves both the user's identity and permissions to the Liberty Server.
+5. The client browser then responds to the Liberty server Authenticate: Negotiate challenge with the SPNEGO token that is obtained in the previous step in the request HTTP header.
+6. SPNEGO authentication in the Liberty server sees the HTTP header with the SPNEGO token, validates the SPNEGO token, and gets the principal or identity of the user.
+7. After the Liberty server gets the identity of the user, it validates the user in its user registry and performs the authorization checks.
+8. If access is granted, the Liberty server sends the response with an HTTP 200. The Liberty server also includes an LTPA cookie in the response. This LTPA cookie is used for subsequent requests.
+
+image::/docs/img/SPNEGO_Main_flow.gif[SPNEGO web authentication in a single Kerberos realm process]
+
+=== SPNEGO web authentication in a trusted Kerberos realm
+The following information explains the process for SPNEGO web authentication in a trusted Kerberos realm:
+
+1. The user logs in to the Microsoft domain controller TRUSTEDREALM.ACME.COM.
+2. From a client browser, the user makes a request for a protected Web resource that is hosted on a Liberty server in the original Microsoft domain controller, MYDOMAIN.EXAMPLE.COM.
+3. The Liberty server answers the client browser with an HTTP 401 challenge header that contains the Authenticate: Negotiate status.
+4. The client browser is configured to support integrated Windows authentication. The client browser parses the URL by using the host name of the workstation that hosts the Liberty server application. The client browser uses the host name as an attribute to request a Kerberos cross-realm ticket (TGS_REQ) for MYDOMAIN.EXAMPLE.COM from realm TRUSTEDREALM.ACME.COM.
+5. The client browser uses the Kerberos cross-realm ticket from step 4 to request a Kerberos service ticket from realm MYDOMAIN.EXAMPLE.COM. The Kerberos service ticket (SPNEGO token) proves the user's identity and permissions to the service (Liberty server).
+6. The client browser then responds to the Liberty server Authenticate: Negotiate challenge with the SPNEGO token that is obtained in the previous step in the request HTTP header.
+7. The Liberty server receives the request and checks the HTTP header with the SPNEGO token. It then extracts the Kerberos service ticket, validates the ticket, and gets the identity (principal) of the user.
+8. After the Liberty server gets the identity of the user, it validates the user in its user registry and performs the authorization checks.
+9. If access is granted, the Liberty server sends the response with an HTTP 200. The Liberty server also includes an LTPA cookie in the response. This LTPA cookie is used for subsequent requests.
+
+image::/docs/img/SPNEGO_Trusted_flow.gif[SPNEGO web authentication in a trusted Kerberos realm process]
