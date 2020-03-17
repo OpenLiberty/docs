@@ -45,9 +45,9 @@ If you use a custom registry, use the `UserRegistry` class to implement the regi
 SSO provides better security and regulatory compliance.
 If you use SSO, maintain your SSO configuration in a separate include file, not in the `server.xml` file.
 For more information about configuring SSO, see link:/docs/ref/general/#sso-config-json.html[SSO configuration with JSON Web Tokens].
-* *Carefully configure file permissions*: When you configure file permissions, ensure that the users who want access to the configuration fall into the appropriate permission bit.
-Users that aren't owners and aren't part of the authorized group fall into the `other` permission bit, which is indicated with `0`.
-* *Encrypt passwords*: Use encryption for passwords instead of Base64 encoding.
+* *Carefully configure file permissions*: When you configure file permissions, ensure that users who require access to the server's configuration have no more than the required capability (ie: a database administrator only has access to the data source configuration that is referenced in the `server.xml` using an `include` statement).
+Users that aren't administrators or developers with specialized access (ie: to view application/server logs), should fall into the `other` group for server configuration files, and all files should have the other group configured with no access (indicated with `0`).
+* *Encrypt passwords*: Use AES encryption for passwords instead of Base64 encoding.
 You can use the `securityUtility` command, which provides plain text encryption for Open Liberty.
 // For more information about the `securityUtility` command, see <link pending>.
 
@@ -63,7 +63,7 @@ To learn more about network vulnerabilities and ways to prevent network intrusio
 * *Use a firewall*: Use a firewall to shield production Open Liberty servers so that they don't run in the demilitarized zone (DMZ).
 The DMZ is an unsecured network segment that exists between internal and external networks.
 Firewalls help prevent security intrusions by monitoring network traffic and blocking specific traffic based on security rules.
-* *Enable the Transport Security feature*: The link:/docs/ref/feature/#transportSecurity.html[Transport Security feature] enables the link:/docs/ref/feature/#ssl.html[SSL feature] to support TLS connections and adds the ability to configure outbound transports.
+* *Enable the Transport Level Security feature*: The link:/docs/ref/feature/#transportSecurity.html[Transport Level Security feature] enables TLS for HTTP connections and adds the ability to configure outbound transports with TLS.
 Additionally, disable non-TLS ports by setting them to `-1` in the `server.xml` file, and use only certificates that are signed by a certificate authority for public-facing production servers.
 Also, enable TLS in your client and web server.
 Using TLS connections throughout your network communication flow helps protect your server from network intrusions.
@@ -85,5 +85,5 @@ To learn more about application configuration vulnerabilities and ways to preven
 * *Understand application roles and access control*: Roles and mappings are crucial for securely configuring your application.
 Incorrect role mapping can give inadvertent levels of access to users, which can result in users gaining unapproved access to sensitive resources.
 For more information about roles and mapping them to the appropriate users or groups, see link:/docs/ref/general/#authorization.html[Authorization].
-* *Secure servlet aliases*: Servlets are secured by URLs, and each URL must be specified in the `web.xml` file.
+* *Secure servlet aliases*: Servlets are secured by URLs, and each URL must be specified in the `web.xml` file or with JAX-RS, using annotations in your application.
 Because Open Liberty secures URLs and not the underlying classes, if a single servlet URL is insecure, an intruder might be able to bypass security.
