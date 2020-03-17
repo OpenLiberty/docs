@@ -9,7 +9,7 @@ The MicroProfile metrics feature can be used to monitor applications that are in
 <keyStore id="defaultKeyStore" password="Liberty"/>
 ----
 
-The MicroProfile metrics feature uses the default keystore to secure the endpoint.
+The MicroProfile metrics feature uses the default keystore to secure the `/metrics` REST endpoint.
 
 === MicroProfile metrics API authorization
 Application developers can add their own custom metrics by using the MicroProfile metrics API alongside the metrics provided by Open Liberty. To allow a user or group of users to access the MicroProfile metrics API, you can map the `administrator` to the user or group from the configured user registry. The metrics API is protected by the Open Liberty `administrator` role. The following example shows a configuration to enable a user in the configured user registry and `AuthorizedGroup` to access the API:
@@ -32,3 +32,27 @@ Application developers can add their own custom metrics by using the MicroProfil
 ----
 
 === REST endpoints
+The MicroProfile metrics feature provides a `/metrics` REST interface. Within this interface, the `/metrics` REST endpoints provide metrics data for administrators to monitor applications. The following table shows the different endpoints that can be accessed to provide metrics:
+
+
+|===
+|Endpoints |Request type |Supported formats |Description
+
+|/metrics |GET |JSON, Prometheus |Returns all registered metrics
+|/metrics/<scope> |GET |JSON, Prometheus |Returns metrics that are registered for the respective scope.
+|/metrics/<scope>/<metric name> |GET |JSON, Prometheus |	Returns the metrics that match the metric name for the respective scope.
+|/metrics |OPTIONS |JSON |Returns all registered metrics metadata.
+|/metrics/<scope>	 |OPTIONS |JSON |Returns metrics metadata registered for the respective scope.
+|/metrics/<scope>/<metric name> |OPTIONS |JSON |	Returns metrics metadata that matches the metric name for the respective scope.
+|===
+
+=== Metrics endpoint formats
+The `/metrics` endpoint provides two output formats for responses to requests that are dependent on the HTTP accept header of the corresponding request. The prometheus text format is a representation of the metrics that are compatible with the Prometheus monitoring tool. This format is returned for requests with a `text/plain` accept header. With the Prometheus monitoring tool, there are four metric types are supported. The following example shows generated Prometheus text for the gauge metric type:
+----
+# TYPE application:cost_dollars gauge
+# HELP application:cost_dollars The running cost of the server in dollars.
+application:cost_dollars 80
+----
+For more information, see https://prometheus.io/docs/concepts/metric_types/[Metric Types].
+
+The JSON format for the metrics endpoint is a JSON representation of the metrics that is returned for requests with an `application/json` accept header.
