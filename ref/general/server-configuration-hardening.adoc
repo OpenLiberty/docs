@@ -6,28 +6,32 @@
 // Contributors:
 //     IBM Corporation
 //
-:page-description: Before you run a container in production, harden the container image to remove any potential vulnerabilities that might allow exploitation of your server config or install.
+:page-description: Before you run a container in production, harden the container image to remove any potential vulnerabilities that might allow exploitation of your server config or installation.
 :seo-title: Operating system security hardening
-:seo-description: Before you run a container in production, harden the container image to remove any potential vulnerabilities that might allow exploitation of your server config or install.
+:seo-description: Before you run a container in production, harden the container image to remove any potential vulnerabilities that might allow exploitation of your server config or installation.
 :page-layout: general-reference
 :page-type: general
 = Server configuration security hardening
 
-Operating system (OS) intrusions occur when unauthorized users can log in to the OS and gain access to sensitive resources.
+Operating system (OS) intrusions occur when unauthorized users are able to log in to the OS and gain access to sensitive resources.
 The OS comprises two file systems, the product file system and the configuration file system.
-The product file system should always be mounted as read-only, and the config file system should be read-only for the server ID but writable for administrators.
+The config file system is the path where the `WLP_USER_DIR` environment variable points.
+
+One of the ways to protect against improper access to Open Liberty code is to ensure that the file system where Open Liberty binary files are located is mounted read-only.
+It's also a best practice to ensure that the Open Liberty server config file system is only writable to authorized server administrators.
 
 == Open Liberty Docker images
 A container that runs in production should have only the tools and packages that you need to run your application.
-Before you run a container in production, harden the container image to remove any potential vulnerabilities that might allow exploitation of your server config or install.
+Before you run a container in production, harden the container image to remove any potential vulnerabilities that might allow exploitation of your server config or installation.
 You can find Open Liberty Docker images and related information in link:https://hub.docker.com/_/open-liberty[Docker Hub].
 
 The simplest way to securely run Open Liberty is to start with an existing Open Liberty Docker image, which is already set up with basic security protocols.
 Although Open Liberty Docker images have basic security already configured, it is recommended that you take steps to harden an image if you intend to use it in production.
 Check the following things about your Open Liberty image to verify that it's hardened for production:
 
-* Confirm that the Open Liberty server identity doesn't own the server config and only has read access to it.
-Use the `WLP_OUTPUT_DIR` environment variable to point to the logs so that the server ID owns only the directory or file where `WLP_OUTPUT_DIR` points.
+* Confirm that the Open Liberty server identity doesn't own the directory where the server config is stored and has only read access to it.
+Use the `WLP_OUTPUT_DIR` environment variable to point to the server logs.
+Also, use the `WLP_OUTPUT_DIR` environment variable to configure the server identity as the owner of the directory where `WLP_OUTPUT_DIR` points.
 * Ensure that any sensitive information in the `server.xml` file is link:/docs/ref/general/#securityUtility.html[AES encrypted].
 * Disable all non-TLS ports by setting ports to `-1` in the `httpPort` argument of the `httpEndpoint` stanza.
 * Use the link:/docs/ref/feature/#transportSecurity.html[Transport Security feature] instead of the link:/docs/ref/feature/#ssl.html[SSL feature].
@@ -41,7 +45,7 @@ Using a minimal image reduces the number of OS vulnerabilities that you bundle w
 
 == Current Open Liberty version
 Keep your version of Open Liberty up to date.
-The zero migration policy means that you can move to a later version without changing anything in your server config.
+Open Liberty's zero migration policy means that you can move to a later version without changing anything in your server config.
 Staying on the latest version also ensures that you get the latest link:/docs/ref/general/#security-vulnerabilities.html[security fixes] because updates are first released in the current version.
 After security fixes are released for the current version of Open Liberty, they are rolled back to older releases.
 Container images in Docker Hub are updated every time a new version of Open Liberty is released.
@@ -53,21 +57,23 @@ This command uses an MD5 checksum to check your installation for errors or poten
 The output message that you receive indicates whether Open Liberty was validated successfully.
 
 == UNIX file permissions
-A critical aspect of OS security is ensuring that files and directories have the appropriate permissions, and users and groups of a file are configured properly.
-All UNIX files where permissions are assigned have the following attributes: *owner*, *group*, and *other*.
+A critical aspect of server security is ensuring that files and directories have the appropriate permissions, and users and groups are configured properly.
+All UNIX files have the following attributes: *file owner*, *group*, and *other*.
 For each of these attributes, there are three bits assigned as an octal digit.
 The first bit indicates read access, the second indicates write access, and the third indicates execute access.
 For example, when all three bits are on for an attribute, this is represented as a `7`, which indicates all access (read, write, and execute).
 A file with `770` permissions means that the file owner and any user in the group have read, write, and execute access. All others have no permissions.
 Generally, the last digit file permission should end in `0` because others shouldn't have access to protected information.
 
+Ensure that only administrative users are attached to the group that has write access to the server config files.
+
 By default, Open Liberty Docker images run with `USER 1001` (non-root) as part of group `0`.
 This setting ensures that these images don't run as root by default.
 For more information about Open Liberty Docker images, go to link:https://hub.docker.com/_/open-liberty[Docker Hub].
 
 == Access control
-It is critical to control users' access levels so that all users have the appropriate access to Open Liberty files.
-Users should have minimal access, based on their needs.
+It is critical to control users' access levels so that users have the appropriate access to Open Liberty files.
+Non-administrative users should have minimal access, based on their needs.
 Different types of users might need to access the config or logs.
 These users might include administrators, developers, or database support personnel.
 The following points provide guidance on controlling users' access:
