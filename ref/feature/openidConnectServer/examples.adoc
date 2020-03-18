@@ -15,26 +15,78 @@ The example uses `localStore` to store client data and token status, which means
 If you use a database, replace the `localStore` section with link:https://www.openliberty.io/docs/ref/feature/#jdbc-4.3.html[JDBC] database configuration.
 When you use a database, clients are not specified in the `server.xml` file. Instead, they are added to the database through the registration endpoint.
 If you reconfigure the server, `localStore` might be cleared.
+<keyStore id="defaultKeyStore" password="keyspass" />
 
-<openidConnectProvider id="OidcConfigSample" oauthProviderRef="OAuthConfigSample" />
+[source,xml]
+----
+<basicRegistry id="basic" realm="customRealm">
+    <user
+      name="demouser"
+      password="demopassword" />
+    <user
+      name="demouser2"
+      password="demopassword2" />
+     <group name="users">
+         <member name="demouser"/>
+         <member name="demouser2" />
+    </group>
+</basicRegistry>
 
-<oauthProvider id="OAuthConfigSample">
-<localStore>
-<!-- localstore is for test/dev use and not for production -->
-<client name="client01" secret="{xor}LDo8LTor"
-displayname="client01"
-scope="openid profile email">
-   <redirect>https://server.example.com:443/oidcclient/redirect/client01</redirect>
-   <redirect>https://server2.example.com:443/oidcclient/redirect/client01</redirect>
-</client>
-</localStore>
+<openidConnectProvider id="OP"
+    oauthProviderRef="OAuth"
+    signatureAlgorithm="RS256" keyStoreRef="defaultKeyStore"
+    jwkEnabled="true">
+</openidConnectProvider>
+
+<oauthProvider id="OAuth" tokenFormat="mpjwt" >
+    <localStore>
+      <client displayname="RP" enabled="true"
+            name="RP" secret="thesecret"
+            scope="openid profile email"
+            preAuthorizedScope="openid profile email">
+            <redirect>https://localhost:19443/oidcclient/redirect/RP</redirect>
+      </client>
+    </localStore>
 </oauthProvider>
 
-Configure the truststore of the server to include the signer certificates of the OpenID Connect Relying Parties, or clients, that are supported.
+<oauth-roles>
+    <authenticated>
+        <special-subject type="ALL_AUTHENTICATED_USERS" />
+    </authenticated>
+</oauth-roles>
+----
+Example of adding clients (when using localStore only) [find out what this means - when do you need to add clients?]:
 
-<sslDefault sslRef="DefaultSSLSettings" />
-<ssl id="DefaultSSLSettings" keyStoreRef="myKeyStore" trustStoreRef="myTrustStore" />
-<keyStore id="myKeyStore" password="{xor}Lz4sLCgwLTs=" type="jks" location="${server.config.dir}/resources/security/BasicKeyStore.jks" />
-<keyStore id="myTrustStore" password="{xor}Lz4sLCgwLTs=" type="jks" location="${server.config.dir}/resources/security/BasicTrustStore.jks" />
+[source, xml]
+----
+<oauth-roles>
+    <authenticated>
+        <special-subject type="ALL_AUTHENTICATED_USERS" />
+    </authenticated>
+    <clientManager>
+        <user name="testuser" />
+        <group name="oidcadmin" />
+    </clientManager>
+</oauth-roles>
+---
 
-OpenID Connect is configured to use the default SSL configuration that is specified by the server. Therefore, the default SSL configuration for the server must use the truststore that is configured for OpenID Connect.
+ example of using a database as the store
+
+[source, xml]
+----
+
+<oauthProvider id="OAuth" tokenFormat="mpjwt" >
+<localStore>
+  <client displayname="RP" enabled="true"
+        name="RP" secret="thesecret"
+        scope="openid profile email"
+        preAuthorizedScope="openid profile email">
+        <redirect>https://localhost:19443/oidcclient/redirect/RP</redirect>
+  </client>
+</localStore>
+
+```
+----
+
+and configure the datasource with authentication .
+To add clients when using a database, users in the clientManager role can add/modify clients by accessing the registration endpoint.
