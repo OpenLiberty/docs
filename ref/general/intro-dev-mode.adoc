@@ -1,0 +1,108 @@
+// Copyright (c) 2020 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description: When you run Open Liberty in development mode, you can rapidly code, deploy, test, and debug applications directly in your IDE or text editor.
+:seo-title: Development mode
+:seo-description: When you run Open Liberty in development mode, you can rapidly code, deploy, test, and debug applications directly in your IDE or text editor.
+:page-layout: general-reference
+:page-type: general
+= Introduction to development mode
+
+When you run Open Liberty in development mode (dev mode), you can rapidly code, deploy, test, and debug applications directly in your internal development environment (IDE) or text editor.
+
+With dev mode, you can quickly iterate on changes to your code and get immediate feedback from on-demand or automatic unit and integration tests. You can also attach a debugger to step through your code at any time.
+Dev mode reduces turnaround times and manages the details of testing and debugging so you can focus on your code.
+You don't need to rebuild your application to implement changes, run tests, or debug.
+Dev mode supports a streamlined workflow for iterative application development.
+
+== What is dev mode?
+
+Dev mode is a goal of link:https://github.com/OpenLiberty/ci.maven[the Open Liberty Maven plug-in].
+It integrates a set of capabilities for Open Liberty so you can edit and monitor your application in real time, without restarting your running server.
+Dev mode provides an enhanced developer experience in three primary focus areas: deploying changes, running tests, and debugging.
+
+To start dev mode, <<run, install the Open Liberty Maven plug-in>> and run the `mvn liberty:dev` command.
+
+=== Detect, recompile, and pick up code changes
+
+In dev mode, your running server can automatically detect, recompile, and deploy code changes whenever you save a new change in your IDE or text editor.
+
+Dev mode automatically detects the following changes to your application source:
+
+- Java source file and test file changes
+- Resource file changes
+- Configuration directory and configuration file changes
+- Addition of new dependencies to your pom.xml file
+- Addition of new features in the Open Liberty server configuration
+
+Resource file, configuration file, and configuration directory changes are copied into your target directory.
+New dependencies in your `pom.xml` file are added to your class path.
+New features are installed and started.
+
+Dev mode does not detect some changes, such as changes to the host and port for Open Liberty or adding a configuration directory or file.
+To detect these changes, you must restart dev mode.
+To restart, first exit dev mode by typing `Control-C`, or by typing `q` and pressing `Enter`.
+Then, run the `mvn liberty:dev` command to restart.
+After the server restarts, your changes are detected, recompiled, and picked up by the running server.
+
+You can configure how dev mode handles changes to your code, including how long to wait to process Java changes and whether to poll for changes or use file system notifications.
+For more information about configuration parameters, see link:https://github.com/OpenLiberty/ci.maven/blob/master/docs/dev.md#dev[the dev goal of the Open Liberty Maven plug-in].
+
+=== Run unit and integration tests on demand
+
+You can run unit and integration tests on demand by pressing `Enter` in the command window where dev mode is running.
+This capability runs the unit tests and integration tests that are configured for your project.
+If you add a test to your project, it is compiled and included the next time that you run tests.
+
+You can get immediate feedback on your changes by configuring dev mode to run hot tests automatically after every change.
+When hot testing is configured, tests run when you start dev mode and whenever you edit your code.
+To configure hot testing, include the `-DhotTests` parameter when you start dev mode, as shown in the following example:
+
+`mvn liberty:dev -DhotTests`
+
+You can also add parameters to specify whether to skip unit or integration tests, or skip tests altogether.
+For more information about configuration parameters, see link:https://github.com/OpenLiberty/ci.maven/blob/master/docs/dev.md#dev[the dev goal of the Open Liberty Maven plug-in].
+
+=== Attach a debugger to the running server
+
+You can attach a debugger to the running server to step through your code at any time.
+You can specify breakpoints in your source code to locally debug different parts of your application.
+The default debug port is `7777`.
+You can specify another port if the default port is not available by configuring the `debugPort` parameter when you start dev mode, as shown in the following example:
+
+`mvn liberty:dev -DdebugPort=8787`
+
+[#run]
+== Run Open Liberty in dev mode
+
+You enable dev mode through the Liberty Maven plug-in.
+
+To use dev mode, add the following code to your `pom.xml` file and run the `mvn liberty:dev` command:
+
+
+[source,xml]
+----
+<plug-in>
+    <groupId>io.openliberty.tools</groupId>
+    <artifactId>liberty-maven-plug-in</artifactId>
+    <version>3.1.0</version>
+</plug-in>
+----
+
+=== VS Code extension for dev mode
+
+With the link:https://marketplace.visualstudio.com/items?itemName=Open-Liberty.liberty-dev-vscode-ext[Liberty Dev VS Code extension], you can start Open Liberty in dev mode, make dynamic code changes, run tests, and debug your application, all without leaving the VS Code editor.
+After you install the extension and specify the Liberty Maven plug-in in your `pom.xml` file, you can select your project under the Liberty Dev Dashboard in the VS Code side bar.
+You can access dev mode functions by right-clicking your project name and selecting a command from the dropdown list.
+
+You can find the Liberty Dev VS Code extension in link:https://marketplace.visualstudio.com/items?itemName=Open-Liberty.liberty-dev-vscode-ext[the Visual Studio Marketplace].
+
+== Additional resources
+
+- Try out dev mode for yourself with this guide to link:/guides/getting-started.html[Packaging and deploying applications].
+- View command examples, explanations of available dev mode parameters, and more in link:https://github.com/OpenLiberty/ci.maven/blob/master/docs/dev.md#dev[the dev goal of the Open Liberty Maven plug-in].
