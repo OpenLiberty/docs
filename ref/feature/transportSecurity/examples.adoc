@@ -1,28 +1,40 @@
 
 == Examples
 
-=== Basic TLS configuration with keystore
+=== Basic TLS configuration
 
-The following example shows a minimal TLS configuration, including TLS keystore and truststore files that are used in the TLS handshake. The `ssl` element can enable SSL or TLS connections. In this example, client-side authentication is enabled by setting the `clientAuthentication` attribute to `true`. The default setting for the `clientAuthentication` attribute is `false`.
+In addition to adding the Transport Security feature, you must add the `keystore` element to your `server.xml` file.
+The following example shows the minimum configuration to enable TLS:
 
 [source,java]
 ----
-<ssl id="mySSLSettings"
-     keyStoreRef="myKeyStore"
-     trustStoreRef="myTrustStore"
-     clientAuthentication="true" />
-<keyStore id="LDAPKeyStore"
-          location="${server.config.dir}/myKey.p12"
-          type="PKCS12"
-          password="{xor}CDo9Hgw=" />
-<keyStore id="LDAPTrustStore"
-          location="${server.config.dir}/myTrust.p12"
-          type="PKCS12"
-          password="{xor}CDo9Hgw=" />
+<keyStore id="defaultKeyStore" password="yourPassword" />
 ----
+
+Open Liberty creates a keystore password during profile creation and puts it in the `server.env` file that is in the server home directory.
+If there is no `keystore` element for the `defaultKeyStore` file, this password is used to create a keystore file.
+This keystore file is then used as the `defaultKeyStore` file.
+Likewise, if a `defaultKeyStore` entry exists without a password in the `server.xml` file, the password from the `server.env` file is used to open the file.
+If you don't want to use the generated keystore password, remove the `keystore_password` entry from the `server.env` file.
+If a default keystore file was already generated with the password from the `server.env` file, you might need to remove it.
+
+In this configuration, the server creates the keystore and certificate if it does not exist during SSL initialization.
+The certificate is self-signed, with a validity period of 365 days and a signature algorithm of `SHA256withRSA`.
+The certified name (CN) value of the certificate `subjectDN` attribute is the host name of the machine where the server is running.
 
 For more information, see link:/docs/ref/config/#ssl.html[SSL Repertoire].
 
+=== Default TLS configuration
+
+The minimal configuration that is needed for TLS is a single keystore element called `defaultKeyStore`.
+When the `defaultKeyStore` element exists in the configuration, Open Liberty builds a TLS configuration around it that is called `defaultSSLConfig`.
+In the default TLS configuration, the `defaultKeyStore` is used as both the keystore and truststore.
+
+This default configuration enables all TLS levels.
+Levels TLSv1, TLSv1.1, TLSv1.2, and  TLSv1.3 are enabled, according to what the JDK supports.
+Default ciphers include all ciphers that are size 128 bit and higher.
+Client authentication is not enabled by the default configuration.
+The `defaultSSLConfig` properties can be customized by including an `ssl` element in the configuration for the `defaultSSLContfig` element, with the attributes customized.
 
 === Multiple TLS configurations
 
@@ -32,21 +44,20 @@ You can set multiple TLS configurations. If more than one TLS configuration is c
 [source,java]
 ----
 <sslDefault sslRef="defaultSSLSettings" />
+
 <ssl id="defaultSSLSettings"
      keyStoreRef="defaultKeyStore"
-     trustStoreRef="defaultTrustStore"
-     clientAuthenticationSupported="true" />
+     trustStoreRef="defaultTrustStore"/>
 <keyStore id="defaultKeyStore"
-          location="key.jks"
-          type="JKS" password="defaultPWD" />
+          location="key.p12"
+          type="PKCS12" password="defaultPWD" />
 <keyStore id="defaultTrustStore"
-          location="trust.jks"
-          type="JKS" password="defaultPWD" />
+          location="trust.p12"
+          type="PKCS12" password="defaultPWD" />
 
 <ssl id="mySSLSettings"
      keyStoreRef="myKeyStore"
      trustStoreRef="myTrustStore"
-     clientAuthentication="true" />
 <keyStore id="LDAPKeyStore"
           location="${server.config.dir}/myKey.p12"
           type="PKCS12"
@@ -58,7 +69,7 @@ You can set multiple TLS configurations. If more than one TLS configuration is c
 ----
 
 
-=== Java virtual machine (JVM) Default truststore configuration
+=== Java virtual machine (JVM) default truststore configuration
 
 You can set the `trustDefaultCert` attribute to `true` to specify that the JVM default truststore can be used, in addition to the configured truststore, as shown in the following example:
 
@@ -75,27 +86,36 @@ You can set the `trustDefaultCert` attribute to `true` to specify that the JVM d
 
 You can configure Liberty to have a global outbound default TLS configuration that is different from the inbound default configuration. Outbound TLS filters are configured on the `outboundConnection` element that is nested in the `ssl` element. You can specify either a host or a host and port to indicate where the outbound SSL connection goes by setting attributes on the `outboundConnection` element.
 
-In the following example, outbound TLS connections that go to any port on the `otherhost` host use the `defaultSSLConfig` TLS configuration. Outbound connections that go to the `server99.ibm.com` host and either port 9443 or 8020 use the `alternateSSLSettings` TLS configuration. All other outbound TLS connections use the outbound default TLS configuration that is specified by the `outboundSSLRef` attribute called `outboundSSLSettings`.
+In the following example, outbound TLS connections that go to any port on the `otherhost` host use the `defaultSSLConfig`. All other outbound TLS connections use the outbound default TLS configuration that is specified by the `outboundSSLRef` attribute called `outboundSSLSettings`.
 
 [source,java]
 ----
 <sslDefault outboundSSLRef=”outboundSSLSettings” />
-<ssl id="defaultSSLConfig" keyStoreRef="defaultKeyStore" trustStoreRef="defaultTrustStore" >
+
+<ssl id="defaultSSLConfig"
+      keyStoreRef="defaultKeyStore"
+      trustStoreRef="defaultTrustStore" >
 	<outboundConnection host=”otherhost”  />
 </ssl>
-<keyStore id="defaultKeyStore" location="key.p12" type="PKCS12" password=”yourpassword” />
-<keyStore id="defaultTrustStore" location="trust.p12" type="PKCS12" password="yourpassword" />
 
-<ssl id="alternateSSLSettings" keyStoreRef="alternateKeyStore" trustStoreRef="alternateTrustStore" >
-	<outboundConnection host=”server99.ibm.com” port=”8020” />
-	<outboundConnection host=”server99.ibm.com” port=”9443” />
+<keyStore id="defaultKeyStore"
+           location="key.p12"
+           type="PKCS12"
+           password=”yourpassword” />
+<keyStore id="defaultTrustStore"
+           location="trust.p12"
+           type="PKCS12"
+           password="yourpassword" />
+
+<ssl id="outboundSSLSettings"
+      keyStoreRef="outboundKeyStore"
+      trustStoreRef="outboundTrustStore" >
 </ssl>
 
-	<keyStore id="alternateKeyStore" location="${server.config.dir}/alternateServerKeyFile.p12" type="PKCS12" password="yourpassword" />
-	<keyStore id="alternateTrustStore" location="${server.config.dir}/alternateServerTrustFile.p12" type="PKCS12" password="yourpassword" />
-
-<ssl id="outboundSSLSettings" keyStoreRef="outboundKeyStore" trustStoreRef="outboundTrustStore" >
-</ssl>
-	<keyStore id="outboundKeyStore" location="${server.config.dir}/outboundKeyFile.p12" password="yourpassword" />
-	<keyStore id="outboundTrustStore" location="${server.config.dir}/outboundTrustFile.p12" password="yourpassword" />
+<keyStore id="outboundKeyStore"
+           location="${server.config.dir}/outboundKeyFile.p12"
+           password="yourpassword" />
+<keyStore id="outboundTrustStore"
+           location="${server.config.dir}/outboundTrustFile.p12"
+           password="yourpassword" />
 ----
