@@ -11,26 +11,27 @@
 :seo-description: When you run Open Liberty in development mode, you can rapidly code, deploy, test, and debug applications directly in your IDE or text editor.
 :page-layout: general-reference
 :page-type: general
-= Introduction to development mode
+= Development mode
 
-When you run Open Liberty in development mode (dev mode), you can rapidly code, deploy, test, and debug applications directly in your internal development environment (IDE) or text editor.
+When you run Open Liberty in development mode (dev mode), you can rapidly code, deploy, test, and debug applications directly from your internal development environment (IDE) or text editor.
 
 With dev mode, you can quickly iterate on changes to your code and get immediate feedback from on-demand or automatic unit and integration tests. You can also attach a debugger to step through your code at any time.
 Dev mode reduces turnaround times and manages the details of testing and debugging so you can focus on your code.
-You don't need to rebuild your application to implement changes, run tests, or debug.
 Dev mode supports a streamlined workflow for iterative application development.
 
 == What is dev mode?
 
-Dev mode is a goal of link:https://github.com/OpenLiberty/ci.maven[the Open Liberty Maven plug-in].
-It integrates a set of capabilities for Open Liberty so you can edit and monitor your application in real time, without restarting your running server.
+Dev mode is available as a goal of link:https://github.com/OpenLiberty/ci.maven[the Open Liberty Maven plug-in]or as a task of https://github.com/OpenLiberty/ci.gradle[the Liberty Gradle plugin].
+It integrates a set of capabilities for Open Liberty so that you can edit and monitor your application in real time, without restarting your running server.
 Dev mode provides an enhanced developer experience in three primary focus areas: deploying changes, running tests, and debugging.
 
-To start dev mode, <<run, install the Open Liberty Maven plug-in>> and run the `mvn liberty:dev` command.
+To start dev mode with Maven, <<run, install the Open Liberty Maven plug-in>> and run the `mvn liberty:dev` command.
+
+To start dev mode with Gradle, <<run, install the Open Liberty Gradle plug-in>> and run the `gradle libertyDev` command.
 
 === Detect, recompile, and pick up code changes
 
-In dev mode, your running server can automatically detect, recompile, and deploy code changes whenever you save a new change in your IDE or text editor.
+Dev mode can automatically detect, recompile, and deploy code changes whenever you save a new change in your IDE or text editor.
 
 Dev mode automatically detects the following changes to your application source:
 
@@ -44,14 +45,14 @@ Resource file, configuration file, and configuration directory changes are copie
 New dependencies in your `pom.xml` file are added to your class path.
 New features are installed and started.
 
-Dev mode does not detect some changes, such as changes to the host and port for Open Liberty or adding a configuration directory or file.
-To detect these changes, you must restart dev mode.
+Some changes, such as adding certain configuration directories or files, do not take effect until dev mode is restarted.
+To enable these changes, restart dev mode when prompted.
 To restart, first exit dev mode by typing `CTRL+C`, or by typing `q` and pressing `Enter`.
-Then, run the `mvn liberty:dev` command to restart.
-After the server restarts, your changes are detected, recompiled, and picked up by the running server.
+Then, run the `mvn liberty:dev` command or the `gradle libertyDev` command to restart.
+After the server restarts, the changes are detected, recompiled, and picked up by the running server.
 
-You can configure how dev mode handles changes to your code, including how long to wait to process Java changes and whether to poll for changes or use file system notifications.
-For more information about configuration parameters, see link:https://github.com/OpenLiberty/ci.maven/blob/master/docs/dev.md#dev[the dev goal of the Open Liberty Maven plug-in].
+You can configure how dev mode handles changes to your code by specifying parameters when you start dev mode.
+For more information about configuration parameters, see link:https://github.com/OpenLiberty/ci.maven/blob/master/docs/dev.md#dev[the dev goal of the Open Liberty Maven plug-in] or link:https://github.com/OpenLiberty/ci.gradle/blob/master/docs/libertyDev.md#libertydev-task[the dev task of the Open Liberty Gradle plug-in].
 
 === Run unit and integration tests on demand
 
@@ -61,29 +62,29 @@ If you add a test to your project, it is compiled and included the next time tha
 
 You can get immediate feedback on your changes by configuring dev mode to run hot tests automatically after every change.
 When hot testing is configured, tests run when you start dev mode and whenever you edit your code.
-To configure hot testing, include the `-DhotTests` parameter when you start dev mode, as shown in the following example:
+To configure hot testing, configure the hot test parameter when you start dev mode, as shown in the following examples:
 
-`mvn liberty:dev -DhotTests`
+Maven: `mvn liberty:dev -DhotTests`
+
+Gradle: `gradle libertyDev --hotTests`
 
 You can also add parameters to specify whether to skip unit or integration tests, or skip tests altogether.
-For more information about configuration parameters, see link:https://github.com/OpenLiberty/ci.maven/blob/master/docs/dev.md#dev[the dev goal of the Open Liberty Maven plug-in].
+For more information about configuration parameters, see link:https://github.com/OpenLiberty/ci.maven/blob/master/docs/dev.md#dev[the dev goal of the Open Liberty Maven plug-in] or link:https://github.com/OpenLiberty/ci.gradle/blob/master/docs/libertyDev.md#libertydev-task[the dev task of the Open Liberty Gradle plug-in].
 
 === Attach a debugger to the running server
 
 You can attach a debugger to the running server to step through your code at any time.
 You can specify breakpoints in your source code to locally debug different parts of your application.
 The default debug port is `7777`.
-You can specify another port if the default port is not available by configuring the `debugPort` parameter when you start dev mode, as shown in the following example:
-
-`mvn liberty:dev -DdebugPort=8787`
+If the default port is not available, dev mode selects a random port to use as the debug port.
 
 [#run]
 == Run Open Liberty in dev mode
+You can enable dev mode through either the Open Liberty Maven plug-in or the Open Liberty Gradle plug-in.
 
-You enable dev mode through the Liberty Maven plug-in.
+=== Dev mode with Maven
 
-To use dev mode, add the following code to your `pom.xml` file and run the `mvn liberty:dev` command:
-
+To use dev mode with Maven, add the following code to your `pom.xml` file and run the `mvn liberty:dev` command:
 
 [source,xml]
 ----
@@ -94,15 +95,20 @@ To use dev mode, add the following code to your `pom.xml` file and run the `mvn 
 </plug-in>
 ----
 
+=== Dev mode with Gradle
+To use dev mode with Gradle, link:https://github.com/OpenLiberty/ci.gradle[install the Gradle plug-in] and run the `gradle libertyDev` command.
+
+
+
 === VS Code extension for dev mode
 
-With the link:https://marketplace.visualstudio.com/items?itemName=Open-Liberty.liberty-dev-vscode-ext[Liberty Dev VS Code extension], you can start Open Liberty in dev mode, make dynamic code changes, run tests, and debug your application, all without leaving the VS Code editor.
-After you install the extension and specify the Liberty Maven plug-in in your `pom.xml` file, you can select your project under the Liberty Dev Dashboard in the VS Code side bar.
+With the link:https://marketplace.visualstudio.com/items?itemName=Open-Liberty.liberty-dev-vscode-ext[Open Liberty Tools VS Code extension], you can start Open Liberty in dev mode, make dynamic code changes, run tests, and debug your application, all without leaving the VS Code editor.
+After you install the extension and either the Maven or Gradle plugin, you can select your project under the Liberty Dev Dashboard in the VS Code side bar.
 You can access dev mode functions by right-clicking your project name and selecting a command from the dropdown list.
 
-You can find the Liberty Dev VS Code extension in link:https://marketplace.visualstudio.com/items?itemName=Open-Liberty.liberty-dev-vscode-ext[the Visual Studio Marketplace].
+You can find the Open Liberty Tools VS Code extension in link:https://marketplace.visualstudio.com/items?itemName=Open-Liberty.liberty-dev-vscode-ext[the Visual Studio Marketplace].
 
 == Additional resources
 
-- Try out dev mode for yourself with this guide to link:/guides/getting-started.html[Packaging and deploying applications].
-- View command examples, explanations of available dev mode parameters, and more in link:https://github.com/OpenLiberty/ci.maven/blob/master/docs/dev.md#dev[the dev goal of the Open Liberty Maven plug-in].
+- Try out dev mode for yourself with link:https://github.com/OpenLiberty/demo-devmode[the demo-devmode sample project] and the guide to link:/guides/getting-started.html[Packaging and deploying applications].
+- View command examples, explanations of available dev mode parameters, and more in link:https://github.com/OpenLiberty/ci.maven/blob/master/docs/dev.md#dev[the dev goal of the Open Liberty Maven plug-in] and link:https://github.com/OpenLiberty/ci.gradle/blob/master/docs/libertyDev.md#libertydev-task[the dev task of the Open Liberty Gradle plug-in].
