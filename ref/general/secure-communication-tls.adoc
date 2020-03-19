@@ -17,12 +17,12 @@
 Transport Layer Security (TLS) is a security protocol that uses verified certificates and encryption keys to secure communications over the internet. TLS is an update to the Secure Sockets Layer (SSL) protocol.
 
 With TLS, client and server applications can authenticate each other and communicate with confidentiality and data integrity.
-TLS is a widely adapted protocol that is designed to address the security challenges of the modern internet.
+TLS is a widely adopted protocol that is designed to address the security challenges of the modern internet.
 Although SSL is still used, it entails many known security vulnerabilities that can be avoided by using TLS instead.
 Most websites now use TLS, which can be easily identified by the presence of the padlock icon in the address bar of an internet browser.
-In order for a website to comply with the secure HTTPS protocol, its communications must be encrypted according to the TLS protocol. Most web browsers flag sites that do not comply with this protocol as `not secure`.
+In order for a website to comply with the secure HTTPS protocol, its communications must be encrypted according to the TLS protocol. Most web browsers flag sites that do not comply with the HTTPS protocol as `not secure`.
 
-== The TLS protocol
+== TLS protocol
 
 The TLS protocol is made up of two component protocols: the TLS handshake and the TLS record.
 The TLS handshake sets the terms for secure communication between client and server during the session.
@@ -49,7 +49,7 @@ TLS addresses many known security vulnerabilities from SSL, and adds extra capab
 Although TLS replaces SSL for most websites, the term SSL is still widely used as a colloquialism and in many cases can refer to either SSL or TLS-enabled connections.
 TLS and SSL are not interoperable, though TLS does provide compatibility support for older devices that still use SSL.
 
-=== The TLS handshake
+=== TLS handshakes
 
 The TLS handshake is a process by which a client and server set the terms for secure communications during a connection.
 The handshake occurs before any data is exchanged.
@@ -73,48 +73,14 @@ A basic TLS handshake comprises the following high-level steps:
 . The server sends a `finished` message, which is encrypted with the shared secret key and indicates that the server side of the handshake is complete.
 . For the remainder of the session, client and server can exchange symmetrically encrypted messages by using the shared secret key.
 
-=== The TLS record
+=== TLS record protocol
 
 After the TLS handshake establishes authentication and encryption details, the TLS record protocol handles the transmission and verification of encrypted messages during the session.
 The TLS record reads the messages to be transmitted, breaks them into manageable chunks, and encrypts them according to the terms agreed on during the TLS handshake.
 The TLS record also specifies a means to compute the message digest so that message integrity can be verified by both parties.
 On the receiving side, the record decrypts the messages and verifies their integrity by comparing the message digests.
 
-== TLS and Open Liberty
 
-You can enable support for TLS in Open Liberty by adding the Transport Security feature to your `server.xml` file.
-You can specify the details of your TLS settings by adding the  `ssl`, `sslDefault`, and `keyStore` elements to your `server.xml` file.
-For more information, see the link:/docs/ref/feature/#transportSecurity.html[Transport Security feature].
+== TLS configuration
 
-In addition to adding the Transport Security feature, you must add the `keystore` element to your `server.xml` file.
-The following example shows the minimum configuration to enable TLS.
-
-[source,java]
-----
-<feature>transportSecurity-1.0</feature>
-
-<keyStore id="defaultKeyStore" password="yourPassword" />
-----
-
-Open liberty creates a keystore password during profile creation and puts it in the `server.env` file that is in the server's home directory.
-If there is no `keystore` element for the `defaultKeyStore` file, this password is used to create a keystore file.
-This keystore file is then used as the `defaultKeyStore` file.
-Likewise, if a `defaultKeyStore` entry exists without a password in the `server.xml` file when the server starts, the password from the `server.env` file is used to open the file.
-If you don't want to use the generated keystore password, remove the `keystore_password` entry from the `server.env` file.
-If a default keystore file was already generated with the password from the `server.env` file, you might need to remove it.
-
-In this configuration, the server creates the keystore and certificate if it does not exist during SSL initialization.
-The certificate is a self-signed certificate with a validity period of 365 days and a signature algorithm of `SHA256withRSA`.
-The certified name (CN) value of the certificate's `subjectDN` attribute is the host name of the machine where the server is running.
-
-=== Default TLS configuration
-
-The minimal configuration that is needed for TLS is a single keystore element called `defaultKeyStore`.
-When the `defaultKeyStore` element exists in the configuration, Open Liberty builds a TLS configuration that is called `defaultSSLConfig` around it.
-In the default TLS configuration, the `defaultKeyStore` is used as both the keystore and truststore.
-
-This default configuration enables all TLS levels.
-TLSv1, TLSv1.1, and TLSv1.2, TLSv1.3 are enabled, according to what the JDK supports.
-Default ciphers include all ciphers that are size 128 bit and higher.
-Client authentication is not enabled by the default configuration.
-The `defaultSSLConfig` properties can be customized by including an `ssl` element in the configuration for the `defaultSSLContfig` element, with the desired attributes customized. For more information, see link:/docs/ref/config/#ssl.html[SSL Repertoire].
+The TLS protocol is the standard for secure communications over the internet. You can configure TLS to specify how the details of the handshake and other aspects of the protocol are implemented for your application. For more information about configuring TLS for Open Liberty, see link:/docs/ref/feature/#transportSecurity-1.0.html[the Transport Security feature].
