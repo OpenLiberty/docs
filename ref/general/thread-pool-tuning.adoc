@@ -18,7 +18,7 @@ Open Liberty provides an auto-tuning algorithm that controls the size of its thr
 For most applications that run on Open Liberty, it is not necessary to tune the size of the thread pool.
 
 All the application code in Open Liberty runs in a single thread pool that is called the default executor.
-The size of this pool is set by an auto-tuning controller, which works well for a wide range of workloads.
+The size of this pool is set by an auto-tuning controller, which can manage a wide range of workloads.
 The default executor pool is the set of threads where your application code runs.
 Open Liberty uses other threads for tasks like serving the OSGi framework, collecting JVM garbage, and providing Java NIO transport functions.
 However, these threads are not directly relevant to application performance and most of them are not configurable.
@@ -49,7 +49,7 @@ During each 1.5-second cycle, the thread pool controller runs through the follow
 
 . Goes back to sleep.
 
-There are a various factors other than the thread pool size that can affect throughput in the Open Liberty server.
+There are various factors other than the thread pool size that can affect throughput in the Open Liberty server.
 The relationship between pool size and observed throughput is not perfectly smooth or continuous.
 Therefore, to improve the predictions derived from the historical throughput data, the controller considers not just the closest larger and smaller pool size performance, but also includes several increments in each direction.
 
@@ -57,7 +57,7 @@ Therefore, to improve the predictions derived from the historical throughput dat
 
 In some application scenarios, all the threads in the pool can become blocked by tasks that must wait for other work to finish before they can run.
 In these cases, the server can become hung at a certain pool size.
-To resolve this type of situation, the thread pool controller enters a hang resolution mode.
+To resolve this situation, the thread pool controller enters a hang resolution mode.
 
 Hang resolution adds threads to the pool to allow the server to resume normal execution.
 Hang resolution also shortens the controller cycle duration to break out of the deadlock quickly.
@@ -86,10 +86,12 @@ In this situation, you can limit `coreThreads` to a value that reflects only the
 
 * `maxThreads` +
 This setting specifies the maximum number of threads in the pool.
-The default value is -1, which is equal to `MAX_INT` or, effectively unlimited.
+The default value is -1, which is equal to `MAX_INT`, or effectively unlimited.
 +
 In some environments, there is a hard limit on the number of threads that a process can spin up.
 Currently, Open Liberty has no way to know whether such a cap applies, or what the value is.
 If Open Liberty is running in a thread-limited environment, the operator can configure the `maxThreads` attribute to an acceptable value.
+
+For more information, see link:/docs/ref/config/#executor.html[Executor Management].
 
 The Open Liberty thread pool controller is designed to handle a wide range of workloads and configurations. There might be some edge cases where you need to adjust the `coreThreads` and `maxThreads` settings. However, try the default behavior first to make sure you actually need to make adjustments.
