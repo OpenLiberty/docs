@@ -17,24 +17,30 @@ In order for an application to be secure, it must be able to manage access to pr
 
 In an application where only certain users or groups are entitled to access certain resources, users and groups are assigned roles that represent which resources they can access. For example, in a payroll application, users in the `Employee` role can view a page that lists their hourly wages and hours worked. However, only users in the `Manager` role can make changes to employee wages. During link:/docs/ref/general/#authentication.html[authentication], Open Liberty identifies users, what groups they might be in, and which roles they have. When a user attempts to access a protected resource on the server, this information is used to determine whether the user is authorized to access the resource.
 
-The roles are defined directly in the application. These roles are mapped by the server configuration to user groups that are specified by the user registry or single sign-on provider. It is possible to avoid defining roles if you specify group names that match the role names exactly. In this case, the server maps the group to the role with a matching name by default.
+== Define user roles in your application code
 
-Roles are defined directly in the application by setting the `@DeclareRoles` annotation or by using `<security-role>` elements in the `web.xml` deployment descriptor file.
+User roles are defined directly in the application. These roles are mapped by the server configuration to user groups that are specified by the user registry or single sign-on provider. It is possible to avoid defining roles if you specify group names that match the role names exactly. In this case, the server maps the group to the role with a matching name by default.
+
+Roles are defined in the application by setting the `@DeclareRoles` annotation or by using `<security-role>` elements in the `web.xml` deployment descriptor file.
 To map the roles to user groups from a user registry or single sign-on provider, specify the `<security-role>` element within the `<application-bnd>` element in the `server.xml` file. If you use the default mapping by matching group names to role names exactly, you do not need specify an `<application-bnd>` element in the `server.xml` file.
 
-In some use cases, an application needs to know only whether a user is authenticated or not. In such cases, configuration can be simplified by specifying `"**"` as the role name in the `@RolesAllowed` annotation or XML configuration. This value denotes that any authenticated user can access a resource. It is also possible to authorize any and all users by setting the `@PermitAll` annotation, which specifies that a resource is accessible to everyone, even users who are not authenticated.
+== Set application resource permissions
 
 Typically, a developer can specify which roles are allowed to access an application resource directly in the source code by setting the `@RolesAllowed` annotation to contain the permissible roles. When a user is authenticated, the access groups to which the user is assigned are retrieved from a user registry or single sign-on (SSO) provider. The Open Liberty server maps these groups to the roles that are defined in the application. If the role or roles that are mapped to the user match the roles that are specified for the resource, the user is granted access.
 
-In cases where an SSO provider is configured, the user's credentials are retrieved from a token (such as a JSON web token) which can then propagate the identity of the logged-in user to application resources in an efficient, self-contained way.
+In cases where an SSO provider is configured, the user’s credentials are retrieved from a token (such as a JSON Web Token). This token can then propagate the identity of the authenticated user to application resources in an efficient, self-contained way
+
+In some use cases, an application needs to know only whether a user is authenticated or not. In such cases, configuration can be simplified by specifying `"**"` as the role name in the `@RolesAllowed` annotation or XML configuration. This value denotes that any authenticated user can access a resource. It is also possible to authorize all users by setting the `@PermitAll` annotation, which specifies that a resource is accessible to everyone, even users who are not authenticated.
 
 As an alternative to the `@RolesAllowed` annotation, you can define the `@ServletSecurity` annotation in the `HomeServlet.java` file with the `@HttpConstraint` annotation and set the `rolesAllowed` attribute to the permissible roles. In this configuration, role mappings are defined either in `.bnd` files in the application or in `application-bnd` stanzas in the `server.xml` file.
 
-Authorization occurs not only between users and applications, but also between microservices within an application. When one service requests data from another, the requesting service often must be able to demonstrate that it is authorized to access the data. Token-based authorization, such as with JSON Web Tokens (JWT), provides a lightweight way for security controls and security tokens to propagate user identities and roles across different services. Open Liberty supports token-based authorization through the link:/docs/ref/feature/#jwt-1.0.html[MicroProfile JWT feature].
+== Authorize requests between web services
+
+Authorization occurs not only between users and applications, but also between microservices within an application. When one service requests data from another, the requesting service often must be able to demonstrate that it is authorized to access the data. Token-based authorization, link:/docs/ref/general/#sso-config-jwt.html[such as with JSON Web Tokens (JWT)], provides a lightweight way for security controls and security tokens to propagate user identities and roles across different services. Open Liberty supports token-based authorization through the link:/docs/ref/feature/#jwt-1.0.html[MicroProfile JWT feature].
 
 == Secure your applications with Open Liberty
 
-Ready to try out authorization with Open Liberty for yourself? Check out some of these guides for securing applications.
+Ready to try out authorization with Open Liberty for yourself? Check out these guides for securing applications:
 
-- Learn how to secure a web application through authentication and authorization in this guide to link:/guides/security-intro.html[Securing a web application].
-- Explore how to control user and role access to microservices with JSON Web Tokens in this guide to link:/guides/microprofile-jwt.html[Securing microservices with JSON Web Tokens].
+- Learn how to secure a web application through authentication and authorization in the guide to link:/guides/security-intro.html[Securing a web application].
+- Explore how to control user and role access to microservices with JSON Web Tokens in the guide to link:/guides/microprofile-jwt.html[Securing microservices with JSON Web Tokens].
