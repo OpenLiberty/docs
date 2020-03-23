@@ -3,13 +3,25 @@
 
 === Basic TLS configuration
 
-In addition to adding the Transport Security feature, you must add the `keystore` element to your `server.xml` file.
+In addition to adding the Transport Security feature, you must add the `keyStore` element to your `server.xml` file.
 The following example shows the minimum configuration to enable TLS:
 
 [source,java]
 ----
 <keyStore id="defaultKeyStore" password="yourPassword" />
 ----
+
+When the `defaultKeyStore` element exists in the configuration, Open Liberty builds a TLS configuration around it with an ID attribute value of `defaultSSLConfig`.
+In this default TLS configuration, the `defaultKeyStore` is used as both the keystore and truststore.
+
+This default configuration enables all TLS levels.
+Levels TLSv1, TLSv1.1, TLSv1.2, and  TLSv1.3 are enabled, according to what the JDK supports.
+Default ciphers include all ciphers that are size 128 bit and higher.
+Client authentication is not enabled by the default configuration.
+
+In this configuration, the server creates the keystore and certificate if it does not exist during SSL initialization.
+The certificate is self-signed, with a validity period of 365 days and a signature algorithm of `SHA256withRSA`.
+The certified name (CN) value of the certificate `subjectDN` attribute is the hostname of the computer where the server is running.
 
 Open Liberty creates a keystore password during profile creation and puts it in the `server.env` file that is in the server home directory.
 If there is no `keystore` element for the `defaultKeyStore` file, this password is used to create a keystore file.
@@ -18,23 +30,16 @@ Likewise, if a `defaultKeyStore` entry exists without a password in the `server.
 If you don't want to use the generated keystore password, remove the `keystore_password` entry from the `server.env` file.
 If a default keystore file was already generated with the password from the `server.env` file, you might need to remove it.
 
-In this configuration, the server creates the keystore and certificate if it does not exist during SSL initialization.
-The certificate is self-signed, with a validity period of 365 days and a signature algorithm of `SHA256withRSA`.
-The certified name (CN) value of the certificate `subjectDN` attribute is the host name of the machine where the server is running.
+The `defaultSSLConfig` properties can be customized by including an `ssl` element in the configuration for the `defaultSSLContfig` element, with the attributes customized.
+
+You can designate a different ssl element in the configuration as the default SSL configuration by specifying the 'sslRef' attribute on the `defaultSSLContfig` element, as shown in the following example:
+
+[source,java]
+----
+<sslDefault sslRef="customSSLConfiguration" />
+----
 
 For more information, see link:/docs/ref/config/#ssl.html[SSL Repertoire].
-
-=== Default TLS configuration
-
-The minimal configuration that is needed for TLS is a single keystore element called `defaultKeyStore`.
-When the `defaultKeyStore` element exists in the configuration, Open Liberty builds a TLS configuration around it that is called `defaultSSLConfig`.
-In the default TLS configuration, the `defaultKeyStore` is used as both the keystore and truststore.
-
-This default configuration enables all TLS levels.
-Levels TLSv1, TLSv1.1, TLSv1.2, and  TLSv1.3 are enabled, according to what the JDK supports.
-Default ciphers include all ciphers that are size 128 bit and higher.
-Client authentication is not enabled by the default configuration.
-The `defaultSSLConfig` properties can be customized by including an `ssl` element in the configuration for the `defaultSSLContfig` element, with the attributes customized.
 
 === Multiple TLS configurations
 
