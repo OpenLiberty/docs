@@ -6,9 +6,9 @@
 // Contributors:
 //     IBM Corporation
 //
-:page-description:
+:page-description: Harden your network security to prevent network intrusions.
 :seo-title: Network security hardening
-:seo-description:
+:seo-description: Harden your network security to prevent network intrusions.
 :page-layout: general-reference
 :page-type: general
 = Network security hardening
@@ -16,14 +16,19 @@
 Network intrusions occur when unauthorized users gain access to network activity.
 With this access, they can alter traffic and steal network resources.
 
-// General questions
-// What's the advice for where to put things in the cloud? Is this determined by the cloud or do you have to decide for yourself?
-
 == Firewalls
-Your production environment needs to run inside a firewall so your applications don't run in the demilitarized zone (DMZ).
+Production environments need to run inside a firewall. It's not recommended to run workloads in the demilitarized zone (DMZ).
 The DMZ is an intermediary zone where proxy and web servers run that is located between public and private networking zones.
 Typically, your network setup includes two firewalls, a perimeter firewall and a backend firewall.
 The perimeter firewall exists between the public zone and the DMZ, and the backend firewall exists between the DMZ and the private zone.
+
+== Security in container environments
+In container environments, running either on-premises or in the cloud, applications can be spread across multiple nodes.
+It's a best practice to isolate workloads from one another across a cluster of nodes.
+When Open Liberty is deployed in container environments, segment network traffic based on users, teams, applications, etc.
+Collections of containers, or pods, apportioned by namespace, offer the ability to provide IP and port isolation.
+Pods with different namespaces shouldn't be able to interact by default.
+For more information about network security in container environments, see the information about network isolation in link:https://www.redhat.com/en/resources/container-security-openshift-cloud-devops-whitepaper[Ten layers of container security].
 
 == TLS connectivity
 Open Liberty provides a simple TLS configuration with the link:/docs/ref/feature/#transportSecurity.html[Transport Security feature].
@@ -64,7 +69,6 @@ This parameter ensures that only specified IP origins are permitted to authentic
 <httpDispatcher trustedHeaderOrigin=“10.20.30.40, 10.20.50.60” />
 ----
 
-// What does setting these parameters do?
 When you use mutual authentication and users log in directly to an Open Liberty server without a proxy, set the following parameters in the `server.xml` file:
 
 [source,xml]
@@ -111,15 +115,14 @@ Set the option in the `server.xml` file to require that LTPA cookies are sent ov
 <webAppSecurity ssoRequiresSSL='true' />
 ----
 
-// Why do you replace LTPA keys regularly?
-Replace LTPA keys regularly.
+It's a security best practice to replace LTPA keys regularly.
+Replacing LTPA keys regularly reduces the risk vector in which a bad actor is able to access a copy of a file and decrypt its contents.
 To replace the keys, delete the `ltpa.keys` file and wait for the server to automatically regenerate them.
 Then, copy the new keys file to the file systems for other servers that share the keys.
 
 In production environments, the cookie for LTPA should be used only for HTTP requests and not for anything else, such as JavaScript applications.
-The following example restricts the use of LTPA cookies to only HTTP connections:
+The following example tells browsers to restrict the use of LTPA cookies to only HTTP connections:
 
-// Does this include HTTPS?
 [source,xml]
 ----
 <webAppSecurity httpOnlyCookies='true' />
@@ -136,30 +139,26 @@ Browsers that support the `HttpOnly` field don't allow client-side scripts to ac
 
 == Automated updates
 Config updates must be carefully controlled in production environments to reduce the possibility that unknown changes or vulnerabilities are deployed to users.
-By default, each server contains a monitored application directory named `dropins/configDropins`.
+By default, each server contains a monitored application directory named `/dropins`.
 When an application is placed in this directory, the server automatically deploys and starts the application.
-If you update config in the `server.xml` file or `configDropins` directory, the server automatically deploys the config changes.
+If you update config in the `server.xml` file or `/dropins` directory, the server automatically deploys the config changes.
 
-To ensure that you deploy only explicitly configured applications, you can disable monitoring of the `dropins/configDropins` directory:
+Each server also contains a monitored directory named `/dropins/configDropins` for config snippets.
+If you update the config in this directory, the server automatically deploys the config changes.
+
+To ensure that you deploy only explicitly pre-configured applications where their config resides in the `server.xml` file, you can disable monitoring of the `/dropins` directory:
 
 [source,xml]
 ----
 <appliciationMonitor updateTrigger="mbean" dropinsEnabled="false" />
 ----
 
-You can also disable automatic config updates by using the following config:
+You can also disable automatic config updates in the `server.xml` file by using the following config:
 
 [source,xml]
 ----
 <config updateTrigger="mbean" />
 ----
-
-// Do we need this section? Was this supposed to be done by 2013? Would we still need transition mode information?
-== SP 800-131a
-You can set up Open Liberty to meet the SP 800-131a requirements that are defined by the National Institute of Standards and Technology (NIST).
-SP 800-131a strengthens security by defining stronger cryptographic keys and more robust algorithms.
-This specification supports strict and transition modes.
-The transition mode allows for a phased adoption of strict mode.
 
 == Welcome page and headers
 For production, you can disable Open Liberty's welcome page.
@@ -171,8 +170,8 @@ Disable this homepage by setting the `enableWelcomePage` custom property to `fal
 <httpDispatcher enableWelcomePage="false" />
 ----
 
-// Why would you disable these headers?
 Open Liberty server headers are also enabled by default.
+Because these headers are enabled by default, in certain situations, server information might be returned to browsers or web clients about the type of server that is running.
 Setting the `removeServerHeader` custom property to `true` removes server implementation information from HTTP headers:
 
 [source,xml]
@@ -197,9 +196,8 @@ Restricting sessions can help prevent denial-of-service attacks in which attacke
 <httpSession allowOverflow="false" maxInMemorySessionCount="1000" alwaysEncodeURL="true" cookieSecure="true" cookieHttpOnly="true" />
 ----
 
-// Why must you secure this connector?
 == JMX connector
-You can secure access to the Open Liberty JMX connector for remote admin services in the web server plug-in by removing or commenting out the following entries:
+When you use the IHS web server, you can secure access to the Open Liberty JMX connector for remote administrative services in the web server plug-in by removing or commenting out the following entries:
 
 [source,xml]
 ----
