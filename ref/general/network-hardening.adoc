@@ -17,10 +17,12 @@ Network intrusions occur when unauthorized users gain access to network activity
 With this access, they can alter traffic and steal network resources.
 
 == Firewalls
-Production environments need to run inside a firewall. It's not recommended to run workloads in the demilitarized zone (DMZ).
+Production environments need to run inside a firewall.
+It's not recommended to run workloads in the demilitarized zone (DMZ).
 The DMZ is an intermediary zone where proxy and web servers run that is located between public and private networking zones.
 Typically, your network setup includes two firewalls, a perimeter firewall and a backend firewall.
 The perimeter firewall exists between the public zone and the DMZ, and the backend firewall exists between the DMZ and the private zone.
+The backend firewall, or overall network design, should limit ingress traffic to trusted addresses and limit egress traffic to the minimum addresses required by the application.
 
 == Security in container environments
 In container environments, running either on-premises or in the cloud, applications can be spread across multiple nodes.
@@ -31,13 +33,13 @@ Pods with different namespaces shouldn't be able to interact by default.
 For more information about network security in container environments, see the information about network isolation in link:https://www.redhat.com/en/resources/container-security-openshift-cloud-devops-whitepaper[Ten layers of container security].
 
 == TLS connectivity
-Open Liberty provides a simple TLS configuration with the link:/docs/ref/feature/#transportSecurity.html[Transport Security feature].
-The Transport Security feature enables the link:/docs/ref/feature/#ssl.html[SSL feature] to support SSL connections and adds the ability to configure outbound transports.
-TLS uses signed public keys to protect HTTP, IIOP, LDAP, MQ, JDBC, and messaging traffic between Open Liberty messaging engines, J2C, and SOAP traffic.
+Open Liberty provides a simple TLS configuration with the link:/docs/ref/feature/#transportSecurity-1.0.html[Transport Security feature].
+The Transport Security feature enables the link:/docs/ref/feature/#ssl-1.0.html[SSL feature] to support SSL connections and adds the ability to configure outbound transports.
+TLS uses key pairs and signed X.509 certificates to protect HTTP, IIOP, LDAP, IBM MQ, JDBC, and messaging traffic between Open Liberty messaging engines, J2C, and SOAP traffic.
 The default TLS config is simple and easy to configure, but it is not suitable for use in production because it generates a self-signed certificate.
 The auto-generated certificate is convenient for development purposes, but certificates used in production should be signed by a trusted authority, such as Verisign.
 
-With Open Liberty, proxies are configurable and no proxies are trusted by default.
+With Open Liberty, ingress proxies are configurable and no proxies are trusted by default.
 For protection at the transport level when traffic comes in by proxy, make required Open Liberty servers accessible to only trusted proxies.
 Disable non-TLS ports wherever possible.
 Exposing only TLS-enabled ports requires careful consideration of the `server.xml` file because some features may automatically enable non-TLS ports.
@@ -62,14 +64,14 @@ If the certificate isn't sent or an untrusted certificate is sent, the connectio
 For production environments, use mutual (2-way) TLS authentication whenever possible.
 Mutual authentication is certificate-based authentication for clients.
 If you use mutual authentication in conjunction with a proxy, consider using the link:/docs/ref/config/#httpDispatcher.html[`httpDispatcher`] parameter with the link:/docs/ref/config/#httpDispatcher.html#trustedHeaderOrigin[`trustedHeaderOrigin`] option.
-This parameter ensures that only specified IP origins are permitted to authenticate:
+This parameter permits proxies by using the specified IP addresses to pass along certificate details on behalf of clients:
 
 [source,xml]
 ----
-<httpDispatcher trustedHeaderOrigin=“10.20.30.40, 10.20.50.60” />
+<httpDispatcher trustedSensitiveHeaderOrigin=“10.20.30.40, 10.20.50.60” />
 ----
 
-When you use mutual authentication and users log in directly to an Open Liberty server without a proxy, set the following parameters in the `server.xml` file:
+If your Open Liberty deployment does not include any proxies, set the following parameters in the `server.xml` file:
 
 [source,xml]
 ----
