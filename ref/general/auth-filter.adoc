@@ -15,11 +15,11 @@
 
 You can use authentication filters to specify which authentication mechanism Open Liberty uses to process different HTTP servlet requests.
 
-An authentication filter sets certain criteria that determine how a request for resources is authenticated. For example, if two applications are running on the same Open Liberty server, an authentication filter can specify different types of authentication for each application. In this case, a web application can be secured with the Social Media Login feature, while an associated microservice on the same server is secured with the MicroProfile JSON Web Token feature.
+An authentication filter sets certain criteria that determine how a request for resources is authenticated. For example, if two applications are running on the same Open Liberty server, an authentication filter can specify different types of authentication for each application. In this case, a web application can be secured with a social media login, while an associated microservice on the same server is secured by authenticating to a lightweight directory access protocol (LDAP) registry.
 
 Similarly, in a single application where different kinds of protected resources require different types of authentication, filters can control how authentication is managed for each resource. For example, in a banking application, resources for customers might be accessible through social media login while resources for administrators are secured by SPNEGO authentication.
 
-Authentication mechanisms in Open Liberty are managed by the feature configuration. To specify an authentication filter, configure link:/docs/ref/config/#authFilter.html[the `authFilter` element] in your `server.xml` file. Then, specify a reference to the `authFilter id` attribute within the feature that manages the designated authentication mechanism by using the `authFilterRef` attribute.
+Authentication mechanisms in Open Liberty are managed by the server configuration. In the `server.xml` file, you can specify filters to control which authentication mechanism is used for different types of requests. For example, you can filter requests that contain the `/mywebapp` URL pattern to be processed by social media login, and requests that contain the `/EmployeeRoleServlet` URL pattern to be processed by SPNEGO. You can configure filters to look for different characteristics of a request, such as URL pattern, IP address, domain name, browser type, and more.
 
 The following example shows an authentication filter that is configured so that authentication requests that contain the `/mywebapp` URL pattern are processed by the OpenID feature. This example assumes the OpenID feature is enabled in the `server.xml` file.
 
@@ -34,16 +34,14 @@ The following example shows an authentication filter that is configured so that 
         matchType="contains" />
 </authFilter>
 ----
-The following Open Liberty features support authentication filters:
+Open Liberty supports authentication filters for various authentication mechanisms, including the following technologies:
 
-* link:/docs/ref/feature/#jwtSso-1.0.html[JSON Web Token Single Sign-On]
-* link:/docs/ref/feature/#mpJwt-1.1.html[MicroProfile JSON Web Token]
-* link:/docs/ref/feature/#openid-2.0.html[OpenID]
-* link:/docs/ref/feature/#openidConnectClient-1.0.html[OpenID Connect Client]
-* link:/docs/ref/feature/#samlWeb-2.0.html[SAML web single sign-on]
-* link:/docs/ref/feature/#spnego-1.0.html[Simple and Protected GSSAPI Negotiation Mechanism (SPNEGO)]
-* link:/docs/ref/feature/#socialLogin-1.0.html[Social Media Login]
+* link:/docs/ref/general/#sso-config-jwt.html[JSON Web Tokens]
+* link:/docs/ref/general/#sso-config-saml.html[SAML web]
+* link:/docs/ref/general/#sso-config-spnego.html[Simple and Protected GSSAPI Negotiation Mechanism (SPNEGO)]
+* link:/docs/ref/general/#sso-social-config.html[Social Media Login]
 
+////
 == Authentication filter examples
 
 The following examples demonstrate how to configure authentication filters for different kinds of requests and applications.
@@ -128,5 +126,6 @@ To process an incoming request with the service configured to use this filter, t
          <webApp id="myWebApp" name="myApp" matchType="contains"/>
 </authFilter>
 ----
+////
 
 Authentication filters give you nuanced control over how you manage authentication to the protected resources in your application. For a full list of supported elements, see link:/docs/ref/config/#authFilter.html[Authentication Filter].
