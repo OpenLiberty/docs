@@ -15,7 +15,7 @@
 = Automated thread pool tuning
 
 Open Liberty provides an auto-tuning algorithm that controls the size of its thread pool.
-For most applications that run on Open Liberty, it is not necessary to tune the size of the thread pool.
+For most applications that run on Open Liberty, you do not need to tune the size of the thread pool.
 
 All the application code in Open Liberty runs in a single thread pool that is called the default executor.
 The size of this pool is set by an auto-tuning controller, which can manage a wide range of workloads.
@@ -31,19 +31,19 @@ The controller records the throughput at the various pool sizes that were previo
 This historical throughput data is then compared to the current cycle’s throughput to decide the optimal pool size.
 At each cycle, the pool size can be incrementally increased or decreased, or left unchanged.
 
-In some cases, there is no historical data to guide the decision.
-For example, if the pool is growing with each cycle and the current cycle is at the largest size so far, there is no data about throughput for larger pool sizes.
+In some cases, no historical data is available to guide the decision.
+For example, if the pool is growing with each cycle and the current cycle is at the largest size so far, no data exists about throughput for larger pool sizes.
 In such a case, the controller flips a coin to decide whether to increase the size of the pool.
 Then, it readjusts for the next cycle based on the results of that decision.
 This process is analogous to a human thread pool tuner who tries various thread pool sizes to see how they perform and decides on an optimal value for the configuration and workload.
 
 During each 1.5-second cycle, the thread pool controller runs through the following auto-tuning operations:
 
-. Wakes up and checks whether the threads in the pool are hung. If there are tasks in the queue and no tasks were completed in the previous cycle, the controller considers the threads to be hung. In this case, the controller increases the thread pool size as specified by settings and skips to step 5.
+. Wakes up and checks whether the threads in the pool are hung. If tasks are in the queue and no tasks were completed in the previous cycle, the controller considers the threads to be hung. In this case, the controller increases the thread pool size as specified by settings and skips to step 5.
 
 . Updates the historical data set with the number of tasks that completed in the most recent controller cycle. Performance is recorded as a weighted moving average for each pool size, so it reflects historical results but adjusts quickly to changing workload characteristics.
 
-. Uses historical data to predict whether performance would be better at smaller or larger pool sizes. If there is no historical data for the smaller or larger pool size, decides whether to increase or shrink the size of the pool.
+. Uses historical data to predict whether performance would be better at smaller or larger pool sizes. If no historical data exists for the smaller or larger pool size, decides whether to increase or shrink the size of the pool.
 
 . Increases, decreases, or leaves the pool size unchanged based on predicted performance, within bounds specified in settings.
 
@@ -69,7 +69,7 @@ The controller cycle returns to its normal duration, and pool size is adjusted b
 In most environments, configurations, and workloads, the Open Liberty thread pool does not require configuration or tuning.
 Open Liberty uses auto-tuning to determine how many threads are needed to provide optimal server throughput.
 The thread pool controller continually adjusts the number of threads in the pool within the defined bounds for coreThreads and maxThreads.
-However, there are some situations in which setting the `coreThreads` or `maxThreads` attributes might be necessary.
+However, in some situations, setting the `coreThreads` or `maxThreads` attributes might be necessary.
 
 === Threading settings
 
@@ -88,7 +88,7 @@ In this situation, you can limit `coreThreads` to a value that reflects only the
 This setting specifies the maximum number of threads in the pool.
 The default value is -1, which is equal to `MAX_INT`, or effectively unlimited.
 +
-In some environments, there is a hard limit on the number of threads that a process can spin up.
+Some environments set a hard limit on the number of threads that a process can spin up.
 Currently, Open Liberty has no way to know whether such a cap applies, or what the value is.
 If Open Liberty is running in a thread-limited environment, the operator can configure the `maxThreads` attribute to an acceptable value.
 
