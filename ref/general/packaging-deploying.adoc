@@ -6,46 +6,98 @@
 // Contributors:
 //     IBM Corporation
 //
-:page-description: You can choose how to package and deploy your application with Open Liberty to meet your needs.
+:page-description: Choose how to package and deploy your application with Open Liberty to meet your needs.
 :seo-title: Packaging and deploying applications
-:seo-description: You can choose how to package and deploy your application with Open Liberty to meet your needs.
+:seo-description: Choose how to package and deploy your application with Open Liberty to meet your needs.
 :page-layout: general-reference
 :page-type: general
 = Package and deploy applications with Open Liberty
 
-You can choose how to package and deploy your application with Open Liberty to meet your needs.
+You can choose among different options for packaging, containerizing, and deploying applications with Open Liberty.
+However, the simplest workflow for developing your cloud-native applications is building applications with Maven or Gradle, containerizing server packages with Docker, and deploying to the cloud with Kubernetes or OpenShift.
 
-== Package, containerize, and deploy using Maven and Docker
+== Package
+Before you containerize and deploy your application, package it with the Open Liberty runtime.
+There are different tools that you can use to package your application.
+Using Maven or Gradle to build and package your application is one of the easiest ways to get your application ready for cloud deployment.
+Maven and Gradle both work well as part of CI/CD pipelines.
+They start with the Open Liberty kernel and download specific features versions that are listed as dependencies.
 
-One of the easiest ways to get your cloud-native application up and running is to use Maven to package it with the Open Liberty runtime and use Docker to containerize and deploy it.
-The Open Liberty Maven plug-in includes goals that allow you to manage your Open Liberty server and applications.
-Go to the link:https://github.com/OpenLiberty/ci.maven[documentation] for information about how to enable the Open Liberty Maven plug-in for your project.
-Use the latest Open Liberty Docker images for access to the most recent feature versions and link:/docs/ref/general/#security-vulnerabilities.html[security fixes].
-You can download Open Liberty Docker images from link:https://hub.docker.com/_/open-liberty[Docker Hub].
+=== Maven
+link:https://maven.apache.org/[Maven] is a build automation tool that makes managing your builds and dependencies easier.
+With Maven, you use a Project Object Model (POM) file written in XML to define information about your project, and Maven downloads and installs all dependencies for you.
+The link:https://github.com/OpenLiberty/ci.maven[Open Liberty Maven plug-in] includes goals that allow you to manage your Open Liberty server and applications.
 
-Maven is a build automation tool that makes managing your builds and dependencies easier.
-You use a Project Object Model (POM) file to define information about your project, and Maven downloads and installs all dependencies for you.
-To learn more about using Maven with Open Liberty, check out this guide on link:/guides/maven-intro.html[Building a web application with Maven].
+After you install the Maven plug-in, specify `war` in the `<packaging>` element in your `pom.xml` file.
+Then, run the `mvn package` command to package your application and Open Liberty into a WAR file.
+This command compiles, verifies, and builds the project.
+After you create this server package, you're ready to containerize and deploy it.
+To learn more about using the Open Liberty Maven plug-in, check out this guide on link:/guides/maven-intro.html[Building a web application with Maven].
 
-When you're ready to package your application, run the `mvn package` command.
-This command compiles and builds the project.
-Then, you can use the `docker build` and `docker run` commands to build your image and run it as a container.
-To learn more about running your applications with the Open Liberty Docker images, see this guide on link:/guides/containerize.html[Containerizing microservices].
+=== Gradle
+Like Maven, link:https://gradle.org/[Gradle] is a build tool that provides dependency management for your projects.
+However, Gradle has it's own domain-specific language (DSL) that's based on Groovy.
+Similar to the Maven plug-in, the link:https://github.com/OpenLiberty/ci.gradle[Open Liberty Gradle plug-in] provides tasks for you to manage your server and applications.
 
-== Package into a JAR file using Maven
-
-In some cases, you might want to package you application into a JAR file.
-You can use Maven to package your application with Open Liberty into a runnable JAR file.
-Run the following Maven goal to specify runnable JAR file as the packaging type:
-
+After you install the Gradle plug-in, include the following lines of code at the top of your `build.gradle` file to specify required plug-ins:
 ----
-mvn liberty:package -Dinclude=runnable
+apply plugin: 'war'
+apply plugin: 'liberty'
+----
+Then, run the link:https://github.com/OpenLiberty/ci.gradle/blob/master/docs/libertyPackage.md#libertypackage-task[`libertyPackage` task] to package your application and Open Liberty into a WAR file.
+Once you create this server package, you can containerize and deploy it.
+To learn more about using the Open Liberty Gradle plug-in, check out this guide on link:https://openliberty.io/guides/gradle-intro.html[Building a web application with Gradle].
+
+=== Runnable JAR file
+You can also use Maven or Gradle to package your application with Open Liberty into a runnable JAR file that contains the application and server runtime.
+The JAR file is portable and ready to deploy both the application and server together.
+Packaging locally can be useful for debugging and testing during development.
+
+With Maven, run the following goal to specify a minimum runnable JAR file as the packaging type:
+----
+mvn liberty:package -Dinclude=minify,runnable
 ----
 
-This command overrides the `include` property to package your application and runtime into a runnable JAR file.
+With Gradle, include the following `packageLiberty` block in the `libertyPackage` task to specify a minimum runnable JAR file as the packaging type:
+----
+packageLiberty {
+    packageName = "MyPackage"
+    include = "minify,runnable"
+}
+----
 
-== Package using the server command
+Each example overrides the `include` property to package your application and runtime into a runnable JAR file.
+The `minify` option specifies that the runnable JAR file contains only what you need to run your application so the application is as lightweight as possible.
 
-You can use the `server package` command to package your application.
-With this command, you can select which parts of the Open Liberty runtime to package.
-For more information about options for packaging with the `server package` command, see the link:/docs/ref/command/#server-package.html[command documentation].
+== Containerize
+After you create a server package by packaging your application with the Open Liberty runtime, you can containerize it for deployment.
+Containerizing your server package bundles together the environment that your application needs to run.
+With Docker containers, you have the portability to run your application on any machine that is running Docker.
+
+A Docker image is a multi-layered file that serves as a template for a Docker container.
+The simplest way to containerize your server package is by using the latest link:https://hub.docker.com/_/open-liberty[Open Liberty Docker images], which include the most recent feature versions and link:/docs/ref/general/#security-vulnerabilities.html[security fixes].
+If you want to build your own Docker image, you need to create a Dockerfile.
+A Dockerfile is a text file that contains commands about how an image is built.
+If you choose to create your own Docker image, make sure to follow link:/docs/ref/general/#server-configuration-hardening.html[server configuration hardening best practices].
+
+Once you have a Dockerfile, you can run the `docker build` command to build an image for the container.
+Finally, the `docker run` command runs your container that houses the application.
+
+To learn more about running applications with Open Liberty Docker images, see these guides on link:https://openliberty.io/guides/docker.html[Using Docker containers to develop microservices] and link:/guides/containerize.html[Containerizing microservices].
+
+== Deploy
+After you containerize your server package, you can deploy it to link:https://kubernetes.io/[Kubernetes] or link:https://www.openshift.com/[OpenShift].
+Kubernetes is an orchestration and automation platform that is used for managing and scaling containers.
+For a step-by-step introduction to Kubernetes, check out the link:https://openliberty.io/guides/kubernetes-intro.html[Deploying microservices to Kubernetes guide].
+OpenShift is a project that is built on Kubernetes and adds functionality to meet enterprise needs.
+For a step-by-step introduction to OpenShift, check out the link:https://openliberty.io/guides/cloud-openshift.html[Deploying microservices to OpenShift guide].
+
+There are different cloud solutions that can run your Kubernetes or OpenShift workloads, including Amazon Web Services (AWS), Azure, IBM Cloud, and Google Cloud Platform (GCP).
+Go to the link:https://openliberty.io/guides/?search=deploy[Open Liberty deployment guides] to learn the specifics of deploying to each of these services.
+Leveraging a cloud-based infrastructure allows you to focus on development without getting hung-up in deployment infrastructure issues.
+
+== Where to next
+
+* To learn how to update and deploy an application on Open Liberty with Maven and Docker, see the link:https://openliberty.io/guides/getting-started.html[Packaging and deploying applications guide].
+
+* Have a Spring Boot application? To learn how to containerize, package, and run a Spring Boot application on an Open Liberty server without modification, see the link:https://openliberty.io/guides/spring-boot.html[Containerizing, packaging, and running a Spring Boot application guide].
