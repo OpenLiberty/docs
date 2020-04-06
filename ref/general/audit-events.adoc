@@ -1,0 +1,1264 @@
+// Copyright (c) 2018 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-layout: general-reference
+:page-type: general
+:seo-title: Audit events and their audit data - OpenLiberty.io
+:seo-description: The auditable events that can be captured from the Open Liberty server runtime environment and applications.
+= Supported audit events and their audit data
+
+The Liberty Audit feature captures auditable events from the server runtime environment and applications. You can use the data generated from the audit events to analyze the configured environment.
+
+The audit events are captured in the following formats to help identify different areas where the configured environment can be improved:
+
+* <<SECURITY_AUDIT_MGMT, Management of the audit service (SECURITY_AUDIT_MGMT)>>
+* <<SECURITY_MEMBER_MGMT, SCIM operations/member management (SECURITY_MEMBER_MGMT)>>
+* <<SECURITY_API_AUTHN, Servlet 3.0 APIs: login/authenticate (SECURITY_API_AUTHN)>>
+* <<SECURITY_API_AUTHN_TERMINATE, Servlet 3.0 APIs: logout (SECURITY_API_AUTHN_TERMINATE)>>
+* <<SECURITY_AUTHN_TERMINATE, Form Logout (SECURITY_AUTHN_TERMINATE)>>
+* <<SECURITY_AUTHN, Basic Authentication (SECURITY_AUTHN)>>
+* <<SECURITY_AUTHN, Client certificate authentication (SECURITY_AUTHN)>>
+* <<SECURITY_AUTHN, Form Login Authenication (SECURITY_AUTHN)>>
+* <<SECURITY_AUTHN_DELEGATION, Servlet runAs delegation (SECURITY_AUTHN_DELEGATION)>>
+* <<SECURITY_AUTHN_DELEGATION, EJB delegation (SECURITY_AUTHN_DELEGATION)>>
+* <<SECURITY_AUTHN_FAILOVER, Failover to basic authentication (SECURITY_AUTHN_FAILOVER)>>
+* <<SECURITY_AUTHZ, Unprotected servlet authorization (SECURITY_AUTHZ)>>
+* <<SECURITY_AUTHZ, JACC web authorization (SECURITY_AUTHZ)>>
+* <<SECURITY_AUTHZ, JACC EJB authorization (SECURITY_AUTHZ)>>
+* <<SECURITY_AUTHZ, EJB authorization (SECURITY_AUTHZ)>>
+* <<SECURITY_JMS_AUTHN, JMS Authentication (SECURITY_JMS_AUTHN)>>
+* <<SECURITY_JMS_AUTHZ, JMS Authorization (SECURITY_JMS_AUTHZ)>>
+* <<JMX_MBEAN_REGISTER, JMX MBean registration (JMX_MBEAN_REGISTER)>>
+* <<JMX_MBEAN, JMX MBean Operations (JXM_MBEAN)>>
+* <<JMX_MBEAN_ATTRIBUTES, JMX MBean attribute operations (JMX_MBEAN_ATTRIBUTES)>>
+* <<JMX_NOTIFICATION, JMX Notifications (JMX_NOTIFICATION)>>
+
+== SECURITY_AUDIT_MGMT
+
+The SECURITY_AUDIT_MGMT event captures the start and stop of the Audit Service and implemented handlers such as the default AuditFileHandler.
+
+
+The following table provides the fields for the SECURITY_AUDIT_MGMT event to perform the management of the audit service.
+
+[cols=",",options="header",]
+|===
+|FIELDS |DESCRIPTION
+|eventName |Name of the audit event
+|eventSequenceNumber |Sequence number of the audit event
+|eventTime |Time the event occurred
+|observer.id |Identifier of the observer of the event
+|observer.name |Name of the observer of the event: `AuditService` in the case of the audit service; `AuditHandler: <name of handler implementation>` in the case of a handler start
+|observer.typeURI |Unique URI of the observer of the event: `service/server`
+|outcome |Outcome of the event
+|target.id |Identifier of the target of the action
+|target.typeURI |Unique URI of the target of the event: `server/audit/start` in the case of an AuditService or handler start; `server/audit/stop` in the case of an AuditService or handler stop
+|===
+
+
+The following example shows the SECURITY_AUDIT_MGMT event capturing the start of the Audit Service and AuditFileHandler:
+
+[source,json]
+----
+{
+	"eventName": "SECURITY_AUDIT_MGMT",
+	"eventSequenceNumber": 0,
+	"eventTime": "2018-07-10 12:15:34.339",
+	"observer": {
+		"id": "websphere: sage-mbp.austin.ibm.com:/Users/sage/libertyGit/WS-CD-Open/dev/build.image/wlp/usr/:TestServer.audit",
+		"name": "AuditService",
+		"typeURI": "service/server"
+	},
+	"outcome": "success",
+	"target": {
+		"id": "websphere: sage-mbp.austin.ibm.com:/Users/sage/libertyGit/WS-CD-Open/dev/build.image/wlp/usr/:TestServer.audit",
+		"typeURI": "service/audit/start"
+	}
+} {
+	"eventName": "SECURITY_AUDIT_MGMT",
+	"eventSequenceNumber": 1,
+	"eventTime": "2018-07-10 12:15:34.471",
+	"observer": {
+		"id": "websphere: sage-mbp.austin.ibm.com:/Users/sage/libertyGit/WS-CD-Open/dev/build.image/wlp/usr/:TestServer.audit",
+		"name": "AuditHandler:AuditFileHandler",
+		"typeURI": "service/server"
+	},
+	"outcome": "success",
+	"target": {
+		"id": "websphere: sage-mbp.austin.ibm.com:/Users/sage/libertyGit/WS-CD-Open/dev/build.image/wlp/usr/:TestServer.audit",
+		"typeURI": "service/audit/start"
+	}
+}
+----
+
+The following example shows the SECURITY_AUDIT_MGMT event capturing the stop of the Audit Service and AuditFileHandler event capturing the stop of the Audit Service and AuditFileHandler:
+
+[source,json]
+----
+{
+	"eventName": "SECURITY_AUDIT_MGMT",
+	"eventSequenceNumber": 8,
+	"eventTime": "2018-07-10 12:15:40.354",
+	"observer": {
+		"id": "websphere: sages-mbp.austin.ibm.com:/Users/sage/libertyGit/WS-CD-Open/dev/build.image/wlp/usr/:TestServer.audit",
+		"name": "AuditHandler:AuditFileHandler",
+		"typeURI": "service/server"
+	},
+	"outcome": "success",
+	"target": {
+		"id": "websphere: sages-mbp.austin.ibm.com:/Users/sage/libertyGit/WS-CD-Open/dev/build.image/wlp/usr/:TestServer.audit",
+		"typeURI": "service/audit/stop"
+	}
+} {
+	"eventName": "SECURITY_AUDIT_MGMT",
+	"eventSequenceNumber": 9,
+	"eventTime": "2018-07-10 12:15:40.360",
+   "observer": {
+		"id": "websphere: sages-mbp.austin.ibm.com:/Users/sage/libertyGit/WS-CD-Open/dev/build.image/wlp/usr/:TestServer.audit",
+		"name": "AuditService",
+		"typeURI": "service/server"
+	},
+	"outcome": "success",
+	"target": {
+		"id": "websphere: sages-mbp.austin.ibm.com:/Users/sage/libertyGit/WS-CD-Open/dev/build.image/wlp/usr/:TestServer.audit",
+		"typeURI": "service/audit/stop"
+	}
+}
+----
+
+
+
+
+
+
+
+
+== SECURITY_MEMBER_MGMT
+
+You can use the SECURITY_Member_MGMT event to perform SCIM operations or member management. The following table provides the fields for the SECURITY_Member_MGMT event and a description of each field.
+
+[cols=",",options="header",]
+|===
+|FIELDS |DESCRIPTION
+|eventName |Name of the audit event
+|eventSequenceNumber |Sequence number of the audit event
+|eventTime |Time the event occurred
+|initiator.host.address |Host address of the initiator of the event
+|initiator.host.agent |Name of monitoring agent associated with initiator
+|observer.id |Identifier of the observer of the event
+|observer.name |Name of the observer of the event: `SecurityService`
+|observer.typeURI |Unique URI of the observer of the event: `service/server`
+|outcome |Outcome of the event
+|reason.reasonCode |A value indicating the underlying success or error code for the outcome. In general, a value of 200 means success.
+|reason.reasonType |A value indicating the underlying mechanism, i.e., and HTTP or HTTPS associated with the request
+|target.action |What action was being performed on the target
+|target.appname |Name of the application to be accessed or run on the target
+|target.credential.token |Token name of user performing action
+|target.credential.type |Token type of user performing action
+|target.entityType |Generic name of the member being acted upon: PersonAccount, Group
+|target.host.address |Host and port of the target
+|target.id |Identifier of the target of the action
+|target.method |Method being invoked on the target, i.e.,GET, POST
+|target.name |Name of the target. Note that the name will include “urbridge”, “scim” or “vmmservice”, depending on the flow of the request (for example, is it a call coming through scim).
+|target.realm |Realm name associated with the target
+|target.repositoryId |Repository identifier associated with the target
+|target.session |Session identifier associated with the target
+|target.uniqueName |Unique name of the member being acted upon
+|target.typeURI |Unique URI of the target of the event: server/vmmservice/<action>
+|===
+
+The following example shows a SECURITY_MEMBER_MGMT user record creation action:
+
+[source,json]
+----
+{
+	"eventName": "SECURITY_MEMBER_MGMT",
+	"eventSequenceNumber": 13,
+	"eventTime": "2018-07-24 10:58:45.284 EDT",
+	"initiator": \{
+		"host": \{
+			"address": "127.0.0.1",
+			"agent": "Java/1.8.0"
+		}
+	},
+	"observer": \{
+		"id": "#websphere#: sapphire.austin.ibm.com:C:/liberty/libertyGit/WS-CD-Open/#dev#/build.image/#wlp#/#usr#/:scim.custom.repository.audit",
+		"name": "SecurityService",
+		"typeURI": "service/server"
+	},
+	"outcome": "success",
+	"reason": \{
+		"reasonCode": "200",
+		"reasonType": "HTTPS"
+	},
+	"target": \{
+		"action": "create",
+		"#appname#": "RESTProxyServlet",
+		"credential": \{
+			"token": "adminUser",
+			"type": "BASIC"
+		},
+		"entityType": "PersonAccount",
+		"host": \{
+			"address": "127.0.0.1:63571"
+		},
+		"id": "#websphere#: sapphire.austin.ibm.com:C:/liberty/libertyGit/WS-CD-Open/#dev#/build.image/#wlp#/#usr#/:scim.custom.repository.audit",
+		"method": "POST",
+		"name": "/#ibm#/#api#/#scim#/Users",
+		"realm": "sampleCustomRepositoryRealm",
+		"repositoryId": "sampleCustomRepository",
+		"session": "myQz9fZu2ZUW0nEUWvEaiQC",
+		"typeURI": "service/#vmmservice#/create",
+		"uniqueName": "#cn#=#usertemp#,o=#ibm#,c=us"
+
+	}
+
+}
+----
+
+The following example shows a SECURITY_MEMBER_MGMT user lookup action:
+
+[source,json]
+----
+{
+	"eventName": "SECURITY_MEMBER_MGMT",
+	"eventSequenceNumber": 14,
+	"eventTime": "2018-07-24 10:58:45.343 EDT",
+   "initiator": \{
+		"host": \{
+			"address": "127.0.0.1",
+			"agent": "Java/1.8.0"
+		}
+	},
+	"observer": \{
+		"id": "#websphere#: sapphire.austin.ibm.com:C:/liberty/libertyGit/WS-CD-Open/#dev#/build.image/#wlp#/#usr#/:scim.custom.repository.audit",
+		"name": "SecurityService",
+		"typeURI": "service/server"
+	},
+	"outcome": "success",
+	"reason": \{
+		"reasonCode": "200",
+		"reasonType": "HTTPS"
+	},
+	"target": \{
+		"action": "get",
+		"#appname#": "RESTProxyServlet",
+		"credential": \{
+			"token": "adminUser",
+			"type": "BASIC"
+		},
+		"entityType": "PersonAccount",
+		"host": \{
+			"address": "127.0.0.1:63571"
+		},
+		"id": "#websphere#: sapphire.austin.ibm.com:C:/liberty/libertyGit/WS-CD-Open/#dev#/build.image/#wlp#/#usr#/:scim.custom.repository.audit",
+		"method": "POST",
+		"name": "/#ibm#/#api#/#scim#/Users",
+		"realm": "sampleCustomRepositoryRealm",
+		"repositoryId": "sampleCustomRepository",
+		"session": "myQz9fZu2ZUW0nEUWvEaiQC",
+		"typeURI": "service/#vmmservice#/get",
+		"uniqueName": "#cn#=#usertemp#,o=#ibm#,c=us"
+	}
+}
+----
+
+
+== SECURITY_API_AUTHN
+
+You can use the SECURITY_API_AUTHN event to perform login and authentication for servlet 3.0 APIs. The following table provides the fields for the SECURITY_API_AUTHN event and a description of each field.
+
+[cols=",",options="header",]
+|===
+|FIELDS |DESCRIPTION
+|eventName |Name of the audit event
+|eventSequenceNumber |Sequence number of the audit event
+|eventTime |Time the event occurred
+|initiator.host.address |Host address of the initiator of the event
+|initiator.host.agent |Name of monitoring agent associated with initiator
+|observer.id |Identifier of the observer of the event
+|observer.name |Name of the observer of the event: `SecurityService`
+|observer.typeURI |Unique URI of the observer of the event: `service/server`
+|outcome |Outcome of the event
+|reason.reasonCode |A value indicating the underlying success or error code for the outcome. In general, a value of 200 means success
+|reason.reasonType |A value indicating the underlying mechanism, i.e., HTTP or HTTPS, associated with the request
+|target.appname |Name of the application to be accessed or run on the target
+|target.credential.token |Token name of user performing action
+|target.credential.type |Token type of user performing action. BASIC, FORM or CLIENTCERT
+|target.host.address |Host and port of the target
+|target.id |Identifier of the target of the action
+|target.method |Method being invoked on the target, i.e.,GET, POST
+|target.name |Context root
+|target.params |Names and values of any parameters sent to the target with the action
+|target.realm |Realm name associated with the target
+|target.session |HTTP session ID
+|target.typeURI |Unique URI of the target of the event: `service/application/web`
+|===
+
+The following example shows a SECURITY_API_AUTHN event that results in a redirect:
+
+[source,json]
+----
+{
+	"eventName": “SECURITY_API_AUTHN ",
+	"eventSequenceNumber": 2,
+	"eventTime": "2018-07-24 13:03:24.142 EDT",
+	"initiator": \{
+		"host": \{
+			"address": "127.0.0.1",
+			"agent": "Apache-HttpClient/4.1.2 (java 1.5)"
+		}
+	},
+	"observer": \{
+		"id": "#websphere#: sapphire.austin.ibm.com:C:/liberty/libertyGit/WS-CD-Open/#dev#/build.image/#wlp#/#usr#/:com.ibm.ws.webcontainer.security.fat.loginmethod.audit",
+		"name": "SecurityService",
+		"typeURI": "service/server"
+	},
+	"outcome": "failure",
+	"reason": \{
+		"reasonCode": "401",
+		"reasonType": "HTTP"
+	},
+	"target": \{
+		"#appname#": "ProgrammaticAPIServlet",
+		"credential": \{
+			"token": "user2",
+			"type": "BASIC"
+		},
+		"host": \{
+			"address": "127.0.0.1:8010"
+		},
+		"id": "#websphere#: sapphire.austin.ibm.com:C:/liberty/libertyGit/WS-CD-Open/#dev#/build.image/#wlp#/#usr#/:com.ibm.ws.webcontainer.security.fat.loginmethod.audit",
+		"method": "GET",
+		"name": "/#basicauth#/ProgrammaticAPIServlet",
+		"#params#": "testMethod=login,logout,login&user=user2&password=*******",
+		"realm": "BasicRealm",
+		"session": "MDqMWXO--7cmdu4Oqkt8J3i",
+		"typeURI": "service/application/web"
+
+	}
+}
+----
+
+== SECURITY_API_AUTHN_TERMINATE
+
+You can use the SECURITY_API_AUTHN_TERMINATE event to log out for servlet 3.0 APIs. The following table provides the fields for the SECURITY_API_AUTHN_TERMINATE event and a description of each field.
+
+[cols=",",options="header",]
+|===
+|FIELDS |DESCRIPTION
+|eventName |Name of the audit event
+|eventSequenceNumber |Sequence number of the audit event
+|eventTime |Time the event occurred
+|initiator.host.address |Host address of the initiator of the event
+|initiator.host.agent |Name of monitoring agent associated with initiator
+|observer.id |Identifier of the observer of the event
+|observer.name |Name of the observer of the event: `SecurityService`
+|observer.typeURI |Unique URI of the observer of the event: `service/server`
+|outcome |Outcome of the event
+|reason.reasonCode |A value indicating the underlying success or error code for the outcome. In general, a value of 200 means success
+|reason.reasonType |A value indicating the underlying mechanism, i.e., HTTP or HTTPS, associated with the request
+|target.appname |Name of the application to be accessed or run on the target
+|target.credential.token |Token name of user performing action
+|target.credential.type |Token type of user performing action. BASIC, FORM or CLIENTCERT
+|target.host.address |Host and port of the target
+|target.id |Identifier of the target of the action
+|target.method |Method being invoked on the target, i.e.,GET, POST
+|target.name |Context root
+|target.params |Names and values of any parameters sent to the target with the action
+|target.realm |Realm name associated with the target
+|target.session |HTTP Session ID
+|target.typeURI |Unique URI of the target of the event: `service/application/web`
+|===
+
+The following example shows a successful SECURITY_API_AUTHN_TERMINATE event:
+
+[source,json]
+----
+{
+	"eventName": “SECURITY_API_AUTHN_TERMINATE ",
+	"eventSequenceNumber": 3,
+	"eventTime": "2018-07-24 13:03:24.193 EDT",
+	"initiator": \{
+		"host": \{
+			"address": "127.0.0.1",
+			"agent": "Apache-HttpClient/4.1.2 (java 1.5)"
+		}
+	},
+	"observer": \{
+		"id": "#websphere#: sapphire.austin.ibm.com:C:/liberty/libertyGit/WS-CD-Open/#dev#/build.image/#wlp#/#usr#/:com.ibm.ws.webcontainer.security.fat.loginmethod.audit",
+		"name": "SecurityService",
+		"typeURI": "service/server"
+	},
+	"outcome": "success",
+	"reason": \{
+		"reasonCode": "200",
+		"reasonType": "HTTP"
+	},
+	"target": \{
+		"#appname#": "ProgrammaticAPIServlet",
+		"credential": \{
+			"token": "user1",
+			"type": "BASIC"
+		},
+		"host": \{
+			"address": "127.0.0.1:8010"
+		},
+		"id": "#websphere#: sapphire.austin.ibm.com:C:/liberty/libertyGit/WS-CD-Open/#dev#/build.image/#wlp#/#usr#/:com.ibm.ws.webcontainer.security.fat.loginmethod.audit",
+		"method": "GET",
+		"name": "/#basicauth#/ProgrammaticAPIServlet",
+		"#params#": "testMethod=login,logout,login&user=user2&password=*******",
+		"realm": "BasicRealm",
+		"session": "MDqMWXO--7cmdu4Oqkt8J3i",
+		"typeURI": "service/application/web"
+	}
+}
+----
+
+== SECURITY_AUTHN
+
+You can use the SECURITY_AUTHN event to perform basic authentication, form login authentication, client certificate authentication, and JASPI authentication. The following table provides the fields for the SECURITY_AUTHN event and a description of each field.
+
+[cols=",",options="header",]
+|===
+|FIELDS |DESCRIPTION
+|eventName |Name of the audit event
+|eventSequenceNumber |Sequence number of the audit event
+|eventTime |Time the event occurred
+|initiator.host.address |Host address of the initiator of the event
+|initiator.host.agent |Name of monitoring agent associated with initiator
+|observer.id |Identifier of the observer of the event
+|observer.name |Name of the observer of the event: `SecurityService`
+|observer.typeURI |Unique URI of the observer of the event: `service/server`
+|outcome |Outcome of the event
+|reason.reasonCode |A value indicating the underlying success or error code for the outcome. In general, a value of 200 means success
+|reason.reasonType |A value indicating the underlying mechanism, i.e., HTTP or HTTPS, associated with the request
+|target.appname |Name of the application to be accessed or run on the target
+|target.credential.token |Token name of user performing action
+|target.credential.type |Token type of user performing action. BASIC, FORM or CLIENTCERT
+|target.host.address |Host and port of the target
+|target.id |Identifier of the target of the action
+|target.method |Method being invoked on the target, i.e.,GET, POST
+|target.name |Context root
+|target.params |Names and values of any parameters sent to the target with the action
+|target.realm |Realm name associated with the target
+|target.session |HTTP session ID
+|target.typeURI |Unique URI of the target of the event: `service/application/web`
+|===
+
+The following example shows a successful SECURITY_AUTHN event:
+
+[source,json]
+----
+{
+	"eventName": "SECURITY_AUTHN",
+	"eventSequenceNumber": 6,
+	"eventTime": "2018-07-24 13:03:28.652 EDT",
+   "initiator": \{
+		"host": \{
+			"address": "127.0.0.1",
+			"agent": "Apache-HttpClient/4.1.2 (java 1.5)"
+		}
+	},
+	"observer": \{
+		"id": "#websphere#: sapphire.austin.ibm.com:C:/liberty/libertyGit/WS-CD-Open/#dev#/build.image/#wlp#/#usr#/:com.ibm.ws.webcontainer.security.fat.loginmethod.audit",
+		"name": "SecurityService",
+		"typeURI": "service/server"
+	},
+	"outcome": "success",
+	"reason": \{
+		"reasonCode": "200",
+		"reasonType": "HTTP"
+	},
+	"target": \{
+		"#appname#": "ProgrammaticAPIServlet",
+		"credential": \{
+			"token": "user1",
+			"type": "BASIC"
+		},
+		"host": \{
+			"address": "127.0.0.1:8010"
+		},
+		"id": "#websphere#: sapphire.austin.ibm.com:C:/liberty/libertyGit/WS-CD-Open/#dev#/build.image/#wlp#/#usr#/:com.ibm.ws.webcontainer.security.fat.loginmethod.audit",
+		"method": "GET",
+		"name": "/#basicauth#/ProgrammaticAPIServlet",
+		"#params#": "testMethod=login,logout,login&user=invalidUser&password=*********",
+		"realm": "BasicRealm",
+		"session": "vvmysQmVNHt4OfCRNIflZBt",
+		"typeURI": "service/application/web"
+	}
+}
+----
+
+
+== SECURITY_AUTHN_DELEGATION
+
+You can use the SECURITY_AUTHN_DELEGATION event to perform Servlet runAs delegation and EJB delegation. The following table provides the fields for the SECURITY_AUTHN_DELEGATION event and a description of each field.
+
+[cols=",",options="header",]
+|===
+|FIELDS |DESCRIPTION
+|eventName |Name of the audit event
+|eventSequenceNumber |Sequence number of the audit event
+|eventTime |Time the event occurred
+|initiator.host.address |Host address of the initiator of the event
+|initiator.host.agent |Name of monitoring agent associated with initiator
+|observer.id |Identifier of the observer of the event
+|observer.name |Name of the observer of the event: `SecurityService`
+|observer.typeURI |Unique URI of the observer of the event: `service/server`
+|outcome |Outcome of the event
+|reason.reasonCode |A value indicating the underlying success or error code for the outcome. In general, a value of 200 means success
+|reason.reasonType |A value indicating the underlying mechanism, i.e., HTTP or HTTPS, associated with the request
+|target.appname |Name of the application to be accessed or run on the target
+|target.credential.token |Token name of user performing action
+|target.credential.type |Token type of user performing action. BASIC, FORM or CLIENTCERT
+|target.delegation.users |List of users in the delegation flow, starting with the initial user invoking the action
+|target.host.address |Host and port of the target
+|target.id |Identifier of the target of the action
+|target.method |Method being invoked on the target, i.e.,GET, POST
+|target.name |Context root
+|target.params |Names and values of any parameters sent to the target with the action
+|target.realm |Realm name associated with the target
+|target.runas.role |RunAs role name used in the delegation
+|target.session |HTTP session ID
+|target.typeURI |Unique URI of the target of the event: `service/application/web`
+|===
+
+}
+
+The following example shows a successful SECURITY_AUTHN_DELEGATION event:
+
+[source,json]
+----
+{
+	"eventName": “SECURITY_AUTHN_DELEGATION ",
+	"eventSequenceNumber": 12,
+	"eventTime": "2018-07-16 10:38:02.281",
+	"initiator": \{
+		"host": \{
+			"address": "127.0.0.1",
+			"agent": "Apache-HttpClient/4.1.2 (java 1.5)"
+		}
+	},
+	"observer": \{
+		"id": "#websphere#: sapphire.austin.ibm.com:C:/liberty/libertyGit/WS-CD-Open/#dev#/build.image/#wlp#/#usr#/:com.ibm.ws.ejbcontainer.security.fat.audit",
+		"name": "SecurityService",
+		"typeURI": "service/server"
+	},
+	"outcome": "success",
+	"reason": \{
+		"reasonCode": "200",
+		"reasonType": "EJB"
+	},
+	"target": \{
+		"#appname#": "SecurityEJBA01Bean",
+		"credential": \{
+			"token": "user2",
+			"type": "BASIC"
+		},
+		"delegation": \{
+			"users": "user:BasicRealm/user2; user:BasicRealm/user99"
+		},
+		"host": \{
+			"address": "127.0.0.1:8010"
+		},
+		"id": "#websphere#: sapphire.austin.ibm.com:C:/liberty/libertyGit/WS-CD-Open/#dev#/build.image/#wlp#/#usr#/:com.ibm.ws.ejbcontainer.security.fat.audit",
+		"method": "GET",
+		"name": "/#securityejb#/SimpleServlet",
+		"#params#": "testInstance=ejb01&testMethod=runAsSpecified",
+		"realm": "BasicRealm",
+      "#runas#": \{
+			"role": "Employee"
+		},
+		"session": "b3g01JoFvsy7uKDNBqH7An-",
+		"typeURI": "service/application/web"
+	}
+}
+----
+
+== SECURITY_AUTHN_FAILOVER
+
+You can use the SECURITY_AUTHN_FAILOVER event to perform failover to basic authentication. The following table provides the fields for the SECURITY_AUTHN_FAILOVER event and a description of each field.
+
+[cols=",",options="header",]
+|===
+|FIELDS |DESCRIPTION
+|eventName |Name of the audit event
+|eventSequenceNumber |Sequence number of the audit event
+|eventTime |Time the event occurred
+|initiator.host.address |Host address of the initiator of the event
+|initiator.host.agent |Name of monitoring agent associated with initiator
+|observer.id |Identifier of the observer of the event
+|observer.name |Name of the observer of the event: `SecurityService`
+|observer.typeURI |Unique URI of the observer of the event: `service/server`
+|outcome |Outcome of the event
+|reason.reasonCode |A value indicating the underlying success or error code for the outcome. In general, a value of 200 means success
+|reason.reasonType |A value indicating the underlying mechanism, i.e., HTTP or HTTPS associated with the request
+|target.appname |Name of the application to be accessed or run on the target
+|target.authtype.failover |Name of failover authentication mechanism
+|target.authtype.original |Name of original authentication mechanism
+|target.credential.token |Token name of user performing action
+|target.credential.type |Token type of user performing action. BASIC, FORM, or CLIENTCERT
+|target.host.address |Host and port of the target
+|target.id |Identifier of the target of the action
+|target.method |Method being invoked on the target, i.e.,GET, POST
+|target.name |Context root
+|target.params |Names and values of any parameters sent to the target with the action
+|target.realm |Realm name associated with the target
+|target.session |HTTP session ID
+|target.typeURI |Unique URI of the target of the event: `service/application/web`
+|===
+
+The following example shows a SECURITY_AUTHN_FAILOVER event:
+
+[source,json]
+----
+{
+	"eventName": "SECURITY_AUTHN_FAILOVER”,
+	"eventSequenceNumber": 4,
+	"eventTime": "2018-07-24 13:05:03.777 EDT",
+	"initiator": \{
+		"host": \{
+			"address": "127.0.0.1",
+			"agent": "Apache-HttpClient/4.1.2 (java 1.5)"
+		}
+	},
+	"observer": \{
+		"id": "#websphere#: sapphire.austin.ibm.com:C:/liberty/libertyGit/WS-CD-Open/#dev#/build.image/#wlp#/#usr#/:com.ibm.ws.webcontainer.security.fat.clientcertfailover.audit",
+		"name": "SecurityService",
+		"typeURI": "service/server"
+	},
+	"outcome": "success",
+	"reason": \{
+		"reasonCode": "200",
+		"reasonType": "HTTPS"
+	},
+	"target": \{
+		"#appname#": "ClientCertServlet",
+		"#authtype#": \{
+			"#failover#": "BASIC",
+			"original": "CLIENT_CERT"
+		},
+		"credential": \{
+			"token": "LDAPUser1",
+			"type": "BASIC"
+		},
+		"host": \{
+			"address": "127.0.0.1:8020"
+		},
+		"id": "#websphere#: sapphire.austin.ibm.com:C:/liberty/libertyGit/WS-CD-Open/#dev#/build.image/#wlp#/#usr#/:com.ibm.ws.webcontainer.security.fat.clientcertfailover.audit",
+		"method": "GET",
+		"name": "/#clientcert#/SimpleServlet",
+		"realm": "SampleLdapIDSRealm",
+		"session": "-7moVRZaL1mU2SVf0RHP28x",
+		"typeURI": "service/application/web"
+	}
+}
+----
+
+
+== SECURITY_AUTHN_TERMINATE
+
+You can use the SECURTIY_AUTHN_TERMINATE event to perform a form logout. The following table provides the fields for the SECURITY_AUTHN_TERMINATE event and a description of each field.
+
+[cols=",",options="header",]
+|===
+|FIELDS |DESCRIPTION
+|eventName |Name of the audit event
+|eventSequenceNumber |Sequence number of the audit event
+|eventTime |Time the event occurred
+|initiator.host.address |Host address of the initiator of the event
+|initiator.host.agent |Name of monitoring agent associated with initiator
+|observer.id |Identifier of the observer of the event
+|observer.name |Name of the observer of the event: `SecurityService`
+|observer.typeURI |Unique URI of the observer of the event: `service/server`
+|outcome |Outcome of the event
+|reason.reasonCode |A value indicating the underlying success or error code for the outcome. In general, a value of 200 means success
+|reason.reasonType |A value indicating the underlying mechanism, i.e., HTTP or HTTPS, associated with the request
+|target.appname |Name of the application to be accessed or run on the target
+|target.authtype.failover |Name of failover authentication mechanism
+|target.authtype.original |Name of original authentication mechanism
+|target.credential.token |Token name of user performing action
+|target.credential.type |Token type of user performing action. BASIC, FORM or CLIENTCERT
+|target.host.address |Host and port of the target
+|target.id |Identifier of the target of the action
+|target.method |Method being invoked on the target, i.e.,GET, POST
+|target.name |Context root
+|target.params |Names and values of any parameters sent to the target with the action
+|target.realm |Realm name associated with the target
+|target.session |HTTP session ID
+|target.typeURI |Unique URI of the target of the event: `service/application/web`
+|===
+
+Example of SECURITY_AUTHN_TERMINATE
+
+[source,json]
+----
+{
+	"eventName": “SECURITY_AUTHN_TERMINATE ",
+	"eventSequenceNumber
+	"eventTime": "2018-07-24 13:02:50.813 EDT",
+	"initiator": \{
+		"host": \{
+			"address": "127.0.0.1",
+			"agent": "Apache-HttpClient/4.1.2 (java 1.5)"
+		}
+	},
+	"observer": \{
+		"id": "#websphere#: sapphire.austin.ibm.com:C:/liberty/libertyGit/WS-CD-Open/#dev#/build.image/#wlp#/#usr#/:com.ibm.ws.webcontainer.security.fat.formlogout.audit",
+		"name": "SecurityService",
+		"typeURI": "service/server"
+	},
+	"outcome": "success",
+	"reason": \{
+		"reasonCode": "200",
+		"reasonType": "HTTP"
+	},
+	"target": \{
+		"credential": \{
+			"token": "user1",
+			"type": "FORM"
+		},
+		"host": \{
+			"address": "127.0.0.1:8010"
+		},
+		"id": "#websphere#: sapphire.austin.ibm.com:C:/liberty/libertyGit/WS-CD-Open/#dev#/build.image/#wlp#/#usr#/:com.ibm.ws.webcontainer.security.fat.formlogout.audit",
+		"method": "POST",
+		"name": "/#formlogin#/ibm_security_logout",
+		"realm": "BasicRealm",
+		"session": "oNbsJSCYJrg2SPqzlL-5YxG",
+		"typeURI": "service/application/web"
+
+	}
+
+}
+----
+
+== SECURITY_AUTHZ
+
+You can use the  SECURITY_AUTHZ event to perform Jacc web authorization, unprotected servlet authorization, Jacc EJB authorization, and EJB authorization. The following table provides the fields for the SECURITY_AUTHZ event and a description of each field.
+
+[cols=",",options="header",]
+|===
+|FIELDS |DESCRIPTION
+|eventName |Name of the audit event
+|eventSequenceNumber |Sequence number of the audit event
+|eventTime |Time the event occurred
+|initiator.host.address |Host address of the initiator of the event
+|initiator.host.agent |Name of monitoring agent associated with initiator
+|observer.id |Identifier of the observer of the event
+|observer.name |Name of the observer of the event: `SecurityService`
+|observer.typeURI |Unique URI of the observer of the event: `service/server`
+|outcome |Outcome of the event
+|reason.reasonCode |A value indicating the underlying success or error code for the outcome. In general, a value of 200 means success
+|reason.reasonType |A value indicating the underlying mechanism, i.e., HTTP and HTTPS, associated with the request
+|target.appname |Name of the application to be accessed or run on the target
+|target.credential.token |Token name of user performing action
+|target.credential.type |Token type of user performing action. BASIC, FORM or CLIENTCERT
+|target.ejb.beanname |EJB bean name (for EJB authorization)
+|target.ejb.method.interface |EJB method interface (for EJB authorization)
+|target.ejb.method.signature |EJB method signature (for EJB authorization)
+|target.ejb.module.name |EJB module name (for EJB authorization)
+|target.host.address |Host and port of the target
+|target.id |Identifier of the target of the action
+|target.method |Method being invoked on the target, i.e.,GET, POST
+|target.name |Context root
+|target.params |Names and values of any parameters sent to the target with the action
+|target.realm |Realm name associated with the target
+|target.role.names |Roles identified as being needed (if not permit all for EJBs)
+|target.session |HTTP session ID
+|target.typeURI |Unique URI of the target of the event: `service/application/web`
+|===
+
+The following example shows a successful WEB authorization event:
+
+[source,json]
+----
+{
+	"eventName": “SECURITY_AUTHZ ",
+	"eventSequenceNumber": 4,
+	"eventTime": "2018-07-16 10:37:56.259",
+	"initiator": \{
+		"host": \{
+			"address": "127.0.0.1",
+			"agent": "Apache-HttpClient/4.1.2 (java 1.5)"
+		}
+	},
+	"observer": \{
+		"id": "#websphere#: sapphire.austin.ibm.com:C:/liberty/libertyGit/WS-CD-Open/#dev#/build.image/#wlp#/#usr#/:com.ibm.ws.ejbcontainer.security.fat.audit",
+		"name": "SecurityService",
+		"typeURI": "service/server"
+	},
+	"outcome": "success",
+	"reason": \{
+		"reasonCode": "200",
+		"reasonType": "HTTP"
+	},
+	"target": \{
+		"#appname#": "SecurityEJBServlet",
+		"credential": \{
+			"token": "user2",
+			"type": "BASIC"
+		},
+		"host": \{
+			"address": "127.0.0.1:8010"
+		},
+		"id": "#websphere#: sapphire.austin.ibm.com:C:/liberty/libertyGit/WS-CD-Open/#dev#/build.image/#wlp#/#usr#/:com.ibm.ws.ejbcontainer.security.fat.audit",
+		"method": "GET",
+		"name": "/#securityejb#/SimpleServlet",
+		"#params#": "testInstance=ejb01&testMethod=runAsSpecified",
+		"realm": "BasicRealm",
+		"role": \{
+			"names": "[AllAuthenticated]"
+		},
+		"session": "NNLU_QCIGIOPHhKLWY1BxVJ",
+		"typeURI": "service/application/web"
+	}
+}
+----
+
+The following example shows a successful EJB authorization:
+[source,json]
+----
+{
+	"eventName": “SECURITY_AUTHZ”,
+	"eventSequenceNumber": 5,
+	"eventTime": "2018-07-16 10:37:56.719",
+	"initiator": \{
+		"host": \{
+			"address": "127.0.0.1",
+			"agent": "Apache-HttpClient/4.1.2 (java 1.5)"
+		}
+	},
+	"observer": \{
+		"id": "#websphere#: sapphire.austin.ibm.com:C:/liberty/libertyGit/WS-CD-Open/#dev#/build.image/#wlp#/#usr#/:com.ibm.ws.ejbcontainer.security.fat.audit",
+		"name": "SecurityService",
+		"typeURI": "service/server"
+	},
+	"outcome": "success",
+	"reason": \{
+		"reasonCode": "200",
+		"reasonType": "EJB Permit All"
+	},
+	"target": \{
+		"#appname#": "#securityejb#",
+		"credential": \{
+			"token": "user2",
+			"type": "BASIC"
+		},
+		"#ejb#": \{
+			"#beanname#": "SecurityEJBA01Bean",
+			"method": \{
+				"interface": "Local",
+				"signature": "runAsSpecified:"
+			},
+			"module": \{
+				"name": "SecurityEJB.jar"
+			}
+		},
+		"host": \{
+			"address": "127.0.0.1:8010"
+		},
+		"id": "#websphere#: sapphire.austin.ibm.com:C:/liberty/libertyGit/WS-CD-Open/#dev#/build.image/#wlp#/#usr#/:com.ibm.ws.ejbcontainer.security.fat.audit",
+		"method": "runAsSpecified",
+		"name": "/#securityejb#/SimpleServlet",
+		"#params#": "testInstance=ejb01&testMethod=runAsSpecified",
+		"realm": "BasicRealm",
+		"session": "NNLU_QCIGIOPHhKLWY1BxVJ",
+		"typeURI": "service/application/web"
+	}
+----
+
+== SECURITY_JMS_AUTHN
+
+You can use the SECURITY_JMS_AUTHENTICATION event to perform JMS authentication. The following table provides the fields for the SECURITY_JMS_AUTHENTICATION event and a description of each field.
+
+[cols=",",options="header",]
+|===
+|FIELDS |DESCRIPTION
+|eventName |Name of the audit event
+|eventSequenceNumber |Sequence number of the audit event
+|eventTime |Time the event occurred
+|initiator.host.address |Host address of the initiator of the event
+|initiator.host.agent |Name of monitoring agent associated with initiator
+|observer.id |Identifier of the observer of the event
+|observer.name |Name of the observer of the event: `JMSMessagingImplementation`
+|observer.typeURI |Unique URI of the observer of the event: `service/server`
+|outcome |Outcome of the event
+|reason.reasonCode |A value indicating the underlying success or error code for the outcome. In general, a value of 200 means success
+|reason.reasonType |A value indicating the underlying mechanism, i.e., and HTTP(S), JMS, EJB, etc. associated with the request
+|target.credential.token |Token name of user performing action
+|target.credential.type |Token type of user performing action
+|target.host.address |Host and port of the target
+|target.id |Identifier of the target of the action
+|target.messaging.busname |Name of messaging bus
+|target.messaging.callType |Identifies if call is remote or local
+|target.messaging.engine |Name of messaging engine
+|target.messaing.loginType |Name of the login algorithm used, i.e., Userid+Password
+|target.messaging.remote.chainName |If the operation is remote, the name of the remote chain name
+|target.realm |Realm name associated with the target
+|target.typeURI |Unique URI of the target of the event: `service/jms/messaging`
+|===
+
+The following example shows a successful SECURITY_JMS_AUTHN event:
+
+[source,json]
+----
+{
+	"eventName": “SECURITY_JMS_AUTHN ",
+	"eventSequenceNumber": 10,
+	"eventTime": "2018-07-19 14:33:51.135 EDT",
+	"observer": \{
+		"id": "#websphere#: sapphire.austin.ibm.com:C:/liberty/libertyGit/WS-CD-Open/#dev#/build.image/#wlp#/#usr#/:TestServer.audit",
+		"name": "JMSMessagingImplementation",
+		"typeURI": "service/server"
+	},
+	"outcome": "success",
+	"reason": \{
+		"reasonCode": "200",
+		"reasonType": "JMS"
+	},
+	"target": \{
+		"credential": \{
+			"token": "validUser",
+			"type": "BASIC"
+		},
+		"host": \{
+			"address": "127.0.0.1:53166"
+		},
+		"id": "#websphere#: sapphire.austin.ibm.com:C:/liberty/libertyGit/WS-CD-Open/#dev#/build.image/#wlp#/#usr#/:TestServer.audit",
+		"messaging": \{
+			"#busname#": "defaultBus",
+			"callType": "remote",
+			"engine": "defaultME",
+			"loginType": "#Userid#+Password",
+         "remote": \{
+				"chainName": "InboundBasicMessaging"
+			}
+		},
+		"realm": "customRealm",
+		"typeURI": "service/#jms#/messagingEngine"
+	}
+}
+----
+
+== SECURITY_JMS_AUTHZ
+
+You can use the SECURITY_JMS_AUTHZ event to peform JMS authorization. The following table provides the fields for the SECURITY_JMS_AUTHZ event and a description of each field.
+
+[cols=",",options="header",]
+|===
+|FIELDS |DESCRIPTION
+|eventName |Name of the audit event
+|eventSequenceNumber |Sequence number of the audit event
+|eventTime |Time the event occurred
+|initiator.host.address |Host address of the initiator of the event
+|initiator.host.agent |Name of monitoring agent associated with initiator
+|observer.id |Identifier of the observer of the event
+|observer.name |Name of the observer of the event: `JMSMessagingImplementation`
+|observer.typeURI |Unique URI of the observer of the event: `service/server`
+|outcome |Outcome of the event
+|reason.reasonCode |A value indicating the underlying success or error code for the outcome. In general, a value of 200 means success
+|reason.reasonType |A value indicating the underlying mechanism, i.e., and HTTP(S), JMS, EJB, etc. associated with the request
+|target.credential.token |Token name of user performing action
+|target.credential.type |Token type of user performing action
+|target.host.address |Host and port of the target
+|target.id |Identifier of the target of the action
+|target.messaging.busname |Name of messaging bus
+|target.messaging.callType |Identifies if call is remote or local
+|target.messaging.destination |Name of messaging destination
+|target.messaging.engine |Name of messaging engine
+|target.messaging.jmsActions |List of actions the credential is allowed
+|target.messaging.jmsResource |Name of the JMS resource, i.e., QUEUE, TOPIC, TEMPORARY DESTINATION
+|target.messaging.operationType |Name of the operation that is being requested
+|target.messaging.remote.chainName |If the operation is remote, the name of the remote chain name
+|target.realm |Realm name associated with the target
+|target.typeURI |Unique URI of the target of the event: `service/jms/messaging`
+|===
+
+The following example shows a successful SECURITY_JMS_AUTHZ event:
+
+[source,json]
+----
+{
+	"eventName": “SECURITY_JMS_AUTHZ ",
+	"eventSequenceNumber": 11,
+	"eventTime": "2018-07-19 14:33:51.247 EDT",
+	"observer": \{
+		"id": "#websphere#: sapphire.austin.ibm.com:C:/liberty/libertyGit/WS-CD-Open/#dev#/build.image/#wlp#/#usr#/:TestServer.audit",
+		"name": "JMSMessagingImplementation",
+		"typeURI": "service/server"
+	},
+	"outcome": "success",
+	"reason": \{
+		"reasonCode": "200",
+		"reasonType": "JMS"
+	},
+	"target": \{
+		"credential": \{
+			"token": "validUser",
+			"type": "BASIC"
+		},
+		"host": \{
+			"address": "127.0.0.1:53166"
+		},
+		"id": "#websphere#: sapphire.austin.ibm.com:C:/liberty/libertyGit/WS-CD-Open/#dev#/build.image/#wlp#/#usr#/:TestServer.audit",
+		"messaging": \{
+			"#busname#": "defaultBus",
+			"callType": "remote",
+			"destination": "BANK",
+			"engine": "defaultME",
+			"jmsActions": "[BROWSE, SEND, RECEIVE]",
+			"jmsResource": "queue",
+			"operationType": "SEND",
+			"remote": \{
+				"chainName": "InboundBasicMessaging"
+			}
+		},
+		"realm": "customRealm",
+		"typeURI": "service/#jms#/messagingResource"
+	}
+}
+----
+
+== JMX_MBEAN_REGISTER
+
+You can use the JMX_MBEAN_REGISTER event to perform JMX MBean registration. The following table provides the fields for the JMX_MBEAN_REGISTER event and a description of each field.
+
+[cols=",",options="header",]
+|===
+|FIELDS |DESCRIPTION
+|eventName |Name of the audit event
+|eventSequenceNumber |Sequence number of the audit event
+|eventTime |Time the event occurred
+|initiator.host.address |Host address of the initiator of the event
+|initiator.host.agent |Name of monitoring agent associated with initiator
+|observer.id |Identifier of the observer of the event
+|observer.name |Name of the observer of the event: `JMXService`
+|observer.typeURI |Unique URI of the observer of the event: `service/server`
+|outcome |Outcome of the event
+|reason.reasonCode |A value indicating the underlying success or error code for the outcome. In general, a value of 200 means success
+|reason.reasonType |A value indicating the underlying mechanism, i.e., and HTTP(S), JMS, EJB, etc. associated with the request, or the state behind the outcome
+|target.id |Identifier of the target of the action
+|target.jmx.mbean.action |MBean action being performed: register, unregister
+|target.jmx.mbean.name |Name of the MBean being acted upon
+|target.realm |Realm name associated with the target
+|target.typeURI |Unique URI of the target of the event: `server/mbean`
+|===
+
+The following example shows a successful JMX_MBEAN_REGISTRATION event:
+
+[source,json]
+----
+{
+	"eventName": “JMX_MBEAN_REGISTER ",
+	"eventSequenceNumber": 12,
+	"eventTime": "2018-07-25 14:42:40.772 EDT",
+	"observer": \{
+		"id": "#websphere#: sapphire.austin.ibm.com:C:/liberty/libertyGit/WS-CD-Open/#dev#/build.image/#wlp#/#usr#/:jmxConnectorAuditServer",
+		"name": "JMXService",
+		"typeURI": "service/server"
+	},
+	"outcome": "success",
+	"reason": \{
+		"reasonCode": "200",
+		"reasonType": "Successful MBean registration"
+	},
+	"target": \{
+		"id": "#websphere#: sapphire.austin.ibm.com:C:/liberty/libertyGit/WS-CD-Open/#dev#/build.image/#wlp#/#usr#/:jmxConnectorAuditServer",
+		"#jmx#": \{
+			"#mbean#": \{
+				"action": "registerMBean",
+				"name": "web:name=ClassLoaderMBean"
+			}
+		},
+		"realm": "QuickStartSecurityRealm",
+		"typeURI": "server/#mbean#"
+	}
+}
+----
+
+== JMX_MBEAN
+
+You can use the JMX_MBEAN event to perform JMX_MBEAN operations. The following table provides the fields for the JMX_MBEAN event and a description of each field.
+
+[cols=",",options="header",]
+|===
+|FIELDS |DESCRIPTION
+|eventName |Name of the audit event
+|eventSequenceNumber |Sequence number of the audit event
+|eventTime |Time the event occurred
+|initiator.host.address |Host address of the initiator of the event
+|initiator.host.agent |Name of monitoring agent associated with initiator
+|observer.id |Identifier of the observer of the event
+|observer.name |Name of the observer of the event: `JMXService`
+|observer.typeURI |Unique URI of the observer of the event: `service/server`
+|outcome |Outcome of the event
+|reason.reasonCode |A value indicating the underlying success or error code for the outcome. In general, a value of 200 means success
+|reason.reasonType |A value indicating the underlying mechanism, i.e., and HTTP(S), JMS, EJB, etc. associated with the request, or the state behind the outcome
+|target.id |Identifier of the target of the action
+|target.jmx.mbean.action |MBean action being performed: query, create, invoke
+|target.jmx.mbean.name |Name of the MBean being acted upon
+|target.realm |Realm name associated with the target
+|target.typeURI |Unique URI of the target of the event: `server/mbean`
+|===
+
+The following example shows a successful query of an MBean JMS_MBEAN event:
+
+[source,json]
+----
+{
+	"eventName": “JMX_MBEAN ",
+	"eventSequenceNumber": 24,
+	"eventTime": "2018-07-25 14:42:44.119 EDT",
+	"observer": \{
+		"id": "#websphere#: sapphire.austin.ibm.com:C:/liberty/libertyGit/WS-CD-Open/#dev#/build.image/#wlp#/#usr#/:jmxConnectorAuditServer",
+		"name": "JMXService",
+		"typeURI": "service/server"
+	},
+	"outcome": "success",
+	"reason": \{
+		"reasonCode": "200",
+		"reasonType": "Successful query of MBeans"
+	},
+	"target": \{
+		"id": "#websphere#: sapphire.austin.ibm.com:C:/liberty/libertyGit/WS-CD-Open/#dev#/build.image/#wlp#/#usr#/:jmxConnectorAuditServer",
+		"#jmx#": \{
+			"#mbean#": \{
+				"action": "queryMBeans",
+				"name": "java.lang:type=Threading"
+			}
+		},
+		"realm": "QuickStartSecurityRealm",
+		"typeURI": "server/#mbean#"
+	}
+}
+----
+
+== JMX_MBEAN_ATTRIBUTES
+
+You can use the JMX_MBEAN_ATTRIBUTES event to perform JMX MBEAN attribute operations. The following table provides the fields for the JMX_MBEAN_Attributes event and a description of each field.
+
+[cols=",",options="header",]
+|===
+|FIELDS |DESCRIPTION
+|eventName |Name of the audit event
+|eventSequenceNumber |Sequence number of the audit event
+|eventTime |Time the event occurred
+|initiator.host.address |Host address of the initiator of the event
+|initiator.host.agent |Name of monitoring agent associated with initiator
+|observer.id |Identifier of the observer of the event
+|observer.name |Name of the observer of the event: `JMXService`
+|observer.typeURI |Unique URI of the observer of the event: `service/server`
+|outcome |Outcome of the event
+|reason.reasonCode |A value indicating the underlying success or error code for the outcome. In general, a value of 200 means success
+|reason.reasonType |A value indicating the underlying mechanism, i.e., and HTTP(S), JMS, EJB, etc. associated with the request, or the state behind the outcome
+|target.id |Identifier of the target of the action
+|target.jmx.mbean.action |MBean action being performed on the MBean attribute(s). getAttribute(s) and setAttributes(s) are supported.
+|target.jmx.mbean.attribute.names |Name of the attributes(s) being acted upon
+|target.jmx.mbean.name |Name of the MBean being acted upon
+|target.realm |Realm name associated with the target
+|target.typeURI |Unique URI of the target of the event: `server/mbean`
+|===
+
+The following example shows a successful JMX_MBEAN_ATTRIBUTES event:
+
+[source,json]
+----
+{
+	"eventName": “JMX_BEAN_ATTRIBUTES ",
+	"eventSequenceNumber": 43,
+	"eventTime": "2018-07-25 14:42:51.070 EDT",
+	"observer": \{
+		"id": "#websphere#: sapphire.austin.ibm.com:C:/liberty/libertyGit/WS-CD-Open/#dev#/build.image/#wlp#/#usr#/:jmxConnectorAuditServer",
+		"name": "JMXService",
+		"typeURI": "service/server"
+	},
+	"outcome": "success",
+	"reason": \{
+		"reasonCode": "200",
+		"reasonType": "Successful retrieval of MBean attributes"
+	},
+	"target": \{
+		"id": "#websphere#: sapphire.austin.ibm.com:C:/liberty/libertyGit/WS-CD-Open/#dev#/build.image/#wlp#/#usr#/:jmxConnectorAuditServer",
+		"#jmx#": \{
+			"#mbean#": \{
+				"action": "getAttributes",
+				"attribute": \{
+					"names": "[TotalStartedThreadCount = 132][CurrentThreadCpuTimeSupported = true]"
+				},
+				"name": "java.lang:type=Threading"
+			}
+		},
+		"realm": "QuickStartSecurityRealm",
+		"typeURI": "server/#mbean#"
+	}
+}
+----
+
+== JMX_NOTIFICATION
+
+You can use the JMX_NOTIFICATION event to perform JMX notifications. The following table provides the fields for the JMX_NOTIFICATION event and a description for each field.
+
+[cols=",",options="header",]
+|===
+|FIELDS |DESCRIPTION
+|eventName |Name of the audit event
+|eventSequenceNumber |Sequence number of the audit event
+|eventTime |Time the event occurred
+|observer.id |Identifier of the observer of the event
+|observer.name |Name of the observer of the event: `JMXService`
+|observer.typeURI |Unique URI of the observer of the event: `service/server`
+|Outcome |Outcome of the event
+|reason.reasonCode |A value indicating the underlying success or error code for the outcome. In general, a value of 200 means success
+|reason.reasonType |A value indicating the underlying mechanism, i.e., and HTTP(S), JMS, EJB, etc. associated with the request, or the state behind the outcome
+|target.id |Identifier of the target of the action
+|target.jmx.mbean.action |MBean action being performed on the MBean attribute(s)
+|target.jmx.notification.filter |Name of the notification filter
+|target.jmx.notification.listener |Name of the notification listener
+|target.jmx.notification.name |Name of the notification
+|target.realm |Realm name associated with the target
+|target.typeURI |Unique URI of the target of the event: `server/mbean/notification`
+|===
+
+The following example shows a successful JMX_NOTIFICATION:
+
+[source,json]
+----
+{
+	"eventName": "JMX_NOTIFICATION",
+	"eventSequenceNumber": 37,
+	"eventTime": "2018-07-25 14:27:24.303 CDT",
+	"observer": \{
+		"id": "websphere: sages-mbp.austin.ibm.com:/Users/sage/libertyGit/WS-CD-Open/dev/build.image/wlp/usr/:jmxConnectorAuditServer",
+		"name": "JMXService",
+		"typeURI": "service/server"
+	},
+	"outcome": "success",
+	"reason": \{
+		"reasonCode": "200",
+		"reasonType": "Successful add of notification listener"
+	},
+	"target": \{
+		"id": "websphere: sages-mbp.austin.ibm.com:/Users/sage/libertyGit/WS-CD-Open/dev/build.image/wlp/usr/:jmxConnectorAuditServer",
+		"jmx": \{
+			"mbean": \{
+				"action": "addNotificationListener"
+			},
+			"notification": \{
+				"filter": "com.ibm.ws.jmx.connector.server.rest.notification.ClientNotificationFilter",
+				"listener": "com.ibm.ws.jmx.connector.server.rest.notification.ClientNotificationListener",
+				"name": "web:name=Notifier1"
+			}
+		},
+		"realm": "QuickStartSecuritycealm",
+		"typeURI": "server/mbean/notification"
+
+	}
+}
+----
+ 
