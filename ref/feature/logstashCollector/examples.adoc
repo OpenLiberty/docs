@@ -1,0 +1,49 @@
+== Examples
+
+=== Transporting data with the Lumberjack protocol
+You can use https://www.elastic.co/guide/en/logstash/current/getting-started-with-logstash.html[Logstash with Elasticsearch] to consolidate and analyze logs in an application.
+With Elasticsearch, you can securely transport and receive log events with the Lumberjack protocol. To transport data between applications with the Lumberjack protocol, you must configure options, such as the SSL certificate, that help to specify the details of the data transfer. For more information, see https://www.elastic.co/guide/en/logstash/current/plugins-inputs-lumberjack.html[Lumberjack input configuration options]. With Open Liberty, you can customize the Lumberjack `ssl_certificate` and `ssl_key paths` and the `Elasticsearch_host_name:port_number` value in the `liberty_logstash.conf` file to provide the framework for the secure transportation of data.
+
+
+=== Enabling event collection
+You can use Open Liberty to create a keystore that contains the credentials to access the application that you want to collect events from. Within the keystore, you can use the following command to create a self-signed certificate that contains customizable credentials that can be used to access the application:
+
+----
+d:\wlp\bin\securityUtility createSSLCertificate --server=myServerName --password="Liberty" --subject=CN=myHostname,OU=defaultServer,O=ibm,C=us
+----
+You can also import the `logstash.crt` file into the `trust.jks` file in your application to provide more security as shown in the following example:
+
+----
+d:\java\bin\keytool -import -noprompt -alias logstash -file logstash.crt -keystore wlp_install_dir\usr\servers\myServerName\resources\security\trust.jks -storepass Liberty
+----
+To begin collecting events, you can use the following command to install the Logstash collector feature:
+
+----
+d:\wlp\bin\installUtility install logstashcollector-1.0
+----
+
+=== Logstash Collector configuration
+There are several parameters that you can use to configure the Logstash collector feature in the `server.xml` file. You can change the maximum number of characters that are allowed for the message field in a message or trace event or for the stack trace in an FFDC event. The default maximum is 2048 characters. You can set this specification in the 'server.xml' file as shown in the following example that sets the `maxFieldLength` parameter to 3000 characters in the `logstashCollector` element. For an unlimited number of characters, you can set the `maxFieldLength` parameter to 0 or -1.
+
+In the `server.xml` file, you can also limit the maximum number of events that are sent for each type of event per second. The default maximum number of events is 0, which means that no throttling is applied. If the `maxEvents` parameter is set to greater than 0, there is a limit to the number of events that are sent per second. The `maxEvents` parameter value must be an integer between 0 and 2147483647. The following example also has two `tag` elements in the `logstashcollector` element to add custom tags that decorate events within the application:
+
+----
+<featureManager>
+    <feature>logstashCollector-1.0</feature>
+</featureManager>
+
+<keyStore id="defaultKeyStore" password="Liberty" />
+<keyStore id="defaultTrustStore" location="trust.jks" password="Liberty" />
+<ssl id="mySSLConfig" trustStoreRef="defaultTrustStore" keyStoreRef="defaultKeyStore" />
+
+<logstashCollector
+	source="message,trace,garbageCollection,ffdc,accessLog,audit"
+	hostName="localhost"
+	port="5043"
+	sslRef="mySSLConfig"
+	maxEvents="10"
+	maxFieldLength="3000">
+	<tag>serverRackA5</tag>
+	<tag>billingAppTeam</tag>
+</logstashCollector>
+----
