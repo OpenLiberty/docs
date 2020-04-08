@@ -90,6 +90,14 @@ Max: +65535+ +
 *+WARN+* +
 +Server will issue warning and error messages when it incurs a configuration error.+
 
+|+protocolVersion+
+
+|string
+
+|
+
+|+When Servlet 4.0 API is enabled as a feature, set this attribute to http/1.1 to disable HTTP/2 processing for the ports that were defined for the httpEndpoint element. When Servlet 3.1 API is enabled as a feature, set this attribute to http/2 to enable HTTP/2 processing for the ports that are defined for the httpEndpoint element.+
+
 |+remoteIpRef+
 
 |A reference to top level remoteIp element (string).
@@ -97,6 +105,14 @@ Max: +65535+ +
 |+defaultRemoteIp+
 
 |+Remote IP options for the endpoint.+
+
+|+samesiteRef+
+
+|A reference to top level samesite element (string).
+
+|+defaultSameSite+
+
+|+SameSite options for the endpoint.+
 
 |+sslOptionsRef+
 
@@ -129,7 +145,7 @@ Max: +65535+ +
 
 |+true+
 
-|+Enable access logging.+
+|+Enables access logging when the accessLogging configuration element is defined. Note: Access logging must be configured for this attribute to take effect.+
 
 |+filePath+
 
@@ -215,6 +231,26 @@ Min: +0+ +
 |
 
 |+Specifies whether the HTTP channel creates an I/O exception when an inbound connection is closed while still in use by the servlet. The default value is set according to the configured servlet feature. Prior to Servlet 4.0, the default value is false; starting with Servlet 4.0, the default value is true.+
+
+|+decompressionRatioLimit+
+
+|int +
+Min: +1+ +
+
+
+|+200+
+
+|+Specifies the maximum ratio of decompressed to compressed request body payload. The HTTP channel reads the request body and verifies the ratio as the body decompresses. The channel stops decompression of the request body if the decompression ratio remains above the configured value and the decompressionTolerance is reached.+
+
+|+decompressionTolerance+
+
+|int +
+Min: +0+ +
+
+
+|+3+
+
+|+Specifies the maximum number of times the HTTP channel tolerates a decompression ratio above the configured ratio, depicted by the decompressionRatioLimit httpOption attribute. If this number reaches, and the next decompression cycle still contains a decompression ratio above the ratio limit, then the HTTP channel stops decompressing the request body.+
 
 |+http2ConnectionIdleTimeout+
 
@@ -355,6 +391,26 @@ Min: +-1+ +
 
 |+If this property is set to true and the remote client information was verified by the HTTP Channel, the NCSA access log reflects the Forwarded or X-Forwarded-* headers. These headers are reflected when one or more of the following items are recorded: the remote client IP, the host, or the request protocol.+
 |===
+[#+samesite+]*samesite*
+
++SameSite options for the endpoint.+
+
+
+[#+samesite/lax+]*samesite > lax*
+
++List of cookie names or patterns for which the SameSite attribute is set to a value of Lax, if not already defined. A single wildcard (*) character is supported as a stand-alone value, or following cookie name prefixes. Any cookie name or pattern that is defined by this list must be unique and not present in the 'none' nor 'strict' configurations.+
+
+
+[#+samesite/none+]*samesite > none*
+
++List of cookie names or patterns for which the SameSite attribute is set to a value of None, if not already defined. A single wildcard (*) character is supported as a stand-alone value, or following cookie name prefixes. Any cookie name or pattern that is defined by this list must be unique and not present in the 'lax' nor 'strict' configurations. Each cookie that is modified to contain a SameSite value of None as a result of this configuration is also set to Secure.+
+
+
+[#+samesite/strict+]*samesite > strict*
+
++List of cookie names or patterns for which the SameSite attribute is set to a value of Strict, if not already defined. A single wildcard (*) character is supported as a stand-alone value, or following cookie name prefixes. Any cookie name or pattern that is defined by this list must be unique and not present in the 'lax' nor 'none' configurations.+
+
+
 [#+sslOptions+]*sslOptions*
 
 +SSL protocol options for the endpoint.+
@@ -460,6 +516,18 @@ Min: +-1+ +
 |+128000+
 
 |+Defines the maximum number of connections allowed to be open on this endpoint.+
+
+|+portOpenRetries+
+
+|int +
+Min: +0+ +
+ +
+Max: +100000+ +
+
+
+|+0+
+
+|+Number of retries to open a TCP/IP port during server startup.  There will be a one second delay between retries, until the opening is successful or the port open retry number is reached.+
 
 |+soReuseAddr+
 
