@@ -24,42 +24,50 @@ The SAML Web Browser SSO flow includes three components:
 * The identity provider (IdP)
 * The service provider (SP)
 
-The IdP is an entity that issues SAML assertions about an authenticated user. The SP delegates authentication to an IdP and relies on information about an authenticated user that exists in a SAML assertion that is issued by an identity provider. Within the SAML Web Browser SSO flow, the user always authenticates to the IdP, and the SP relies on the IdP assertion to identify the user as shown in the following example:
+The identity provider is an entity that issues SAML assertions about an authenticated user. The service provider delegates authentication to an identity provider and relies on information about an authenticated user that exists in a SAML assertion that is issued by an identity provider. Within the SAML Web Browser SSO flow, the user always authenticates to the identity provider, and the service provider relies on the identity provider assertion to identify the user as shown in the following example:
 
 image::/docs/img/saml_actor.gif[Key Concepts in Web Single-Sign-On]
 
-The SAML Web Browser SSO flow usually begins with a user's request for a secured web application at the service provider, which is called SP-initiated SSO. It is also possible that SSO starts from the IdP. In this scenario, the user authenticates to the IdP, and the IdP redirects the user to the SP with a SAML response message, which is called IdP-initiated SSO.
+The example illustrates the following process:
+
+1. User requests a service from service provider.
+2. Service provider requests a user identity (SAML) from the idenity provider via redirect.
+3. Identity provider asks user to login. (There is no sign-in if user has been authenticated).
+4. Service provider obtains SAML.
+5. Service provider makes an access control decision on the basis of SAML assertion.
+
+The SAML Web Browser SSO flow usually begins with a user's request for a secured web application at the service provider, which is called SP-initiated SSO. It is also possible that SSO starts from the identity provider. In this scenario, the user authenticates to the identity provider, and the identity provider redirects the user to the service provider with a SAML response message, which is called IdP-initiated SSO.
 
 === SP-initiated solicited Web SSO
-The simplest form of cross-domain SSO is the SP-initiated SSO in which the user starts at the SP. In the following scenario, a user attempts to access a protected resource directly on an SP website without being logged on. The user does not have an account on the SP site, but does have a federated account that is managed by a third-party IdP. The SP sends an authentication request to the IdP. Both the request and the returned SAML assertion are sent through the user’s browser where the user request is verified.
+The simplest form of cross-domain SSO is the SP-initiated SSO in which the user starts at the service provider. In the following scenario, a user attempts to access a protected resource directly on an service provider website without being logged on. The user does not have an account on the service provider site, but does have a federated account that is managed by a third-party identity provider. The service provider sends an authentication request to the identity provider. Both the request and the returned SAML assertion are sent through the user’s browser where the user request is verified.
 
 image::/docs/img/saml_sp_sso.gif[SP-Initiated solicited Web SSO (End user starting at SP)]
 
 === IdP-Initiated unsolicited Web SSO
-With the IdP-intiated SSO, the user starts at the IdP. In the following scenario, a user is logged on to the IdP and attempts to access a resource on a remote SP server. The SAML assertion is transported to the SP where it is verified.
+With the IdP-intiated SSO, the user starts at the identity provider. In the following scenario, a user is logged on to the identity provider and attempts to access a resource on a remote service provider server. The SAML assertion is transported to the service provider where it is verified.
 
 image::/docs/img/saml_idp_sso.gif[dP-Initiated unsolicited Web SSO (End user starting at IdP)]
 
 == SAML Single Logout
-Single Logout (SLO) is a near-simultaneous logout of a user from a specific authentication session and all active SP sessions that are associated with the authentication session. SLO can be initiated by both the SP and the IdP.
+Single Logout (SLO) is a near-simultaneous logout of a user from a specific authentication session and all active service provider sessions that are associated with the authentication session. Single Logout can be initiated by both the service provider and the identity provider.
 
-=== SP-initiated SLO
-With the SP-initiated SLO, a user clicks a logout link in the SP to start a global logout. The logout request is fulfilled with the following process:
+=== SP-initiated Single Logout
+With the SP-initiated Single Logout, a user clicks a logout link in the service provider to start a global logout. The logout request is fulfilled with the following process:
 
-1. The SP sends a logout request to the SAML through a web browser.
-2. The IdP requests all active SP sessions to log out.
-3. The IdP logs out the user and sends the response back to the log out request of the SP.
-4. The SP ends the user's local security session.
+1. The service provider sends a logout request to the SAML through a web browser.
+2. The identity provider requests all active service provider sessions to log out.
+3. The identity provider logs out the user and sends the response back to the log out request of the service provider.
+4. The service provider ends the user's local security session.
 
-=== IdP-initiated SLO
-With the IdP-initiated SLO, the user clicks a logout link in the IdP to start a global logout. The logout request is fulfilled with the following process:
+=== IdP-initiated Single Logout
+With the IdP-initiated Single Logout, the user clicks a logout link in the identity provider to start a global logout. The logout request is fulfilled with the following process:
 
-1. The IdP sends a logout request to every SP that shares a login session through a web browser.
-2. The SP ends the local user login session.
-3. The IdP ends the user's IdP login session.
+1. The identity provider sends a logout request to every service provider that shares a login session through a web browser.
+2. The service provider ends the local user login session.
+3. The identity provider ends the user's identity provider login session.
 
 == SAML metadata
-SAML metadata is configuration data that is required to automatically negotiate agreements between the SP and the IdP. The metadata consists of identifiers, binding support and endpoints, certificates, keys, cryptographic capabilities, and security and privacy policies.
+SAML metadata is configuration data that is required to automatically negotiate agreements between the service provider and the identity provider. The metadata consists of identifiers, binding support and endpoints, certificates, keys, cryptographic capabilities, and security and privacy policies.
 
 === Open Liberty and SAML
 Open Liberty supports the SAML Web browser SSO profile with HTTP post binding, Single Logout, and SAML metadata.
