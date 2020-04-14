@@ -3,7 +3,7 @@
 
 === Basic TLS configuration
 
-In addition to adding the Transport Security feature, you must add the `keyStore` element to your `server.xml` file.
+In addition to the Transport Security feature, you must add the `keyStore` element to your `server.xml` file.
 The following example shows the minimum configuration to enable TLS:
 
 [source,java]
@@ -11,26 +11,24 @@ The following example shows the minimum configuration to enable TLS:
 <keyStore id="defaultKeyStore" password="yourPassword" />
 ----
 
-When the `defaultKeyStore` element exists in the configuration, Open Liberty builds a TLS configuration around it with an ID attribute value of `defaultSSLConfig`.
+When the `defaultKeyStore` element is specified in the configuration, Open Liberty builds a TLS configuration around it with an ID attribute value of `defaultSSLConfig`.
 In this default TLS configuration, the `defaultKeyStore` is used as both the keystore and truststore.
 
 This default configuration enables all TLS levels.
-Levels TLSv1, TLSv1.1, TLSv1.2, and  TLSv1.3 are enabled, according to what the JDK supports.
-Default ciphers include all ciphers that are size 128-bit and higher.
+Levels TLSv1, TLSv1.1, TLSv1.2, and  TLSv1.3 are enabled, according to what the Java SDK supports.
+The default ciphers include all ciphers that are size 128-bit and higher.
 Client authentication is not enabled by the default configuration.
 
-In this configuration, the server creates the keystore and certificate if it does not exist during SSL initialization.
+In this configuration, the server creates the keystore and a certificate, if no certificate exists during SSL initialization.
 The certificate is self-signed, with a validity period of 365 days and a signature algorithm of `SHA256withRSA`.
 The certified name (CN) value of the certificate `subjectDN` attribute is the hostname of the computer where the server is running.
 
 Open Liberty creates a keystore password during profile creation and puts it in the `server.env` file that is in the server home directory.
-If there is no `keystore` element for the `defaultKeyStore` file, this password is used to create a keystore file.
+If no `keystore` element exists for the `defaultKeyStore` file, this password is used to create a keystore file.
 This keystore file is then used as the `defaultKeyStore` file.
 Likewise, if a `defaultKeyStore` entry exists without a password in the `server.xml` file, the password from the `server.env` file is used to open the file.
 If you don't want to use the generated keystore password, remove the `keystore_password` entry from the `server.env` file.
 If a default keystore file was already generated with the password from the `server.env` file, you might need to remove it.
-
-The `defaultSSLConfig` properties can be customized by including an `ssl` element in the configuration for the `defaultSSLContfig` element, with the attributes customized.
 
 You can designate a different ssl element in the configuration as the default SSL configuration by specifying the `sslRef` attribute on the `defaultSSLContfig` element, as shown in the following example:
 
@@ -40,39 +38,6 @@ You can designate a different ssl element in the configuration as the default SS
 ----
 
 For more information, see link:/docs/ref/config/#ssl.html[SSL Repertoire].
-
-=== Multiple TLS configurations
-
-You can set multiple TLS configurations. Even if there are multiple TLS configurations, the default TLS configuration is still `defaultSSLConfig`. If you want to set a configuration other than `defaultSSLConfig` as the default, you must specify your preferred default in the `server.xml` file that uses the `sslDefault` service configuration. The default configuration is specified by setting the `sslRef` attribute on the `sslDefault` element to equal the ID of the preferred default configuration, as shown in the following example:
-
-
-[source,java]
-----
-<sslDefault sslRef="defaultSSLSettings" />
-
-<ssl id="defaultSSLSettings"
-     keyStoreRef="defaultKeyStore"
-     trustStoreRef="defaultTrustStore"/>
-<keyStore id="defaultKeyStore"
-          location="key.p12"
-          type="PKCS12" password="defaultPWD" />
-<keyStore id="defaultTrustStore"
-          location="trust.p12"
-          type="PKCS12" password="defaultPWD" />
-
-<ssl id="mySSLSettings"
-     keyStoreRef="myKeyStore"
-     trustStoreRef="myTrustStore"
-<keyStore id="LDAPKeyStore"
-          location="${server.config.dir}/myKey.p12"
-          type="PKCS12"
-          password="{xor}CDo9Hgw=" />
-<keyStore id="LDAPTrustStore"
-          location="${server.config.dir}/myTrust.p12"
-          type="PKCS12"
-          password="{xor}CDo9Hgw=" />
-----
-
 
 === Java virtual machine (JVM) default truststore configuration
 
