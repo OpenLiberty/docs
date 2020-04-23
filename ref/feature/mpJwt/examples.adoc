@@ -18,24 +18,37 @@ The `<mpJwt/>` element is required to configure the processing of the caller’s
 ----
 
 This is the keystore that is used by SSL and by JWT.
-The keystore is built by using the maven keytool plugin
+The keystore is built by using the maven keytool plugin,
 
     <keyStore id="defaultKeyStore" location="keystore.jceks" type="JCEKS"
               password="secret" />
 
-The HTTP ports that the application uses.
+These are the HTTP ports that the application uses,
 
     <httpEndpoint id="defaultHttpEndpoint" host="*" httpPort="${http.port}"
                   httpsPort="${https.port}"/>
 
-The application that contains the user and login endpoints. 
+The application that contains the user and login endpoints,
 
     <webApplication location="${app.name}" contextRoot="/" />
 
 The MP JWT configuration that injects the caller's JWT into a
-         ResourceScoped bean for inspection.
+         ResourceScoped bean for inspection,
 
     <mpJwt id="jwtUserConsumer" keyName="default" audiences="simpleapp"
            issuer="${jwt.issuer}"/>
 </server>
+
+=== Specify login with Micrprofile JSON Web Token for only a subset of applications, URLs, browsers, or IP addresses
+
+To protect only a subset of applications, URLs, or IP addresses, use an authentication filter. The security configuration takes effect only when the conditions in the filter are met. In the following example, requests that target the `myApp` application are processed by the mp-jwt feature:
+
+[source,xml]
+----
+<mp-jwt authFilterRef="authFilter1" />
+<authFilter id="myAuthFilter">
+         <webApp id="myWebApp"
+         name="myApp"
+         matchType="contains"/>
+</authFilter>
 ----
