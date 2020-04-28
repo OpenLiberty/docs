@@ -1,0 +1,91 @@
+
+== Examples
+
+=== Basic TLS configuration
+
+In addition to the Transport Security feature, you must add the `keyStore` element to your `server.xml` file.
+The following example shows the minimum configuration to enable TLS:
+
+[source,java]
+----
+<keyStore id="defaultKeyStore" password="yourPassword" />
+----
+
+When the `defaultKeyStore` element is specified in the configuration, Open Liberty builds a TLS configuration around it with an ID attribute value of `defaultSSLConfig`.
+In this default TLS configuration, the `defaultKeyStore` is used as both the keystore and truststore.
+
+This default configuration enables all TLS levels.
+Levels TLSv1, TLSv1.1, TLSv1.2, and  TLSv1.3 are enabled, according to what the Java SDK supports.
+The default ciphers include all ciphers that are size 128-bit and higher.
+Client authentication is not enabled by the default configuration.
+
+In this configuration, the server creates the keystore and a certificate, if no certificate exists during SSL initialization.
+The certificate is self-signed, with a validity period of 365 days and a signature algorithm of `SHA256withRSA`.
+The certified name (CN) value of the certificate `subjectDN` attribute is the hostname of the computer where the server is running.
+
+Open Liberty creates a keystore password during profile creation and puts it in the `server.env` file that is in the server home directory.
+If no `keystore` element exists for the `defaultKeyStore` file, this password is used to create a keystore file.
+This keystore file is then used as the `defaultKeyStore` file.
+Likewise, if a `defaultKeyStore` entry exists without a password in the `server.xml` file, the password from the `server.env` file is used to open the file.
+If you don't want to use the generated keystore password, remove the `keystore_password` entry from the `server.env` file.
+If a default keystore file was already generated with the password from the `server.env` file, you might need to remove it.
+
+You can designate a different ssl element in the configuration as the default SSL configuration by specifying the `sslRef` attribute on the `defaultSSLContfig` element, as shown in the following example:
+
+[source,java]
+----
+<sslDefault sslRef="customSSLConfiguration" />
+----
+
+For more information, see link:/docs/ref/config/#ssl.html[SSL Repertoire].
+
+=== Java virtual machine (JVM) default truststore configuration
+
+You can set the `trustDefaultCert` attribute to `true` to specify that the JVM default truststore can be used, in addition to the configured truststore, as shown in the following example:
+
+[source,java]
+----
+<ssl id="myDefaultSSLConfig"
+      keyStoreRef="defaultKeyStore"
+      trustStoreRef="defaultTrustStore"
+      trustDefaultCert="true" />
+----
+
+
+=== Outbound TLS configuration
+
+You can configure Liberty to have a global outbound default TLS configuration that is different from the inbound default configuration. Outbound TLS filters are configured on the `outboundConnection` element that is nested in the `ssl` element. You can specify either a host or a host and port to indicate where the outbound SSL connection goes by setting attributes on the `outboundConnection` element.
+
+In the following example, outbound TLS connections that go to any port on the `otherhost` host use the `defaultSSLConfig`. All other outbound TLS connections use the outbound default TLS configuration that is specified by the `outboundSSLRef` attribute called `outboundSSLSettings`.
+
+[source,java]
+----
+<sslDefault outboundSSLRef=”outboundSSLSettings” />
+
+<ssl id="defaultSSLConfig"
+      keyStoreRef="defaultKeyStore"
+      trustStoreRef="defaultTrustStore" >
+	<outboundConnection host=”otherhost”  />
+</ssl>
+
+<keyStore id="defaultKeyStore"
+           location="key.p12"
+           type="PKCS12"
+           password=”yourpassword” />
+<keyStore id="defaultTrustStore"
+           location="trust.p12"
+           type="PKCS12"
+           password="yourpassword" />
+
+<ssl id="outboundSSLSettings"
+      keyStoreRef="outboundKeyStore"
+      trustStoreRef="outboundTrustStore" >
+</ssl>
+
+<keyStore id="outboundKeyStore"
+           location="${server.config.dir}/outboundKeyFile.p12"
+           password="yourpassword" />
+<keyStore id="outboundTrustStore"
+           location="${server.config.dir}/outboundTrustFile.p12"
+           password="yourpassword" />
+----

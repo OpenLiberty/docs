@@ -13,28 +13,34 @@
 :page-type: general
 = Application configuration security hardening
 
-If your application isn't properly secured, external users might derive or inherit unauthorized privileges when they run it.
-This unauthorized access can lead to users with access to sensitive information about your application and other users.
 Before you can run an application in production, you must carefully harden its configuration.
+
+If your application isn't properly secured, external users might derive or inherit unauthorized privileges when they run it.
+These unauthorized privileges can give users unauthorized access to sensitive information about your application and other users.
+By hardening your application's configuration, you can prevent unauthorized exposure of sensitive information.
 
 == User roles and access
 Understanding the roles and mappings of users is key to securely configuring your application for production use.
 For information about how to map users to roles and groups, see link:/docs/ref/general/#authorization.html[Authorization].
 
-If you don't configure user roles in the `server.xml` file, Open Liberty uses the group name that the application runs under as the role name by default.
-For conflicts in a servlet's role mapping between an application's `web.xml` file and annotations in the application, the config in the `web.xml` file takes precedence.
-If there is a conflict between the `ibm-application-bnd.xmi` and `server.xml` files, then the config int he `server.xml` file takes precedence.
+If you don't configure user roles in the `server.xml` file, Open Liberty uses the group names that a user is attached to as the role names for the user by default.
+For conflicts in the role mapping of a servlet between the `web.xml` file and annotations in the application, the config in the `web.xml` of the application file takes precedence.
+
+If there is a conflict between the `ibm-application-bnd.xml` and `server.xml` files, then the config in the `server.xml` file takes precedence.
+If the information that is being specified can have multiple values, the values from the `server.xml` file are added to the values from the application.
+For example, if the `ibm-application-bnd.xml` file defines two security roles and the `server.xml` file defines one role, all three security roles are used.
+If a security role that is defined in the `server.xml` file has the same name as a security role defined in the `ibm-application-bnd.xml` file, the role from the `server.xml` file overwrites the role from the application.
 
 When the role mapping binding information for a protected application isn't provided, the group name and role name must be the same.
 For example, if the role name is `manager`, then a user who belongs to a `manager` group has access to that resource.
-This example applies only when application binding information isn't specified for the application in the `ibm-application-bnd.xmi` or `server.xml` files
+This example applies only when application binding information isn't specified for the application in the `ibm-application-bnd.xml` or `server.xml` files.
 
 == Web server document root
 WAR files contain application code and sensitive information.
 Only some of that information is web-servable content, so the web server document root should not be set to the WAR root.
-If the web server document root is set to the WAR root, the web server serves up all the contents of the WAR file without interpretation, which means that code, raw JSPs, and more are served to your users.
+If the web server document root is set to the WAR root, the web server serves up all the contents of the WAR file without interpretation, which means that code, raw JSPs, and other resources are served to your users.
 
-You should also never place sensitive information in the WAR root.
+Avoid placing sensitive information in the WAR root.
 The web container serves any files that are found in the root of the WAR file, which is okay if the root contains only servable content.
 However, because the web container serves files from the WAR root, it must never contain any content that users shouldn't see, including property or class files.
 If you must place such information in the WAR file, place it in the `WEB-INF` directory, as permitted by the servlet specification.
@@ -47,35 +53,66 @@ Instead of defining a mapping for each servlet, a single generic URL (such as `/
 The component of the path after the base is assumed to be the class name for the servlet.
 For example, `/servlet/com.ibm.sample.MyServlet` refers to the `com.ibm.sample.MyServlet` servlet class.
 
-You can serve servlets by class name by setting the `serveServletsByClassnameEnabled` property to `true` in the `ibm-web-ext.xmi` file.
+You can serve servlets by class name by setting the `serveServletsByClassnameEnabled` property to `true` in the `ibm-web-ext.xml` file of the application.
 For production purposes, don't enable this property.
 Enabling the `serveServletsByClassnameEnabled` property makes it possible for anyone that knows the class name of any servlet to directly invoke it.
 
 === Servlet aliases
 Servlets are secured by URLs.
-Each URL that is secured must be specified in the `web.xml` file.
-Servlets can have more than one alias if multiple URLs access the same servlet class.
-If a servlet has more than one alias or there are many servlets, it can be easy to forget to secure an alias.
-Because Open Liberty secures URLs and not the underlying classes, if just one servlet URL is insecure, then an intruder might be able to bypass security.
-To alleviate this problem, use wildcards to secure servlets when possible.
-If using wildcards isn't an option, carefully double check your `web.xml` file before deployment to ensure that all servlet aliases are secure.
+Each URL that is secured must be specified in the `web.xml` file that describes the application.
+A servlet can have more than one alias, for example, multiple URLs can access the same servlet class or there can be many servlets.
+If a servlet has more than one alias, it is easy to forget to secure an alias.
+Because Open Liberty secures URLs and not the underlying classes, if just one servlet URL is insecure, an intruder might be able to bypass security.
+To alleviate this risk, use wildcards to secure servlets wherever possible.
+If that is not appropriate, carefully double check your `web.xml` file before deployment.
 
-When you specify authorization constraints for servlets, you must either list no methods or list all methods for a servlet.
-In the following secure example, endpoints in the web application are unreachable by default.
-If a new servlet is added, you must add a security constraint for the new URL so that anyone can use it:
+When you specify authorization constraints for servlets, ensure that you either list no methods or carefully list all the methods for a servlet, including GET, POST, PUT, HEAD, etc.
+If you are using multiple constraints, list all the methods.
 
-// Is it okay to use this example? Did it come from the other article?
+Specify the `<deny-uncovered-http-methods>` element in the `web.xml` file.
+When the `<deny-uncovered-http-methods>` element is specified, the container denies any uncovered HTTP methods.
+A `403 (SC_FORBIDDEN)` status code is returned by the denied HTTP methods.
+You can also use the link:https://openliberty.io/docs/ref/config/#webApplication.html#webservices-bnd/http-publishing/webservice-security/security-constraint/web-resource-collection&expand=true[`<http-method-omission>` element] to specify an HTTP method to which a security constraint shouldn't apply.
+In the following secure example, the `<deny-uncovered-http-methods>` element is specified in the `web.xml` file:
+
 [source,xml]
 ----
-<security-constraint>
-  <web-resource-collection>
-    <web-resource-name>DefaultDeny</web-resource-name>
-    <url-pattern>/*</url-pattern>
-  </web-resource-collection>
-  <auth-constraint>
-    <role-name>NoAccess</role-name>
-  </auth-constraint>
+<servlet-mapping id="ServletMapping_1">
+		<servlet-name>MyServlet</servlet-name>
+		<url-pattern>/MyURLPattern</url-pattern>
+</servlet-mapping>
+
+<deny-uncovered-http-methods/>
+
+<!-- SECURITY CONSTRAINTS -->
+<security-constraint id="SecurityConstraint_1">
+		<web-resource-collection id="WebResourceCollection_1">
+			<web-resource-name>Protected with Employee or Manager roles</web-resource-name>
+			<url-pattern>/MyURLPattern</url-pattern>
+			<http-method>GET</http-method>
+			<http-method>POST</http-method>
+		</web-resource-collection>
+		<auth-constraint id="AuthConstraint_1">
+			<role-name>Employee</role-name>
+			<role-name>Manager</role-name>
+		</auth-constraint>
 </security-constraint>
+----
+{empty} +
+
+When the `<deny-uncovered-http-methods>` element is specified in the `web.xml` file, a message is logged in the `messages.log` file for each URL pattern in each servlet.
+These messages indicate the uncovered methods with a note that those methods are unprotected and not accessible, as shown in the following example:
+
+----
+For URL MyURLPattern in servlet MyServlet, the following HTTP methods are uncovered, and not accessible: DELETE OPTIONS HEAD PUT TRACE
+----
+{empty} +
+
+If the `<deny-uncovered-http-methods>` element isn't specified in the `web.xml` file, a different message is logged in the `messages.log` file for each URL pattern in each servlet.
+These messages indicate the uncovered methods with a note that those methods are unprotected and accessible, as shown in the following example:
+
+----
+For URL MyURLPattern in servlet MyServlet, the following HTTP methods are uncovered, and accessible: DELETE OPTIONS HEAD PUT TRACE
 ----
 
 == Error handler
@@ -85,11 +122,11 @@ Not only is this output unfriendly to users, but it also reveals information abo
 
 It is best to ensure that users never see a raw error message by defining a default error page that displays whenever an unhandled exception occurs.
 This page can be a user-friendly error message rather than a stack trace.
-The default error page is defined in the `ibm-web-ext.xmi` file by using the `defaultErrorPage` attribute.
+The default error page is defined in the `ibm-web-ext.xml` file by using the `defaultErrorPage` attribute.
 
 == File serving and directory browsing
 You can further limit the risk of serving inappropriate content by disabling file serving and directory browsing in your web applications.
-Set the following property in the `ibm-web-ext.xmi` file:
+Set the following property in the `ibm-web-ext.xml` file:
 
 [source,xml]
 ----
@@ -97,8 +134,7 @@ Set the following property in the `ibm-web-ext.xmi` file:
 ----
 
 == Confidential transport guarantee
-//Why do you do this?
-Ensure that applications specify transport guarantee of confidential in the `web.xml` or `ibm-web-ext.xmi` files:
+To ensure that applications run only over secure HTTP connections, specify transport guarantee of `CONFIDENTIAL` in the `web.xml` file:
 
 [source,xml]
 ----
@@ -106,3 +142,7 @@ Ensure that applications specify transport guarantee of confidential in the `web
   <transport-guarantee>CONFIDENTIAL</transport-guarantee>
 </user-data-constraint>
 ----
+
+== See also
+
+* To learn how to secure a web application through authentication and authorization, check out this guide on link:/guides/security-intro.html[Securing a web application].
