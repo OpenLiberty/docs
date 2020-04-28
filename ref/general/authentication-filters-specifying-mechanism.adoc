@@ -21,11 +21,17 @@ Similarly, in a single application where different kinds of protected resources 
 
 Authentication mechanisms in Open Liberty are managed by the server configuration. In the `server.xml` file, you can specify filters to control which authentication mechanism processes certain types of requests. For example, you can filter requests that contain the `/mywebapp` URL pattern to be processed by social media login, and requests that contain the `/EmployeeRoleServlet` URL pattern to be processed by SPNEGO. You can configure filters to look for different characteristics of a request, such as URL pattern, IP address, domain name, browser type, and more.
 
-The following example shows an authentication filter that is configured so that authentication requests that contain the `/mywebapp` URL pattern are processed by the OpenID feature. This example assumes the OpenID feature is enabled in the `server.xml` file.
+Open Liberty supports authentication filters for various authentication mechanisms, including the following options:
 
-[source,java]
+* link:/docs/ref/general/#sso-config-jwt.html[JSON Web Tokens]
+* link:/docs/ref/general/#sso-config-saml.html[SAML web]
+* link:/docs/ref/general/#sso-config-spnego.html[Simple and Protected GSSAPI Negotiation Mechanism (SPNEGO)]
+* link:/docs/ref/general/#sso-social-config.html[Social Media Login]
+
+For example, you can set an authentication filter on social media logins to specify a particular type of social media credentials for requests from a web application. In the following example, only requests that contain the `/mywebapp` pattern are authenticated by using Google credentials.
+
 ----
-<openId authFilterRef="authFilter1">
+<googleLogin  authFilterRef="authFilter1" clientId="your app id"  clientSecret="your app secret" />
 
 <authFilter id="authFilter1">
     <requestUrl
@@ -34,12 +40,11 @@ The following example shows an authentication filter that is configured so that 
         matchType="contains" />
 </authFilter>
 ----
-Open Liberty supports authentication filters for various authentication mechanisms, including the following options:
 
-* link:/docs/ref/general/#sso-config-jwt.html[JSON Web Tokens]
-* link:/docs/ref/general/#sso-config-saml.html[SAML web]
-* link:/docs/ref/general/#sso-config-spnego.html[Simple and Protected GSSAPI Negotiation Mechanism (SPNEGO)]
-* link:/docs/ref/general/#sso-social-config.html[Social Media Login]
+For more authentication filter configuration examples, see the following features:
+
+* link:/docs/ref/feature/#spnego-1.0.html[Simple and Protected GSSAPI Negotiation Mechanism (SPNEGO): Limit SPNEGO authentication]
+* link:/docs/ref/feature/#mpJwt-1.1.html[MicroProfile JSON Web Token: Specify login with Micrprofile JSON Web Token for only a subset of applications, URLs, browsers, or IP addresses]
 
 ////
 these examples were removed from this topic to point out to feature config examples, preserving them here in case they are needed later
@@ -131,8 +136,4 @@ To process an incoming request with the service configured to use this filter, t
 
 == See also
 
-* Authentication filters give you nuanced control over how you manage authentication to the protected resources in your application. For more information, see link:/docs/ref/config/#authFilter.html[Authentication Filter].
-* For authentication filter configuration examples, see the following features:
-** link:docs/ref/feature/#socialLogin-1.0.html[Social Media Login: Request log in with a social media ID for only a subset of applications, URLs, browsers, or IP addresses]
-** link:/docs/ref/feature/#spnego-1.0.html[Simple and Protected GSSAPI Negotiation Mechanism (SPNEGO): Limit SPNEGO authentication]
-** link:/docs/ref/feature/#mpJwt-1.1.html[MicroProfile JSON Web Token: Specify login with Micrprofile JSON Web Token for only a subset of applications, URLs, browsers, or IP addresses]
+Authentication filters give you nuanced control over how you manage authentication to the protected resources in your application. For more information, see link:/docs/ref/config/#authFilter.html[Authentication Filter].
