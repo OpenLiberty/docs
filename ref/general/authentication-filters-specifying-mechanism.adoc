@@ -1,0 +1,139 @@
+// Copyright (c) 2020 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description: You can set authentication filters to specify the authentication mechanisms that process different types of HTTP servlet requests.
+:seo-title: Using authentication filters
+:seo-description: You can set authentication filters to specify the authentication mechanisms that process different types of HTTP servlet requests.
+:page-layout: general-reference
+:page-type: general
+= Authentication filters for specifying authentication mechanisms
+
+You can set authentication filters to specify the authentication mechanisms that process different types of HTTP servlet requests.
+
+An authentication filter sets certain criteria that determine how a request for resources is authenticated. For example, if two applications are running on the same Open Liberty server, an authentication filter can specify different types of authentication for each application. In this case, a web application can be secured with a social media login, while a microservice on the same server is secured by a lightweight directory access protocol (LDAP) registry.
+
+Similarly, in a single application where different kinds of protected resources require different types of authentication, filters can control how authentication is managed for each resource. For example, in a banking application, resources for customers might be accessible through social media login while resources for administrators are secured by SPNEGO authentication.
+
+Authentication mechanisms in Open Liberty are managed by the server configuration. In the `server.xml` file, you can specify filters to control which authentication mechanism processes certain types of requests. For example, you can filter requests that contain the `/mywebapp` URL pattern to be processed by social media login, and requests that contain the `/EmployeeRoleServlet` URL pattern to be processed by SPNEGO. You can configure filters to look for different characteristics of a request, such as URL pattern, IP address, domain name, browser type, and more.
+
+Open Liberty supports authentication filters for various authentication mechanisms, including the following options:
+
+* link:/docs/ref/general/#sso-config-jwt.html[JSON Web Tokens]
+* link:/docs/ref/general/#sso-config-saml.html[SAML web]
+* link:/docs/ref/general/#sso-config-spnego.html[Simple and Protected GSSAPI Negotiation Mechanism (SPNEGO)]
+* link:/docs/ref/general/#sso-social-config.html[Social Media Login]
+
+For example, you can set an authentication filter on social media logins to specify a particular type of social media credentials for requests from a web application. In the following example, only requests that contain the `/mywebapp` pattern are authenticated by using Google credentials.
+
+----
+<googleLogin  authFilterRef="authFilter1" clientId="your app id"  clientSecret="your app secret" />
+
+<authFilter id="authFilter1">
+    <requestUrl
+        id="myUrlFilter"
+        urlPattern="/mywebapp"
+        matchType="contains" />
+</authFilter>
+----
+
+For more authentication filter configuration examples, see the following features:
+
+* link:/docs/ref/feature/#spnego-1.0.html[Simple and Protected GSSAPI Negotiation Mechanism (SPNEGO): Limit SPNEGO authentication]
+* link:/docs/ref/feature/#mpJwt-1.1.html[MicroProfile JSON Web Token: Specify login with Micrprofile JSON Web Token for only a subset of applications, URLs, browsers, or IP addresses]
+
+////
+these examples were removed from this topic to point out to feature config examples, preserving them here in case they are needed later
+== Authentication filter examples
+
+The following examples demonstrate how to configure authentication filters for different kinds of requests and applications.
+
+=== Request URL contains a pattern
+The following example shows a typical configuration for an authentication filter. In this configuration, any incoming request with a request URL that contains the `/SimpleServlet` pattern is processed by the service that is configured to use this filter.
+
+[source,java]
+----
+<authFilter id="myAuthFilter">
+         <requestUrl id="myRequestUrl" urlPattern="/SimpleServlet" matchType="contains"/>
+</authFilter>
+----
+
+=== Request URL contains one of a set of patterns
+In the following example, a piped list of request URL patterns is specified. To process an incoming request with the service that is configured to use this filter, the request URL must contain any one of the  `/SimpleServlet`, `/EmployeeRoleServlet`, or `/AllRoleServlet` patterns.
+
+[source,java]
+----
+<authFilter id="myAuthFilter">
+         <requestUrl id="myURL" urlPattern="/SimpleServlet|/EmployeeRoleServlet|/AllRoleServlet" matchType="contains" />
+</authFilter>
+----
+
+=== Web application name contains a pattern
+In the following example, a web application name is specified in the authentication filter. Incoming requests must target the `myApp` application to be processed by the service that is configured to use this filter.
+
+[source,java]
+----
+<authFilter id="myAuthFilter">
+         <webApp id="myWebApp" name="myApp" matchType="contains"/>
+</authFilter>
+----
+
+=== Web application name contains one of a set of patterns
+In the following example, a piped list of web applications is specified. To process an incoming request with the service that is configured to use this filter, the request must target  `myApp1`, `myApp2`, or `myApp3` applications.
+
+[source,java]
+----
+<authFilter id="myAuthFilter">
+         <webApp id="myWebApp" name="myApp1|myApp2|myApp3" matchType="contains"/>
+</authFilter>
+----
+
+=== Request originates from a certain IP address
+The following example shows how to use wildcards in the `remoteAddress` element. With this configuration, the service that is configured to use this filter processes the incoming request if the request comes from an IP address anywhere in the `127.0.0.*` range.
+
+[source,java]
+----
+<authFilter id="myAuthFilter">
+         <remoteAddress id="myRemoteAddress" ip="127.0.0.*" matchType="equals"/>
+</authFilter>
+----
+
+=== Request must not contain certain patterns or originate from a certain IP address
+The following example shows how to exclude certain requests by setting the `matchType` attribute to `notContain`. If values in the request match elements in the filter for which the `matchType` attribute is set to `notContain`, the request fails to satisfy the filter requirements. In this example, the request URL must not contain the `/ManagerRoleServlet` pattern and it must not come from an Internet Explorer user agent.
+
+[source,java]
+----
+<authFilter id="myAuthFilter">
+         <requestUrl id="myURL2" urlPattern="/ManagerRoleServlet" matchType="notContain" />
+         <userAgent id="myAgent" agent="IE" matchType="notContain" />
+</authFilter>
+----
+
+=== Request contains a specified set of sub elements
+To process an incoming request with the service configured to use this filter, the request must meet the following conditions:
+
+* Contains the `/SimpleServlet` pattern in the request URL
+* Targets a domain that contains `host.example.com`
+* Comes from the IP address `127.0.0.1`
+* Comes from a Firefox browser
+* Targets an application that is named `myApp`
+
+[source,java]
+----
+<authFilter id="myAuthFilter">
+         <requestUrl id="myRequestUrl" urlPattern="/SimpleServlet" matchType="contains"/>
+         <host id="myHost" name="host.example.com" matchType="contains"/>
+         <remoteAddress id="myAddress" ip="127.0.0.1" matchType="equals" />
+         <userAgent id="myUserAgent" agent="Firefox" matchType="equals"/>
+         <webApp id="myWebApp" name="myApp" matchType="contains"/>
+</authFilter>
+----
+////
+
+== See also
+
+Authentication filters give you nuanced control over how you manage authentication to the protected resources in your application. For more information, see link:/docs/ref/config/#authFilter.html[Authentication Filter].
