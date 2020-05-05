@@ -1,0 +1,65 @@
+// Copyright (c) 2020 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-layout: general-reference
+:page-type: general
+:seo-title: SSO configuration with social logins - OpenLiberty.io
+:seo-description:
+= SSO configuration with Social Media Login
+
+Social Media Login is a form of single sign-on (SSO) that enables users to sign in to applications by using their existing social media account instead of creating an account specifically for the application. By configuring SSO with Social Media Login, you can simplify the registrations and logins for both users and the applications that are accessed.
+
+== Enabling Social Media Login
+When you enable Social Media Login, the user authentication process is simplified for each of the parties that are involved. With social media login, the user accesses an application and selects a social media platform from a form. After a social media platform is selected, a login request is sent to the social media platform to confirm the user's identity. After the user's identity is confirmed by the social media platform, a current user of the platform gets access to the application and a new user is registered as a new user and then logged into the application.
+
+In Open Liberty, Social Media Login is enabled by the https://openliberty.io/docs/ref/feature/#socialLogin-1.0.html[Social Media Login feature]. The Social Media Login feature handles the authentication requirements of the application such as user and password management by using the credentials that are supplied and protected by the social media platform.  With this feature, the managers of the application are not solely responsible for securing the personal information of users and the user does not have to register for multiple online accounts, which leads to faster and more secure access.
+
+You can enable Social Media Login for any social media platform that uses the OAuth or OpenID Connect (OIDC) standard for authentication. OpenID Connect is a SSO method that enables applications to assign user authentication to authorization servers that return the application claims about the authenticated user and authentication event. This standard process is established for the application that provides the user access. The OpenID Connect authorization process involves specific roles that enable the identity management for secure applications. The OpenID provider (OP) is an authorization server that implements OpenID Connect, authenticates users, and returns claims about the authenticated user and the authentication event to a relying party or application. The Relying Party is the application that delegates user authentication to an OpenID Provider and requests claims about the user from the OpenID Provider.
+
+During the OpenID Connect authentication process, a browser accesses a protected application and is redirected to the OpenID provider. The OpenID provider interacts with the user to authenticate them. After authentication, the user's browser is redirected back to the application. The application or its container then contacts the OpenID provider and obtains a JSON Web Token (JWT) that contains claims about the user, and completes authentication and authorization. If successful, the user is granted access to the application. The application can access the claims that are sent in the JWT. If you use the Social Media Login feature, the entire OpenID Connect authorization process is handled by the social media platform, which makes the process simpler.
+
+
+== Configuring authentication with Social Media Login
+If multiple social media providers are configured to protect a request, Open Liberty provides a default social media selection form. With the social media selection form, the user can choose between available social media login providers to log in to the application. For more information, see https://draft-openlibertyio.mybluemix.net/docs/ref/feature/#socialLogin-1.0.html[Social Media Login 1.0].
+
+The social media login providers that are displayed to the user on the selection form are, by default, only the providers that are configured in the application to protect the original resource request. Any providers that are not configured to protect the original request are not shown as options. Additionally, if only one provider is configured to protect a certain request, the selection page is not displayed. Instead, the user is automatically redirected to that provider to authenticate. You can add https://draft-openlibertyio.mybluemix.net/docs/ref/feature/#socialLogin-1.0.html[authentication filters] to specify whether certain HTTP servlet requests are processed by certain social media providers.
+
+=== Configuring a custom social media selection form
+With Open Liberty, you can provide your own custom selection form if you do not want to use the custom selection form that is provided by Open Liberty. Any custom selection form needs to receive the following HTTP request parameters and use those values to construct a valid web page:
+
+[%header , cols=2*]
+
+|===
+|HTTP request parameter
+|Description
+
+|request_url
+|The original protected resource request URL, including request parameters if any are present. The custom selection form should submit the social media provider that the user selects back to this URL. For example, if the custom selection form uses an HTML form to display the social media options, the action attribute of the form should be set to this URL. Additionally, request parameters should be included as hidden inputs within the form.
+
+|request_method
+|The HTTP request method of the original protected resource request. The custom selection page should use the same HTTP request method to submit the social media provider that the user selects back to the original request URL.
+
+|submit_param_name
+|The name that needs to be used for the parameter or header that specifies the social media provider ID that is selected by the user. When the custom selection page submits the social media provider that the user selects back to the original request URL, the configuration ID of the social media provider needs to be specified by a parameter or header with this name.
+
+|configuration
+|A JSON object that contains information about each of the social media providers that are configured to authenticate the original request.
+
+|social-media
+|The top-level key that maps to a JSON array of social media configurations.
+|===
+
+When a protected resource request is received, the application determines that multiple providers protect the request and that a custom selection page is configured. The request is redirected to the custom selection page as shown in the following example:
+----
+HTTP/1.1 302 Found
+Location: https://myhost.com/myApp/customSelection?
+    request_url=https%3A%2F%2Fmyhost.com%2Facme%3Fproduct_id%3D123%26product_name%3Danvil
+    &request_method=GET
+    &submit_param_name=social_login_hint
+    &configuration=%7B%22social-media%22%3A%5B%7B%22id%22%3A%2213579%22%2C%22display-name%22%3A%22Twitter%22%2C%22website%22%3A%22https%3A%2F%2Fwww.twitter.com%22%7D%2C%7B%22id%22%3A%2224680%22%2C%22display-name%22%3A%22Google%22%2C%22website%22%3A%22https%3A%2F%2Fwww.google.com%22%7D%2C%7B%22id%22%3A%22-123456%22%2C%22display-name%22%3A%22An%20OAuth%20Provider%22%7D%5D%7D
+----
