@@ -17,6 +17,14 @@
 
 |+When this property is set to true, the default SSO cookie name, ltpaToken2, is used if a custom SSO cookie name is not configured.  If a custom cookie name is configured for SSO, that cookie name is used.  If a custom cookie name is not configured and this property is set to false, an auto-generated SSO cookie name will be used.+
 
+|+customClaims+
+
+|string
+
+|
+
+|+The extra claims to be put in the payloads of the ID Token, in addition to the default realmName, uniqueSecurityName and groupIds claims.+
+
 |+id+
 
 |string
@@ -215,7 +223,8 @@
 
 |+name+
 
-|string
+|string +
+Required
 
 |
 
@@ -223,17 +232,13 @@
 
 |+value+
 
-|string
+|string +
+Required
 
 |
 
 |+Specify the value of the property+
 |===
-[#+customClaims+]*customClaims*
-
-+The extra claims to be put in the payloads of the ID Token, in addition to the default realmName, uniqueSecurityName and groupIds claims.+
-
-
 [#+discovery+]*discovery*
 
 +Discovery is based on OpenID Connect and Jazz Authorization Server Profile.+
@@ -250,6 +255,45 @@
 |+false+
 
 |+Indicate by true or false whether claims parameter is supported.+
+
+|+claimsSupported+
+
+|string
+
+|+sub+
+
+|+Specify by comma the list of claims that will be supported.+
+
+|+grantTypesSupported+
+
+|* +authorization_code+
+* +client_credentials+
+* +implicit+
+* +password+
+* +refresh_token+
+* +urn:ietf:params:oauth:grant-type:jwt-bearer+
+
+
+|+authorization_code+
+
+|+Specify by comma the list of the grant types that will be used.+
+
+|+idTokenSigningAlgValuesSupported+
+
+|* +HS256+
+* +RS256+
+* +none+
+
+
+|+HS256+
+
+|+Specify the signature algorithm that will be used to sign the ID token.+ +
+*+HS256+* +
++HMAC using SHA-256 hash+ +
+*+RS256+* +
++RSASSA-PKCS-v1_5 using SHA-256 hash+ +
+*+none+* +
++No signature+
 
 |+requestParameterSupported+
 
@@ -274,42 +318,48 @@
 |+false+
 
 |+Indicate by true or false whether require request URI registration is supported.+
+
+|+responseModesSupported+
+
+|* +form_post+
+* +fragment+
+* +query+
+
+
+|+query+
+
+|+Specify by comma the list of the response modes that will be used.+
+
+|+responseTypesSupported+
+
+|* +code+
+* +id_token token+
+* +token+
+
+
+|+code+
+
+|+Specify by comma the list of the response types that will be supported by the OP.+
+
+|+scopesSupported+
+
+|string
+
+|+openid+
+
+|+Specify by comma the list of scopes that will be supported.+
+
+|+tokenEndpointAuthMethodsSupported+
+
+|* +client_secret_basic+
+* +client_secret_post+
+* +none+
+
+
+|+client_secret_post+
+
+|+Specify by comma the list of the token endpoint authentication methods that will be used.+
 |===
-[#+discovery/claimsSupported+]*discovery > claimsSupported*
-
-+Specify by comma the list of claims that will be supported.+
-
-
-[#+discovery/grantTypesSupported+]*discovery > grantTypesSupported*
-
-+Specify by comma the list of the grant types that will be used.+
-
-
-[#+discovery/idTokenSigningAlgValuesSupported+]*discovery > idTokenSigningAlgValuesSupported*
-
-+Specify the signature algorithm that will be used to sign the ID token.+
-
-
-[#+discovery/responseModesSupported+]*discovery > responseModesSupported*
-
-+Specify by comma the list of the response modes that will be used.+
-
-
-[#+discovery/responseTypesSupported+]*discovery > responseTypesSupported*
-
-+Specify by comma the list of the response types that will be supported by the OP.+
-
-
-[#+discovery/scopesSupported+]*discovery > scopesSupported*
-
-+Specify by comma the list of scopes that will be supported.+
-
-
-[#+discovery/tokenEndpointAuthMethodsSupported+]*discovery > tokenEndpointAuthMethodsSupported*
-
-+Specify by comma the list of the token endpoint authentication methods that will be used.+
-
-
 [#+oauthProvider+]*oauthProvider*
 
 +A reference to the ID of an OAuth provider.+
@@ -326,6 +376,16 @@
 |+true+
 
 |+Enable caching to save access tokens in the database and in-memory cache.+
+
+|+accessTokenEncoding+
+
+|* +PBKDF2WithHmacSHA512+
+* +plain+
+
+
+|+plain+
+
+|+The encoding type for the stored access token. The default is set to plain, for compatibility with earlier versions. PBKDF2WithHmacSHA512 is recommended.+
 
 |+accessTokenLength+
 
@@ -439,6 +499,14 @@
 
 |+To use auto authorization, append the autoAuthorize parameter to requests with a value of true.+
 
+|+autoAuthorizeClient+
+
+|string
+
+|
+
+|+Name of a client that is allowed to use auto authorization.+
+
 |+autoAuthorizeParam+
 
 |string
@@ -462,6 +530,16 @@
 |
 
 |+Set request character encoding to this value.+
+
+|+clientSecretEncoding+
+
+|* +PBKDF2WithHmacSHA512+
+* +xor+
+
+
+|+xor+
+
+|+The encoding type for the stored client secret. The default is set to XOR, for compatibility with earlier versions. PBKDF2WithHmacSHA512 is recommended.+
 
 |+clientTokenCacheSize+
 
@@ -490,8 +568,7 @@
 |+consentCacheSize+
 
 |long +
-Min: +0+ +
-
+Min: +0+
 
 |+1000+
 
@@ -521,6 +598,14 @@ Min: +0+ +
 
 |+URI filter selects requests to be authorized by this provider.+
 
+|+grantType+
+
+|string
+
+|+authorization_code+
+
+|+An OAuth 2.0 grant type, as detailed in the OAuth 2.0 specification, that is allowed for the provider. By default, all grant types are allowed. The supported values are authorization_code, client_credentials, refresh_token, password, implicit and urn:ietf:params:oauth:grant-type:jwt-bearer.+
+
 |+httpsRequired+
 
 |boolean
@@ -536,6 +621,22 @@ Min: +0+ +
 |+true+
 
 |+If the value is true, add the com.ibm.wsspi.security.oauth20.token.WSOAuth20Token as a private credential.+
+
+|+internalClientId+
+
+|string
+
+|
+
+|+The ID of an existing client that will be used to generate tokens for PersonalTokenManagement and UsersTokenManagement UI pages.+
+
+|+internalClientSecret+
+
+|Reversably encoded password (string)
+
+|
+
+|+The secret of an existing client that will be used to generate tokens for PersonalTokenManagement and UsersTokenManagement UI pages.+
 
 |+issueRefreshToken+
 
@@ -569,6 +670,14 @@ Min: +0+ +
 
 |+Optional URL that the client is redirected to after successfully invoking the logout endpoint. If a URL is not supplied, then a minimal default logout page is used.+
 
+|+mediatorClassname+
+
+|string
+
+|
+
+|+Mediator plugin class name.+
+
 |+oauthOnly+
 
 |boolean
@@ -601,6 +710,14 @@ Min: +0+ +
 
 |+A value of false disables revocation of associated access tokens when a refresh token is revoked. The default value is true.+
 
+|+ropcPreferUserSecurityName+
+
+|boolean
+
+|+false+
+
+|+If the user security name differs from the username that is supplied in the ROPC (Resource Owner Password Credentials) request, then the username is set to the user security name for all tokens that are created by the ROPC grant type. The default is false.+
+
 |+skipResourceOwnerValidation+
 
 |boolean
@@ -608,6 +725,25 @@ Min: +0+ +
 |+false+
 
 |+If the value is true, skip validation of resource owner.+
+
+|+tokenFormat+
+
+|* +jwt+
+* +mpjwt+
+* +opaque+
+
+
+|
+
+|+The type of token to be produced. One of opaque, jwt, or mpjwt. Mpjwt is microprofile standardized format. The default is opaque.+
+
+|+trackOAuthClients+
+
+|boolean
+
+|+false+
+
+|+Track all OAuth clients that interact with this OAuth provider.+
 
 |+userClientTokenLimit+
 
@@ -617,11 +753,6 @@ Min: +0+ +
 
 |+Token limit for each user and client combination.+
 |===
-[#+oauthProvider/autoAuthorizeClient+]*oauthProvider > autoAuthorizeClient*
-
-+Name of a client that is allowed to use auto authorization.+
-
-
 [#+oauthProvider/customStore+]*oauthProvider > customStore*
 
 +Clients are defined, and tokens and consents are cached in a custom OAuthStore implementation.+
@@ -641,7 +772,8 @@ Min: +0+ +
 
 |+storeId+
 
-|string
+|string +
+Required
 
 |
 
@@ -788,8 +920,7 @@ Min: +0+ +
 |+statementCacheSize+
 
 |int +
-Min: +0+ +
-
+Min: +0+
 
 |+10+
 
@@ -855,6 +986,14 @@ Min: +0+ +
 
 |+Indicates that connections obtained from the data source should be castable to interface classes that the JDBC vendor connection implementation implements. Enabling this option incurs additional overhead on each getConnection operation. If vendor JDBC interfaces are needed less frequently, it might be more efficient to leave this option disabled and use Connection.unwrap(interface) only where it is needed. If updated while the server is running, the update is applied with new connection requests; in-use connections are not impacted.+
 
+|+onConnect+
+
+|string
+
+|
+
+|+SQL command to execute once on each new connection that is established to the database. The SQL statement applies only to newly created connections, not to existing connections that are reused from the connection pool. If updated while the server is running, existing connections are destroyed.+
+
 |+queryTimeout+
 
 |A period of time with second precision
@@ -918,7 +1057,7 @@ Min: +0+ +
 
 |+30s+
 
-|+Amount of time after which a connection request times out. A value of -1 disables this timeout. Specify a positive integer followed by a unit of time, which can be hours (h), minutes (m), or seconds (s). For example, specify 30 seconds as 30s. You can include multiple values in a single entry. For example, 1m30s is equivalent to 90 seconds.+
+|+Amount of time after which a connection request times out. A value of -1 disables this timeout, meaning infinite wait. A value of 0 is immediate, meaning no wait. Specify a positive integer followed by a unit of time, which can be hours (h), minutes (m), or seconds (s). For example, specify 30 seconds as 30s. You can include multiple values in a single entry. For example, 1m30s is equivalent to 90 seconds.+
 
 |+maxIdleTime+
 
@@ -931,8 +1070,7 @@ Min: +0+ +
 |+maxPoolSize+
 
 |int +
-Min: +0+ +
-
+Min: +0+
 
 |+50+
 
@@ -941,8 +1079,7 @@ Min: +0+ +
 |+minPoolSize+
 
 |int +
-Min: +0+ +
-
+Min: +0+
 
 |
 
@@ -986,8 +1123,7 @@ Min: +0+ +
 |+maxConnectionsPerThread+
 
 |int +
-Min: +0+ +
-
+Min: +0+
 
 |
 
@@ -996,8 +1132,7 @@ Min: +0+ +
 |+numConnectionsPerThreadLocal+
 
 |int +
-Min: +0+ +
-
+Min: +0+
 
 |
 
@@ -1014,7 +1149,8 @@ Min: +0+ +
 
 |+password+
 
-|Reversably encoded password (string)
+|Reversably encoded password (string) +
+Required
 
 |
 
@@ -1022,7 +1158,8 @@ Min: +0+ +
 
 |+user+
 
-|string
+|string +
+Required
 
 |
 
@@ -1047,7 +1184,8 @@ Min: +0+ +
 
 |+name+
 
-|string
+|string +
+Required
 
 |
 
@@ -1156,7 +1294,8 @@ Min: +0+ +
 
 |+name+
 
-|Path to a file
+|Path to a file +
+Required
 
 |
 
@@ -1230,7 +1369,8 @@ Min: +0+ +
 
 |+dir+
 
-|Path to a directory
+|Path to a directory +
+Required
 
 |
 
@@ -1244,11 +1384,6 @@ Min: +0+ +
 
 |+A unique configuration ID.+
 |===
-[#+oauthProvider/databaseStore/dataSource/onConnect+]*oauthProvider > databaseStore > dataSource > onConnect*
-
-+SQL command to execute once on each new connection that is established to the database. The SQL statement applies only to newly created connections, not to existing connections that are reused from the connection pool. If updated while the server is running, existing connections are destroyed.+
-
-
 [#+oauthProvider/databaseStore/dataSource/properties+]*oauthProvider > databaseStore > dataSource > properties*
 
 +List of JDBC vendor properties for the data source. For example, databaseName="dbname" serverName="localhost" portNumber="50000".+
@@ -1574,8 +1709,7 @@ Min: +0+ +
 |+longDataCacheSize+
 
 |int +
-Min: +-1+ +
-
+Min: +-1+
 
 |
 
@@ -1593,9 +1727,7 @@ Min: +-1+ +
 
 |int +
 Min: +-1+ +
- +
-Max: +128+ +
-
+Max: +128+
 
 |
 
@@ -1988,8 +2120,7 @@ Max: +128+ +
 |+lobThreshold+
 
 |int +
-Max: +500000+ +
-
+Max: +500000+
 
 |+0+
 
@@ -2025,9 +2156,7 @@ Max: +500000+ +
 
 |int +
 Min: +0+ +
- +
-Max: +63+ +
-
+Max: +63+
 
 |+31+
 
@@ -2037,9 +2166,7 @@ Max: +63+ +
 
 |int +
 Min: +0+ +
- +
-Max: +9+ +
-
+Max: +9+
 
 |+0+
 
@@ -2225,7 +2352,8 @@ Max: +9+ +
 
 |+serverName+
 
-|string
+|string +
+Required
 
 |
 
@@ -2326,9 +2454,7 @@ Max: +9+ +
 
 |int +
 Min: +0+ +
- +
-Max: +3+ +
-
+Max: +3+
 
 |
 
@@ -2557,9 +2683,7 @@ Max: +3+ +
 
 |int +
 Min: +0+ +
- +
-Max: +16777216+ +
-
+Max: +16777216+
 
 |+0+
 
@@ -2577,9 +2701,7 @@ Max: +16777216+ +
 
 |int +
 Min: +1+ +
- +
-Max: +32000+ +
-
+Max: +32000+
 
 |
 
@@ -2601,9 +2723,7 @@ Max: +32000+ +
 
 |int +
 Min: +0+ +
- +
-Max: +63+ +
-
+Max: +63+
 
 |+31+
 
@@ -2613,9 +2733,7 @@ Max: +63+ +
 
 |int +
 Min: +0+ +
- +
-Max: +1+ +
-
+Max: +1+
 
 |+1+
 
@@ -2625,9 +2743,7 @@ Max: +1+ +
 
 |int +
 Min: +0+ +
- +
-Max: +9+ +
-
+Max: +9+
 
 |+0+
 
@@ -2765,9 +2881,7 @@ Max: +9+ +
 
 |int +
 Min: +0+ +
- +
-Max: +2+ +
-
+Max: +2+
 
 |+0+
 
@@ -2784,8 +2898,7 @@ Max: +2+ +
 |+queryStorageLimit+
 
 |int +
-Min: +-1+ +
-
+Min: +-1+
 
 |
 
@@ -2804,8 +2917,7 @@ Min: +-1+ +
 |+receiveBufferSize+
 
 |int +
-Min: +1+ +
-
+Min: +1+
 
 |
 
@@ -2864,8 +2976,7 @@ Min: +1+ +
 |+sendBufferSize+
 
 |int +
-Min: +1+ +
-
+Min: +1+
 
 |
 
@@ -3103,9 +3214,7 @@ Min: +1+ +
 
 |int +
 Min: +0+ +
- +
-Max: +1+ +
-
+Max: +1+
 
 |+0+
 
@@ -3341,8 +3450,7 @@ Max: +1+ +
 |+clientDebugInfo+
 
 |string +
-Max: +254+ +
-
+Max: +254+
 
 |
 
@@ -3351,8 +3459,7 @@ Max: +254+ +
 |+clientProgramId+
 
 |string +
-Max: +80+ +
-
+Max: +80+
 
 |
 
@@ -3361,8 +3468,7 @@ Max: +80+ +
 |+clientProgramName+
 
 |string +
-Max: +12+ +
-
+Max: +12+
 
 |
 
@@ -3410,9 +3516,7 @@ Max: +12+ +
 
 |int +
 Min: +0+ +
- +
-Max: +999+ +
-
+Max: +999+
 
 |
 
@@ -3459,8 +3563,7 @@ Max: +999+ +
 |+currentExplainMode+
 
 |string +
-Max: +254+ +
-
+Max: +254+
 
 |
 
@@ -3469,8 +3572,7 @@ Max: +254+ +
 |+currentExplainSnapshot+
 
 |int +
-Max: +8+ +
-
+Max: +8+
 
 |
 
@@ -4055,9 +4157,7 @@ Max: +8+ +
 
 |int +
 Min: +4096+ +
- +
-Max: +65535+ +
-
+Max: +65535+
 
 |
 
@@ -5745,8 +5845,7 @@ Max: +65535+ +
 |+PSORT_NPROCS+
 
 |string +
-Max: +10+ +
-
+Max: +10+
 
 |
 
@@ -5868,9 +5967,7 @@ Max: +10+ +
 
 |int +
 Min: +4096+ +
- +
-Max: +10485760+ +
-
+Max: +10485760+
 
 |
 
@@ -6182,9 +6279,7 @@ Max: +10485760+ +
 
 |int +
 Min: +-1+ +
- +
-Max: +32767+ +
-
+Max: +32767+
 
 |
 
@@ -6779,8 +6874,7 @@ Max: +32767+ +
 |+defaultRowFetchSize+
 
 |int +
-Min: +0+ +
-
+Min: +0+
 
 |
 
@@ -6805,8 +6899,7 @@ Min: +0+ +
 |+preparedStatementCacheQueries+
 
 |int +
-Min: +0+ +
-
+Min: +0+
 
 |+0+
 
@@ -6931,7 +7024,8 @@ Min: +0+ +
 
 |+databaseName+
 
-|string
+|string +
+Required
 
 |
 
@@ -7034,7 +7128,8 @@ Min: +0+ +
 
 |+password+
 
-|Reversably encoded password (string)
+|Reversably encoded password (string) +
+Required
 
 |
 
@@ -7042,17 +7137,13 @@ Min: +0+ +
 
 |+user+
 
-|string
+|string +
+Required
 
 |
 
 |+Name of the user to use when connecting to the EIS.+
 |===
-[#+oauthProvider/grantType+]*oauthProvider > grantType*
-
-+An OAuth 2.0 grant type, as detailed in the OAuth 2.0 specification, that is allowed for the provider. By default, all grant types are allowed. The supported values are authorization_code, client_credentials, refresh_token, password, implicit and urn:ietf:params:oauth:grant-type:jwt-bearer.+
-
-
 [#+oauthProvider/jwtGrantType+]*oauthProvider > jwtGrantType*
 
 +The grant_type for JWT Token handler+
@@ -7081,8 +7172,7 @@ Min: +0+ +
 |+maxJtiCacheSize+
 
 |long +
-Min: +1+ +
-
+Min: +1+
 
 |+10000+
 
@@ -7156,7 +7246,8 @@ Min: +1+ +
 
 |+name+
 
-|Path to a file
+|Path to a file +
+Required
 
 |
 
@@ -7230,7 +7321,8 @@ Min: +1+ +
 
 |+dir+
 
-|Path to a directory
+|Path to a directory +
+Required
 
 |
 
@@ -7320,6 +7412,14 @@ Min: +1+ +
 
 |+Client is enabled if true, disabled if false.+
 
+|+functionalUserGroupIds+
+
+|string
+
+|
+
+|+A list of group ids to be to be associated with access tokens obtained by this client using the client credentials grant type. When this client parameter is specified, the value is returned in the functional_user_groupIds response parameter from the introspect endpoint.+
+
 |+functionalUserId+
 
 |string
@@ -7327,6 +7427,20 @@ Min: +1+ +
 |
 
 |+A user identifier to be associated with access tokens obtained by this client using the client credentials grant type. When this client parameter is specified, the value is returned in the functional_user_id response parameter from the introspect endpoint.+
+
+|+grantTypes+
+
+|* +authorization_code+
+* +client_credentials+
+* +implicit+
+* +password+
+* +refresh_token+
+* +urn:ietf:params:oauth:grant-type:jwt-bearer+
+
+
+|+authorization_code+
+
+|+Grant types the client may use.+
 
 |+id+
 
@@ -7352,6 +7466,14 @@ Min: +1+ +
 
 |+Name of the client (sometimes referred to as the Id).+
 
+|+postLogoutRedirectUris+
+
+|string
+
+|
+
+|+Array of URLs supplied by the RP to which it may request that the end-user's user agent be redirected using the post_logout_redirect_uri parameter after a logout has been performed.+
+
 |+preAuthorizedScope+
 
 |string
@@ -7359,6 +7481,49 @@ Min: +1+ +
 |
 
 |+Space separated list of scope values that the client can use when requesting access tokens that are deemed to have been pre-approved by the resource owner and therefore does not require the resource owner's consent.+
+
+|+proofKeyForCodeExchange+
+
+|boolean
+
+|+false+
+
+|+Proof key for code exchange support for OAuth clients.+
+
+|+publicClient+
+
+|boolean
+
+|+false+
+
+|+Specify whether OAuth client is public.+
+
+|+redirect+
+
+|string
+
+|
+
+|+Array of redirect URIs for use in redirect-based flows such as the authorization code and implicit grant types of the client. The first redirect URI is used as a default, when none is specified in a request. Each URI must be an absolute URI as defined by RFC 3986.+
+
+|+resourceIds+
+
+|string
+
+|
+
+|+The resource identifiers which are the audiences of the Json Web Token.+
+
+|+responseTypes+
+
+|* +code+
+* +id_token token+
+* +token+
+
+
+|+code+
+
+|+Response types the client may use.+
 
 |+scope+
 
@@ -7403,47 +7568,15 @@ Min: +1+ +
 |+client_secret_basic+
 
 |+The requested authentication method for the token endpoint of the client.+
+
+|+trustedUriPrefixes+
+
+|string
+
+|
+
+|+URIs for use by the coverage map.+
 |===
-[#+oauthProvider/localStore/client/functionalUserGroupIds+]*oauthProvider > localStore > client > functionalUserGroupIds*
-
-+A list of group ids to be to be associated with access tokens obtained by this client using the client credentials grant type. When this client parameter is specified, the value is returned in the functional_user_groupIds response parameter from the introspect endpoint.+
-
-
-[#+oauthProvider/localStore/client/grantTypes+]*oauthProvider > localStore > client > grantTypes*
-
-+Grant types the client may use.+
-
-
-[#+oauthProvider/localStore/client/postLogoutRedirectUris+]*oauthProvider > localStore > client > postLogoutRedirectUris*
-
-+Array of URLs supplied by the RP to which it may request that the end-user's user agent be redirected using the post_logout_redirect_uri parameter after a logout has been performed.+
-
-
-[#+oauthProvider/localStore/client/redirect+]*oauthProvider > localStore > client > redirect*
-
-+Array of redirect URIs for use in redirect-based flows such as the authorization code and implicit grant types of the client. The first redirect URI is used as a default, when none is specified in a request. Each URI must be an absolute URI as defined by RFC 3986.+
-
-
-[#+oauthProvider/localStore/client/resourceIds+]*oauthProvider > localStore > client > resourceIds*
-
-+The resource identifiers which are the audiences of the Json Web Token.+
-
-
-[#+oauthProvider/localStore/client/responseTypes+]*oauthProvider > localStore > client > responseTypes*
-
-+Response types the client may use.+
-
-
-[#+oauthProvider/mediatorClassname+]*oauthProvider > mediatorClassname*
-
-+Mediator plugin class name.+
-
-
-[#+oauthProvider/tokenFormat+]*oauthProvider > tokenFormat*
-
-+The type of token to be produced. One of opaque, jwt, or mpjwt. Mpjwt is microprofile standardized format. The default is opaque.+
-
-
 [#+scopeToClaimMap+]*scopeToClaimMap*
 
 +Specify the claims for the scope.+
@@ -7504,7 +7637,8 @@ Min: +1+ +
 
 |+name+
 
-|string
+|string +
+Required
 
 |
 
@@ -7512,7 +7646,8 @@ Min: +1+ +
 
 |+value+
 
-|string
+|string +
+Required
 
 |
 

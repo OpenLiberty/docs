@@ -1,0 +1,40 @@
+== Examples
+
+=== Default SPNEGO configuration
+Adding the SPNEGO feature automatically enforces a certain minimum configuration.
+You don't have to specify a `spnego` element in the `server.xml` file.
+If you don't specify a `spnego` element, the following config is implicit:
+
+[source,xml]
+----
+<spnego
+       canonicalHostName="true"
+       disableFailOverToAppAuthType="true"
+       trimKerberosRealmNameFromPrincipal="true"
+       includeClientGSSCredentialInSubject="true" />
+----
+
+=== Apply SPNEGO authentication to a subset of HTTP requests
+You can filter HTTP requests to require SPNEGO authentication for only certain requests, web applications, hosts, or user agents.
+Specify attributes within the link:https://draft-openlibertyio.mybluemix.net/docs/ref/config/#authFilter.html[`authFilter` element] in the `server.xml` file to require SPNEGO authentication for certain requests, as shown in the following example:
+
+[source,xml]
+----
+<authFilter id="myAuthFilter">
+          <host id="myHost" name="example.com" matchType="contains" /> <1>
+          <webApp id="myWebApp" name="protectedApp" matchType="equals" /> <1>
+</authFilter>
+
+<spnego id="mySpnego"
+        includeClientGSSCredentialInSubject="false" <2>
+        krb5Config="${server.config.dir}/resources/security/kerberos/krb5.conf" <3>
+        krb5Keytab="${server.config.dir}/resources/security/kerberos/krb5.keytab" <3>
+        servicePrincipalNames="HTTP/myLibertyMachine.example.com"
+        authFilterRef="myAuthFilter" />
+</spnego>
+----
+This example configures the following points for SPNEGO authentication:
+
+<1> SPNEGO authentication is used for any requests received that contain the `example.com` hostname for resources within the `protectedApp` web application.
+<2> The client's GSS credentials are not added to the user subject upon successful authentication.
+<3> The Kerberos configuration and keytab files used by the server are given specific locations within the server configuration directory instead of within their default locations.

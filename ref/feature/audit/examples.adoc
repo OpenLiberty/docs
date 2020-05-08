@@ -1,0 +1,61 @@
+== Examples
+
+=== Managing audit log files
+
+The audit file handler can be customized by specifying any of the config attributes, along with the `<auditFileHandler>` element. For more information, see link:https://www.openliberty.io/docs/ref/config/#auditFileHandler.html[Default Audit File Handler].
+
+When the maximum number of archived audit logs is reached, after the `audit.log` file that is being written to reaches its maximum size, then the oldest archived audit log is overwritten. By default, the audit file handler writes audit records to an audit log file until the file reaches 20 MB size. The audit log file is then archived and a new audit log file is started. By default, the maximum number of archived audit log files is 100 after which the oldest archived log file is overwritten. The following example shows how to increase the individual file size to 100 MB and reduce the maximum number of archived audit log files to 50. The example also specifies the `compact` attribute, which makes the log file that is written in JSON write the audit records all on the same line in the log file:
+
+[source,xml]
+----
+<auditFileHandler maxFiles="50" maxFileSize="100" compact=”true”>
+</auditFileHandler>
+----
+
+In the example, the audit logs are written to the default `$\{server.output.dir}/logs` directory. Each audit file has a maximum 100 MB size before they are archived and new audit records are written to a new `audit.log` file. The maximum number of archived audit logs is 50. When 50 audit logs are archived, and the current `audit.log` file that is written to reaches the 100 MB size, then the oldest archived audit.log file is overwritten.
+
+
+=== Specifying the logging of events
+
+To specify only those audit events and outcomes that might be of relevance in an environment, the `<event>` element can be defined with the audit event name and outcome:
+
+The following example specifies audit events and outcomes:
+
+[source,xml]
+----
+<auditFileHandler maxFiles="5" maxFileSize="20" compact="true">
+    <events name="AuditEvent_1" eventName="SECURITY_AUTHN" outcome="SUCCESS"/>
+    <events name="AuditEvent_2" eventName="SECURITY_AUTHN" outcome="REDIRECT"/>
+    <events name="AuditEvent_3" eventName="SECURITY_AUTHN" outcome="FAILURE"/>
+    <events name="AuditEvent_4" eventName="SECURITY_AUTHZ"/>
+</auditFileHandler>
+----
+
+In the example, the only events that are captured are the security authentication events whose outcome is `SUCCESS`, `REDIRECT`, or `FAILURE`, and security authorization events with any outcome.
+
+If an event is specified with only an `outcome` attribute, with no `eventName` attribute specified, then no audit records are produced. However, an `eventName` attribute can be specified without an `outcome` attribute, in which case all possible outcomes for that `eventName` attribute are emitted.
+
+=== Encrypting and signing audit data
+
+It is important for the recorded audit data to be preserved in a way that not only restricts access but also ensures that the data itself is tamper-proof. Due to this requirement, the ability to both encrypt and sign the audit records data is provided.
+
+The `keystore` element contains the private or public key that is used to encrypt and sign the audit data.
+
+To encrypt audit records, the encrypt attribute must be specified in the `auditFileHandler` element, along with the alias name of the certificate that is used to encrypt the audit data, and the keystore in which that certificate exists.
+
+To sign audit records, the `sign` attribute must be specified in the `auditFileHandler` element, along with the alias name of the certificate that is used to sign the audit data, and the keystore in which that certificate exists.
+
+The following example shows the audit file handler with encryption and signing enabled:
+
+
+[source,xml]
+----
+<keyStore id="auditEncKeyStore” password="Liberty" location="$\{server.config.dir}/resources/security/AuditEncryptionKeyStore.jks" type="JKS" />
+
+<keyStore id="auditSignKeyStore" password="\{#xor#}EzY9Oi0rJg==" location="$\{server.config.dir}/resources/security/AuditSigningKeyStore2.#jks#" type="JKS" />
+
+<auditFileHandler encrypt="true" encryptAlias="#auditencryption#" encryptKeyStoreRef="auditEncKeyStore" sign="true" signingAlias="auditsigning2" signingKeyStoreRef="auditSignKeyStore"
+</auditFileHandler>
+----
+
+SHA256withRSA is used as the default crypto algorithm for both encryption and signing.
