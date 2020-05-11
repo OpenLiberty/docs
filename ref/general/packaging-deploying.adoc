@@ -63,14 +63,55 @@ Add two sentence intro
 === Packaging for containerization
 If you're planning to containerize your application for cloud deployment, use Maven or Gradle to package it into a `tar.gz` file.
 When you package your application, specify `usr` in the `include` parameter or attribute.
-If you're packaging with Maven, the following example packages the ___ application into a `tar.gz` file with `usr` contents:
-
-
-If you're packaging with Gradle, the following example packages the ___ application into a `tar.gz` file with `usr` contents:
-
-
-
 This option packages only relevant files in the `wlp.user.dir` directory, effectively excluding the runtime binary files from the compressed file.
+
+If you're packaging with Maven, include the following config in your `pom.xml` file to package the `myServer` server into a `tar.gz` file with `usr` contents:
+
+[source,xml]
+----
+<plugin>
+    <groupId>io.openliberty.tools</groupId>
+    <artifactId>liberty-maven-plugin</artifactId>
+    <executions>
+        <execution>
+            <id>package-server</id>
+            <phase>package</phase>
+            <goals>
+                <goal>package</goal>
+            </goals>
+            <configuration>
+                <packageName>test</packageName>
+                <packageType>tar.gz</packageType>
+                <include>usr</include>
+            </configuration>
+        </execution>
+        ...
+    </executions>
+    <configuration>
+       <installDirectory>/opt/ibm/wlp</installDirectory>
+       <serverName>myServer</serverName>
+    </configuration>
+</plugin>
+----
+
+If you're packaging with Gradle, include the following config in your `build.gradle` file to package the `myServer` server into a `tar.gz` file with `usr` contents:
+
+----
+apply plugin: 'liberty'
+
+liberty {
+
+    server {
+        name = 'myServer'
+
+        packageLiberty {
+            packageName = "test"
+            packageType = "tar.gz"
+            include = "usr"
+        }
+    }
+}
+----
 
 === Server packages
 A server package is a compressed file that contains an Open Liberty runtime environment, the files in the shared resources directory, a specific server, and the applications that are embedded in the server.
@@ -78,14 +119,59 @@ You can also choose to exclude the runtime binary files from the compressed file
 Open Liberty supports different server package types.
 The supported package types are `zip`, `jar`, `tar`, and `tar.gz`.
 
-You can choose to package your application and an Open Liberty installation into a link:/docs/ref/general/#runnablejarfiles.html[runnable JAR file].
+Different options can be specified with the `include` parameter or attribute to tailor the server package to meet your needs.
+The `minify` option can be specified to create a package that only has the server config of the application.
+The `runnable` option is used to package an application and an Open Liberty installation into a link:/docs/ref/general/#runnablejarfiles.html[runnable JAR file].
 The JAR file is portable and ready to deploy both the application and server together.
-To package into a runnable JAR file, specify `runnable` as the package type in the `include` parameter or attribute.
-You can also specify the `minify` option in the `include` property or attribute so that your runnable JAR file contains only what you need to run your application.
+The `minify` option can be specified with the `runnable` option to package into a minimum runnable JAR file that contains only what you need to run your application.
 
-// Talk about `minify` in this paragraph - packages that just have server config of application - add a few worked examples
+If you're packaging with Maven, including the following config in your `pom.xml` file to package the `myServer` server into a minimum runnable JAR file:
 
-// Maven/Gradle config
+[source,xml]
+----
+<plugin>
+    <groupId>io.openliberty.tools</groupId>
+    <artifactId>liberty-maven-plugin</artifactId>
+    <executions>
+        ...
+        <execution>
+            <id>package-server</id>
+            <phase>package</phase>
+            <goals>
+                <goal>package</goal>
+            </goals>
+            <configuration>
+                <packageName>test</packageName>
+                <packageType>jar</packageType>
+                <include>minify,runnable</include>
+            </configuration>
+        </execution>
+        ...
+    </executions>
+    <configuration>
+       <installDirectory>/opt/ibm/wlp</installDirectory>
+       <serverName>myServer</serverName>
+    </configuration>
+</plugin>
+----
+
+If you're packaging with Gradle, include the following config in your `build.gradle` file to package the `myServer` server into a minimum runnable JAR file:
+
+----
+apply plugin: 'liberty'
+
+liberty {
+
+    server {
+        name = 'myServer'
+
+        packageLiberty {
+            packageName = "test"
+            include = "minify,runnable"
+        }
+    }
+}
+----
 
 For more information about Open Liberty packaging options with Maven, see the link:https://github.com/OpenLiberty/ci.maven/blob/master/docs/package.md#package[`package` goal in the Maven documentation]. For more information about Open Liberty packaging options with Gradle, see the link:https://github.com/OpenLiberty/ci.gradle/blob/master/docs/libertyPackage.md#libertypackage-task[`libertyPackage` task in the Gradle documentation].
 
