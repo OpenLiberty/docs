@@ -68,23 +68,6 @@ WLP_LOGGING_MESSAGE_SOURCE=message,trace,accessLog,ffdc,audit
 +
 When using `server.xml` to configure json format some log lines are written in the default non-JSON format prior to `server.xml` startup which can cause issues with some tools. For example, https://stedolan.github.io/jq/[`jq`] would have trouble understanding the log files.
 
-=== Configuring JSON field names
-When logs are in JSON format, you can use the `jsonFieldMappings` attribute to replace default field names with new field names. The following examples show sample configurations for renaming a JSON field:
-
-* To configure a field name, include the following in the `server.env.` file:
-+
-[source,properties,linenums,role="code_column"]
-----
-WLP_LOGGING_JSON_FIELD_MAPPINGS=loglevel:level
-----
-+
-* To configure a field name for a specific source, include the following in the `server.env.` file:
-+
-[source,properties,linenums,role="code_column"]
-----
-WLP_LOGGING_JSON_FIELD_MAPPINGS=message:message:log
-----
-
 === Configuring logging for a Docker image
 
 It is common in Docker environments to disable `messages.log` and instead format the console output as JSON. This can be done using environment variables:
@@ -129,9 +112,9 @@ binaryLog view defaultServer
 
 == Configuration settings by source
 
-The table below shows the equivalent `server.xml`, `bootstrap.properties`, and environment variable configurations along with brief descriptions. Full configuration documentation is available in the config reference for the config:logging[] element.
+The following table shows the equivalent `server.xml`, `bootstrap.properties`, and environment variable configurations along with brief descriptions. Full configuration documentation is available in the config reference for the config:logging[] element.
 
-
+[%header,cols="6,9,9,9"]
 |===
 | Server XML Attribute|bootstrap property|Env var|Description
 
@@ -160,13 +143,10 @@ To omit a field from the logs, specify the field name without a replacement, as 
 
 To rename or omit multiple fields, specify a comma-separated list of field name mappings.
 
-
 |logDirectory
 |com.ibm.ws.logging.log.directory
 |LOG_DIR
 |You can use this attribute to set a directory for all log files, excluding the `console.log` file, but including FFDC. The default is `WLP_OUTPUT_DIR/serverName/logs`. It is not recommended to set the `logDirectory` in `server.xml` since it can result in some log data being written to the default location prior to `server.xml` being read.
-
-4+|Console Log Config
 
 |consoleFormat
 |com.ibm.ws.logging.console.format
@@ -181,14 +161,12 @@ To rename or omit multiple fields, specify a comma-separated list of field name 
 |consoleSource
 |com.ibm.ws.logging.console.source
 |WLP_LOGGING_CONSOLE_SOURCE
-|The list of comma-separated sources that route to the console. This property applies only when `consoleFormat="json"`. Valid values are `message`, `trace`, `accessLog`, `ffdc`, and `audit`. By default, `consoleSource` is set to `message`. To use the `audit` source, enable the Liberty feature:audit-1.0[] feature. To use the `accessLog` source you need to have configured config:httpAccessLogging[].d
+|The list of comma-separated sources that route to the console. This property applies only when `consoleFormat="json"`. Valid values are `message`, `trace`, `accessLog`, `ffdc`, and `audit`. By default, `consoleSource` is set to `message`. To use the `audit` source, enable the Liberty feature:audit-1.0[] feature. To use the `accessLog` source you need to have configured config:httpAccessLogging[].
 
 |copySystemStreams
 |com.ibm.ws.logging.copy.system.streams
 |
 |If true, messages that are written to the System.out and System.err streams are copied to process `stdout` and `stderr` and so appear in `console.log`. If false, those messages are written to configured logs such as `messages.log` or `trace.log`, but they are not copied to `stdout` and `stderr` and do not appear in `console.log`. The default value is true.
-
-4+|Message Log Config
 
 |
 |com.ibm.ws.logging.newLogsOnStart
@@ -228,8 +206,6 @@ If you specify a value of `false`, the date and time are formatted according to 
 |com.ibm.ws.logging.message.source
 |WLP_LOGGING_MESSAGE_SOURCE
 |The list of comma-separated sources that route to the `messages.log` file. This property applies only when `messageFormat="json"`. Valid values are `message`, `trace`, `accessLog`, `ffdc`, and `audit`. By default, `messageSource` is set to `message`. To use the `audit` source, enable the Liberty feature:audit-1.0[] feature. To use the `accessLog` source you need to have configured config:httpAccessLogging[].
-
-4+|Trace Config
 
 |suppressSensitiveTrace
 |

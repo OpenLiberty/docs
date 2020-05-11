@@ -1,0 +1,92 @@
+// Copyright (c) 2020 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description: With zero-migration architecture, you can move to the latest version of Open Liberty with minimal impact to your current applications and configurations.
+:seo-title: Zero-migration architecture
+:seo-description: With zero-migration architecture, you can move to the latest version of Open Liberty with minimal impact to your current applications and configurations.
+:page-layout: general-reference
+:page-type: general
+= Zero-migration architecture
+
+Zero-migration architecture is a core design principle of Open Liberty, which supports pluggable features and full compatibility between product versions.
+With zero-migration architecture, you can move to the latest version of Open Liberty with minimal impact to your current applications and configurations.
+
+Zero-migration architecture means that you can use your existing, unmodified configuration and application files with an updated version of Open Liberty without unexpected changes in application behavior.
+You can update Open Liberty without updating your configuration files.
+Your existing APIs and behaviors are supported in new product versions, and new APIs and behaviors are added in new features and feature versions.
+
+== User configuration files
+
+Open Liberty never modifies user configuration files, which are fully compatible between versions.
+You can use a single version of your configuration files across multiple product versions.
+You can use files that you created for a previous version of Open Liberty with a later version.
+You can use files that you create for later versions with previous versions.
+As a result, if all configured features are installed, you can use a single set of configuration files across multiple versions without modifications.
+Open Liberty ignores any configuration settings that do not apply to the running version of the runtime environment.
+User configuration files do not require modification when the runtime is updated, either for a fix pack or a new version.
+
+Open Liberty provides an absolute separation between product files and user files.
+Product files do not need to be modified by users.
+By default, user files such as server configuration and application files are located under a separate directory from the product files.
+If you want to override the default location for user files, for example to put them on a separate file system from the product files, you can do so by setting the `WLP_USER_DIR` environment variable.
+For more information, see link:/docs/ref/config/serverConfiguration.html[Server configuration].
+
+== Pluggable features
+
+Open Liberty features are pluggable.
+Your existing features are supported in new product versions.
+You can add, remove, and update features as needed, with minimal impact on your application.
+Open Liberty uses pluggable features to support multiple versions of an API.
+Changes in API behavior are enabled in new feature versions so that you can choose the appropriate feature version for your application.
+Open Liberty continues to support these versioned features across runtime updates.
+If you continue to use the same feature version, you never need to migrate your application.
+
+For example, Open Liberty supports both the servlet 3.0 and 3.1 specifications.
+The Servlet 3.1 specification includes clarifications to previous servlet versions that can result in changes in application behavior.
+Open Liberty restricts any such behavior changes to the `servlet-3.1` feature and retains the existing behavior in the `servlet-3.0` feature.
+If your application is configured for the Servlet 3.0 specification, you can continue to use the `servlet-3.0` feature across runtime updates, regardless of how many other servlet specification levels are supported.
+You don't need to migrate your application unless you decide to configure the `servlet-3.1` feature instead.
+For more information, see link:/docs/ref/feature/#featureOverview.html[Server features].
+
+=== Considerations for using new features
+
+A new version of a feature that you are already using might impact your existing applications.
+For example, if you currently use the `servlet-3.0` feature and you want to use the `servlet-3.1` feature, your existing servlet applications might need to be changed to work correctly with servlet 3.1.
+Modify your application to work with the new feature version or keep your applications in a server that is configured with the original feature version and create a server configuration with the new version for new applications.
+
+Some features interact closely with other features and are sensitive to the feature versions when they are both configured into the same server.
+Some features require specific versions of prerequisite software, most commonly the Java SDK.
+Java EE 7 features, for example, require Java version 7 as a minimum.
+Therefore, adding a Java EE 7 feature to your server configuration might require you to use Java SDK 7 or later.
+
+== Exceptions to zero migration
+
+Open Liberty recognizes several exceptions to the zero migration principle.
+Although these instances are rare, in the following scenarios you might need to modify your application or configuration:
+
+- Security fixes +
+If your application requires a security-related fix that cannot be safely implemented in the context of existing behavior, then you might need to modify your application or configuration.
+- Third-party API requirements +
+Open Liberty does not control APIs from the third-party class loader configuration.
+As a result, updates to third-party components are not guaranteed to be compatible with an earlier version of the runtime.
+- Removal of support +
+In rare cases, Open Liberty must withdraw a feature or supported software product.
+In these cases, users receive removal notifications at least two years in advance.
+However, these notifications do not cover situations where  other software suppliers remove support for their product earlier than Open Liberty does.
+Be aware of the the lifecycle dates of third-party products that you are using with your Open Liberty installation.
+- Undocumented configuration properties +
+The Open Liberty code base is common with the WebSphere® Application Server traditional code base.
+Therefore, some configuration properties in the Open Liberty code base might not be documented, but when specified, might affect the behavior of Open Liberty. Because these configuration properties are not documented for Open Liberty, they are not supported.
+They were not tested for Open Liberty and might not work reliably now or in the future.
+Since these properties are not documented as a product external, they can be removed at any time.
+- Incompatible Java changes +
+Historically, new Java SE versions make few incompatible changes to the Java language.
+In the rare case that a breaking change is included in a new Java version, Open Liberty attempts to minimize the impact of these changes on applications.
+
+Zero-migration architecture saves developers and enterprises time and money by avoiding the need to migrate existing configuration and application files.
+Instead, developers can use new capabilities and features to write new applications while they continue to benefit from improved performance and administration for their existing server configurations.
