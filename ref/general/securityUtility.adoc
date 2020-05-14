@@ -15,7 +15,7 @@
 = securityUtility command
 
 The `securityUtility` command supports plain text obfuscation and TLS certificate creation for Open Liberty.
-For more information about limits to password encryption, see <<limits-to-encryption,Limits to protection through password encryption>>.
+For more information about limits to password encryption, see link:/docs/ref/general/#password-encryption.html[Password encryption].
 
 == Usage examples
 
@@ -215,41 +215,3 @@ If the `--extInfo` option is used, the value is passed directly to the link:http
 Use the syntax of the `--ext` flag on the `keytool` command.
 
 |===
-
-'''
-
-[#limits-to-encryption]
-== Limits to protection through password encryption
-
-Open Liberty supports AES encryption for passwords that are stored in the `server.xml` file.
-When you use this option for protecting system passwords in the Open Liberty configuration, you need to understand the limits to the protection it provides.
-
-Encrypting a password in the Open Liberty configuration doesn't guarantee that the password is secure or protected.
-It only means that someone who can see the encrypted password but doesn't know the encryption key, cannot easily recover the password.
-The application server process requires access to both the encrypted password and the decryption key, so both these items need to be stored on the file system that is accessible to the server runtime environment.
-The encryption key is also required by anyone who encrypts a password that is placed in the server configuration.
-For an attacker that has access to exactly the same set of files as the Open Liberty server instance, applying AES encryption to the password provides no additional security over XOR encoding.
-
-However, there are still reasons why you might consider encrypting passwords in the Open Liberty configuration.
-The Open Liberty configuration is designed to be highly composable and sharable.
-As such, it's designed to be configured without an administration subsystem, so any XOR-encoded password is visible to any administrator.
-Given these design features, consider the following scenarios:
-
-* The passwords are not sensitive, so encoding them provides little value.
-* The passwords are sensitive, so either the configuration files containing the password are security sensitive and access needs to be controlled, or the passwords are encrypted and the encoding key is then protected as security sensitive.
-
-The encryption key used for decrypting can be overridden from the default by setting the `wlp.password.encryption.key` property.
-To ensure that the file that contains the key isn't included when you run the `server dump` or `server package` command, don't set this property in the `server.xml` file that stores the password.
-Instead, set it in a separate configuration file that's included by the `server.xml` file:
-
-[source,xml]
-----
-<server>
-  ...
-  <include location="${shared.config.dir}/key.xml" />
-</server>
-----
-
-This separate configuration file must contain only a single property declaration, and it must be stored outside the normal configuration directory for the server.
-The encryption key property can also be specified as a bootstrap property.
-If you choose this option, put the encryption key in a separate properties file that is included in the `bootstrap.properties` file.
