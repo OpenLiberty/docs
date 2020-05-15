@@ -15,11 +15,12 @@
 
 You can enable sign-on (SSO) for HTTP requests by using Simple and Protected GSS-API Negotiation Mechanism (SPNEGO) web authentication for Open Liberty.
 With SPNEGO SSO, HTTP users log in only once to a Microsoft domain controller at their desktop.
+For more information about SPNEGO SSO, see link:/docs/ref/general/#sso-config-spnego.html[SSO configuration with SPNEGO].
 
 SPNEGO SSO is also known as Integrated Windows Authentication (IWA).
-Open Liberty supports SPNEGO for IWA but not for Kerberos and NT LAN Manager (NTLM).
+Open Liberty supports SPNEGO for IWA but not for NT LAN Manager (NTLM) tokens.
 This task demonstrates how to configure an Open Liberty server to support SSO for HTTP requests by using SPNEGO.
-First, create a Kerberos service principal name and keytab file and enable them for SPNEGO authentication.
+First, create a Kerberos service principal name and keytab file and copy the keytab file to Open Liberty.
 Then, link:/docs/ref/feature/#spnego-1.0.html[configure the SPENGO feature for Open Liberty] and the client application.
 
 == Prerequisite information
@@ -51,6 +52,7 @@ The `myLibertyMachine_http` example user should be created with password securit
 This user account represents the Open Liberty server as being a Kerberos service with the KDC.
 The following snippet shows an example of how to run the `setspn` command :
 +
+[role,command]
 ----
 C:\> setspn -S HTTP/myLibertyMachine.example.com myLibertyMachine_http
 
@@ -63,6 +65,7 @@ Updated object
 The default name for this file is `krb5.keytab`.
 The following snippet shows an example of how to run the `ktpass` command :
 +
+[role,command]
 ----
 C:\> ktpass -out krb5.keytab -princ HTTP/myLibertyMachine.example.com@MYDOMAIN.EXAMPLE.COM -mapUser myLibertyMachine_http -mapOp set -pass security -crypto RC4-HMAC-NT -ptype KRB5_NT_PRINCIPAL
 
@@ -79,6 +82,7 @@ C:\> ktpass -out krb5.keytab -princ HTTP/myLibertyMachine.example.com@MYDOMAIN.E
 +
 * If your Microsoft `setspn` command version supports the `-X` option, you can run `setspn -X`:
 +
+[role,command]
 ----
 C:\>setspn -X HTTP/myLibertyMachine.example.com
 
@@ -89,6 +93,7 @@ found 0 group of duplicate SPNs.
 * You can also use the Microsoft `ldif` command.
 The following example shows that one entry was returned, which indicates that there is not a duplicated SPN:
 +
+[role,command]
 ----
 C:\>ldifde -f check_SPN.txt -t 3268 -d "" -l servicePrincipalName -r "
 (servicePrincipalName=HTTP/myLibertyMachine.example.com)" -p subtree
@@ -104,6 +109,7 @@ Writing out entries.
 .. You can run the `ktpass` command with the `-in` option to include an existing keytab file with the newly created keytab file.
 The following example command includes the `myOtherKrb5.keytab` keytab file:
 +
+[role,command]
 ----
 ktpass -in myOtherKrb5.keytab -out krb5.keytab -princ HTTP/myLibertyMachine.example.com@MYDOMAIN.EXAMPLE.COM -mapUser myLibertyMachine_http -mapOp set -pass security -crypto RC4-HMAC-NT -ptype KRB5_NT_PRINCIPALCopy
 ----
@@ -120,7 +126,7 @@ Keytab version: 0x502
 keysize 93 HTTP/myLibertyMachine.example.com@MYDOMAIN.EXAMPLE.COM ptype 1 (KRB5_NT_PRINCIPAL) vno 3 etype 0x17 (RC4-HMAC) keylength 16 (0x148d643db283327d3f3d44547da8cade)
 ----
 
-=== Enable the Kerberos keytab and configuration files and SPNEGO web authentication
+=== Copy the Kerberos keytab and configuration files and enable SPNEGO web authentication
 . *Copy the Kerberos keytab file from the domain controller to the Open Liberty server.*
 The default name of this file is `krb5.keytab`, and the default location is the same directory as the Kerberos configuration file.
 
@@ -164,11 +170,13 @@ For example, if the Kerberos client uses the RC4-HMAC encryption type, the targe
 To verify the Kerberos configuration and keytab files, use the `klist` and `kinit` commands.
 * Run the `klist` command to list the SPN in the keytab file:
 +
+[role,command]
 ----
 klist -k -t /etc/krb5.keytabCopy
 ----
 * Run the `kinit` command to validate the SPN in the keytab file and the Kerberos configuration file:
 +
+[role,command]
 ----
 kinit -k -t /etc/krb5.keytab HTTP/myLibertyMachine.example.com
 ----
@@ -186,7 +194,7 @@ The runtime forms the default SPN in the following format:
 "HTTP/" + java.net.InetAddress.getLocalHost().getCanonicalHostName();Copy
 ----
 +
-If the default SPN does not match what you have in the krb5.keytab file, then you need to specify the servicePrincipalNames, for example:
+If the default SPN does not match what you have in the `krb5.keytab` file, then you need to specify the `servicePrincipalNames` attribute, for example:
 +
 ----
 <spnego id="mySpnego" servicePrincipalNames="HTTP/myLibertyMachine.example.com"/>
