@@ -1,0 +1,325 @@
+// Copyright (c) 2020 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description:
+:seo-title: JMX metrics - openliberty.io
+:seo-description:
+:page-layout: general-reference
+:page-type: general
+= JMX metrics
+
+You can use the Performance Monitoring feature to monitor your Open Liberty runtime environment.
+Enable monitoring by adding the link:/docs/ref/feature/#monitor-1.0.html[Performance Monitoring feature] to your `server.xml` file.
+
+If you don't use the server script on a JVM to launch the server, ensure that the JavaAgent is configured for JVM, as shown in the following example:
+[source,xml]
+----
+agentlib=-javaagent:<path to liberty install>/bin/tools/ws-javaagent.jar
+----
+
+== Prometheus
+
+== JConsole and MXBeans
+You can JConsole to connect to the JVM and look at the performance data by clicking each attribute of the MXBeans.
+Monitoring data is reported as standard Beans.
+
+== JMX metrics
+
+The following MXBeans provide monitoring for the specified runtime components:
+
+* `WebSphere:type=JvmStats` for the JVM
+* `WebSphere:type=RequestTimingStats,name=*` for request monitoring
+* `WebSphere:type=ServletStats,name=*` for web applications
+* `WebSphere:type=ThreadPoolStats,name=Default Executor` for thread pools
+* `org.apache.cxf:type=WebServiceStats,service=*,port=*` for JAX-WS endpoints.
+* `WebSphere:type=SessionStats,name=*` for session management
+* `Websphere:type=ConnectionPool,name=*` for connection pools
+
+=== JvmStats MXBean
+You can use the `JvmStats` MXBean for JVM monitoring in Open Liberty.
+Each Open Liberty instance has one `JvmStats` MXBean.
+
+The following attributes are available for the `JvmStats` MXBean:
+
+[%header,cols=3]
+|===
+
+|MXBean attribute
+|Units
+|Description
+
+|`FreeMemory`
+|Not applicable
+|The free heap that's available for the current JVM.
+
+|`Heap`
+|Not applicable
+|The heap size that's used for the current JVM.
+
+|`GcCount`
+|Not applicable
+|The number of times garbage collection occurred since the JVM started.
+
+|`GcTime`
+|Not applicable
+|The total accumulated value of garbage collection time.
+
+|`ProcessCPU`
+|Not applicable
+|The percentage of CPU that's being used by the JVM process.
+
+|`UpTime`
+|Milliseconds
+|The time since the JVM started.
+
+|`UsedMemory`
+|Not applicable
+|The used heap for the current JVM.
+
+|===
+
+=== RequestTimingStats MXBean
+You can use the `RequestTimingStats` MXBean to collect request data to see how the Open Liberty server is performing in comparison with set goals.
+Servlet requests that are identified by the name of Servlet are tracked.
+
+The following attributes are available for the `RequestTimingStats` MXBean:
+
+[%header,cols=3]
+|===
+
+|MXBean attribute
+|Units
+|Description
+
+|`ActiveRequestCount`
+|Not applicable
+|The total requests that are currently running.
+
+|`HungRequestCount`
+|Not applicable
+|The total requests in flight that are deemed hung.
+
+|`RequestCount`
+|Not applicable
+|The total requests since the server started.
+
+|`SlowRequestCount`
+|Not applicable
+|The total requests that are running and are deemed slow.
+
+|===
+
+=== ServletStats MXBean
+You can use the `ServletStats` MXBean for web application monitoring of Open Liberty.
+Performance data is available for each servlet in a web application.
+Each servlet has its own MXBean.
+
+The following attributes are available for the `ServletStats` MXBean:
+
+[%header,cols=3]
+|===
+
+|MXBean attribute
+|Units
+|Description
+
+|`AppName`
+|Not applicable
+|The name of the application.
+
+|`Description`
+|Not applicable
+|The description of the counter.
+
+|`RequestCount`
+|Not applicable
+|The total requests to the servlet.
+
+|`RequestCountDetails`
+|Not applicable
+|`RequestCount` details that include the last time stamp.
+
+|`ResponseTime`
+|Nanoseconds
+|The average response time.
+
+|`ResponseTimeDetails`
+|Nanoseconds
+|`ResponseTime` details that include the number of snapshots that are taken, minimum values, and maximum values.
+
+|`ServletName`
+|Not applicable
+|The name of the servlet.
+
+|===
+
+=== ThreadPoolStats MXBean
+You can use the `ThreadPoolStats` MXBean for thread pool monitoring in Open Liberty.
+All web requests run in the Default Executor thread pool, and you can monitor the usage of this thread pool with the `ThreadPoolStats` MXBean.
+
+The following attributes are available for the `ThreadPoolStats` MXBean:
+
+[%header,cols=3]
+|===
+
+|MXBean attribute
+|Units
+|Description
+
+|`ActiveThreads`
+|Not applicable
+|The number of threads that are active.
+
+|`PoolName`
+|Not applicable
+|The name of the thread pool.
+
+|`PoolSize`
+|Not applicable
+|The size of the thread pool.
+
+|===
+
+=== WebServiceStats MXBean
+You can use the `WebServiceStats` MXBean for JAX-WS monitoring of Open Liberty.
+Performance data is available for each endpoint and operation in a JAX-WS application, and each web service endpoint has its own MXBean.
+
+The following attributes are available for the `WebServiceStats` MXBean:
+
+[%header,cols=3]
+|===
+
+|MXBean attribute
+|Units
+|Description
+
+|`AvgResponseTime`
+|Milliseconds
+|The average response time.
+
+|`MaxResponseTime`
+|Milliseconds
+|The maximum response time.
+
+|`MinResponseTime`
+|Milliseconds
+|The minimum response time.
+
+|`NumInvocations`
+|Not applicable
+|The number of invocations to this endpoint or operation.
+
+|`NumCheckedApplicationFaults`
+|Not applicable
+|The number of checked application faults.
+
+|`NumLogicalRuntimeFaluts`
+|Not applicable
+|The number of logical runtime faults.
+
+|`NumRuntimeFaults`
+|Not applicable
+|The number of runtime faults.
+
+|`NumUnCheckedApplicationFaults`
+|Not applicable
+|The number of unchecked application faults.
+
+|`TotalHandlingTime`
+|Milliseconds
+|The total response handling time.
+
+|===
+
+=== SessionStats MXBean
+You can use the `SessionStats` MXBean to monitor the performance data of sessions in Open Liberty.
+The performance data of sessions for each application is available as an MXBean, which can be accessed through JMX.
+The sessions that are associated with a single web application have their own `SessionStats` MXBean, so there's one `SessionStats` MXBean for each web application.
+
+The following attributes are available for the `SessionStats` MXBean:
+
+[%header,cols=3]
+|===
+
+|MXBean attribute
+|Units
+|Description
+
+|`CreateCount`
+|Not applicable
+|The total number of sessions created.
+
+|`LiveCount`
+|Not applicable
+|The total number of sessions that are currently cached in memory.
+
+|`ActiveCount`
+|Not applicable
+|The total number of concurrently active sessions. A session is active if Open Liberty is processing a request that uses that session.
+
+|`InvalidatedCount`
+|Not applicable
+|The total number of sessions that are invalidated.
+
+|`InvalidatedCountbyTimeout`
+|Not applicable
+|The total number of sessions that are invalidated by a timeout.
+
+|===
+
+=== ConnectionPoolStats MXBean
+You can use the `ConnectionPoolStats` MXBean for connection pool monitoring in Open Liberty.
+Connection pools manage connections from data sources and connection factories, and performance data is made available for each connection pool.
+The `ConnectionPoolStats` MXBean is responsible for reporting connection pool information for a single connection manager.
+
+The following attributes are available for the `ConnectionPoolStats` MXBean:
+
+[%header,cols=3]
+|===
+
+|MXBean attribute
+|Units
+|Description
+
+|`ConnectionHandleCount`
+|Not applicable
+|The number of connections that are in use. This number might include multiple connections that are shared from a single managed connection.
+
+|`CreateCount`
+|Not applicable
+|The total number of managed connections that have been created since pool creation.
+
+|`DestroyCount`
+|Not applicable
+|The total number of managed connections that have been destroyed since pool creation.
+
+|`FreeConnectionCount`
+|Not applicable
+|The number of managed connections in the free pool.
+
+|`InUseTime`
+|Milliseconds
+|The average time that a connection is in use.
+
+|`InUseTimeDetails`
+|Not applicable
+|`InUseTime` details that include the total number of granted connections (excluding the ones that are currently in use), minimum in use time, and maximum in use time.
+
+|`ManagedConnectionCount`
+|Not applicable
+|The total number of managed connections in the free, shared, and unshared pools.
+
+|`WaitTime`
+|Milliseconds
+|The average waiting time until a connection is granted if a connection is not currently available.
+
+|`WaitTimeDetails`
+|Not applicable
+|`WaitTime` details that include the total number of queued requests, minimum wait time, and maximum wait time.
+
+|===
