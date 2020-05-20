@@ -22,12 +22,12 @@ It's not recommended to run workloads in the demilitarized zone (DMZ).
 The DMZ is an intermediary zone where proxy and web servers run that is located between public and private networking zones.
 Typically, your network setup includes two firewalls, a perimeter firewall and a backend firewall.
 The perimeter firewall exists between the public zone and the DMZ, and the backend firewall exists between the DMZ and the private zone.
-The backend firewall, or overall network design, should limit ingress traffic to trusted addresses and limit egress traffic to the minimum addresses required by the application.
+The backend firewall, or overall network design, limits ingress traffic to trusted addresses and limits egress traffic to the minimum addresses required by the application.
 
 == Security in container environments
 In container environments, running either on-premises or in the cloud, applications can be spread across multiple nodes.
 It's a best practice to isolate workloads from one another across a cluster of nodes.
-When Open Liberty is deployed in container environments, segment network traffic based on users, teams, applications, etc.
+When Open Liberty is deployed in container environments, segment network traffic based on users, teams, or applications.
 Collections of containers, or pods, apportioned by namespace, offer the ability to provide IP and port isolation.
 Pods with different namespaces shouldn't be able to interact by default.
 For more information about network security in container environments, see the information about network isolation in link:https://www.redhat.com/en/resources/container-security-openshift-cloud-devops-whitepaper[Ten layers of container security].
@@ -37,12 +37,12 @@ Open Liberty provides a simple TLS configuration with the link:/docs/ref/feature
 The Transport Security feature enables the link:/docs/ref/feature/#ssl-1.0.html[SSL feature] to support SSL connections and adds the ability to configure outbound transports.
 TLS uses key pairs and signed X.509 certificates to protect HTTP, IIOP, LDAP, IBM MQ, JDBC, and messaging traffic between Open Liberty messaging engines, J2C, and SOAP traffic.
 The default TLS config is simple and easy to configure, but it is not suitable for use in production because it generates a self-signed certificate.
-The auto-generated certificate is convenient for development purposes, but certificates used in production should be signed by a trusted authority, such as Verisign.
+The auto-generated certificate is convenient for development purposes, but a certificate that's used in production must be signed by a trusted authority, such as Verisign.
 
 With Open Liberty, ingress proxies are configurable and no proxies are trusted by default.
 For protection at the transport level when traffic comes in by proxy, make required Open Liberty servers accessible to only trusted proxies.
 Disable non-TLS ports wherever possible.
-Exposing only TLS-enabled ports requires careful consideration of the `server.xml` file because some features may automatically enable non-TLS ports.
+Exposing only TLS-enabled ports requires careful consideration of the `server.xml` file because some features might automatically enable non-TLS ports.
 Disable non-TLS ports by setting them to `-1`, as shown in the following example:
 
 [source,xml]
@@ -51,19 +51,21 @@ Disable non-TLS ports by setting them to `-1`, as shown in the following example
 ----
 
 === Mutual authentication
-Methods of authentication are configurable by application, meaning that applications running on the same server can use different means of authentication.
-For example, if two applications are running on an Open Liberty server, one might use client authentication while the other uses basic authentication.
+For production environments, use mutual TLS authentication whenever possible.
+Mutual authentication, also known as 2-way authentication, is certificate-based authentication for clients.
+Methods of authentication are configurable by application.
+For example, one application might use client authentication while the other application uses basic authentication.
 Open Liberty has two modes for client certificate authentication:
 
 * *Supported*: The client might present a TLS certificate, but it is not required.
 If the client presents an untrusted certificate, the certificate is ignored.
 If the certificate is trusted, it can be used for application authentication.
+For supported mode, set the link:https://draft-openlibertyio.mybluemix.net/docs/ref/config/#ssl.html[`clientAuthenticationSupported` attribute] to `true` in your TLS config.
 * *Required*: The client must present a trusted TLS certificate.
 If the certificate isn't sent or an untrusted certificate is sent, the connection is rejected.
+For required mode, set the link:https://draft-openlibertyio.mybluemix.net/docs/ref/config/#ssl.html[`clientAuthentication` attribute] to `true` in your TLS config.
 
-For production environments, use mutual (2-way) TLS authentication whenever possible.
-Mutual authentication is certificate-based authentication for clients.
-If you use mutual authentication in conjunction with a proxy, consider using the link:/docs/ref/config/#httpDispatcher.html[`httpDispatcher`] parameter with the `trustedHeaderOrigin` or `trustedSensitiveHeaderOrigin` options.
+If you use mutual authentication along with a proxy, consider using the link:/docs/ref/config/#httpDispatcher.html[`httpDispatcher`] parameter with the `trustedHeaderOrigin` or `trustedSensitiveHeaderOrigin` options.
 This parameter permits proxies by using the specified IP addresses to pass along certificate details on behalf of clients:
 
 [source,xml]
@@ -81,25 +83,9 @@ If your Open Liberty deployment does not include any proxies, set the following 
 
 === LDAP servers
 Ensure that any links from the Open Liberty server to LDAP servers are secured by TLS.
-
-The following snippet shows an example of how to enable TLS for an LDAP connection:
-
-[source,xml]
-----
-<ssl id="ldapSSLConfig" keyStoreRef="ldapTrustStore" trustStoreRef="ldapTrustStore" /> // <1>
-
-<keyStore id="ldapTrustStore" location="ldapTrustStore.jks" type="JKS"
-  password="{xor}BQUFbm1sa2o=" />
-
-<ldapRegistry id="MyLdap" realm="SampleLdapRealm"
-  host="host.domain.com" port="636" ignoreCase="true" baseDN="o=domain,c=us"
-  ldapType="OpenLDAP" idsFilters="myidsfilters"
-  sslEnabled="true" // <2>
-  sslRef="ldapSSLConfig" /> // <3>
-----
-<1> Sets the TLS `id`
-<2> Enables TLS for the LDAP registry
-<3> `sslRef` attribute references the TLS `id`
+Securing these LDAP connections with TLS encrypts communication so that your network configuration is hardened for production.
+To secure LDAP connections with TLS, enable the Lightweight Directory Access Protocol Over Secure Socket Links (LDAPS) protocol in your feature configuration.
+For configuration information about enabling LDAPS, see the link:/docs/ref/feature/#ldapRegistry.html[LDAP User Registry feature].
 
 == LTPA best practices
 Lightweight Third-Party Authentication (LTPA) is a single sign-on (SSO) technology that uses cookies or binary tokens for authentication.
@@ -122,7 +108,7 @@ Replacing LTPA keys regularly reduces the risk vector in which a bad actor is ab
 To replace the keys, delete the `ltpa.keys` file and wait for the server to automatically regenerate them.
 Then, copy the new keys file to the file systems for other servers that share the keys.
 
-In production environments, the cookie for LTPA should be used only for HTTP requests and not for anything else, such as JavaScript applications.
+In production environments, the cookie for LTPA must be used only for HTTP requests and not for anything else, such as JavaScript applications.
 The following example tells browsers to restrict the use of LTPA cookies to only HTTP connections:
 
 [source,xml]
@@ -139,33 +125,10 @@ Browsers that support the `HttpOnly` field don't allow client-side scripts to ac
 <httpSession cookieHttpOnly='true' />
 ----
 
-== Automated updates
-Config updates must be carefully controlled in production environments to reduce the possibility that unknown changes or vulnerabilities are deployed to users.
-By default, each server contains a monitored application directory named `/dropins`.
-When an application is placed in this directory, the server automatically deploys and starts the application.
-If you update config in the `server.xml` file or `/dropins` directory, the server automatically deploys the config changes.
-
-Each server also contains a monitored directory named `/dropins/configDropins` for config snippets.
-If you update the config in this directory, the server automatically deploys the config changes.
-
-To ensure that you deploy only explicitly pre-configured applications where their config resides in the `server.xml` file, you can disable monitoring of the `/dropins` directory:
-
-[source,xml]
-----
-<appliciationMonitor updateTrigger="mbean" dropinsEnabled="false" />
-----
-
-You can also disable automatic config updates in the `server.xml` file by using the following config:
-
-[source,xml]
-----
-<config updateTrigger="mbean" />
-----
-
 == Welcome page and headers
-For production, you can disable Open Liberty's welcome page.
-The welcome page is enabled by default, and accessing the `/` root context displays the Open Liberty homepage.
-Disable this homepage by setting the `enableWelcomePage` custom property to `false` in the `server.xml` file:
+For production, you can disable the Open Liberty welcome page.
+The welcome page is enabled by default, and accessing the `/` root context displays the Open Liberty home page.
+Disable this home page by setting the `enableWelcomePage` custom property to `false` in the `server.xml` file:
 
 [source,xml]
 ----
@@ -173,7 +136,7 @@ Disable this homepage by setting the `enableWelcomePage` custom property to `fal
 ----
 
 Open Liberty server headers are also enabled by default.
-Because these headers are enabled by default, in certain situations, server information might be returned to browsers or web clients about the type of server that is running.
+Because these headers are enabled by default, in certain situations, information might be returned to browsers or web clients about the server implementation that is running.
 Setting the `removeServerHeader` custom property to `true` removes server implementation information from HTTP headers:
 
 [source,xml]
@@ -181,7 +144,7 @@ Setting the `removeServerHeader` custom property to `true` removes server implem
 <httpOptions removeServerHeader="true" />
 ----
 
-You can disable the _X-Powered-By_ header if you don't want to reveal which server is running.
+You can disable the _X-Powered-By_ header if you don’t want to reveal that an Open Liberty server is running.
 Setting the `disableXPoweredBy` custom property to `true` disables the _X-Powered-By_ header, which prevents the header from being sent on the HTTP response:
 
 [source,xml]
@@ -199,7 +162,7 @@ Restricting sessions can help prevent denial-of-service attacks in which attacke
 ----
 
 == JMX connector
-When you use the IHS web server, you can secure access to the Open Liberty JMX connector for remote administrative services in the web server plug-in by removing or commenting out the following entries:
+When you use the IHS web server, you can secure access to the Open Liberty JMX connector for remote administrative services in the web server plug-in by removing the following entries:
 
 [source,xml]
 ----

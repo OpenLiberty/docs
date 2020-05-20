@@ -1,10 +1,26 @@
 == Examples
 
-Open Liberty supports many common SPNEGO scenarios and configurations.
+The following examples provide feature configuration details for the SPNEGO feature.
+If you want to learn more about single sign-on (SSO) with SPNEGO, see link:/docs/ref/general/#sso-config-spnego.html[SSO configuration with SPNEGO].
+If you need additional information about how to configure your browser, KDC, and Open Liberty server for SPNEGO, see link:/docs/ref/general/#configuring-spnego-auth.html[Configuring SPNEGO authentication in Open Liberty].
 
-=== Limit SPNEGO authentication
+=== Default SPNEGO configuration
+Adding the SPNEGO feature automatically enforces a certain minimum configuration.
+You don't have to specify a `spnego` element in the `server.xml` file.
+If you don't specify a `spnego` element, the following config is implicit:
+
+[source,xml]
+----
+<spnego
+       canonicalHostName="true"
+       disableFailOverToAppAuthType="true"
+       trimKerberosRealmNameFromPrincipal="true"
+       includeClientGSSCredentialInSubject="true" />
+----
+
+=== Apply SPNEGO authentication to a subset of HTTP requests
 You can filter HTTP requests to require SPNEGO authentication for only certain requests, web applications, hosts, or user agents.
-This example configures the following points for SPNEGO authentication:
+Specify attributes within the link:https://draft-openlibertyio.mybluemix.net/docs/ref/config/#authFilter.html[`authFilter` element] in the `server.xml` file to require SPNEGO authentication for certain requests, as shown in the following example:
 
 [source,xml]
 ----
@@ -21,6 +37,8 @@ This example configures the following points for SPNEGO authentication:
         authFilterRef="myAuthFilter" />
 </spnego>
 ----
+This example configures the following points for SPNEGO authentication:
+
 <1> SPNEGO authentication is used for any requests received that contain the `example.com` hostname for resources within the `protectedApp` web application.
 <2> The client's GSS credentials are not added to the user subject upon successful authentication.
-<3> The Kerberos configuration and keytab files to be used by the server are given specific locations within the server configuration directory instead of their respective default locations.
+<3> The Kerberos configuration and keytab files used by the server are given specific locations within the server configuration directory instead of within their default locations.

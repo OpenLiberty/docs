@@ -14,11 +14,12 @@
 = Server configuration security hardening
 
 Operating system (OS) intrusions occur when unauthorized users are able to log in to the OS and gain access to sensitive resources.
+
 One of the ways to protect against improper access to Open Liberty code is to ensure that the file system where Open Liberty binary files are located is mounted read-only.
-It's also a best practice to ensure that the Liberty server's configuration file system, which is the path where the `WLP_USER_DIR` environment variable points, is only writable to authorized server administrators. 
+It's also a best practice to ensure that the Open Liberty server configuration file system, which is the path where the `WLP_USER_DIR` environment variable points, is only writable to authorized server administrators.
 
 == Open Liberty Docker images
-A container that runs in production should have only the tools and packages that you need to run your application.
+A container that runs in production must have only the tools and packages that you need to run your application.
 Before you run a container in production, harden the container image to remove any potential vulnerabilities that might allow exploitation of your server config or installation.
 You can find Open Liberty Docker images and related information in link:https://hub.docker.com/_/open-liberty[Docker Hub].
 
@@ -26,12 +27,11 @@ The simplest way to securely run Open Liberty is to start with an existing Open 
 Although Open Liberty Docker images have basic security already configured, it is recommended that you take steps to harden an image if you intend to use it in production.
 Check the following things about your Open Liberty image to verify that it's hardened for production:
 
-* Confirm that the Open Liberty server identity doesn't own the directory where the server config is stored and has only read access to it.
-Use the `WLP_OUTPUT_DIR` environment variable to point to the server logs.
-Also, use the `WLP_OUTPUT_DIR` environment variable to configure the server identity as the owner of the directory where `WLP_OUTPUT_DIR` points.
+* Confirm that the Open Liberty server identity doesn’t own the directory where the server config is stored (`WLP_USER_DIR`) and has only read access to it.
+Set the `WLP_OUTPUT_DIR` environment variable to point to the server logs with the same server identity as the owner of this directory.
 * Ensure that any sensitive information in the `server.xml` file is link:/docs/ref/general/#securityUtility.html[AES encrypted].
 * Disable all non-TLS ports by setting ports to `-1` in the `httpPort` argument of the `httpEndpoint` stanza.
-* Use the link:/docs/ref/feature/#transportSecurity.html[Transport Security feature] instead of the link:/docs/ref/feature/#ssl.html[SSL feature].
+* Use the link:/docs/ref/feature/#transportSecurity-1.0.html[Transport Security feature] instead of the link:/docs/ref/feature/#ssl-1.0.html[SSL feature].
 * Add `webAppSecurity ssoRequiresSSL=’true’` to the `server.xml` file.
 * Add `webAppSecurity httpOnlyCookies=’true’` to the `server.xml` file.
 * Set `httpOptions removeServerHeader="true"` in the `server.xml` file.
@@ -42,7 +42,7 @@ Using a minimal image reduces the number of OS vulnerabilities that you bundle w
 
 == Current Open Liberty version
 Keep your version of Open Liberty up to date.
-Open Liberty's zero migration policy means that you can move to a later version without changing anything in your server config.
+The zero migration policy of Open Liberty means that you can move to a later version without changing anything in your server config.
 Staying on the latest version also ensures that you get the latest link:/docs/ref/general/#security-vulnerabilities.html[security fixes] because updates are first released in the current version.
 After security fixes are released for the current version of Open Liberty, they are rolled back to older releases.
 Container images in Docker Hub are updated every time a new version of Open Liberty is released.
@@ -51,16 +51,17 @@ Use the most recent images from Docker Hub for the containers that you run in pr
 == Installation validation
 You can validate your Open Liberty server installation by running the `/<wlp_install_dir/bin/productInfo validate` command.
 This command uses an MD5 checksum to check your installation for errors or potential vulnerabilities.
-The output message that you receive indicates whether Open Liberty was validated successfully.
+The output message that you receive indicates whether the Open Liberty installation was validated successfully.
 
 == UNIX file permissions
 A critical aspect of server security is ensuring that files and directories have the appropriate permissions, and users and groups are configured properly.
 All UNIX files have the following attributes: *file owner*, *group*, and *other*.
-For each of these attributes, there are three bits assigned as an octal digit.
+For each of these attributes, there are 3 bits assigned as an octal digit.
 The first bit indicates read access, the second indicates write access, and the third indicates execute access.
-For example, when all three bits are on for an attribute, this is represented as a `7`, which indicates all access (read, write, and execute).
-A file with `770` permissions means that the file owner and any user in the group have read, write, and execute access. All others have no permissions.
-Generally, the last digit file permission should end in `0` because others shouldn't have access to protected information.
+For example, when all 3 bits are on for an attribute, this is represented as a `7`, which indicates read, write, and execute access.
+A file with `770` permissions means that the file owner and any user in the group have read, write, and execute access.
+All others have no permissions.
+Generally, the last digit in the file permissions should end in `0` because others shouldn't have access to protected information.
 
 Ensure that only administrative users are attached to the group that has write access to the server config files.
 
@@ -76,7 +77,8 @@ These users might include administrators, developers, or database support person
 The following points provide guidance on controlling users' access:
 
 * *The ID that the Open Liberty server uses to run*:
-This ID needs to read its config and write to logs, but when hardening a server, this ID should be configured only with read access to its own config files.
+This ID needs to read its config and write to logs.
+However, when hardening a server, this ID must be configured only with read access to its own config files.
 This ID can also own files, or it can be a separate ID from the file owner.
 
 * *Users who are responsible for administering the server*:
@@ -94,7 +96,7 @@ These users shouldn't have access to the config or product file systems, and are
 Include files can hold portions of the config outside of the `server.xml` file.
 These files are helpful in two primary situations:
 
-* When sensitive information needs to be available for select users or groups (for example, database administrators) but not the larger group with read access to the server config.
+* When sensitive information needs to be available for select users or groups, for example, database administrators, but not the larger group with read access to the server config.
 * When a user needs to update only their portion of the server config.
 In this situation, it is important to ensure that a user can't override config in the `server.xml` file.
 To prevent users from overriding config in the `server.xml` file, use the `onConflict` tag in the `<include>` element:
@@ -106,10 +108,35 @@ To prevent users from overriding config in the `server.xml` file, use the `onCon
 +
 In this example, Open Liberty ignores XML elements in the `myIncludeFile.xml` file that are also found in the  `server.xml` file.
 
+== Automated updates
+Config updates must be carefully controlled in production environments to reduce the possibility that unknown changes or vulnerabilities are deployed to users.
+You can disable automated config updates so that your production environment isn't changed unless you manually update it.
+
+By default, each server contains a monitored application directory named `/dropins`.
+When an application is placed in this directory, the server automatically deploys and starts the application.
+If you update config in the `server.xml` file or `/dropins` directory, the server automatically deploys the config changes.
+
+Each server also contains a monitored directory named `/dropins/configDropins` for config snippets.
+If you update the config in this directory, the server automatically deploys the config changes.
+
+To ensure that you deploy only explicitly pre-configured applications where their config resides in the `server.xml` file, disable monitoring of the `/dropins` directory:
+
+[source,xml]
+----
+<applicationMonitor updateTrigger="mbean" dropinsEnabled="false" />
+----
+
+You can also disable automatic config updates in the `server.xml` file by using the following config:
+
+[source,xml]
+----
+<config updateTrigger="mbean" />
+----
+
 == Password encryption
 Use AES encryption for passwords instead of Base64 encoding.
 You can use the link:/docs/ref/general/#securityUtility.html[`securityUtility` command] with Open Liberty for plain text encryption.
-AES encryption is also preferable to XOR encryption because any XOR-encoded password is visible to any administrator.
+AES encryption is also preferable to XOR encryption because an XOR-encoded password is visible to any administrator
 
 With AES encryption, the default encryption key that is used for decrypting can be overridden by setting the `wlp.password.encryption.key` property.
 This property must not be set in the `server.xml` file, but in a separate config file that is included by the `server.xml` file.
