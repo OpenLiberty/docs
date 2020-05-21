@@ -1,0 +1,464 @@
+// Copyright (c) 2018 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-layout: general-reference
+:page-type: general
+:seo-title: Audit support for server runtime environment and applications - OpenLiberty.io
+:seo-description:
+= Audit support for server runtime environment and applications
+
+The Audit (audit-1.0) feature enables audit support for the server runtime environment and applications. By enabling audit support with the Audit feature, you can assess the configured environment with the Audit data that is provided in an audit log.
+
+Auditing helps you to identify and understand the behavior of users and applications by using audit logs that consist of data that reveals different interactions with the server runtime environment. Audit logs provide a record of what action was performed on the environment, when the action was performed, why the action was performed, and who is responsible for the action.
+
+While the functions of audit logs can be relegated to only troubleshooting errors within the configuration of the environment, the Liberty audit feature can be used to extend those capabilities to enable the observation of the environment to help prevent any potential security risks.
+
+With the Audit feature, you can report and track auditable events to ensure the integrity of your configured environment.
+
+The Audit feature introduces an infrastructure that serves two purposes:
+
+* Confirming the effectiveness and integrity of the existing configuration
+* Identifying areas where improvement to the configuration might be needed
+
+
+=== Audit events
+
+An audit event is any event that occurs within the environment that can be represented by who attempted to perform the action, when they tried to perform it, what resource did they try to perform the action on, and the outcome.
+
+All relevant data that is associated with the action is included in the audit event. The data in an event can record who initiated the action, what initiated the action, when the action was initiated, on what the action was initiated, where the action was initiated, and optionally from where did the action initiate and to where did the action target. These components are also referred to as the 7 W’s of audit and compliance, as described in the following table:
+
+[cols=",,",options="header",]
+|===
+|“W” component |Field |Description
+|What a|
+eventName
+
+outcome
+
+|what activity occurred and the result of the activity
+|When |eventTime |when did this happen
+|Who a|
+initiator.host.address
+
+initiator.host.agent
+
+|who (person or service) initiated the action
+|OnWhat a|
+target.id
+
+target.typeURI
+
+|the resource that was targeted by the activity
+|Where a|
+observer.id
+
+observer.name
+
+|where did the activity get observed
+|FromWhere |observer.typeURI |where did the action initiate
+|ToWhere |target.host.address |the target of the action
+|===
+
+=== Audit outcomes
+
+
+An audit outcome is the final result of an auditable event. The final result of auditable events is specified as one of the following outcome types: SUCCESS, FAILURE, ERROR, REDIRECT, DENIED, INFO, and WARNING.
+
+
+===  Audit handler
+
+The audit handler pushes the audit outcome and emits audit events to a back-end repository. A repository can be an on-premises flat file, a database, or the cloud. An audit file handler is provided by default to emit audit data to an on-premises `audit.log` file. To configure the audit file handler, you must configure the `<auditFileHandler>` element in the `server.xml` file. For more information, see https://draft-openlibertyio.mybluemix.net/docs/ref/feature/#audit-1.0.html[Audit 1.0].
+
+
+==== Successful form login flow to access a servlet application example
+
+The following example demonstrates audit events that are logged for a successful form login with security authentication that is followed by role-based authorization to a web servlet application.
+
+Security authentication redirects the user to a login form for entering an ID and password. The `“session”` field in the audit event records the HTTP session for this user interaction:
+
+[source,json]
+----
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": 2,
+   "eventTime": "2018-07-31 11:52:38.091 CDT",
+   "initiator": \{
+      "host": \{
+         "address": "127.0.0.1",
+         "agent": "Apache-HttpClient/4.1.2 (java 1.5)"
+      }
+   },
+   "observer": \{
+      "id": "websphere: sample.xyz.com:/Users/sample/libertyGit/WS-CD-Open/dev/build.image/wlp/usr/:com.ibm.ws.webcontainer.security.fat.formlogin.audit",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "redirect",
+   "reason": \{
+      "reasonCode": "302",
+      "reasonType": "HTTP"
+   },
+   "target": \{
+      "appname": "FormLoginServlet",
+      "credential": \{
+         "type": "FORM"
+      },
+      "host": \{
+         "address": "127.0.0.1:8010"
+      },
+      "id": "websphere: sample.xyz.com:/Users/sample/libertyGit/WS-CD-Open/dev/build.image/wlp/usr/:com.ibm.ws.webcontainer.security.fat.formlogin.audit",
+      "method": "GET",
+      "name": "/formlogin/SimpleServlet",
+      "realm": "BasicRealm",
+      "session": "hYhd2wzjGOdn6_oyokUTBdb",
+      "typeURI": "service/application/web"
+   }
+}
+----
+
+The login form is successfully displayed and prompts the user to enter the user ID and password:
+
+[source,json]
+----
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": 3,
+   "eventTime": "2018-07-31 11:52:38.572 CDT",
+   "initiator": \{
+      "host": \{
+         "address": "127.0.0.1",
+         "agent": "Apache-HttpClient/4.1.2 (java 1.5)"
+      }
+   },
+   "observer": \{
+      "id": "websphere: sample.xyz.com:/Users/sample/libertyGit/WS-CD-Open/dev/build.image/wlp/usr/:com.ibm.ws.webcontainer.security.fat.formlogin.audit",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": \{
+      "reasonCode": "200",
+      "reasonType": "HTTP"
+   },
+   "target": \{
+      "appname": "/login.jsp",
+      "credential": \{
+         "token": "BasicRealm",
+         "type": "BASIC"
+      },
+      "host": \{
+         "address": "127.0.0.1:8010"
+      },
+      "id": "websphere: sample.xyz.com:/Users/sample/libertyGit/WS-CD-Open/dev/build.image/wlp/usr/:com.ibm.ws.webcontainer.security.fat.formlogin.audit",
+      "method": "GET",
+      "name": "/formlogin/login.jsp",
+      "realm": "BasicRealm",
+      "session": "hYhd2wzjGOdn6_oyokUTBdb",
+      "typeURI": "service/application/web"
+   }
+}
+
+{
+   "eventName": "SECURITY_AUTHZ",
+   "eventSequenceNumber": 4,
+   "eventTime": "2018-07-31 11:52:38.622 CDT",
+   "initiator": \{
+      "host": \{
+         "address": "127.0.0.1",
+         "agent": "Apache-HttpClient/4.1.2 (java 1.5)"
+      }
+   },
+   "observer": \{
+      "id": "websphere: sample.xyz.com:/Users/sample/libertyGit/WS-CD-Open/dev/build.image/wlp/usr/:com.ibm.ws.webcontainer.security.fat.formlogin.audit",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": \{
+      "reasonCode": "200",
+      "reasonType": "HTTP"
+   },
+   "target": \{
+      "appname": "/login.jsp",
+      "credential": \{
+         "type": "BASIC"
+      },
+      "host": \{
+         "address": "127.0.0.1:8010"
+      },
+      "id": "websphere: sample.xyz.com:/Users/sample/libertyGit/WS-CD-Open/dev/build.image/wlp/usr/:com.ibm.ws.webcontainer.security.fat.formlogin.audit",
+      "method": "GET",
+      "name": "/formlogin/login.jsp",
+      "realm": "BasicRealm",
+      "session": "hYhd2wzjGOdn6_oyokUTBdb",
+      "typeURI": "service/application/web"
+   }
+}
+----
+
+The `user1` user ID is successfully authenticated against the Basic User registry:
+
+[source,json]
+----
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": 5,
+   "eventTime": "2018-07-31 11:52:39.383 CDT",
+   "initiator": \{
+      "host": \{
+         "address": "127.0.0.1",
+         "agent": "Apache-HttpClient/4.1.2 (java 1.5)"
+      }
+   },
+   "observer": \{
+      "id": "websphere: sample.xyz.com:/Users/sample/libertyGit/WS-CD-Open/dev/build.image/wlp/usr/:com.ibm.ws.webcontainer.security.fat.formlogin.audit",
+
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": \{
+      "reasonCode": "200",
+      "reasonType": "HTTP"
+   },
+   "target": \{
+      "appname": "FormLoginServlet",
+      "credential": \{
+         "token": "user1",
+         "type": "LtpaToken2"
+      },
+      "host": \{
+         "address": "127.0.0.1:8010"
+      },
+      "id": "websphere: sample.xyz.com:/Users/sample/libertyGit/WS-CD-Open/dev/build.image/wlp/usr/:com.ibm.ws.webcontainer.security.fat.formlogin.audit",
+      "method": "GET",
+      "name": "/formlogin/SimpleServlet",
+      "realm": "BasicRealm",
+      "session": "hYhd2wzjGOdn6_oyokUTBdb",
+      "typeURI": "service/application/web"
+   }
+}
+----
+
+The `user1` user ID is successfully authorized to access the FormLoginServlet application because the user is in the required Employee or Manager role:
+
+[source,json]
+----
+\{
+   "eventName": "SECURITY_AUTHZ",
+   "eventSequenceNumber": 6,
+   "eventTime": "2018-07-31 11:52:39.410 CDT",
+   "initiator": \{
+      "host": \{
+         "address": "127.0.0.1",
+         "agent": "Apache-HttpClient/4.1.2 (java 1.5)"
+      }
+   },
+   "observer": \{
+      "id": "websphere: sample.xyz.com:/Users/sample/libertyGit/WS-CD-Open/dev/build.image/wlp/usr/:com.ibm.ws.webcontainer.security.fat.formlogin.audit",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": \{
+      "reasonCode": "200",
+      "reasonType": "HTTP"
+   },
+   "target": \{
+      "appname": "FormLoginServlet",
+      "credential": \{
+         "token": "user1",
+         "type": "LtpaToken2"
+      },
+      "host": \{
+         "address": "127.0.0.1:8010"
+      },
+      "id": "websphere: sample.xyz.com:/Users/sample/libertyGit/WS-CD-Open/dev/build.image/wlp/usr/:com.ibm.ws.webcontainer.security.fat.formlogin.audit",
+      "method": "GET",
+      "name": "/formlogin/SimpleServlet",
+      "realm": "BasicRealm",
+      "role": \{
+         "names": "[Employee, Manager]"
+      },
+      "session": "hYhd2wzjGOdn6_oyokUTBdb",
+      "typeURI": "service/application/web"
+   }
+}
+
+----
+
+
+==== Failed form login authentication example
+
+The following example demonstrates the audit events that are logged for a failed form login by a user who cannot be authenticated against the user registry.
+
+Security authentication redirects the user to a login form for entering an ID and password. The session field in the audit event records the HTTP session for this user interaction:
+
+[source,json]
+----
+\{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": 2,
+   "eventTime": "2018-07-31 13:46:54.423 CDT",
+   "initiator": \{
+      "host": \{
+         "address": "127.0.0.1",
+         "agent": "Apache-HttpClient/4.1.2 (java 1.5)"
+      }
+   },
+   "observer": \{
+      "id": "websphere: sample.xyz.com:/Users/sample/libertyGit/WS-CD-Open/dev/build.image/wlp/usr/:com.ibm.ws.webcontainer.security.fat.formlogin.audit",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "redirect",
+   "reason": \{
+      "reasonCode": "302",
+      "reasonType": "HTTP"
+   },
+   "target": \{
+      "appname": "FormLoginServlet",
+      "credential": \{
+         "type": "FORM"
+      },
+      "host": \{
+         "address": "127.0.0.1:8010"
+      },
+      "id": "websphere: sample.xyz.com:/Users/sample/libertyGit/WS-CD-Open/dev/build.image/wlp/usr/:com.ibm.ws.webcontainer.security.fat.formlogin.audit",
+      "method": "GET",
+      "name": "/formlogin/SimpleServlet",
+      "realm": "BasicRealm",
+      "session": "0EREOocFtP9s4VvptJ4DHhi",
+      "typeURI": "service/application/web"
+   }
+}
+----
+
+The login form is successfully displayed and prompts the user to enter the user ID and password:
+
+[source,json]
+----
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": 3,
+   "eventTime": "2018-07-31 13:46:54.966 CDT",
+   "initiator": \{
+      "host": \{
+         "address": "127.0.0.1",
+         "agent": "Apache-HttpClient/4.1.2 (java 1.5)"
+      }
+
+   },
+   "observer": \{
+      "id": "websphere: sample.xyz.com:/Users/sample/libertyGit/WS-CD-Open/dev/build.image/wlp/usr/:com.ibm.ws.webcontainer.security.fat.formlogin.audit",
+
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": \{
+      "reasonCode": "200",
+      "reasonType": "HTTP"
+   },
+   "target": \{
+      "appname": "/login.jsp",
+      "credential": \{
+         "token": "BasicRealm",
+         "type": "BASIC"
+      },
+      "host": \{
+         "address": "127.0.0.1:8010"
+      },
+      "id": "websphere: sample.xyz.com:/Users/sample/libertyGit/WS-CD-Open/dev/build.image/wlp/usr/:com.ibm.ws.webcontainer.security.fat.formlogin.audit",
+      "method": "GET",
+      "name": "/formlogin/login.jsp",
+      "realm": "BasicRealm",
+      "session": "0EREOocFtP9s4VvptJ4DHhi",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHZ",
+   "eventSequenceNumber": 4,
+   "eventTime": "2018-07-31 13:46:55.014 CDT",
+   "initiator": \{
+      "host": \{
+         "address": "127.0.0.1",
+         "agent": "Apache-HttpClient/4.1.2 (java 1.5)"
+      }
+   },
+   "observer": \{
+      "id": "websphere: sample.xyz.com:/Users/sample/libertyGit/WS-CD-Open/dev/build.image/wlp/usr/:com.ibm.ws.webcontainer.security.fat.formlogin.audit",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": \{
+      "reasonCode": "200",
+      "reasonType": "HTTP"
+   },
+   "target": \{
+      "appname": "/login.jsp",
+      "credential": \{
+         "type": "BASIC"
+      },
+      "host": \{
+         "address": "127.0.0.1:8010"
+      },
+      "id": "websphere: sample.xyz.com:/Users/sample/libertyGit/WS-CD-Open/dev/build.image/wlp/usr/:com.ibm.ws.webcontainer.security.fat.formlogin.audit",
+      "method": "GET",
+      "name": "/formlogin/login.jsp",
+      "realm": "BasicRealm",
+      "session": "0EREOocFtP9s4VvptJ4DHhi",
+      "typeURI": "service/application/web"
+   }
+}
+----
+
+The `baduser` user ID fails authentication against the user registry and the user login is denied:
+
+[source,json]
+----
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": 5,
+   "eventTime": "2018-07-31 13:46:55.205 CDT",
+   "initiator": \{
+      "host": \{
+         "address": "127.0.0.1",
+         "agent": "Apache-HttpClient/4.1.2 (java 1.5)"
+      }
+   },
+   "observer": \{
+      "id": "websphere: sample.xyz.com:/Users/sample/libertyGit/WS-CD-Open/dev/build.image/wlp/usr/:com.ibm.ws.webcontainer.security.fat.formlogin.audit",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "denied",
+   "reason": \{
+      "reasonCode": "403",
+      "reasonType": "HTTP"
+   },
+   "target": \{
+      "appname": "null",
+      "credential": \{
+         "token": "baduser",
+         "type": "FORM"
+      },
+      "host": \{
+         "address": "127.0.0.1:8010"
+      },
+      "id": "websphere: sample.xyz.com:/Users/sample/libertyGit/WS-CD-Open/dev/build.image/wlp/usr/:com.ibm.ws.webcontainer.security.fat.formlogin.audit",
+      "method": "POST",
+      "name": "/formlogin/j_security_check",
+      "realm": "BasicRealm",
+      "session": "0EREOocFtP9s4VvptJ4DHhi",
+      "typeURI": "service/application/web"
+   }
+}
+----
