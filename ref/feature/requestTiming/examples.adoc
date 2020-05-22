@@ -2,15 +2,15 @@
 == Examples
 
 === Slow and hung request threshold configuration
-The request timing feature can track the duration of every request that comes into a system. You can configure the request timing feature to detect slow and hung requests. The request timing feature provides diagnostic information when the duration of any request exceeds the configured threshold.  The slow and hung request thresholds are configured by setting the `slowRequestThreshold` and `hungRequestThreshold` attributes within the `<requestTiming/>` element configuration in the `server.xml` file. Setting these attributes specifies a single slow and hung request threshold for all requests that are timed. The following example shows the `<requestTiming/>` element configuration with the embedded `<jdbcTiming/>` element configuration:
+The following example sets the slow and hung request thresholds for all requests, where the `<requestTiming>` element detects requests as slow if the requests require more than 10 seconds to complete, or as hung if the requests did not complete in 10 minutes:
 [source,xml]
 ----
 <requestTiming slowRequestThreshold="10s" hungRequestThreshold="10m">
 </requestTiming>
 ----
 
-==== Customizing threshold configuration
-You can also set different slow and hung request thresholds for different types of requests. An embedded `<servletTiming/>` or `<jdbcTiming/>` element configuration in the server.xml file overrides the configured slow and hung request thresholds that are defined in the `<requestTiming/>` element. A `<jdbcTiming/>` element configuration can set the slow and hung request threshold by datasource name, sql string, or both. The following example shows a `<jdbcTiming/>` element configuration that sets the slow and hung request threshold by datasource name:
+=== Configuring JDBC request thresholds
+The following example uses the embedded `<jdbcTiming/>` element to set the slow and hung JDBC request thresholds within the `<requestTiming>` element configuration. The `<requestTiming>` element detects that the JDBC request with a datasource name of `testDBSource` is slow, if the request requires more than 500ms to complete or hung if the request does not complete in 5 minutes:
 [source,xml]
 ----
 <requestTiming slowRequestThreshold="10s" hungRequestThreshold="10m">
@@ -18,7 +18,8 @@ You can also set different slow and hung request thresholds for different types 
 </requestTiming>
 ----
 
-The `<requestTiming/>` element configuration can also include the embedded `<servletTiming/>` element configuration for one specific servlet and one specific web application as shown in the following example:
+=== Configuring servlet request thresholds
+The following example uses the embedded <servletTiming/> elements to set the slow and hung request thresholds for two servlets within the `<requestTiming>` element configuration. The `<requestTiming>` element detects that the `Arm10Servlet` servlet request is hung if the request does not complete in 20 seconds and that the `SecurityExchangeApp` servlet request is hung if the request does not complete in 2 hours:
 [source,xml]
 ----
 <requestTiming slowRequestThreshold="10s" hungRequestThreshold="10m">
@@ -26,5 +27,3 @@ The `<requestTiming/>` element configuration can also include the embedded `<ser
   <servletTiming appName="SecurityExchangeApp” hungRequestThreshold=”2h”/>
 </requestTiming>
 ----
-
-In both cases, the names are taken from the context information for the request, as reported by the https://draft-openlibertyio.mybluemix.net/docs/ref/feature/#eventLogging-1.0.html[Event Logging feature]. The event log contains the type and context information for each request that was processed by the server. With type and context information, you can create a `<servletTiming/>` or `<jdbcTiming/>` element configuration in the `server.xml` file for the requests that require different threshold values.
