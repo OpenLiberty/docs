@@ -20,7 +20,16 @@ For more information about SPNEGO SSO, see link:/docs/ref/general/#sso-config-sp
 SPNEGO SSO is also known as Integrated Windows Authentication (IWA).
 Open Liberty supports SPNEGO for IWA but not for NT LAN Manager (NTLM) tokens.
 This task demonstrates how to configure an Open Liberty server to support SSO for HTTP requests by using SPNEGO.
-First, create a Kerberos service principal name and keytab file and copy the keytab file to Open Liberty.
+
+Create user, spn, keytab from the AD machine
+Copy keytab from AD machine to Liberty machine,.
+create Kerberos configuration file on Liberty machine
+Configure SPNEGO feature
+Step 2) and 3) can combine.
+Configure the browser client could be step 4 or separate a client configuration article.
+
+First, create a Kerberos service principal name and keytab file. Next, copy the keytab file to Open Liberty.
+Then, create a Kerberos configuration file for Open Liberty
 Then, link:/docs/ref/feature/#spnego-1.0.html[configure the SPENGO feature for Open Liberty] and the client application.
 
 == Prerequisite information
@@ -111,7 +120,7 @@ The following example command includes the `myOtherKrb5.keytab` keytab file:
 +
 [role,command]
 ----
-ktpass -in myOtherKrb5.keytab -out krb5.keytab -princ HTTP/myLibertyMachine.example.com@MYDOMAIN.EXAMPLE.COM -mapUser myLibertyMachine_http -mapOp set -pass security -crypto RC4-HMAC-NT -ptype KRB5_NT_PRINCIPALCopy
+ktpass -in myOtherKrb5.keytab -out krb5.keytab -princ HTTP/myLibertyMachine.example.com@MYDOMAIN.EXAMPLE.COM -mapUser myLibertyMachine_http -mapOp set -pass security -crypto RC4-HMAC-NT -ptype KRB5_NT_PRINCIPAL
 ----
 +
 The previous example produces the following output:
@@ -172,7 +181,7 @@ To verify the Kerberos configuration and keytab files, use the `klist` and `kini
 +
 [role,command]
 ----
-klist -k -t /etc/krb5.keytabCopy
+klist -k -t /etc/krb5.keytab
 ----
 * Run the `kinit` command to validate the SPN in the keytab file and the Kerberos configuration file:
 +
@@ -191,7 +200,7 @@ For information about how to enable this feature and configuration examples, go 
 The runtime forms the default SPN in the following format:
 +
 ----
-"HTTP/" + java.net.InetAddress.getLocalHost().getCanonicalHostName();Copy
+"HTTP/" + java.net.InetAddress.getLocalHost().getCanonicalHostName();
 ----
 +
 If the default SPN does not match what you have in the `krb5.keytab` file, then you need to specify the `servicePrincipalNames` attribute, for example:
