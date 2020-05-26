@@ -17,16 +17,14 @@ You can choose among different options for packaging, containerizing, and deploy
 However, the simplest workflow for developing your cloud-native applications is to build applications with Maven or Gradle, containerize with Docker, and deploy to the cloud with Kubernetes or OpenShift.
 
 == Maven and Gradle build tools
-link:https://maven.apache.org/[Maven] is a build automation tool that makes managing your builds and dependencies easier.
-With Maven, you use a Project Object Model (POM) file written in XML to define information about your project, and Maven downloads and installs all dependencies for you.
-The link:https://github.com/OpenLiberty/ci.maven[Open Liberty Maven plug-in] helps you develop and package applications with Open Liberty.
-To learn more about the Open Liberty Maven plug-in, check out this guide on link:/guides/maven-intro.html[Building a web application with Maven].
+Maven and Gradle are build automation tool that make managing your builds and dependencies easier.
+The Open Liberty project provides Maven and Gradle plug-ins to help you develop and package applications with Open Liberty.
 
-Like Maven, link:https://gradle.org/[Gradle] is a build tool that provides dependency management for your projects.
-However, Gradle has it's own domain-specific language that's based on Groovy.
-Similar to the Maven plug-in, the link:https://github.com/OpenLiberty/ci.gradle[Open Liberty Gradle plug-in] provides tasks for you to develop and package applications with Open Liberty.
-While Maven build scripts are written in XML, Gradle build scripts are made up of incremental tasks that form a program.
-To learn more about the Open Liberty Gradle plug-in, check out this guide on link:https://openliberty.io/guides/gradle-intro.html[Building a web application with Gradle].
+With link:https://maven.apache.org/[Maven], you use a `pom.xml` file to define information about your project, and Maven downloads and installs all dependencies for you.
+To learn more about the Open Liberty Maven plug-in, check out the link:https://github.com/OpenLiberty/ci.maven[Open Liberty Maven plug-in documentation] and this guide on link:/guides/maven-intro.html[Building a web application with Maven].
+
+link:https://gradle.org/[Gradle] uses a domain-specific language based on Groovy, and Gradle build scripts are made up of incremental tasks that form a program.
+To learn more about the Open Liberty Gradle plug-in, check out the link:https://github.com/OpenLiberty/ci.gradle[Open Liberty Gradle plug-in documentation] and this guide on link:https://openliberty.io/guides/gradle-intro.html[Building a web application with Gradle].
 
 === Building a WAR deployment artifact
 First, you must build your application into a WAR deployment artifact.
@@ -36,8 +34,16 @@ Then, package your application with Maven or Gradle. The result is a WAR deploym
 
 [#config-ol-war]
 == Configuring Open Liberty to run a WAR file
-If you don't plan on containerizing your application for the cloud, you can configure Open Liberty to run the application from a WAR file.
-Before you can run an application from a WAR file on Open Liberty, you must change the default HTTP port of the server to the port where the application will be accessed by replacing the `httpPort` attribute value in the `server.xml` file.
+To deploy and run your application from a WAR file, first you must configure Open Liberty by defining the application with the `webApplication` element in the `server.xml` file.
+The following example configures the `helloworld` application:
+
+[source,xml]
+----
+<webApplication contextRoot="helloworld" location="helloworld.war" />
+----
+
+You can change the default HTTP port of the server to the port where the application will be accessed by replacing the `httpPort` attribute value in the `server.xml` file.
+
 The following example updates the HTTP port of the server to `9090`:
 
 [source,xml]
@@ -46,14 +52,6 @@ The following example updates the HTTP port of the server to `9090`:
   host="localhost"
   httpPort="9090"
   httpsPort="9443" />
-----
-
-Next, define the application with the `webApplication` element in the `server.xml` file.
-The following example configures the `helloworld` application:
-
-[source,xml]
-----
-<webApplication contextRoot="helloworld" location="helloworld.war" />
 ----
 
 After you configure Open Liberty to run a WAR file, you can <<deploy-ol-war,deploy the application on Open Liberty>>.
@@ -131,7 +129,7 @@ The supported package types are `zip`, `jar`, `tar`, and `tar.gz`.
 
 Different options can be specified with the `include` parameter or attribute to tailor the server package to meet your needs.
 The `minify` option can be specified to create a package that only has the server config of the application.
-The `runnable` option is used to package an application and an Open Liberty installation into a link:/docs/ref/general/#runnablejarfiles.html[runnable JAR file].
+The `runnable` option is used to package an application and Open Liberty into a link:/docs/ref/general/#runnablejarfiles.html[runnable JAR file].
 The JAR file is portable and ready to deploy both the application and server together.
 The `minify` option can be specified with the `runnable` option to package into a minimum runnable JAR file that contains only what you need to run your application.
 
