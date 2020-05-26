@@ -6,9 +6,8 @@
 // Contributors:
 //     IBM Corporation
 //
-:page-description:
-:seo-title: Configuring SPNEGO authentication in Open Liberty
-:seo-description:
+:page-description: You can enable sign-on (SSO) for HTTP requests by using Simple and Protected GSS-API Negotiation Mechanism (SPNEGO) web authentication for Open Liberty. With SPNEGO SSO, HTTP users log in only once to a Microsoft domain controller at their desktop.
+:seo-title: Configuring  You can enable sign-on (SSO) for HTTP requests by using Simple and Protected GSS-API Negotiation Mechanism (SPNEGO) web authentication for Open Liberty. With SPNEGO SSO, HTTP users log in only once to a Microsoft domain controller at their desktop.
 :page-layout: general-reference
 :page-type: general
 = Configuring SPNEGO authentication in Open Liberty
@@ -20,8 +19,10 @@ For more information about SPNEGO SSO, see link:/docs/ref/general/#sso-config-sp
 SPNEGO SSO is also known as Integrated Windows Authentication (IWA).
 Open Liberty supports SPNEGO for IWA but not for NT LAN Manager (NTLM) tokens.
 This task demonstrates how to configure an Open Liberty server to support SSO for HTTP requests by using SPNEGO.
+
 First, create a Kerberos service principal name and keytab file and copy the keytab file to Open Liberty.
-Then, link:/docs/ref/feature/#spnego-1.0.html[configure the SPENGO feature for Open Liberty] and the client application.
+Then, create a Kerberos configuration file on Open Liberty, and link:/docs/ref/feature/#spnego-1.0.html[configure the SPENGO feature].
+Last, configure the browser client so users can access SPNEGO-protected resources from a browser.
 
 == Prerequisite information
 
@@ -50,7 +51,7 @@ The `myLibertyMachine_http` example user should be created with password securit
 
 . *Run the Microsoft `setspn` command to map the user account to a Kerberos SPN.*
 This user account represents the Open Liberty server as being a Kerberos service with the KDC.
-The following snippet shows an example of how to run the `setspn` command :
+The following snippet shows an example of how to run the `setspn` command:
 +
 [role,command]
 ----
@@ -63,7 +64,7 @@ Updated object
 
 . *Create the Kerberos keytab file by using the Microsoft `ktpass` command.*
 The default name for this file is `krb5.keytab`.
-The following snippet shows an example of how to run the `ktpass` command :
+The following snippet shows an example of how to run the `ktpass` command:
 +
 [role,command]
 ----
@@ -90,7 +91,7 @@ Processing entry 0
 found 0 group of duplicate SPNs.
 ----
 +
-* You can also use the Microsoft `ldif` command.
+* You can also run the Microsoft `ldif` command.
 The following example shows that one entry was returned, which indicates that there is not a duplicated SPN:
 +
 [role,command]
@@ -107,11 +108,11 @@ Writing out entries.
 ----
 +
 .. You can run the `ktpass` command with the `-in` option to include an existing keytab file with the newly created keytab file.
-The following example command includes the `myOtherKrb5.keytab` keytab file:
+The following example command includes the `myOtherKrb5.keytab` file:
 +
 [role,command]
 ----
-ktpass -in myOtherKrb5.keytab -out krb5.keytab -princ HTTP/myLibertyMachine.example.com@MYDOMAIN.EXAMPLE.COM -mapUser myLibertyMachine_http -mapOp set -pass security -crypto RC4-HMAC-NT -ptype KRB5_NT_PRINCIPALCopy
+ktpass -in myOtherKrb5.keytab -out krb5.keytab -princ HTTP/myLibertyMachine.example.com@MYDOMAIN.EXAMPLE.COM -mapUser myLibertyMachine_http -mapOp set -pass security -crypto RC4-HMAC-NT -ptype KRB5_NT_PRINCIPAL
 ----
 +
 The previous example produces the following output:
@@ -172,7 +173,7 @@ To verify the Kerberos configuration and keytab files, use the `klist` and `kini
 +
 [role,command]
 ----
-klist -k -t /etc/krb5.keytabCopy
+klist -k -t /etc/krb5.keytab
 ----
 * Run the `kinit` command to validate the SPN in the keytab file and the Kerberos configuration file:
 +
@@ -182,7 +183,7 @@ kinit -k -t /etc/krb5.keytab HTTP/myLibertyMachine.example.com
 ----
 +
 After you run the `kinit` command, you can run the `klist` command to list the Kerberos ticket.
-If you get the Kerberos ticket, then the Kerberos keytab and configuration are valid.
+If you get the Kerberos ticket, then the Kerberos keytab and configuration files are valid.
 
 . *Configure and enable SPNEGO web authentication for Open Liberty.*
 You can enable SPNEGO web authentication by enabling the Simple and Protected GSSAPI Negotiation Mechanism (SPNEGO) feature.
@@ -191,17 +192,16 @@ For information about how to enable this feature and configuration examples, go 
 The runtime forms the default SPN in the following format:
 +
 ----
-"HTTP/" + java.net.InetAddress.getLocalHost().getCanonicalHostName();Copy
+"HTTP/" + java.net.InetAddress.getLocalHost().getCanonicalHostName();
 ----
 +
-If the default SPN does not match what you have in the `krb5.keytab` file, then you need to specify the `servicePrincipalNames` attribute, for example:
+If the default SPN does not match what you have in the `krb5.keytab` file, then you need to specify the link:/docs/ref/config/#spnego.html[`servicePrincipalNames` attribute], for example:
 +
 ----
 <spnego id="mySpnego" servicePrincipalNames="HTTP/myLibertyMachine.example.com"/>
 ----
 +
 When values for the `krb5Config` or `krb5Keytab` attributes are not given, each respective file is expected to exist at its default location.
-The default locations for the Kerberos configuration and keytab files on various platforms are given earlier in this example.
 +
 If you use the Oracle JDK or Java 11, add the `java.security.krb5.kdc` and `java.security.krb5.realm` JVM system properties to the `jvm.options` file, as shown in the following example:
 +
@@ -212,9 +212,9 @@ If you use the Oracle JDK or Java 11, add the `java.security.krb5.kdc` and `java
 
 === Configure the client application on the client application machine
 
-The following steps must be done only on the client machine.
+The following steps must be completed only on the client machine.
 These steps are for users who are accessing SPNEGO-protected resources from a browser.
-You must have a browser installed that supports SPNEGO authentication, and the user must be logged in to the domain controller for SPNEGO to work
+You must have a browser installed that supports SPNEGO authentication, and the user must be logged in to the domain controller for SPNEGO to work.
 
 * **Microsoft Internet Explorer**
 +
