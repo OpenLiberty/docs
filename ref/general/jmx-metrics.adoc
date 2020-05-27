@@ -14,15 +14,24 @@
 = JMX metrics
 
 You can use the Performance Monitoring feature to monitor your Open Liberty runtime environment.
-Enable monitoring by adding the link:/docs/ref/feature/#monitor-1.0.html[Performance Monitoring feature] to your `server.xml` file.
 
+Open Liberty provides JMX metrics and a `/metrics` endpoint.
+The link:/docs/ref/feature/#monitor-1.0.html[Performance Monitoring feature] provides JMX MXBeans, which you can use with JConsole or other JMX-based tools.
+The link:/docs/ref/feature/#mpMetrics.html[MicroProfile Metrics feature] provides a `/metrics` endpoint, which you can use with link:https://prometheus.io/[Prometheus] or other web-based tools.
+
+that monitor-1.0 contains all of the metrics that are related to .... mpMetrics on its own provides metrics that are related to ....
+
+If you use the Performance Monitoring feature with the MicroProfile Metrics feature, then you get both JMX metrics and `/metrics` endpoint metrics, and the JMX metrics are included in the `/metrics` output.
+The MicroProfile Metrics 2.3 feature and later automatically enables the Performance Monitoring feature.
+
+== Gather JMX metrics
+Enable JMX metrics by adding the Performance Monitoring feature to your `server.xml` file.
 If you don't use the server script on a JVM to launch the server, ensure that the JavaAgent is configured for JVM, as shown in the following example:
+
 [source,xml]
 ----
 agentlib=-javaagent:<path to liberty install>/bin/tools/ws-javaagent.jar
 ----
-
-// Monitor-1.0 enablement
 
 // JConsole part of the JVM
 // Other products that could consume them
@@ -30,18 +39,8 @@ agentlib=-javaagent:<path to liberty install>/bin/tools/ws-javaagent.jar
 You can JConsole to connect to the JVM and look at the performance data by clicking each attribute of the MXBeans.
 Monitoring data is reported as standard Beans.
 
-== JMX metrics
+== JMX metrics reference list
 
-// Incorporate to table
-The following MXBeans provide monitoring for the specified runtime components:
-
-* `WebSphere:type=JvmStats` for the JVM
-* `WebSphere:type=RequestTimingStats,name=*` for request monitoring
-* `WebSphere:type=ServletStats,name=*` for web applications
-* `WebSphere:type=ThreadPoolStats,name=Default Executor` for thread pools
-* `org.apache.cxf:type=WebServiceStats,service=*,port=*` for JAX-WS endpoints.
-* `WebSphere:type=SessionStats,name=*` for session management
-* `Websphere:type=ConnectionPool,name=*` for connection pools
 
 === JvmStats MXBean
 You can use the `JvmStats` MXBean for JVM monitoring in Open Liberty.
@@ -49,38 +48,46 @@ Each Open Liberty instance has one `JvmStats` MXBean.
 
 The following attributes are available for the `JvmStats` MXBean:
 
-[%header,cols=3]
+[%header,cols=4]
 |===
 
 |MXBean attribute
+|Object name
 |Units
 |Description
 
 |`FreeMemory`
+|`WebSphere:type=JvmStats`
 |Not applicable
 |The free heap that's available for the current JVM.
 
 |`Heap`
+|`WebSphere:type=JvmStats`
 |Not applicable
 |The heap size that's used for the current JVM.
 
 |`GcCount`
+|`WebSphere:type=JvmStats`
 |Not applicable
 |The number of times garbage collection occurred since the JVM started.
 
 |`GcTime`
+|`WebSphere:type=JvmStats`
 |Not applicable
 |The total accumulated value of garbage collection time.
 
 |`ProcessCPU`
+|`WebSphere:type=JvmStats`
 |Not applicable
 |The percentage of CPU that's being used by the JVM process.
 
 |`UpTime`
+|`WebSphere:type=JvmStats`
 |Milliseconds
 |The time since the JVM started.
 
 |`UsedMemory`
+|`WebSphere:type=JvmStats`
 |Not applicable
 |The used heap for the current JVM.
 
@@ -92,26 +99,31 @@ Servlet requests that are identified by the name of Servlet are tracked.
 
 The following attributes are available for the `RequestTimingStats` MXBean:
 
-[%header,cols=3]
+[%header,cols=4]
 |===
 
 |MXBean attribute
+|Object name
 |Units
 |Description
 
 |`ActiveRequestCount`
+|`WebSphere:type=RequestTimingStats,name=*`
 |Not applicable
 |The total requests that are currently running.
 
 |`HungRequestCount`
+|`WebSphere:type=RequestTimingStats,name=*`
 |Not applicable
 |The total requests in flight that are deemed hung.
 
 |`RequestCount`
+|`WebSphere:type=RequestTimingStats,name=*`
 |Not applicable
 |The total requests since the server started.
 
 |`SlowRequestCount`
+|`WebSphere:type=RequestTimingStats,name=*`
 |Not applicable
 |The total requests that are running and are deemed slow.
 
@@ -124,38 +136,46 @@ Each servlet has its own MXBean.
 
 The following attributes are available for the `ServletStats` MXBean:
 
-[%header,cols=3]
+[%header,cols=4]
 |===
 
 |MXBean attribute
+|Object name
 |Units
 |Description
 
 |`AppName`
+|`WebSphere:type=ServletStats,name=*`
 |Not applicable
 |The name of the application.
 
 |`Description`
+|`WebSphere:type=ServletStats,name=*`
 |Not applicable
 |The description of the counter.
 
 |`RequestCount`
+|`WebSphere:type=ServletStats,name=*`
 |Not applicable
 |The total requests to the servlet.
 
 |`RequestCountDetails`
+|`WebSphere:type=ServletStats,name=*`
 |Not applicable
 |`RequestCount` details that include the last time stamp.
 
 |`ResponseTime`
+|`WebSphere:type=ServletStats,name=*`
 |Nanoseconds
 |The average response time.
 
 |`ResponseTimeDetails`
+|`WebSphere:type=ServletStats,name=*`
 |Nanoseconds
 |`ResponseTime` details that include the number of snapshots that are taken, minimum values, and maximum values.
 
 |`ServletName`
+|`WebSphere:type=ServletStats,name=*`
 |Not applicable
 |The name of the servlet.
 
@@ -167,22 +187,26 @@ All web requests run in the Default Executor thread pool, and you can monitor th
 
 The following attributes are available for the `ThreadPoolStats` MXBean:
 
-[%header,cols=3]
+[%header,cols=4]
 |===
 
 |MXBean attribute
+|Object name
 |Units
 |Description
 
 |`ActiveThreads`
+|`WebSphere:type=ThreadPoolStats,name=Default Executor`
 |Not applicable
 |The number of threads that are active.
 
 |`PoolName`
+|`WebSphere:type=ThreadPoolStats,name=Default Executor`
 |Not applicable
 |The name of the thread pool.
 
 |`PoolSize`
+|`WebSphere:type=ThreadPoolStats,name=Default Executor`
 |Not applicable
 |The size of the thread pool.
 
@@ -194,135 +218,132 @@ Performance data is available for each endpoint and operation in a JAX-WS applic
 
 The following attributes are available for the `WebServiceStats` MXBean:
 
-[%header,cols=3]
+[%header,cols=4]
 |===
 
 |MXBean attribute
+|Object name
 |Units
 |Description
 
 |`AvgResponseTime`
+|`org.apache.cxf:type=WebServiceStats,service=\*,port=*`
 |Milliseconds
 |The average response time.
 
 |`MaxResponseTime`
+|`org.apache.cxf:type=WebServiceStats,service=\*,port=*`
 |Milliseconds
 |The maximum response time.
 
 |`MinResponseTime`
+|`org.apache.cxf:type=WebServiceStats,service=\*,port=*`
 |Milliseconds
 |The minimum response time.
 
 |`NumInvocations`
+|`org.apache.cxf:type=WebServiceStats,service=\*,port=*`
 |Not applicable
 |The number of invocations to this endpoint or operation.
 
 |`NumCheckedApplicationFaults`
+|`org.apache.cxf:type=WebServiceStats,service=\*,port=*`
 |Not applicable
 |The number of checked application faults.
 
 |`NumLogicalRuntimeFaluts`
+|`org.apache.cxf:type=WebServiceStats,service=\*,port=*`
 |Not applicable
 |The number of logical runtime faults.
 
 |`NumRuntimeFaults`
+|`org.apache.cxf:type=WebServiceStats,service=\*,port=*`
 |Not applicable
 |The number of runtime faults.
 
 |`NumUnCheckedApplicationFaults`
+|`org.apache.cxf:type=WebServiceStats,service=\*,port=*`
 |Not applicable
 |The number of unchecked application faults.
 
 |`TotalHandlingTime`
+|`org.apache.cxf:type=WebServiceStats,service=\*,port=*`
 |Milliseconds
 |The total response handling time.
 
 |===
 
-=== SessionStats MXBean
-You can use the `SessionStats` MXBean to monitor the performance data of sessions in Open Liberty.
-The performance data of sessions for each application is available as an MXBean, which can be accessed through JMX.
-The sessions that are associated with a single web application have their own `SessionStats` MXBean, so there's one `SessionStats` MXBean for each web application.
+=== SIP application MXBeans
+Session Initiation Protocol (SIP) Performance Monitoring Infrastructure (PMI) is a component that collects SIP performance metrics of a running application server.
+To monitor the SIP metrics, you must enable PMI on your server.
+To enable monitoring for SIP, add the link:/docs/ref/feature/#sipServlet-1.1.html[SIP Servlet] feature to your `server.xml` file in addition to the Performance Monitoring feature.
 
 The following attributes are available for the `SessionStats` MXBean:
 
-[%header,cols=3]
+[%header,cols=6]
 |===
 
+|Name
 |MXBean attribute
+|Object name
+|Method
 |Units
 |Description
 
-|`CreateCount`
+|Incoming traffic
+|`ReceivedSipMsgs`
+|`WebSphere:type=SipContainerBasicCounters,name=SipContainer.Basic`
+|`_connection.getAttribute("WebSphere:type=SipContainerBasicCounters,name=SipContainer.Basic", "ReceivedSipMsgs")`
 |Not applicable
-|The total number of sessions created.
+|The average number of messages that are handled by the container and calculated over a configurable period.
 
-|`LiveCount`
+|New SIP application sessions
+|`NewSipApplications`
+|`WebSphere:type=SipContainerBasicCounters,name=SipContainer.Basic`
+|`_connection.getAttribute("WebSphere:type=SipContainerBasicCounters,name=SipContainer.Basic", "NewSipApplications")`
 |Not applicable
-|The total number of sessions that are currently cached in memory.
+|The average number of new SIP application sessions created in the container and calculated over a configurable period.
 
-|`ActiveCount`
+|Number of active SIP application sessions
+|`SipAppSessions`
+|`WebSphere:type=SipContainerBasicCounters,name=SipContainer.Basic`
+|`_connection.getAttribute("WebSphere:type=SipContainerBasicCounters,name=SipContainer.Basic", "SipAppSessions")`
 |Not applicable
-|The total number of concurrently active sessions. A session is active if Open Liberty is processing a request that uses that session.
+|The number of SIP application sessions that belong to each application.
 
-|`InvalidatedCount`
+|Number of active SIP sessions
+|`SipSessions`
+|`WebSphere:type=SipContainerBasicCounters,name=SipContainer.Basic`
+|`_connection.getAttribute("WebSphere:type=SipContainerBasicCounters,name=SipContainer.Basic", "SipSessions")`
 |Not applicable
-|The total number of sessions that are invalidated.
+|The number of SIP sessions that belong to each application.
 
-|`InvalidatedCountbyTimeout`
+|Queue size
+|`InvokerSize`
+|`WebSphere:type=SipContainerBasicCounters,name=SipContainer.Basic`
+|`_connection.getAttribute("WebSphere:type=SipContainerBasicCounters,name=SipContainer.Basic", "InvokerSize")`
 |Not applicable
-|The total number of sessions that are invalidated by a timeout.
+|The size of the invoke queue in the product.
 
-|===
-
-=== ConnectionPoolStats MXBean
-You can use the `ConnectionPoolStats` MXBean for connection pool monitoring in Open Liberty.
-Connection pools manage connections from data sources and connection factories, and performance data is made available for each connection pool.
-The `ConnectionPoolStats` MXBean is responsible for reporting connection pool information for a single connection manager.
-
-The following attributes are available for the `ConnectionPoolStats` MXBean:
-
-[%header,cols=3]
-|===
-
-|MXBean attribute
-|Units
-|Description
-
-|`ConnectionHandleCount`
+|Rejected SIP messages
+|`RejectedMessages`
+|`WebSphere:type=SipContainerBasicCounters,name=SipContainer.Basic`
+|`_connection.getAttribute("WebSphere:type=SipContainerBasicCounters,name=SipContainer.Basic", "RejectedMessages")`
 |Not applicable
-|The number of connections that are in use. This number might include multiple connections that are shared from a single managed connection.
+|The number of rejected SIP messages.
 
-|`CreateCount`
+|Response time
+|`SipRequestProcessing`
+|`WebSphere:type=SipContainerBasicCounters,name=SipContainer.Basic`
+|`_connection.getAttribute("WebSphere:type=SipContainerBasicCounters,name=SipContainer.Basic", "SipRequestProcessing")`
 |Not applicable
-|The total number of managed connections that have been created since pool creation.
+|The average amount of time that it takes between when a message gets into the container and when a response is sent from the container.
 
-|`DestroyCount`
+|SIP timer invocations
+|`SipTimersInvocations`
+|`WebSphere:type=SipContainerBasicCounters,name=SipContainer.Basic`
+|`_connection.getAttribute("WebSphere:type=SipContainerBasicCounters,name=SipContainer.Basic", "SipTimersInvocations")`
 |Not applicable
-|The total number of managed connections that have been destroyed since pool creation.
-
-|`FreeConnectionCount`
-|Not applicable
-|The number of managed connections in the free pool.
-
-|`InUseTime`
-|Milliseconds
-|The average time that a connection is in use.
-
-|`InUseTimeDetails`
-|Not applicable
-|`InUseTime` details that include the total number of granted connections (excluding the ones that are currently in use), minimum in use time, and maximum in use time.
-
-|`ManagedConnectionCount`
-|Not applicable
-|The total number of managed connections in the free, shared, and unshared pools.
-
-|`WaitTime`
-|Milliseconds
-|The average waiting time until a connection is granted if a connection is not currently available.
-
-|`WaitTimeDetails`
-|Not applicable
-|`WaitTime` details that include the total number of queued requests, minimum wait time, and maximum wait time.
+|The number of invocations of the SIP timers (Timer A, Timer B, Timer C, Timer D, Timer E, Timer F, Timer G, Timer H).
 
 |===
