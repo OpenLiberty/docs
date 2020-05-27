@@ -1,0 +1,62 @@
+== Examples
+
+=== Configuring Liberty servers to persist session data with `JCache`
+After enabling the `sessionCache` feature, define a library that points to the location of your `JCache` provider.
+
+[source,java]
+----
+<library id="jCacheVendorLib">
+  <fileset dir="${shared.resource.dir}/hazelcast" includes="hazelcast.jar"/>
+</library>
+----
+
+You can specify JCache vendor configuration by specifying a provider-specific URI, provider-specific properties, or Specify provider-specific system properties.
+
+Following is an example to configure session persistence by using Hazelcast as the JCache provider:
+
+[source,java]
+----
+<server description="Demonstrates HTTP Session Persistence configuration with JCache">
+  <featureManager>
+    <feature>sessionCache-1.0</feature>
+    <feature>servlet-4.0</feature>
+  </featureManager>
+
+  <httpEndpoint id="defaultHttpEndpoint" host="*" httpPort="${httpPort}"/>
+
+  <library id="jCacheVendorLib">
+    <fileset dir="${shared.resource.dir}/hazelcast" includes="hazelcast.jar"/>
+  </library>
+
+  <httpSessionCache libraryRef="jCacheVendorLib"
+                    uri="file:${shared.resource.dir}/hazelcast/hazelcast.xml"/>
+
+  <httpSession cloneId="${cloneId}"/>
+  <application location="${shared.app.dir}/test.ear"/>
+</server>
+----
+
+If you configure multiple servers to persist session data to the same database, ensure the servers share the session management configuration.
+Any other configuration is not supported.
+
+The HTTP server plug-in uses the clone ID that is inserted into the response or request header to maintain session affinity between requests.
+While the clone ID usually doesn't change, in Open Liberty the clone ID is generated when you start a server for the first time, and it is regenerated if you start the server with the `--clean` option.
+For production use, manually assign a clone ID to ensure that the ID is stable and that request affinity is maintained.
+The clone ID must be unique for each server and consists of alphanumeric characters.
+
+Any needed Hazelcast configuration, such as for security, can be provided in the `${shared.resource.dir}/hazelcast/hazelcast.xml` file.
+
+Specify unique variables in the `bootstrap.properties` file of each server.
+
+- ${wlp.user.dir}/servers/s1/bootstrap.properties
+----
+httpPort=9081
+cloneId=s1
+----
+- ${wlp.user.dir}/servers/s2/bootstrap.properties
+----
+httpPort=9082
+cloneId=s2
+----
+Synchronize the system clocks of all computers that host Liberty servers.
+If the system clocks are not synchronized, session invalidation can occur prem
