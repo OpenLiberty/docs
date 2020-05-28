@@ -6,26 +6,25 @@
 // Contributors:
 //     IBM Corporation
 //
-:page-description:
+:page-description: With Open Liberty, you can access Java Management Extensions (JMX) metrics and metrics from a `/metrics` endpoint. Use the Performance Monitoring feature to monitor JMX metrics for your Open Liberty runtime environment.
 :seo-title: JMX metrics - openliberty.io
-:seo-description:
+:seo-description: With Open Liberty, you can access Java Management Extensions (JMX) metrics and metrics from a `/metrics` endpoint. Use the Performance Monitoring feature to monitor JMX metrics for your Open Liberty runtime environment.
 :page-layout: general-reference
 :page-type: general
 = JMX metrics
 
-You can use the Performance Monitoring feature to monitor your Open Liberty runtime environment.
+With Open Liberty, you can access Java Management Extensions (JMX) metrics and metrics from a `/metrics` endpoint.
+Use the Performance Monitoring feature to monitor JMX metrics for your Open Liberty runtime environment.
 
-Open Liberty provides JMX metrics and a `/metrics` endpoint.
 The link:/docs/ref/feature/#monitor-1.0.html[Performance Monitoring feature] provides JMX MXBeans, which you can use with JConsole or other JMX-based tools.
 The link:/docs/ref/feature/#mpMetrics.html[MicroProfile Metrics feature] provides a `/metrics` endpoint, which you can use with link:https://prometheus.io/[Prometheus] or other web-based tools.
-
-that monitor-1.0 contains all of the metrics that are related to .... mpMetrics on its own provides metrics that are related to ....
-
 If you use the Performance Monitoring feature with the MicroProfile Metrics feature, then you get both JMX metrics and `/metrics` endpoint metrics, and the JMX metrics are included in the `/metrics` output.
 The MicroProfile Metrics 2.3 feature and later automatically enables the Performance Monitoring feature.
+For more information about MicroProfile Metrics, see link:/docs/ref/general/#microservice-observability-metrics.html[Microservice observability with metrics].
 
-== Gather JMX metrics
-Enable JMX metrics by adding the Performance Monitoring feature to your `server.xml` file.
+== Enabling JMX metrics
+You can enable JMX metrics by adding the Performance Monitoring feature to your `server.xml` file.
+After you add this feature to your server config, monitoring of JMX metrics automatically starts.
 If you don't use the server script on a JVM to launch the server, ensure that the JavaAgent is configured for JVM, as shown in the following example:
 
 [source,xml]
@@ -33,15 +32,23 @@ If you don't use the server script on a JVM to launch the server, ensure that th
 agentlib=-javaagent:<path to liberty install>/bin/tools/ws-javaagent.jar
 ----
 
-// JConsole part of the JVM
-// Other products that could consume them
-== JConsole and MXBeans
-You can JConsole to connect to the JVM and look at the performance data by clicking each attribute of the MXBeans.
-Monitoring data is reported as standard Beans.
+After you enable monitoring for Open Liberty, you can use JConsole to connect to the JVM and view performance data by clicking each attribute of the MXBeans.
+JConsole is a JVM tool used for viewing monitoring and performance data.
+If you prefer, you can choose to use other products that consume JMX metrics to view your metrics information.
 
 == JMX metrics reference list
+The following sections list the JMX metrics that are available for different monitoring capabilities when you enable the Perfomance Monitoring feature:
 
+* <<jvm-stats,JVM monitoring>>
+* <<request-timing-stats,Request monitoring>>
+* <<servlet-stats,Servlet monitoring>>
+* <<threadpool-stats,Thread pool monitoring>>
+* <<web-service-stats,JAX-WS monitoring>>
+* <<session-stats,Session monitoring>>
+* <<connection-pool-stats,Connection pool monitoring>>
+* <<sip-application,SIP application monitoring>>
 
+[#jvm-stats]
 === JvmStats MXBean
 You can use the `JvmStats` MXBean for JVM monitoring in Open Liberty.
 Each Open Liberty instance has one `JvmStats` MXBean.
@@ -93,6 +100,7 @@ The following attributes are available for the `JvmStats` MXBean:
 
 |===
 
+[#request-timing-stats]
 === RequestTimingStats MXBean
 You can use the `RequestTimingStats` MXBean to collect request data to see how the Open Liberty server is performing in comparison with set goals.
 Servlet requests that are identified by the name of Servlet are tracked.
@@ -129,6 +137,7 @@ The following attributes are available for the `RequestTimingStats` MXBean:
 
 |===
 
+[#servlet-stats]
 === ServletStats MXBean
 You can use the `ServletStats` MXBean for web application monitoring of Open Liberty.
 Performance data is available for each servlet in a web application.
@@ -181,6 +190,7 @@ The following attributes are available for the `ServletStats` MXBean:
 
 |===
 
+[#threadpool-stats]
 === ThreadPoolStats MXBean
 You can use the `ThreadPoolStats` MXBean for thread pool monitoring in Open Liberty.
 All web requests run in the Default Executor thread pool, and you can monitor the usage of this thread pool with the `ThreadPoolStats` MXBean.
@@ -212,6 +222,7 @@ The following attributes are available for the `ThreadPoolStats` MXBean:
 
 |===
 
+[#web-service-stats]
 === WebServiceStats MXBean
 You can use the `WebServiceStats` MXBean for JAX-WS monitoring of Open Liberty.
 Performance data is available for each endpoint and operation in a JAX-WS application, and each web service endpoint has its own MXBean.
@@ -273,77 +284,1468 @@ The following attributes are available for the `WebServiceStats` MXBean:
 
 |===
 
+[#session-stats]
+=== SessionStats MXBean
+You can use the `SessionStats` MXBean for monitoring the performance data of sessions for each application in Open Liberty.
+The sessions that are associated with a single web application have their own `SessionStats` MXBean, meaning that there's one `SessionStats` MXBean for each web application.
+
+The following attributes are available for the `SessionStats` MXBean:
+
+[%header,cols=4]
+|===
+
+|MXBean attribute
+|Object name
+|Units
+|Description
+
+|`ActiveCount`
+|`WebSphere:type=SessionStats,name=*`
+|Not applicable
+|The total number of concurrently active sessions.
+A session is active if Liberty is processing a request that uses that session.
+
+|`CreateCount`
+|`WebSphere:type=SessionStats,name=*`
+|Not applicable
+|The total number of sessions created.
+
+|`InvalidatedCount`
+|`WebSphere:type=SessionStats,name=*`
+|Not applicable
+|The total number of sessions that are invalidated.
+
+|`InvalidatedCountbyTimeout`
+|`WebSphere:type=SessionStats,name=*`
+|Not applicable
+|The total number of sessions invalidated by a timeout.
+
+|`LiveCount`
+|`WebSphere:type=SessionStats,name=*`
+|Not applicable
+|The total number of sessions that are currently cached in memory.
+
+|===
+
+[#connection-pool-stats]
+=== ConnectionPool MXBean
+You can use the `ConnectionPool` MXBean for monitoring the connection pool in Open Liberty.
+Connection pools manage connections from data sources and connection factories, and performance data is made available for each connection pool.
+The `ConnectionPool` MXBean is responsible for reporting metrics for a single connection manager.
+
+The following attributes are available for the `ConnectionPool` MXBean:
+
+[%header,cols=4]
+|===
+
+|MXBean attribute
+|Object name
+|Units
+|Description
+
+|`CreateCount`
+|`Websphere:type=ConnectionPool,name=*`
+|Not applicable
+|The total number of managed connections that have been created since pool creation.
+
+|`ConnectionHandleCount`
+|`Websphere:type=ConnectionPool,name=*`
+|Not applicable
+|The number of connections that are in use.
+This number might include multiple connections that are shared from a single managed connection.
+
+|`DestroyCount`
+|`Websphere:type=ConnectionPool,name=*`
+|Not applicable
+|The total number of managed connections that have been destroyed since pool creation.
+
+|`FreeConnectionCount`
+|`Websphere:type=ConnectionPool,name=*`
+|Not applicable
+|The number of managed connections in the free pool.
+
+|`InUseTime`
+|`Websphere:type=ConnectionPool,name=*`
+|Milliseconds
+|The average time that a connection is in use.
+
+|`InUseTimeDetails`
+|`Websphere:type=ConnectionPool,name=*`
+|Milliseconds
+|In use time details that include the total number of granted connections (excluding the ones that are currently in use), minimum in use time, and maximum in use time.
+
+|`ManagedConnectionCount`
+|`Websphere:type=ConnectionPool,name=*`
+|Not applicable
+|The total number of managed connections in the free, shared, and unshared pools.
+
+|`WaitTime`
+|`Websphere:type=ConnectionPool,name=*`
+|Milliseconds
+|The average waiting time until a connection is granted if a connection is not currently available.
+
+|`WaitTimeDetails`
+|`Websphere:type=ConnectionPool,name=*`
+|Milliseconds
+|Wait time details that include the total number of queued requests, minimum wait time, and maximum wait time.
+
+|===
+
+[#sip-application]
 === SIP application MXBeans
 Session Initiation Protocol (SIP) Performance Monitoring Infrastructure (PMI) is a component that collects SIP performance metrics of a running application server.
 To monitor the SIP metrics, you must enable PMI on your server.
 To enable monitoring for SIP, add the link:/docs/ref/feature/#sipServlet-1.1.html[SIP Servlet] feature to your `server.xml` file in addition to the Performance Monitoring feature.
 
-The following attributes are available for the `SessionStats` MXBean:
+==== Basic counters
+The following table lists the SIP container basic counters.
+The object name of the MXBean for these counters is `WebSphere:type=SipContainerBasicCounters,name=SipContainer.Basic`:
 
-[%header,cols=6]
+[%header,cols=4]
 |===
 
-|Name
-|MXBean attribute
-|Object name
-|Method
+|Name and description
+|MXBean attribute or method
 |Units
-|Description
+|Granularity
 
-|Incoming traffic
-|`ReceivedSipMsgs`
-|`WebSphere:type=SipContainerBasicCounters,name=SipContainer.Basic`
-|`_connection.getAttribute("WebSphere:type=SipContainerBasicCounters,name=SipContainer.Basic", "ReceivedSipMsgs")`
+|Incoming traffic.
+{empty} +
+{empty} +
+The average number of messages that are handled by the container and calculated over a configurable period.
+|`getAttribute("WebSphere:type=SipContainerBasicCounters,name=SipContainer.Basic", "ReceivedSipMsgs")`
 |Not applicable
-|The average number of messages that are handled by the container and calculated over a configurable period.
+|Server
 
-|New SIP application sessions
-|`NewSipApplications`
-|`WebSphere:type=SipContainerBasicCounters,name=SipContainer.Basic`
-|`_connection.getAttribute("WebSphere:type=SipContainerBasicCounters,name=SipContainer.Basic", "NewSipApplications")`
+|New SIP application sessions.
+{empty} +
+{empty} +
+The average number of new SIP application sessions created in the container and calculated over a configurable period.	|`getAttribute("WebSphere:type=SipContainerBasicCounters,name=SipContainer.Basic", "NewSipApplications")`
 |Not applicable
-|The average number of new SIP application sessions created in the container and calculated over a configurable period.
+|Server
 
-|Number of active SIP application sessions
-|`SipAppSessions`
-|`WebSphere:type=SipContainerBasicCounters,name=SipContainer.Basic`
-|`_connection.getAttribute("WebSphere:type=SipContainerBasicCounters,name=SipContainer.Basic", "SipAppSessions")`
+|Number of active SIP application sessions.
+{empty} +
+{empty} +
+The number of SIP application sessions that belong to each application.
+|`getAttribute("WebSphere:type=SipContainerBasicCounters,name=SipContainer.Basic", "SipAppSessions")`
 |Not applicable
-|The number of SIP application sessions that belong to each application.
+|Server
 
-|Number of active SIP sessions
-|`SipSessions`
-|`WebSphere:type=SipContainerBasicCounters,name=SipContainer.Basic`
-|`_connection.getAttribute("WebSphere:type=SipContainerBasicCounters,name=SipContainer.Basic", "SipSessions")`
+|Number of active SIP sessions.
+{empty} +
+{empty} +
+The number of SIP sessions that belong to each application.
+|`getAttribute("WebSphere:type=SipContainerBasicCounters,name=SipContainer.Basic", "SipSessions")`
 |Not applicable
-|The number of SIP sessions that belong to each application.
+|Server
 
-|Queue size
-|`InvokerSize`
-|`WebSphere:type=SipContainerBasicCounters,name=SipContainer.Basic`
-|`_connection.getAttribute("WebSphere:type=SipContainerBasicCounters,name=SipContainer.Basic", "InvokerSize")`
+|Queue size.
+{empty} +
+{empty} +
+The size of the invoke queue in the product.
+|`getAttribute("WebSphere:type=SipContainerBasicCounters,name=SipContainer.Basic", "InvokerSize")`
 |Not applicable
-|The size of the invoke queue in the product.
+|Server
 
-|Rejected SIP messages
-|`RejectedMessages`
-|`WebSphere:type=SipContainerBasicCounters,name=SipContainer.Basic`
-|`_connection.getAttribute("WebSphere:type=SipContainerBasicCounters,name=SipContainer.Basic", "RejectedMessages")`
+|Rejected SIP messages.
+{empty} +
+{empty} +
+The number of rejected SIP messages.
+|`getAttribute("WebSphere:type=SipContainerBasicCounters,name=SipContainer.Basic", "RejectedMessages")`
 |Not applicable
-|The number of rejected SIP messages.
+|Server
 
-|Response time
-|`SipRequestProcessing`
-|`WebSphere:type=SipContainerBasicCounters,name=SipContainer.Basic`
-|`_connection.getAttribute("WebSphere:type=SipContainerBasicCounters,name=SipContainer.Basic", "SipRequestProcessing")`
+|Response time.
+{empty} +
+{empty} +
+The average amount of time that it takes between when a message gets into the container and when a response is sent from the container.
+|`getAttribute("WebSphere:type=SipContainerBasicCounters,name=SipContainer.Basic", "SipRequestProcessing")`
 |Not applicable
-|The average amount of time that it takes between when a message gets into the container and when a response is sent from the container.
+|Server
 
-|SIP timer invocations
-|`SipTimersInvocations`
-|`WebSphere:type=SipContainerBasicCounters,name=SipContainer.Basic`
-|`_connection.getAttribute("WebSphere:type=SipContainerBasicCounters,name=SipContainer.Basic", "SipTimersInvocations")`
+|SIP timer invocations.
+{empty} +
+{empty} +
+The number of invocations of the SIP timers (Timer A, Timer B, Timer C, Timer D, Timer E, Timer F, Timer G, Timer H).
+|`getAttribute("WebSphere:type=SipContainerBasicCounters,name=SipContainer.Basic", "SipTimersInvocations")`
 |Not applicable
-|The number of invocations of the SIP timers (Timer A, Timer B, Timer C, Timer D, Timer E, Timer F, Timer G, Timer H).
+|Server
+
+|===
+
+==== Inbound requests
+The following table lists the SIP container inbound requests.
+The object name of the MXBean for these requests is `WebSphere:type=InboundRequestCounters,name=SipContainer.InboundRequest`:
+
+[%header,cols=4]
+|===
+
+|Name and description
+|MXBean attribute or method
+|Units
+|Granularity
+
+|Number of inbound ACK requests.
+{empty} +
+{empty} +
+The number of inbound ACK requests that belong to each application.
+|`getTotalInboundRequests(appName, “ACK”);`
+|Not applicable
+|Application
+
+|Number of inbound BYE requests.
+{empty} +
+{empty} +
+The number of inbound BYE requests that belong to each application.
+|`getTotalInboundRequests(appName, “BYE”);`
+|Not applicable
+|Application
+
+|Number of inbound CANCEL requests.
+{empty} +
+{empty} +
+The number of inbound CANCEL requests that belong to each application.
+|`getTotalInboundRequests(appName, “CANCEL”);`
+|Not applicable
+|Application
+
+|Number of inbound INFO requests.
+{empty} +
+{empty} +
+The number of inbound INFO requests that belong to each application.
+|`getTotalInboundRequests(appName, “INFO”);`
+|Not applicable
+|Application
+
+|Number of inbound INVITE requests.
+{empty} +
+{empty} +
+The number of inbound INVITE requests that belong to each application.
+|`getTotalInboundRequests(appName, “INVITE”);`
+|Not applicable
+|Application
+
+|Number of inbound MESSAGE requests.
+{empty} +
+{empty} +
+The number of inbound MESSAGE requests that belong to each application.
+|`getTotalInboundRequests(appName, “MESSAGE”);`
+|Not applicable
+|Application
+
+|Number of inbound NOT SIP STANDARD requests.
+{empty} +
+{empty} +
+The number of inbound NOT SIP STANDARD requests that belong to each application.
+|`getTotalInboundRequests(appName, “NOTSIPSTANDARD”);`
+|Not applicable
+|Application
+
+|Number of inbound NOTIFY requests.
+{empty} +
+{empty} +
+The number of inbound NOTIFY requests that belong to each application.
+|`getTotalInboundRequests(appName, “NOTIFY”);`
+|Not applicable
+|Application
+
+|Number of inbound OPTIONS requests.
+{empty} +
+{empty} +
+The number of inbound OPTIONS requests that belong to each application.
+|`getTotalInboundRequests(appName, “OPTIONS”);`
+|Not applicable
+|Application
+
+|Number of inbound PRACK requests.
+{empty} +
+{empty} +
+The number of inbound PRACK requests that belong to each application.
+|`getTotalInboundRequests(appName, “PRACK”);`
+|Not applicable
+|Application
+
+|Number of inbound PUBLISH requests.
+{empty} +
+{empty} +
+The number of inbound PUBLISH requests that belong to each application.
+|`getTotalInboundRequests(appName, “PUBLISH”);`
+|Not applicable
+|Application
+
+|Number of inbound REFER requests.
+{empty} +
+{empty} +
+The number of inbound REFER requests that belong to each application.
+|`getTotalInboundRequests(appName, “REFER”);`
+|Not applicable
+|Application
+
+|Number of inbound REGISTER requests.
+{empty} +
+{empty} +
+The number of inbound REGISTER requests that belong to each application.
+|`getTotalInboundRequests(appName, “REGISTER”);`
+|Not applicable
+|Application
+
+|Number of inbound SUBSCRIBE requests.
+{empty} +
+{empty} +
+The number of inbound SUBSCRIBE requests that belong to each application.
+|`getTotalInboundRequests(appName, “SUBSCRIBE”);`
+|Not applicable
+|Application
+
+|Number of inbound UPDATE requests.
+{empty} +
+{empty} +
+The number of inbound UPDATE requests that belong to each application.
+|`getTotalInboundRequests(appName, “UPDATE”);`
+|Not applicable
+|Application
+
+|===
+
+==== Inbound responses
+The following table lists the SIP container inbound responses.
+The object name of the MXBean for these responses is `WebSphere:type=InboundResponseCounters,name=SipContainer.InboundResponse`:
+
+[%header,cols=4]
+|===
+
+|Name and description
+|MXBean attribute or method
+|Units
+|Granularity
+
+|Number of inbound 100 responses.
+{empty} +
+{empty} +
+The number of inbound 100 (Trying) responses that belong to each application.
+|`getTotalInboundResponses(appName, “100”);`
+|Not applicable
+|Application
+
+|Number of inbound 180 responses.
+{empty} +
+{empty} +
+The number of inbound 180 (Ringing) responses that belong to each application.
+|`getTotalInboundResponses(appName, “180”);`
+|Not applicable
+|Application
+
+|Number of inbound 181 responses.
+{empty} +
+{empty} +
+The number of inbound 181 (Call being forwarded) responses that belong to each application.
+|`getTotalInboundResponses(appName, “181”);`
+|Not applicable
+|Application
+
+|Number of inbound 182 responses.
+{empty} +
+{empty} +
+The number of inbound 182 (Call Queued) responses that belong to each application.
+|`getTotalInboundResponses(appName, “182”);`
+|Not applicable
+|Application
+
+|Number of inbound 183 responses.
+{empty} +
+{empty} +
+The number of inbound 183 (Session Progress) responses that belong to each application.
+|`getTotalInboundResponses(appName, “183”);`
+|Not applicable
+|Application
+
+|Number of inbound 200 responses.
+{empty} +
+{empty} +
+The number of inbound 200 (OK) responses that belong to each application.
+|`getTotalInboundResponses(appName, “200”);`
+|Not applicable
+|Application
+
+|Number of inbound 202 responses.
+{empty} +
+{empty} +
+The number of inbound 202 (Accepted) responses that belong to each application.
+|`getTotalInboundResponses(appName, “202”);`
+|Not applicable
+|Application
+
+|Number of inbound 300 responses.
+{empty} +
+{empty} +
+The number of inbound 300 (Multiple choices) responses that belong to each application.
+|`getTotalInboundResponses(appName, “300”);`
+|Not applicable
+|Application
+
+|Number of inbound 301 responses.
+{empty} +
+{empty} +
+The number of inbound 301 (Moved Permanently) responses that belong to each application.
+|`getTotalInboundResponses(appName, “301”);`
+|Not applicable
+|Application
+
+|Number of inbound 302 responses.
+{empty} +
+{empty} +
+The number of inbound 302 (Moved Temporarily) responses that belong to each application.
+|`getTotalInboundResponses(appName, “302”);`
+|Not applicable
+|Application
+
+|Number of inbound 305 responses.
+{empty} +
+{empty} +
+The number of inbound 305 (Use Proxy) responses that belong to each application.
+|`getTotalInboundResponses(appName, “305”);`
+|Not applicable
+|Application
+
+|Number of inbound 380 responses.
+{empty} +
+{empty} +
+The number of inbound 380 (Alternative Service) responses that belong to each application.
+|`getTotalInboundResponses(appName, “380”);`
+|Not applicable
+|Application
+
+|Number of inbound 400 responses.
+{empty} +
+{empty} +
+The number of inbound 400 (Bad Request) responses that belong to each application.
+|`getTotalInboundResponses(appName, “400”);`
+|Not applicable
+|Application
+
+|Number of inbound 401 responses.
+{empty} +
+{empty} +
+The number of inbound 401 (Unauthorized) responses that belong to each application.
+|`getTotalInboundResponses(appName, “401”);`
+|Not applicable
+|Application
+
+|Number of inbound 402 responses.
+{empty} +
+{empty} +
+The number of inbound 402 (Payment Required) responses that belong to each application.
+|`getTotalInboundResponses(appName, “402”);`
+|Not applicable
+|Application
+
+|Number of inbound 403 responses.
+{empty} +
+{empty} +
+The number of inbound 403 (Forbidden) responses that belong to each application.
+|`getTotalInboundResponses(appName, “403”);`
+|Not applicable
+|Application
+
+|Number of inbound 404 responses.
+{empty} +
+{empty} +
+The number of inbound 404 (Not Found) responses that belong to each application.
+|`getTotalInboundResponses(appName, “404”);`
+|Not applicable
+|Application
+
+|Number of inbound 405 responses.
+{empty} +
+{empty} +
+The number of inbound 405 (Method Not Allowed) responses that belong to each application.
+|`getTotalInboundResponses(appName, “405”);`
+|Not applicable
+|Application
+
+|Number of inbound 406 responses.
+{empty} +
+{empty} +
+The number of inbound 406 (Not Acceptable) responses that belong to each application.
+|`getTotalInboundResponses(appName, “406”);`
+|Not applicable
+|Application
+
+|Number of inbound 407 responses.
+{empty} +
+{empty} +
+The number of inbound 407 (Proxy Authentication Required) responses that belong to each application.
+|`getTotalInboundResponses(appName, “407”);`
+|Not applicable
+|Application
+
+|Number of inbound 408 responses.
+{empty} +
+{empty} +
+The number of inbound 408 (Request Timeout) responses that belong to each application.
+|`getTotalInboundResponses(appName, “408”);`
+|Not applicable
+|Application
+
+|Number of inbound 410 responses.
+{empty} +
+{empty} +
+The number of inbound 410 (Gone) responses that belong to each application.
+|`getTotalInboundResponses(appName, “410”);`
+|Not applicable
+|Application
+
+|Number of inbound 413 responses.
+{empty} +
+{empty} +
+The number of inbound 413 (Request Entity Too Large) responses that belong to each application.
+|`getTotalInboundResponses(appName, “413”);`
+|Not applicable
+|Application
+
+|Number of inbound 414 responses.
+{empty} +
+{empty} +
+The number of inbound 414 (Request URI Too Long) responses that belong to each application.
+|`getTotalInboundResponses(appName, “414”);`
+|Not applicable
+|Application
+
+|Number of inbound 415 responses.
+{empty} +
+{empty} +
+The number of inbound 415 (Unsupported Media Type) responses that belong to each application.
+|`getTotalInboundResponses(appName, “415”);`
+|Not applicable
+|Application
+
+|Number of inbound 416 responses.
+{empty} +
+{empty} +
+The number of inbound 416 (Unsupported URI Scheme) responses that belong to each application.
+|`getTotalInboundResponses(appName, “416”);`
+|Not applicable
+|Application
+
+|Number of inbound 420 responses.
+{empty} +
+{empty} +
+The number of inbound 420 (Bad Extension) responses that belong to each application.
+|`getTotalInboundResponses(appName, “420”);`
+|Not applicable
+|Application
+
+|Number of inbound 421 responses.
+{empty} +
+{empty} +
+The number of inbound 421 (Extension Required) responses that belong to each application.
+|`getTotalInboundResponses(appName, “421”);`
+|Not applicable
+|Application
+
+|Number of inbound 423 responses.
+{empty} +
+{empty} +
+The number of inbound 423 (Interval Too Brief) responses that belong to each application.
+|`getTotalInboundResponses(appName, “423”);`
+|Not applicable
+|Application
+
+|Number of inbound 480 responses.
+{empty} +
+{empty} +
+The number of inbound 480 (Temporarily Unavailable) responses that belong to each application.
+|`getTotalInboundResponses(appName, “480”);`
+|Not applicable
+|Application
+
+|Number of inbound 481 responses.
+{empty} +
+{empty} +
+The number of inbound 481 (Call Leg Done) responses that belong to each application.
+|`getTotalInboundResponses(appName, “481”);`
+|Not applicable
+|Application
+
+|Number of inbound 482 responses.
+{empty} +
+{empty} +
+The number of inbound 482 (Loop Detected) responses that belong to each application.
+|`getTotalInboundResponses(appName, “482”);`
+|Not applicable
+|Application
+
+|Number of inbound 483 responses.
+{empty} +
+{empty} +
+The number of inbound 483 (Too Many Hops) responses that belong to each application.
+|`getTotalInboundResponses(appName, “483”);`
+|Not applicable
+|Application
+
+|Number of inbound 484 responses.
+{empty} +
+{empty} +
+The number of inbound 484 (Address Incomplete) responses that belong to each application.
+|`getTotalInboundResponses(appName, “484”);`
+|Not applicable
+|Application
+
+|Number of inbound 485 responses.
+{empty} +
+{empty} +
+The number of inbound 485 (Ambiguous) responses that belong to each application.
+|`getTotalInboundResponses(appName, “485”);`
+|Not applicable
+|Application
+
+|Number of inbound 486 responses.
+{empty} +
+{empty} +
+The number of inbound 486 (Busy Here) responses that belong to each application.
+|`getTotalInboundResponses(appName, “486”);`
+|Not applicable
+|Application
+
+|Number of inbound 487 responses.
+{empty} +
+{empty} +
+The number of inbound 487 (Request Terminated) responses that belong to each application.
+|`getTotalInboundResponses(appName, “487”);`
+|Not applicable
+|Application
+
+|Number of inbound 488 responses.
+{empty} +
+{empty} +
+The number of inbound 488 (Not Acceptable Here) responses that belong to each application.
+|`getTotalInboundResponses(appName, “488”);`
+|Not applicable
+|Application
+
+|Number of inbound 491 responses.
+{empty} +
+{empty} +
+The number of inbound 491 (Request Pending) responses that belong to each application.
+|`getTotalInboundResponses(appName, “491”);`
+|Not applicable
+|Application
+
+|Number of inbound 493 responses.
+{empty} +
+{empty} +
+The number of inbound 493 (Undecipherable) responses that belong to each application.
+|`getTotalInboundResponses(appName, “493”);`
+|Not applicable
+|Application
+
+|Number of inbound 500 responses.
+{empty} +
+{empty} +
+The number of inbound 500 (Server Internal Error) responses that belong to each application.
+|`getTotalInboundResponses(appName, “500”);`
+|Not applicable
+|Application
+
+|Number of inbound 501 responses.
+{empty} +
+{empty} +
+The number of inbound 501 (Not Implemented) responses that belong to each application.
+|`getTotalInboundResponses(appName, “501”);`
+|Not applicable
+|Application
+
+|Number of inbound 502 responses.
+{empty} +
+{empty} +
+The number of inbound 502 (Bad Gateway) responses that belong to each application.
+|`getTotalInboundResponses(appName, “502”);`
+|Not applicable
+|Application
+
+|Number of inbound 503 responses.
+{empty} +
+{empty} +
+The number of inbound 503 (Service Unavailable) responses that belong to each application.
+|`getTotalInboundResponses(appName, “503”);`
+|Not applicable
+|Application
+
+|Number of inbound 504 responses.
+{empty} +
+{empty} +
+The number of inbound 504 (Server Timeout) responses that belong to each application.
+|`getTotalInboundResponses(appName, “504”);`
+|Not applicable
+|Application
+
+|Number of inbound 505 responses.
+{empty} +
+{empty} +
+The number of inbound 505 (Version Not Supported) responses that belong to each application.
+|`getTotalInboundResponses(appName, “505”);`
+|Not applicable
+|Application
+
+|Number of inbound 513 responses.
+{empty} +
+{empty} +
+The number of inbound 513 (Message Too Large) responses that belong to each application.
+|`getTotalInboundResponses(appName, “513”);`
+|Not applicable
+|Application
+
+|Number of inbound 600 responses.
+{empty} +
+{empty} +
+The number of inbound 600 (Busy Everywhere) responses that belong to each application.
+|`getTotalInboundResponses(appName, “600”);`
+|Not applicable
+|Application
+
+|Number of inbound 603 responses.
+{empty} +
+{empty} +
+The number of inbound 603 (Decline) responses that belong to each application.
+|`getTotalInboundResponses(appName, “603”);`
+|Not applicable
+|Application
+
+|Number of inbound 604 responses.
+{empty} +
+{empty} +
+The number of inbound 604 (Does Not Exit Anywhere) responses that belong to each application.
+|`etTotalInboundResponses(appName, “604”);`
+|Not applicable
+|Application
+
+|Number of inbound 606 responses.
+{empty} +
+{empty} +
+The number of inbound 606 (Not Acceptable Anywhere) responses that belong to each application.
+|`getTotalInboundResponses(appName, “606”);`
+|Not applicable
+|Application
+
+|===
+
+==== Outbound requests
+The following table lists the SIP container outbound requests.
+The object name of the MXBean for these requests is `WebSphere:type=OutboundRequestCounters,name=SipContainer.OutboundRequest`:
+
+[%header,cols=4]
+|===
+
+|Name and description
+|MXBean attribute or method
+|Units
+|Granularity
+
+|Number of outbound ACK requests.
+{empty} +
+{empty} +
+The number of outbound ACK requests that belong to each application.
+|`getTotalOutboundRequests(appName, “ACK”);`
+|Not applicable
+|Application
+
+|Number of outbound BYE requests.
+{empty} +
+{empty} +
+The number of outbound BYE requests that belong to each application.
+|`getTotalOutboundRequests(appName, “BYE”);`
+|Not applicable
+|Application
+
+|Number of outbound CANCEL requests.
+{empty} +
+{empty} +
+The number of outbound CANCEL requests that belong to each application.
+|`getTotalOutboundRequests(appName, “CANCEL”);`
+|Not applicable
+|Application
+
+|Number of outbound INFO requests.
+{empty} +
+{empty} +
+The number of outbound INFO requests that belong to each application.
+|`getTotalOutboundRequests(appName, “INFO”);`
+|Not applicable
+|Application
+
+|Number of outbound INVITE requests.
+{empty} +
+{empty} +
+The number of outbound INVITE requests that belong to each application.
+|`getTotalOutboundRequests(appName, “INVITE”);`
+|Not applicable
+|Application
+
+|Number of outbound MESSAGE requests.
+{empty} +
+{empty} +
+The number of outbound MESSAGE requests that belong to each application.
+|`getTotalOutboundRequests(appName, “MESSAGE”);`
+|Not applicable
+|Application
+
+|Number of outbound NOT SIP STANDARD requests.
+{empty} +
+{empty} +
+The number of outbound NOT SIP STANDARD requests that belong to each application.
+|`getTotalOutboundRequests(appName, “NOTSIPSTANDARD”);`
+|Not applicable
+|Application
+
+|Number of outbound OPTIONS requests.
+{empty} +
+{empty} +
+The number of outbound OPTIONS requests that belong to each application.
+|`getTotalOutboundRequests(appName, “OPTIONS”);`
+|Not applicable
+|Application
+
+|Number of outbound NOTIFY requests.
+{empty} +
+{empty} +
+The number of outbound NOTIFY requests that belong to each application.
+|`getTotalOutboundRequests(appName, “NOTIFY”);`
+|Not applicable
+|Application
+
+|Number of outbound PRACK requests.
+{empty} +
+{empty} +
+The number of outbound PRACK requests that belong to each application.
+|`getTotalOutboundRequests(appName, “PRACK”);`
+|Not applicable
+|Application
+
+|Number of outbound PUBLISH requests.
+{empty} +
+{empty} +
+The number of outbound PUBLISH requests that belong to each application.
+|`getTotalOutboundRequests(appName, “PUBLISH”);`
+|Not applicable
+|Application
+
+|Number of outbound REFER requests.
+{empty} +
+{empty} +
+The number of outbound REFER requests that belong to each application.
+|`getTotalOutboundRequests(appName, “REFER”);`
+|Not applicable
+|Application
+
+|Number of outbound REGISTER requests.
+{empty} +
+{empty} +
+The number of outbound REGISTER requests that belong to each application.
+|`getTotalOutboundRequests(appName, “REGISTER”);`
+|Not applicable
+|Application
+
+|Number of outbound SUBSCRIBE requests.
+{empty} +
+{empty} +
+The number of outbound SUBSCRIBE requests that belong to each application.
+|`getTotalOutboundRequests(appName, “SUBSCRIBE”);`
+|Not applicable
+|Application
+
+|Number of outbound UPDATE requests.
+{empty} +
+{empty} +
+The number of outbound UPDATE requests that belong to each application.
+|`getTotalOutboundRequests(appName, “UPDATE”);`
+|Not applicable
+|Application
+
+|===
+
+==== Outbound responses
+The following table lists the SIP container outbound responses.
+The object name of the MXBean for these responses is `WebSphere:type=OutboundResponseCounters,name=SipContainer.OutboundResponse`:
+
+[%header,cols=4]
+|===
+
+|Name and description
+|MXBean attribute or method
+|Units
+|Granularity
+
+|Number of outbound 100 responses.
+{empty} +
+{empty} +
+The number of outbound 100 (Trying) responses that belong to each application.
+|`getTotalOutboundResponses(appName, “100”);`
+|Not applicable
+|Application
+
+|Number of outbound 180 responses.
+{empty} +
+{empty} +
+The number of outbound 180 (Ringing) responses that belong to each application.
+|`getTotalOutboundResponses(appName, “180”);`
+|Not applicable
+|Application
+
+|Number of outbound 181 responses.
+{empty} +
+{empty} +
+The number of outbound 181 (Call being forwarded) responses that belong to each application.
+|`getTotalOutboundResponses(appName, “181”);`
+|Not applicable
+|Application
+
+|Number of outbound 182 responses.
+{empty} +
+{empty} +
+The number of outbound 182 (Call Queued) responses that belong to each application.
+|`getTotalOutboundResponses(appName, “182”);`
+|Not applicable
+|Application
+
+|Number of outbound 183 responses.
+{empty} +
+{empty} +
+The number of outbound 183 (Session Progress) responses that belong to each application.
+|`getTotalOutboundResponses(appName, “183”);`
+|Not applicable
+|Application
+
+|Number of outbound 200 responses.
+{empty} +
+{empty} +
+The number of outbound 200 (OK) responses that belong to each application.
+|`getTotalOutboundResponses(appName, “200”);`
+|Not applicable
+|Application
+
+|Number of outbound 202 responses.
+{empty} +
+{empty} +
+The number of outbound 202 (Accepted) responses that belong to each application.
+|`getTotalOutboundResponses(appName, “202”);`
+|Not applicable
+|Application
+
+|Number of outbound 300 responses.
+{empty} +
+{empty} +
+The number of outbound 300 (Multiple choices) responses that belong to each application.
+|`getTotalOutboundResponses(appName, “300”);`
+|Not applicable
+|Application
+
+|Number of outbound 301 responses.
+{empty} +
+{empty} +
+The number of outbound 301 (Moved Permanently) responses that belong to each application.
+|`getTotalOutboundResponses(appName, “301”);`
+|Not applicable
+|Application
+
+|Number of outbound 302 responses.
+{empty} +
+{empty} +
+The number of outbound 302 (Moved Temporarily) responses that belong to each application.
+|`getTotalOutboundResponses(appName, “302”);`
+|Not applicable
+|Application
+
+|Number of outbound 305 responses.
+{empty} +
+{empty} +
+The number of outbound 305 (Use Proxy) responses that belong to each application.
+|`getTotalOutboundResponses(appName, “305”);`
+|Not applicable
+|Application
+
+|Number of outbound 380 responses.
+{empty} +
+{empty} +
+The number of outbound 380 (Alternative Service) responses that belong to each application.
+|`getTotalOutboundResponses(appName, “380”);`
+|Not applicable
+|Application
+
+|Number of outbound 400 responses.
+{empty} +
+{empty} +
+The number of outbound 400 (Bad Request) responses that belong to each application.
+|`getTotalOutboundResponses(appName, “400”);`
+|Not applicable
+|Application
+
+|Number of outbound 401 responses.
+{empty} +
+{empty} +
+The number of outbound 401 (Unauthorized) responses that belong to each application.
+|`getTotalOutboundResponses(appName, “401”);`
+|Not applicable
+|Application
+
+|Number of outbound 402 responses.
+{empty} +
+{empty} +
+The number of outbound 402 (Payment Required) responses that belong to each application.
+|`getTotalOutboundResponses(appName, “402”);`
+|Not applicable
+|Application
+
+|Number of outbound 403 responses.
+{empty} +
+{empty} +
+The number of outbound 403 (Forbidden) responses that belong to each application.
+|`getTotalOutboundResponses(appName, “403”);`
+|Not applicable
+|Application
+
+|Number of outbound 404 responses.
+{empty} +
+{empty} +
+The number of outbound 404 (Not Found) responses that belong to each application.
+|`getTotalOutboundResponses(appName, “404”);`
+|Not applicable
+|Application
+
+|Number of outbound 405 responses.
+{empty} +
+{empty} +
+The number of outbound 405 (Method Not Allowed) responses that belong to each application.
+|`getTotalOutboundResponses(appName, “405”);`
+|Not applicable
+|Application
+
+|Number of outbound 406 responses.
+{empty} +
+{empty} +
+The number of outbound 406 (Not Acceptable) responses that belong to each application.
+|`getTotalOutboundResponses(appName, “406”);`
+|Not applicable
+|Application
+
+|Number of outbound 407 responses.
+{empty} +
+{empty} +
+The number of outbound 407 (Proxy Authentication Required) responses that belong to each application.
+|`getTotalOutboundResponses(appName, “407”);`
+|Not applicable
+|Application
+
+|Number of outbound 408 responses.
+{empty} +
+{empty} +
+The number of outbound 408 (Request Timeout) responses that belong to each application.
+|`getTotalOutboundResponses(appName, “408”);`
+|Not applicable
+|Application
+
+|Number of outbound 410 responses.
+{empty} +
+{empty} +
+The number of outbound 410 (Gone) responses that belong to each application.
+|`getTotalOutboundResponses(appName, “410”);`
+|Not applicable
+|Application
+
+|Number of outbound 413 responses.
+{empty} +
+{empty} +
+The number of outbound 413 (Request Entity Too Large) responses that belong to each application.
+|`getTotalOutboundResponses(appName, “413”);`
+|Not applicable
+|Application
+
+|Number of outbound 414 responses.
+{empty} +
+{empty} +
+The number of outbound 414 (Request URI Too Long) responses that belong to each application.
+|`getTotalOutboundResponses(appName, “414”);`
+|Not applicable
+|Application
+
+|Number of outbound 415 responses.
+{empty} +
+{empty} +
+The number of outbound 415 (Unsupported Media Type) responses that belong to each application.
+|`getTotalOutboundResponses(appName, “415”);`
+|Not applicable
+|Application
+
+|Number of outbound 416 responses.
+{empty} +
+{empty} +
+The number of outbound 416 (Unsupported URI Scheme) responses that belong to each application.
+|`getTotalOutboundResponses(appName, “416”);`
+|Not applicable
+|Application
+
+|Number of outbound 420 responses.
+{empty} +
+{empty} +
+The number of outbound 420 (Bad Extension) responses that belong to each application.
+|`getTotalOutboundResponses(appName, “420”);`
+|Not applicable
+|Application
+
+|Number of outbound 421 responses.
+{empty} +
+{empty} +
+The number of outbound 421 (Extension Required) responses that belong to each application.
+|`getTotalOutboundResponses(appName, “421”);`
+|Not applicable
+|Application
+
+|Number of outbound 423 responses.
+{empty} +
+{empty} +
+The number of outbound 423 (Interval Too Brief) responses that belong to each application.
+|`getTotalOutboundResponses(appName, “423”);`
+|Not applicable
+|Application
+
+|Number of outbound 480 responses.
+{empty} +
+{empty} +
+The number of outbound 480 (Temporarily Unavailable) responses that belong to each application.
+|`getTotalOutboundResponses(appName, “480”);`
+|Not applicable
+|Application
+
+|Number of outbound 481 responses.
+{empty} +
+{empty} +
+The number of outbound 481 (Call Leg Done) responses that belong to each application.
+|`getTotalOutboundResponses(appName, “481”);`
+|Not applicable
+|Application
+
+|Number of outbound 482 responses.
+{empty} +
+{empty} +
+The number of outbound 482 (Loop Detected) responses that belong to each application.
+|`getTotalOutboundResponses(appName, “482”);`
+|Not applicable
+|Application
+
+|Number of outbound 483 responses.
+{empty} +
+{empty} +
+The number of outbound 483 (Too Many Hops) responses that belong to each application.
+|`getTotalOutboundResponses(appName, “483”);`
+|Not applicable
+|Application
+
+|Number of outbound 484 responses.
+{empty} +
+{empty} +
+The number of outbound 484 (Address Incomplete) responses that belong to each application.
+|`getTotalOutboundResponses(appName, “484”);`
+|Not applicable
+|Application
+
+|Number of outbound 485 responses.
+{empty} +
+{empty} +
+The number of outbound 485 (Ambiguous) responses that belong to each application.
+|`getTotalOutboundResponses(appName, “485”);`
+|Not applicable
+|Application
+
+|Number of outbound 486 responses.
+{empty} +
+{empty} +
+The number of outbound 486 (Busy Here) responses that belong to each application.
+|`getTotalOutboundResponses(appName, “486”);`
+|Not applicable
+|Application
+
+|Number of outbound 487 responses.
+{empty} +
+{empty} +
+The number of outbound 487 (Request Terminated) responses that belong to each application.
+|`getTotalOutboundResponses(appName, “487”);`
+|Not applicable
+|Application
+
+|Number of outbound 488 responses.
+{empty} +
+{empty} +
+The number of outbound 488 (Not Acceptable Here) responses that belong to each application.
+|`getTotalOutboundResponses(appName, “488”);`
+|Not applicable
+|Application
+
+|Number of outbound 491 responses.
+{empty} +
+{empty} +
+The number of outbound 491 (Request Pending) responses that belong to each application.
+|`getTotalOutboundResponses(appName, “491”);`
+|Not applicable
+|Application
+
+|Number of outbound 493 responses.
+{empty} +
+{empty} +
+The number of outbound 493 (Undecipherable) responses that belong to each application.
+|`getTotalOutboundResponses(appName, “493”);`
+|Not applicable
+|Application
+
+|Number of outbound 500 responses.
+{empty} +
+{empty} +
+The number of outbound 500 (Server Internal Error) responses that belong to each application.
+|`getTotalOutboundResponses(appName, “500”);`
+|Not applicable
+|Application
+
+|Number of outbound 501 responses.
+{empty} +
+{empty} +
+The number of outbound 501 (Not Implemented) responses that belong to each application.
+|`getTotalOutboundResponses(appName, “501”);`
+|Not applicable
+|Application
+
+|Number of outbound 502 responses.
+{empty} +
+{empty} +
+The number of outbound 502 (Bad Gateway) responses that belong to each application.
+|`getTotalOutboundResponses(appName, “502”);`
+|Not applicable
+|Application
+
+|Number of outbound 503 responses.
+{empty} +
+{empty} +
+The number of outbound 503 (Service Unavailable) responses that belong to each application.
+|`getTotalOutboundResponses(appName, “503”);`
+|Not applicable
+|Application
+
+|Number of outbound 504 responses.
+{empty} +
+{empty} +
+The number of outbound 504 (Server Timeout) responses that belong to each application.
+|`getTotalOutboundResponses(appName, “504”);`
+|Not applicable
+|Application
+
+|Number of outbound 505 responses.
+{empty} +
+{empty} +
+The number of outbound 505 (Version Not Supported) responses that belong to each application.
+|`getTotalOutboundResponses(appName, “505”);`
+|Not applicable
+|Application
+
+|Number of outbound 513 responses.
+{empty} +
+{empty} +
+The number of outbound 513 (Message Too Large) responses that belong to each application.
+|`getTotalOutboundResponses(appName, “513”);`
+|Not applicable
+|Application
+
+|Number of outbound 600 responses.
+{empty} +
+{empty} +
+The number of outbound 600 (Busy Everywhere) responses that belong to each application.
+|`getTotalOutboundResponses(appName, “600”);`
+|Not applicable
+|Application
+
+|Number of outbound 603 responses.
+{empty} +
+{empty} +
+The number of outbound 603 (Decline) responses that belong to each application.
+|`getTotalOutboundResponses(appName, “603”);`
+|Not applicable
+|Application
+
+|Number of outbound 604 responses.
+{empty} +
+{empty} +
+The number of outbound 604 (Does Not Exit Anywhere) responses that belong to each application.
+|`etTotalOutboundResponses(appName, “604”);`
+|Not applicable
+|Application
+
+|Number of outbound 606 responses.
+{empty} +
+{empty} +
+The number of outbound 606 (Not Acceptable Anywhere) responses that belong to each application.
+|`getTotalOutboundResponses(appName, “606”);`
+|Not applicable
+|Application
+
+|===
+
+==== Task duration counters
+The following table lists the SIP container task duration counters.
+The object name of the MXBean for these counters is `WebSphere:type=TaskDurationCounters,name=SipContainer.TaskDuration`:
+
+[%header,cols=4]
+|===
+
+|Name and description
+|MXBean attribute or method
+|Units
+|Granularity
+
+|Average Task Duration in outbound queue.
+{empty} +
+{empty} +
+The average task duration in the SIP stack outbound queue over a configured window of time.
+|`AvgTaskDurationOutBoundQueue`
+|Not applicable
+|Server
+
+|Maximum Task Duration in outbound queue.
+{empty} +
+{empty} +
+The maximum task duration in the SIP stack outbound queue over a configured window of time.
+|`MaxTaskDurationOutBoundQueue`
+|Not applicable
+|Server
+
+|Minimum Task Duration in outbound queue.
+{empty} +
+{empty} +
+The minimum task duration in the SIP stack outbound queue over a configured window of time.
+|`MinTaskDurationOutBoundQueue`
+|Not applicable
+|Server
+
+|Average Task Duration in processing queue.
+{empty} +
+{empty} +
+The average task duration in the SIP container processing queue over a configured window of time.
+|`AvgTaskDurationInProcessingQueue`
+|Not applicable
+|Server
+
+|Maximum Task Duration in processing queue.
+{empty} +
+{empty} +
+The maximum task duration in the SIP container processing queue over a configured window of time.
+|`MaxTaskDurationInProcessingQueue`
+|Not applicable
+|Server
+
+|Minimum Task Duration in processing queue.
+{empty} +
+{empty} +
+The minimum task duration in the SIP container processing queue over a configured window of time.
+|`MinTaskDurationInProcessingQueue`
+|Not applicable
+|Server
+
+|Average Task Duration in application code.
+{empty} +
+{empty} +
+The average task duration the SIP application code over a configured period.
+|`getAvgTaskDurationInApplication(appName)`
+|Not applicable
+|Application
+
+|Maximum Task Duration in application code.
+{empty} +
+{empty} +
+The maximum task duration in the SIP application code over a configured period.
+|`getMaxTaskDurationInApplication(appName)`
+|Not applicable
+|Application
+
+|Minimum Task Duration in application code.
+{empty} +
+{empty} +
+The minimum task duration in the SIP application code over a configured period.
+|`getMinTaskDurationInApplication(appName)`
+|Not applicable
+|Application
+
+|===
+
+==== Queue monitoring counters
+The following table lists the SIP container queue monitoring counters.
+The object name of the MXBean for these counters is `WebSphere:type=QueueMonitoringModule,name=SipContainer.QueueMonitor`:
+
+[%header,cols=4]
+|===
+
+|Name and description
+|MXBean attribute or method
+|Units
+|Granularity
+
+|Total number of tasks that have flowed through the processing SIP container queue.
+{empty} +
+{empty} +
+The total number of tasks, such as messages or SIP timer events, that have flowed through the processing SIP container queue over a configured window of time.
+|`TotalTasksCountInProcessingQueue`
+|Not applicable
+|Server
+
+|Maximum number of tasks in the processing SIP container queue.
+{empty} +
+{empty} +
+The maximum number of tasks in the processing SIP container queue over a configured window of time.
+|`PeakTasksCountInProcessingQueue`
+|Not applicable
+|Server
+
+|Minimum number of tasks in the processing SIP container queue.
+{empty} +
+{empty} +
+The minimum number of tasks in the processing SIP container queue over a configured window of time.
+|`MinTasksCountInProcessingQueue`
+|Not applicable
+|Server
+
+|Maximum percent full of the processing SIP container queue.
+{empty} +
+{empty} +
+The maximum processing SIP container queue usage percentage over a configured window of time.
+|`PercentageFullTasksCountInProcessingQueue`
+|Not applicable
+|Server
+
+|Total number of tasks that have flowed through the outbound SIP stack queue.
+{empty} +
+{empty} +
+The total number of tasks that have flowed through the outbound SIP stack queue over a configured window of time.
+|`TotalTasksCountInOutboundQueue`
+|Not applicable
+|Server
+
+|Maximum number of tasks in the outbound SIP stack queue.
+{empty} +
+{empty} +
+The maximum number of tasks in the outbound SIP stack queue over a configured window of time.
+|`PeakTasksCountInOutboundQueue`
+|Not applicable
+|Server
+
+|Minimum number of tasks in the outbound SIP stack queue.
+{empty} +
+{empty} +
+The minimum number of tasks in the outbound SIP stack queue over a configured window of time.
+|`MinTasksCountInOutboundQueue`
+|Not applicable
+|Server
+
+|Maximum percent full of the outbound SIP stack queue.
+{empty} +
+{empty} +
+The maximum outbound SIP stack queue usage percentage over a configured window of time.
+|`PercentageFullTasksCountInOutboundQueue`
+|Not applicable
+|Server
 
 |===
