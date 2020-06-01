@@ -75,7 +75,7 @@ You can give users the option of logging in with either a social media provider 
 
 To protect only a subset of applications, URLs, or IP addresses, use an authentication filter.
 The security configuration takes effect only when the conditions in the filter are met. For example,
-you might want a web app to be secured with the Social Media Login feature and a microservice app to be secured with the MicroProfile JWT (feature:mp-jwt[]) feature:
+you might want a web app to be secured with the Social Media Login feature and a microservice app to be secured with the MicroProfile JWT (feature:mp-jwt[]) feature. In the following example, only request URLs that contain the `/mywebapp` pattern are authenticated by using Google credentials:
 
 // tag::authfilter[]
 [source,xml]
@@ -117,3 +117,38 @@ obtained from the social media provider's developer instructions.  Here is an ex
 // LC: Leaving the following links in the source for now to show where this topic should link to when the relevant equivalent topics are published in the Open Liberty docs (do not link to the KC from Open Liberty docs). Remove this commented section when the relevant links are added in future.
 //More information on using the socialLogin feature is available https://www.ibm.com/support/knowledgecenter/en/SSEQTP_liberty/com.ibm.websphere.wlp.doc/ae/twlp_sec_sociallogin.html[here].
 //More information on using authentication filters is available https://www.ibm.com/support/knowledgecenter/en/SSEQTP_liberty/com.ibm.websphere.wlp.doc/ae/rwlp_auth_filter.html[here].
+
+The `socialLogin-1.0` feature can be configured to use OpenShift service accounts to authenticate and authorize protected resource requests.
+This configuration allows server administrators to secure, for example, monitoring and metrics endpoints that might produce sensitive information but require repeated access by an automated process or non-human entity.
+This security feature allows service accounts to authenticate themselves by providing in the request a service account token that was created within the OpenShift cluster.
+
+The minimum configuration requires only that an `<okdServiceLogin>` element be specified:
+
+[source,java]
+----
+<server>
+
+<!-- Enable features -->
+<featureManager>
+  <feature>socialLogin-1.0</feature>
+</featureManager>
+
+<okdServiceLogin />
+
+</server>
+----
+
+The minimum configuration assumes that the Liberty server is packaged and deployed within an OpenShift cluster.
+By default, the `<okdServiceLogin>` element will be used to authenticate all protected resource requests that the Liberty server receives.
+
+Incoming requests to protected resources must include a service account token.
+The token must be specified as a bearer token in the Authorization header of the request.
+The Liberty server will use the service account token to query information about the associated service account from the OpenShift cluster.
+The OpenShift project that the service account is in will be used as the group for the service account when making authorization decisions.
+Similarly, the name of the service account will be used as the user name.
+
+If the Liberty server is not deployed within an OpenShift cluster, the `userValidationApi` attribute should be configured and set to the value for the appropriate User API endpoint in the OpenShift cluster:
+
+`<okdServiceLogin userValidationApi="https://cluster.domain.example.com/apis/user.openshift.io/v1/users/~" />`
+
+Multiple <okdServiceLogin> elements can be configured as long as each element has a unique id attribute specified. In those cases, authentication filters should also be configured to ensure the appropriate endpoints are protected by a unique `<okdServiceLogin>` instance.
