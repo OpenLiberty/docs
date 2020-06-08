@@ -3,8 +3,10 @@
 You can require that users log in with a specific social media provider, or you can give them a list of providers so that they can choose which they prefer to log in with. You can also restrict when they have certain log in options based on browser type, the application, and so on. The following examples show how to configure different scenarios in your `server.xml`.
 
 === Request log in with a social media ID
+The Social Media Login feature provides a set of built-in configuration elements for social media providers like Google, Facebook, LinkedIn, and more, in addition to generic configuration elements like `oauth2Login` and `oidcLogin` to support other social media providers.
+A customizable selection form is presented so the user can choose which provider they prefer to sign in with.
 
-A customizable selection form is presented so the user can choose which provider they prefer to sign in with. The following example shows how to configure your application to request that the user logs in with their Google ID:
+The following example shows how to configure your application to request that the user logs in with their Google ID:
 
 [source,xml]
 ----
@@ -19,7 +21,20 @@ A customizable selection form is presented so the user can choose which provider
     </application-bnd>
 </application>
 ----
+The following example shows how to log in with Instagram by using the `oauth2Login` element:
 
+[source,xml]
+----
+<oauth2Login id="instagramLogin" clientId="client_id" clientSecret="client_secret"
+    scope="basic public_content"   responseType="code"
+    tokenEndpointAuthMethod="client_secret_post"
+    authorizationEndpoint="https://api.instagram.com/oauth/authorize"
+    tokenEndpoint="https://api.instagram.com/oauth/access_token"
+    userApi="https://api.instagram.com/v1/users/self"
+    userNameAttribute="username"
+    website="https://www.instagram.com/developer/authentication/">
+</oauth2Login>
+----
 === Provide a choice of social media providers to the user
 
 You can provide the user with a choice of social media providers on a form from which they choose one to log in with. The following example presents the user with the choice of Google, GitHub, Facebook, LinkedIn, and Twitter with which to log in:
@@ -42,9 +57,10 @@ You can provide the user with a choice of social media providers on a form from 
 </application>
 ----
 
-=== Request log in with a social media ID only if the users is also in another registry
+=== Require authenticated users to also be present in the configured registry
 
-You can restrict the presentation of a social media provider to only users who are also in another configured registry. For example, use the `mapToUserRegistry` attribute to configure your app so that only users in the company LDAP registry can log in with their Google ID:
+You can restrict access by asking the user to authenticate with a configured user registry in addition to the social media provider authentication.
+For example, use the `mapToUserRegistry` attribute to configure your app so that users authenticate with Google and also verify as an existing user in the company LDAP registry:
 
 [source,xml]
 ----
