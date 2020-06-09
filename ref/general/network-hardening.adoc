@@ -7,7 +7,7 @@
 //     IBM Corporation
 //
 :page-description: Harden your network security to prevent network intrusions.
-:seo-title: Network security hardening
+:seo-title: Network security hardening - OpenLiberty.io
 :seo-description: Harden your network security to prevent network intrusions.
 :page-layout: general-reference
 :page-type: general
@@ -15,10 +15,11 @@
 
 Network intrusions occur when unauthorized users gain access to network activity.
 With this access, they can alter traffic and steal network resources.
+Employ best practices with Open Liberty to harden your network against potential attacks.
 
 == Firewalls
 Production environments need to run inside a firewall.
-It's not recommended to run workloads in the demilitarized zone (DMZ).
+As a best practice, don't run workloads in the DMZ.
 The DMZ is an intermediary zone where proxy and web servers run that is located between public and private networking zones.
 Typically, your network setup includes two firewalls, a perimeter firewall and a backend firewall.
 The perimeter firewall exists between the public zone and the DMZ, and the backend firewall exists between the DMZ and the private zone.
@@ -26,7 +27,7 @@ The backend firewall, or overall network design, limits ingress traffic to trust
 
 == Security in container environments
 In container environments, running either on-premises or in the cloud, applications can be spread across multiple nodes.
-It's a best practice to isolate workloads from one another across a cluster of nodes.
+Another best practice is to isolate workloads from one another across a cluster of nodes.
 When Open Liberty is deployed in container environments, segment network traffic based on users, teams, or applications.
 Collections of containers, or pods, apportioned by namespace, offer the ability to provide IP and port isolation.
 Pods with different namespaces shouldn't be able to interact by default.
@@ -36,7 +37,7 @@ For more information about network security in container environments, see the i
 Open Liberty provides a simple TLS configuration with the link:/docs/ref/feature/#transportSecurity-1.0.html[Transport Security feature].
 The Transport Security feature enables the link:/docs/ref/feature/#ssl-1.0.html[SSL feature] to support SSL connections and adds the ability to configure outbound transports.
 TLS uses key pairs and signed X.509 certificates to protect HTTP, IIOP, LDAP, IBM MQ, JDBC, and messaging traffic between Open Liberty messaging engines, J2C, and SOAP traffic.
-The default TLS config is simple and easy to configure, but it is not suitable for use in production because it generates a self-signed certificate.
+The default TLS config is simple to configure, but it is not suitable for use in production because it generates a self-signed certificate.
 The auto-generated certificate is convenient for development purposes, but a certificate that's used in production must be signed by a trusted authority, such as Verisign.
 
 With Open Liberty, ingress proxies are configurable and no proxies are trusted by default.
@@ -65,7 +66,7 @@ For supported mode, set the link:https://draft-openlibertyio.mybluemix.net/docs/
 If the certificate isn't sent or an untrusted certificate is sent, the connection is rejected.
 For required mode, set the link:https://draft-openlibertyio.mybluemix.net/docs/ref/config/#ssl.html[`clientAuthentication` attribute] to `true` in your TLS config.
 
-If you use mutual authentication along with a proxy, consider using the link:/docs/ref/config/#httpDispatcher.html[`httpDispatcher`] parameter with the `trustedHeaderOrigin` or `trustedSensitiveHeaderOrigin` options.
+If you use mutual authentication along with a proxy, consider specifying the link:/docs/ref/config/#httpDispatcher.html[`httpDispatcher`] parameter with the `trustedHeaderOrigin` or `trustedSensitiveHeaderOrigin` options.
 This parameter permits proxies by using the specified IP addresses to pass along certificate details on behalf of clients:
 
 [source,xml]
@@ -85,16 +86,14 @@ If your Open Liberty deployment does not include any proxies, set the following 
 Ensure that any links from the Open Liberty server to LDAP servers are secured by TLS.
 Securing these LDAP connections with TLS encrypts communication so that your network configuration is hardened for production.
 To secure LDAP connections with TLS, enable the Lightweight Directory Access Protocol Over Secure Socket Links (LDAPS) protocol in your feature configuration.
-For configuration information about enabling LDAPS, see the link:/docs/ref/feature/#ldapRegistry.html[LDAP User Registry feature].
+For more information about enabling and configuring LDAPS, see the link:/docs/ref/feature/#ldapRegistry-3.0.html[LDAP User Registry feature].
 
 == LTPA best practices
 Lightweight Third-Party Authentication (LTPA) is a single sign-on (SSO) technology that uses cookies or binary tokens for authentication.
-For more information about how to use LTPA for SSO, see link:/docs/ref/general/#sso-config-ltpa.html[SSO configuration with LTPA cookies].
-
-There are several measures that you can take to harden your network when you use LTPA with SSO.
+You can take several measures to harden your network when you use LTPA with SSO.
 By default, LTPA cookies are sent over HTTPS or HTTP connections.
 For production purposes, the cookie that carries the LTPA token (`ltpaToken2`) must be protected.
-If it's stolen, an intruder can act in place of the authenticated user until the token expires.
+If this cookie is stolen, an intruder can act in place of the authenticated user until the token expires.
 Cookies support the `secure` attribute, which tells the browser to send a cookie over HTTPS connections only.
 Set the option in the `server.xml` file to require that LTPA cookies are sent over TLS connections:
 
@@ -103,7 +102,7 @@ Set the option in the `server.xml` file to require that LTPA cookies are sent ov
 <webAppSecurity ssoRequiresSSL='true' />
 ----
 
-It's a security best practice to replace LTPA keys regularly.
+As a best practice, replace LTPA keys regularly.
 Replacing LTPA keys regularly reduces the risk vector in which a bad actor is able to access a copy of a file and decrypt its contents.
 To replace the keys, delete the `ltpa.keys` file and wait for the server to automatically regenerate them.
 Then, copy the new keys file to the file systems for other servers that share the keys.
