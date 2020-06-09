@@ -7,16 +7,17 @@
 //     IBM Corporation
 //
 :page-description: Before you run a container in production, harden the container image to remove any potential vulnerabilities that might allow exploitation of your server config or installation.
-:seo-title: Operating system security hardening
+:seo-title: Operating system security hardening - OpenLiberty.io
 :seo-description: Before you run a container in production, harden the container image to remove any potential vulnerabilities that might allow exploitation of your server config or installation.
 :page-layout: general-reference
 :page-type: general
 = Server configuration security hardening
 
 Operating system (OS) intrusions occur when unauthorized users are able to log in to the OS and gain access to sensitive resources.
+Employ best practices with Open Liberty to harden your server configuration against potential OS attacks. 
 
 One of the ways to protect against improper access to Open Liberty code is to ensure that the file system where Open Liberty binary files are located is mounted read-only.
-It's also a best practice to ensure that the Open Liberty server configuration file system, which is the path where the `WLP_USER_DIR` environment variable points, is only writable to authorized server administrators.
+Another best practice is to ensure that the Open Liberty server configuration file system, which is the path where the `WLP_USER_DIR` environment variable points, is only writable to authorized server administrators.
 
 == Open Liberty Docker images
 A container that runs in production must have only the tools and packages that you need to run your application.
@@ -24,7 +25,7 @@ Before you run a container in production, harden the container image to remove a
 You can find Open Liberty Docker images and related information in link:https://hub.docker.com/_/open-liberty[Docker Hub].
 
 The simplest way to securely run Open Liberty is to start with an existing Open Liberty Docker image, which is already set up with basic security protocols.
-Although Open Liberty Docker images have basic security already configured, it is recommended that you take steps to harden an image if you intend to use it in production.
+Although Open Liberty Docker images have basic security that's already configured, take steps to harden an image if you intend to use it in production.
 Check the following things about your Open Liberty image to verify that it's hardened for production:
 
 * Confirm that the Open Liberty server identity doesn’t own the directory where the server config is stored (`WLP_USER_DIR`) and has only read access to it.
@@ -57,11 +58,13 @@ The output message that you receive indicates whether the Open Liberty installat
 A critical aspect of server security is ensuring that files and directories have the appropriate permissions, and users and groups are configured properly.
 All UNIX files have the following attributes: *file owner*, *group*, and *other*.
 For each of these attributes, there are 3 bits assigned as an octal digit.
-The first bit indicates read access, the second indicates write access, and the third indicates execute access.
-For example, when all 3 bits are on for an attribute, this is represented as a `7`, which indicates read, write, and execute access.
+The first bit indicates read access.
+The second bit indicates write access.
+The third bit indicates execute access.
+For example, a `7` represents that all 3 bits are on for an attribute, which indicates read, write, and execute access.
 A file with `770` permissions means that the file owner and any user in the group have read, write, and execute access.
 All others have no permissions.
-Generally, the last digit in the file permissions should end in `0` because others shouldn't have access to protected information.
+Generally, the last digit in the file permissions ends in `0` because others shouldn't have access to protected information.
 
 Ensure that only administrative users are attached to the group that has write access to the server config files.
 
@@ -71,7 +74,7 @@ For more information about Open Liberty Docker images, go to link:https://hub.do
 
 == Access control
 It is critical to control users' access levels so that users have the appropriate access to Open Liberty files.
-Non-administrative users should have minimal access, based on their needs.
+Non-administrative users require minimal access, based on their needs.
 Different types of users might need to access the config or logs.
 These users might include administrators, developers, or database support personnel.
 The following points provide guidance on controlling users' access:
@@ -92,7 +95,7 @@ Some of these users need read access to view the logs, while other users might n
 * *Unauthorized users*:
 These users shouldn't have access to the config or product file systems, and are treated as part of the other group.
 
-== Process include files
+== Include file processing
 Include files can hold portions of the config outside of the `server.xml` file.
 These files are helpful in two primary situations:
 
@@ -112,14 +115,14 @@ In this example, Open Liberty ignores XML elements in the `myIncludeFile.xml` fi
 Config updates must be carefully controlled in production environments to reduce the possibility that unknown changes or vulnerabilities are deployed to users.
 You can disable automated config updates so that your production environment isn't changed unless you manually update it.
 
-By default, each server contains a monitored application directory named `/dropins`.
+By default, each server contains a monitored application directory that's named `/dropins`.
 When an application is placed in this directory, the server automatically deploys and starts the application.
 If you update config in the `server.xml` file or `/dropins` directory, the server automatically deploys the config changes.
 
-Each server also contains a monitored directory named `/dropins/configDropins` for config snippets.
+Each server also contains a monitored directory that's named `/dropins/configDropins` for config snippets.
 If you update the config in this directory, the server automatically deploys the config changes.
 
-To ensure that you deploy only explicitly pre-configured applications where their config resides in the `server.xml` file, disable monitoring of the `/dropins` directory:
+To ensure that you deploy only explicitly pre-configured applications where their config is in the `server.xml` file, disable monitoring of the `/dropins` directory:
 
 [source,xml]
 ----
