@@ -2,17 +2,21 @@
 
 === Configuring Liberty servers to persist session data to a database
 
-After enabling the `sessionDatabase` feature, define a data source, `<dataSource id="SessionDS" ... />`, and refer to the data source from the session database configuration,
+After you enable the `sessionDatabase` feature, you can define a data source, as shown in the following example:
+
+ `<dataSource id="SessionDS" ... />`
+
+After you define a data source, you can refer to the data source from the following session database configuration:
 
 `<httpSessionDatabase id="SessionDB" dataSourceRef="SessionDS" ... />`.
 
-Then refer to the persistent storage location from the session management configuration,
+You can also refer to the persistent storage location from the following session management configuration:
 
 `<httpSession storageRef="SessionDB" ... />`
 
-The example creates a file named `${shared.config.dir}/httpSessionPersistence.xml`:
+The following example creates a file that is named `${shared.config.dir}/httpSessionPersistence.xml`:
 
-[source,java]
+[source, java]
 ----
 <server description="Demonstrates HTTP Session Persistence Configuration">
 
@@ -46,25 +50,27 @@ If you configure multiple servers to persist session data to the same database, 
 Any other configuration is not supported.
 
 The HTTP server plugin uses the clone ID that is inserted into the response/request header to maintain session affinity between requests.
-While the clone ID is normally unchanging, in Liberty, the clone ID is generated when you start a server for the first time and it is regenerated if you start the server with the `--clean` option.
+In Open Liberty, the clone ID is generated when you start a server for the first time and it is regenerated if you start the server with the `--clean` option.
 For production use, manually assigning a clone ID will ensure that the ID is stable and that request affinity is correctly maintained.
-The clone ID must be unique for each server and can be 8 to 9 alphanumeric characters in length.
+The clone ID must be unique for each server and can be 8-9 alphanumeric characters in length.
 
 Include the shared session management configuration in each of your servers.
 
-For example, create two `server.xml` files for server instances named `s1` and `s2`, as follows:
+For example, you can create two `server.xml` files for server instances named `s1` and `s2`, as follows:
 
     `${wlp.user.dir}/servers/s1/server.xml`
     `${wlp.user.dir}/servers/s2/server.xml`
 
+[source, java]
 ----
 <server description="Example Server">
     <include location="${shared.config.dir}/httpSessionPersistence.xml"/>
 </server>
 ----
 
-Specify unique variables in the `bootstrap.properties` file of each server.
+You can specify unique variables in the `bootstrap.properties` file of each server.
 
+[source, java]
 ----
     ${wlp.user.dir}/servers/s1/bootstrap.properties
 
@@ -73,12 +79,10 @@ Specify unique variables in the `bootstrap.properties` file of each server.
     Copy
 -----
 
+[source, java]
 -----
     ${wlp.user.dir}/servers/s2/bootstrap.properties
 
     httpPort=9082
     cloneId=s2
 ----
-
-Then create a table for session persistence before you start the servers, and synchronize the system clocks of all machines that host Open Liberty servers.
-If the system clocks are not synchronized, session invalidation can occur prematurely.
