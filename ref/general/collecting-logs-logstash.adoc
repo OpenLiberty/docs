@@ -1,0 +1,104 @@
+// Copyright (c) 2020 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description:
+:seo-title:
+:page-layout: general-reference
+:page-type: general
+= Collecting logs and events with Logstash collector
+
+Configure link:/docs/ref/feature/#logstashCollector-1.0.html[the Logstash collector feature] to collect logs and other events from your Open Liberty servers and send them to a remote Logstash server. The collected events can be used for log analysis and troubleshooting purposes by products such as Elasticsearch and Kibana.
+
+== About this task
+
+You can use the Logstash collector feature with a Logstash server that runs with any of the available output plug-ins from Logstash. However, many users choose to use Logstash with Elasticsearch and Kibana to facilitate complete log consolidation and analysis. For more information, see link:https://www.elastic.co/downloads/[the Elastic website].
+
+The `logstashCollector-1.0` feature was tested with the following products:
+
+- Logstash V5.3.x, Elasticsearch V5.3.x, and Kibana V5.3.x
+- Logstash V6.4.x, Elasticsearch V6.4.x, and Kibana V6.4.x
+- Logstash V7.x, Elasticsearch V7.x, and Kibana V7.x
+
+
+== Procedure
+
+
+. Set up Logstash by following link:https://www.elastic.co/logstash[the instructions from Elastic].
+
+
+. Create or acquire certificate and key pair files for SSL for Logstash. +
+The following example command for openSSL generates a certificate and key pair. Customize the number of days that the keys are valid as needed.
++
+[role,command]
+----
+openssl req -x509 -newkey rsa:2048 -keyout logstash.key -out logstash.crt -days 365 -nodes
+----
+
+. For Logstash and Elasticsearch users, download a sample Logstash configuration file and an index template file from link:https://github.com/WASdev/sample.logstash.collector[Sample Logstash Collector dashboards for Liberty].
+
+.. Download the Logstash configuration file, `liberty_logstash.conf`, and the index template file, `liberty_logstash_template.json`, from the directory that corresponds to your Elastic stack version.
+
+.. In the `liberty_logstash.conf` file, customize the lumberjack `ssl_certificate` and `ssl_key` paths and the `Elasticsearch_host_name:port_number` Elasticsearch hosts value.
+
+. Complete the following steps for each Open Liberty server from which you want to collect events:
+
+.. Acquire or create a keystore for the Open Liberty server. To create a self-signed certificate, use the following command. Customize the server name, password, and subject as needed.
++
+[role,command]
+----
+d:\wlp\bin\securityUtility createSSLCertificate --server=myServerName --password="Liberty" --subject=CN=myHostname,OU=defaultServer,O=ibm,C=us
+----
+
+.. Import the `logstash.crt` file that you created in step 2 into the `trust.jks` file in your server. Customize the `wlp_install_dir` and server name as needed. When prompted for a password, use the certificate password that you specified in step 4a.
++
+[role,command]
+----
+d:\java\bin\keytool -import -noprompt -alias logstash -file logstash.crt -keystore wlp_install_dir\usr\servers\myServerName\resources\security\trust.jks -storepass Liberty
+----
+
+.. Run the following command to install the logstashcollector-1.0 feature:
++
+[role,command]
+----
+d:\wlp\bin\installUtility install logstashcollector-1.0
+----
+
+.. link:/docs/ref/feature/#logstashCollector-1.0.html[Configure the Logstash collector feature] in the `server.xml` file.
+
+.. Enable HTTP access logging.
+
+. Start Elasticsearch, Logstash, and Kibana. See link:https://www.elastic.co/[the Elastic website] for instructions.
+
+. Start the Open Liberty server and generate some events.
+
+. Open Kibana in a browser and create an index.
+
+- For Kibana 7, 6, or 5.6, click **Management** > **Index Patterns**.
+** Enter `logstash-*` as the **Index Pattern**.
+** Click **Advanced Options**, and enter `logstash-*` as the **Index Pattern ID**.
+** Select `datetime` as the **Time filter field name**, and click **Create**.
+
+- For Kibana 5.0 - 5.5, click **Management** > **Index Patterns** and select `datetime` as the **Time filter field name**. Click **Create**.
+
+- For Kibana 4, click **Settings** > **Index Patterns**, and select `datetime` as the **Time filter field name**. Click **Create**.
+
+. Download a sample dashboard from the directory that corresponds to your version of Elastic in the link:https://github.com/WASdev/sample.logstash.collector[Sample Logstash Collector dashboards for Liberty] repository.
+
+. Import the dashboard into Kibana.
+
+- For Kibana 7, 6, or 5, click **Management** > **Saved Object** > **Import**.
+- For Kibana 4, click **Settings** > **Objects** > **Import**.
+
+. View the dashboard.
+
+- For Kibana 7, 6, or 5, click **Dashboard** > **Open** and then select the dashboard.
+- For Kibana 4, click **Dashboard** > **Load Saved Dashboard** and then select the dashboard.
+
+== Results
+
+You configured your Open Liberty servers to send events to your Logstash server and can now view your events in the Liberty dashboard by using Kibana.
