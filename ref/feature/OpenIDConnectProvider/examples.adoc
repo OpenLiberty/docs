@@ -1,0 +1,113 @@
+== Examples
+
+The OpenID Connect Provider (OP) feature can be configured to manage user authentication for OpenID Connect (OIDC) clients and microservices during development.
+The OP feature can work directly with a user registry, such as LDAP, or act as an identity broker and delegate to another security provider.
+In production, the application uses a cloud-hosted SSO provider.
+
+Any user that is authorized to use OIDC must also be mapped to the authenticated OAuth role.
+
+The following example assumes that you are using a basic registry, which is available for  development and test purposes.
+If you use another method of authentication, for example, LDAP, replace the `basicRegistry` section with link:https://www.openliberty.io/docs/ref/feature/#ldapRegistry-3.0.html[LDAP] config.
+
+The example uses `localStore` to store client data and token status, which means all client data and token status is held in memory for test and development purposes.
+If you use a database, replace the `localStore` section with link:https://www.openliberty.io/docs/ref/feature/#jdbc-4.3.html[JDBC] database configuration.
+When you use a database, clients are not specified in the `server.xml` file. Instead, they are added to the database through the registration endpoint.
+If you reconfigure the server, `localStore` might be cleared.
+
+[source,xml]
+----
+<keyStore id="defaultKeyStore" password="keyspass" />
+
+<basicRegistry id="basic" realm="customRealm">
+    <user
+      name="demouser"
+      password="demopassword" />
+    <user
+      name="demouser2"
+      password="demopassword2" />
+     <group name="users">
+         <member name="demouser"/>
+         <member name="demouser2" />
+    </group>
+</basicRegistry>
+<openidConnectProvider id="OP"
+    oauthProviderRef="OAuth"
+    signatureAlgorithm="RS256" keyStoreRef="defaultKeyStore"
+    jwkEnabled="true">
+</openidConnectProvider>
+
+<oauthProvider id="OAuth" tokenFormat="mpjwt" >
+    <localStore>
+      <client displayname="RP" enabled="true"
+            name="RP" secret="thesecret"
+            scope="openid profile email"
+            preAuthorizedScope="openid profile email">
+            <redirect>https://localhost:19443/oidcclient/redirect/RP</redirect>
+      </client>
+    </localStore>
+</oauthProvider>
+
+<oauth-roles>
+    <authenticated>
+        <special-subject type="ALL_AUTHENTICATED_USERS" />
+    </authenticated>
+</oauth-roles>
+----
+
+Example to add users and groups to the `clientManager` role:
+
+[source, xml]
+----
+<oauth-roles>
+    <authenticated>
+        <special-subject type="ALL_AUTHENTICATED_USERS" />
+    </authenticated>
+    <clientManager>
+        <user name="testuser" />
+        <group name="oidcadmin" />
+    </clientManager>
+</oauth-roles>
+----
+
+Example to add clients with `localStore`:
+
+[source, xml]
+----
+
+<oauthProvider id="OAuth" tokenFormat="mpjwt" >
+<localStore>
+  <client displayname="RP" enabled="true"
+        name="RP" secret="thesecret"
+        scope="openid profile email"
+        preAuthorizedScope="openid profile email">
+        <redirect>https://localhost:19443/oidcclient/redirect/RP</redirect>
+  </client>
+</localStore>
+----
+
+Configure the data source with authentication .
+
+When you connect to a database, users in the `clientManager` role can add or modify clients by accessing the registration endpoint.
+The following example  uses Derby as a configured database with authentication:
+
+[source, xml]
+----
+<dataSource
+        id="OAuthFvtDataSource"
+        jndiName="jdbc/OAuth2DB"
+        jdbcDriverRef="DerbyEmbedded"
+    >
+        <properties.derby.embedded databaseName="memory:oAuthDB" createDatabase="create" />
+    </dataSource>
+    <jdbcDriver id="DerbyEmbedded">
+        <library>
+            <fileset dir="${server.config.dir}/derby" includes="derby.jar" />
+        </library>
+    </jdbcDriver>
+
+    <oauth-roles>
+        <authenticated>
+            <special-subject type="ALL_AUTHENTICATED_USERS" />
+        </authenticated>
+    </oauth-roles>
+----
