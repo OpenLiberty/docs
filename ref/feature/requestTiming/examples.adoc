@@ -1,0 +1,33 @@
+
+== Examples
+
+=== Slow and hung request threshold configuration
+The following example sets the slow and hung request thresholds for all requests, where the `<requestTiming>` element detects requests as slow if the requests require more than 10 seconds to complete, or as hung if the requests do not complete in 10 minutes:
+[source,xml]
+----
+<requestTiming slowRequestThreshold="10s" hungRequestThreshold="10m">
+</requestTiming>
+----
+
+=== Configuring JDBC request thresholds
+The following example uses the embedded `<jdbcTiming/>` element to set the slow and hung JDBC request thresholds within the `<requestTiming>` element configuration. The `<jdbcTiming>` element detects that the JDBC request with a datasource name of `testDBSource` is slow, if the request requires more than 500ms to complete or hung if the request does not complete in 5 minutes:
+[source,xml]
+----
+<requestTiming slowRequestThreshold="10s" hungRequestThreshold="10m">
+  <jdbcTiming dataSourceName="testDBSource" slowRequestThreshold="500ms" hungRequestThreshold="5m"/>
+</requestTiming>
+----
+
+=== Configuring servlet request thresholds
+The following example uses the embedded `<servletTiming/>` elements to set the slow and hung request thresholds for two servlets within the `<requestTiming>` element configuration. The `<servletTiming>` element detects that the `Arm10Servlet` servlet request is hung if the request does not complete in 20 seconds and that the servlet request from the `SecurityExchangeApp` application is hung if the request does not complete in 2 hours:
+[source,xml]
+----
+<requestTiming slowRequestThreshold="10s" hungRequestThreshold="10m">
+  <servletTiming servletName="Arm10Servlet" hungRequestThreshold="20s"/>
+  <servletTiming appName="SecurityExchangeApp" hungRequestThreshold="2h"/>
+</requestTiming>
+----
+
+The embedded configurations always override the configured slow and hung request thresholds that are defined in the `<requestTiming/>` element configuration.
+
+A `<servletTiming/>` or `<jdbcTiming/>` configuration can only be used to time a root level request. For example, if a servlet request makes a JDBC query, the JDBC query cannot be timed because the servlet request is the root level request.
