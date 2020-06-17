@@ -1,0 +1,39 @@
+== Examples
+
+The `samlWebSso20` element is configured by default in Liberty.
+
+----
+<samlWebSso20 id="defaultSP">
+
+</samlWebSso20>
+----
+
+The default configuration sets the following values:
+
+- AssertionConsumerService URL:
+
+`https://<hostname>:<sslport>/ibm/saml20/defaultSP/acs`
+
+- Service Provider (SP) metadata URL:
+
+`https://<hostname>:<sslport>/ibm/saml20/defaultSP/samlmetadata`
+
+The preferred approach to configure SAML is by using metadata exchange.
+Supply the provided URL to the SAML identity provider (IdP) to establish federation between this SP and IdP.
+If the IdP requires a file instead of a URL, use a browser to retrieve the data from that URL and supply the file.
+Next, obtain the metadata file from the provider, rename it to `idpMetadata.xml`, and copy it to the `resources/security` directory on the server.
+The issuer name for SAML assertion is used as the security realm, and `NameID` element is used as the princIdPal to create an authenticated subject from the SAML assertion.
+
+The SAML `AuthnRequest` request is signed with a private key in the default keystore of the server if the `KeyStoreRef` attribute is not specified.
+If the `keyAlias` element is not configured, then `samlsp` element is the default key alias.
+If the `keyAlias` element is not configured, and the keystore contains only one private key, the private key is used in the signature.
+
+If you create a new service provider instance and the `defaultSP` instance is no longer required, then you must explicitly disable the `defaultSP` instance.
+You can disable the `defaultSP` instance by adding the following code to the `server.xml` file:
+
+----
+<samlWebSso20 id="defaultSP" enabled="false">
+</samlWebSso20>
+----
+
+Additional attributes can be optionally specified to override the default behavior. In most cases, exchange of the metadata files is sufficient.
