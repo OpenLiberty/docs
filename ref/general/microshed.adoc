@@ -42,25 +42,16 @@ With MicroShed Testing framework, you can write an integration test that looks s
 @MicroShedTest
 public class BasicJAXRSServiceTest {
 
-    // This will search for a Dockerfile in the repository and start up the application
-    // in a Docker container, and wait for it to be ready before starting the tests.
     @Container
     public static ApplicationContainer app = new ApplicationContainer()
                     .withAppContextRoot("/myservice");
 
-    // This injects a REST _Client_ proxy of the PersonService shown above
-    // This allows us to easily invoke HTTP requests on the running application container
     @RESTClient
     public static PersonService personSvc;
 
     @Test
     public void testGetPerson() {
-        // This invokes an HTTP POST request to the running container, which triggers
-        // the PersonService#createPerson endpoint and returns the generated ID
         Long bobId = personSvc.createPerson("Bob", 24);
-
-        // Using the generated ID, invoke an HTTP GET request to read the record we just created
-        // The JSON response will be automatically converted to a 'Person' object using JSON-B
         Person bob = personSvc.getPerson(bobId);
 
         assertEquals("Bob", bob.name);
@@ -74,11 +65,9 @@ public class BasicJAXRSServiceTest {
         // asserts that the application container returns an HTTP 404 (not found) exception
         assertThrows(NotFoundException.class, () -> personSvc.getPerson(-1L));
     }
-
-    // ...
 }
 ```
-The `@MicroShedTest` annotation searches for a Dockerfile in the repository, starts up the application in a Docker container, and waits for it to be ready before starting the tests. 
+The `@MicroShedTest` annotation searches for a Dockerfile in the repository, starts up the application in a Docker container, and waits for it to be ready before starting the tests.
 The `@Container` annotation injects a REST Client proxy of the PersonService, which allows you to easily invoke HTTP requests on the running application container.
 The `@RESTClient` annotation invokes an HTTP POST request to the running container, which triggers the PersonService#createPerson endpoint and returns the generated ID.
 By using the generated ID, invoke an HTTP GET request to read the record that was created. The JSON response automatically converts to a Person object by using JSON-B token.
