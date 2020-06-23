@@ -1,0 +1,266 @@
+//
+// Copyright (c) 2020 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description: Use the `featureUtility` command to find, get information about, and install assets that are in a Maven repository.
+:seo-title: featureUtility command
+:seo-description: Use the `featureUtility` command to find, get information about, and install assets that are in a Maven repository.
+:page-layout: general-reference
+:page-type: general
+= featureUtility command
+
+Use the `featureUtility` command to find, get information about, and install assets that are in a Maven repository.
+
+== Usage examples
+
+Display help information for the `installFeature` action:
+
+----
+featureUtility help installFeature
+----
+
+Install the link:/docs/ref/feature/#mpHealth-2.2.html[MicroProfile Health 2.2 feature] from Maven Central:
+
+----
+featureUtility installFeature mpHealth-2.2
+----
+
+or:
+
+----
+featureUtility installFeature io.openliberty.features:mpHealth-2.2
+----
+
+Install server features for the `myserver` server:
+
+----
+featureUtility installServerFeatures myserver
+----
+
+Install the MicroProfile Health 2.2 feature without caching the feature to the local Maven repository:
+
+----
+featureUtility installFeature mpHealth-2.2 --noCache
+----
+
+Install server features for the `myserver` server without caching the features to the local Maven repository:
+
+----
+featureUtility installServerFeatures myserver --noCache
+----
+
+Install the link:https://www.ibm.com/support/knowledgecenter/SSEQTP_liberty/com.ibm.websphere.liberty.autogen.base.doc/ae/rwlp_feature_adminCenter-1.0.html[Admin Center feature] from Maven Central:
+
+----
+featureUtility installFeature adminCenter-1.0 --acceptLicense
+----
+
+Install features for the `myserver` server with debug enabled:
+
+----
+featureUtility installServerFeatures defaultServer --verbose
+----
+
+View a template of your `featureUtility.properties` file:
+
+----
+featureUtility viewSettings
+----
+
+Search for the MicroProfile Health 2.2 feature from Maven Central and all configured Maven repositories:
+
+----
+featureUtility find mpHealth-2.2
+----
+
+Search for all available features from Maven Central and all configured Maven repositories:
+
+----
+featureUtility find
+----
+
+== Syntax
+
+Run the command from the `path_to_liberty/bin` directory.
+
+----
+featureUtility action [options]
+----
+
+action::
+The action that the command performs.
+
+options::
+One or more optional parameters that you can specify to modify an action.
+Options differ based on the value of *action*.
+
+== Actions and options
+
+=== installFeature
+
+This action installs features.
+You can install a single feature or a list of space-separated features.
+
+The following options are available for the `installFeature` action:
+
+[%header,cols=2*]
+|===
+|Option
+|Description
+
+|--acceptLicense
+|Accepts the license agreement.
+
+a|_name_
+|One or more features that are separated by a space.
+Specify the feature shortname or the Maven coordinate.
+If you specify a Maven coordinate, it must contain the group ID and the artifact ID, for example, `io.openliberty.features:mpHealth-2.0`.
+{empty} +
+{empty} +
+If the version and packaging type aren't specified, the version defaults to the current runtime version and the packaging type defaults to ESA.
+
+|--noCache
+|Specifies that features installed from a remote repository, for example, Maven Central, aren't cached locally.
+
+|--verbose
+|Displays additional debug information while the action runs.
+
+|===
+
+=== installServerFeature
+
+This action installs the required features for a specified server.
+
+The following options are available for the `installServerFeature` action:
+
+[%header,cols=2*]
+|===
+|Option
+|Description
+
+|--acceptLicense
+|Accepts the license agreement.
+
+a|_name_
+|The name of an existing server in the same Open Liberty environment.
+
+|--noCache
+|Specifies that features installed from a remote repository, for example, Maven Central, aren't cached locally.
+
+|--verbose
+|Displays additional debug information while the action runs.
+
+|===
+
+=== find
+
+This action finds features in the repositories that are applicable to your configuration and allows you to view detailed information about features.
+
+The following options are available for the `find` action:
+
+[%header,cols=2*]
+|===
+|Option
+|Description
+
+a|_searchString_
+|Finds features with names or descriptions that match the _searchString_ in Maven Central and configured Maven repositories.
+If you do not specify _searchString_, the `find` action searches all available features.
+
+|===
+
+[#view-settings]
+=== viewSettings
+
+This action allows you to view the repositories and proxy settings.
+
+The following options are available for the `viewSettings` action:
+
+[%header,cols=2*]
+|===
+|Option
+|Description
+
+|--viewvalidationmessages
+|Displays detailed messages from the validation of the configured `featureUtility.properties` file.
+Each message contains an error code, the line number where the error was found, and the cause of the error.
+
+|===
+
+=== help
+
+This action displays help information for a specified action.
+
+The following options are available for the `help` action:
+
+[%header,cols=2*]
+|===
+|Option
+|Description
+
+a|_name_
+a|The name of the `featureUtility` action for which you need help information.
+
+|===
+
+== Repository and proxy modifications
+
+You can modify several behaviors of the `featureUtility` command by declaring environment variables in the shell environment or by specifying properties in the `featureUtility.properties` file that's located in the `{wlp.install.dir}/etc/` directory.
+Properties that are specified in the `featureUtility.properties` file take precedence over environment variables that are declared in the shell environment.
+For example, if you specify `featureLocalRepo=/usr/IBM/maven/repository` in the `featureUtility.properties` file, then any value set with the `FEATURE_LOCAL_REPO` environment variable is overriden.
+
+It can be helpful to specify modifications to the `featureUtility` command by using properties in the `featureUtility.properties` file rather than environment variables.
+You can easily see repository and proxy settings that are contained in the `featureUtility.properties` file by running the <<view-settings,`viewSettings` action>>.
+Settings that are configured with environment variables don't show up with this information.
+
+The following table lists the environment variables and their corresponding properties that you can specify to modify the `featureUtility` command:
+
+[%header,cols=3*]
+|===
+|Environment variable
+|Corresponding properties
+|Description
+
+|`FEATURE_REPO_URL`
+|`mavenCentralMirror.url`
+|Overrides Maven Central with an on-premises Maven repository.
+
+|`FEATURE_REPO_USER`
+|`mavenCentralMirror.user`
+|The username for `FEATURE_REPO_URL` user credentials.
+
+|`FEATURE_REPO_PASSWORD`
+|`mavenCentralMirror.password`
+|The password for `FEATURE_REPO_URL` user credentials.
+
+|`FEATURE_LOCAL_REPO`
+|`featureLocalRepo`
+|Overrides the local Maven repository.
+
+|`http_proxy`
+|`proxyHost`, `proxyPort`, `proxyUser`, and `proxyPassword`
+a|Configures the outbound HTTP proxy.
+
+|`https_proxy`
+|`proxyHost`, `proxyPort`, `proxyUser`, and `proxyPassword`
+a|Configures the outbound HTTPS proxy.
+
+|===
+
+You can also define additional remote repositories by adding the `customRepoName.url` property in the `featureUtility.properties` file.
+Each repository name must be unique, and defined repositories are accessed in the order that they're specified.
+If a repository requires a user name and password, also set the `customRepoName.user` and `customRepoName.password` properties.
+In the following example, two custom repositories, `remoteRepo1` and `remoteRepo2`, are defined.
+`remoteRepo2` is secure so it also requires a user name and password:
+
+----
+remoteRepo1.url=http://my-remote-server1/maven2
+remoteRepo2.url=https://my-remote-server2/secure/maven2
+remoteRepo2.user=operator
+remoteRepo2.password={aes}KM8dhwcv892Ss1sawu9R+
+----
