@@ -1,39 +1,33 @@
 == Examples
 
-You can enable the SAML Web Single Sign-On feature to configure SAML in Open Liberty:
+=== Example for default configuration
 
-----
-<samlWebSso20 id="defaultSP">
-
-</samlWebSso20>
-----
-
-The default configuration sets the following values:
+The default configuration of the feature activates the following endpoints:
 
 - AssertionConsumerService URL:
+AssertionConsumerService URL (used by the provider to communicate with the server)
 
 `https://<hostname>:<sslport>/ibm/saml20/defaultSP/acs`
 
-- Service Provider (SP) metadata URL:
+- Service Provider (SP) metadata URL:(used to provide configuration information for the provider)
 
 `https://<hostname>:<sslport>/ibm/saml20/defaultSP/samlmetadata`
 
-The preferred approach to configure SAML is by using metadata exchange.
-Supply the provided URL to the SAML identity provider (IdP) to establish federation between this SP and IdP.
+The preferred approach to configure SAML is to supply the metadata url to the identity provider (IdP).
 If the IdP requires a file instead of a URL, use a browser to retrieve the data from that URL and supply the file.
 Next, obtain the metadata file from the provider, rename it to `idpMetadata.xml`, and copy it to the `resources/security` directory on the server.
-The issuer name for SAML assertion is used as the security realm, and `NameID` element is used as the princIdPal to create an authenticated subject from the SAML assertion.
 
-The SAML `AuthnRequest` request is signed with a private key in the default keystore of the server if the `KeyStoreRef` attribute is not specified.
-If the `keyAlias` element is not configured, then `samlsp` element is the default key alias.
-If the `keyAlias` element is not configured, and the keystore contains only one private key, the private key is used in the signature.
+=== Example for a customized configuration
 
+In most cases, exchange of the metadata files is sufficient.
+Additional attribute can be specified if necessary.
 If you create a new service provider instance and the `defaultSP` instance is no longer required, then you must explicitly disable the `defaultSP` instance.
 You can disable the `defaultSP` instance by adding the following code to the `server.xml` file:
 
 ----
 <samlWebSso20 id="defaultSP" enabled="false">
 </samlWebSso20>
-----
 
-Additional attributes can be optionally specified to override the default behavior. In most cases, exchange of the metadata files is sufficient.
+<samlWebSso20 id="newSP" allowCustomCacheKey="false">
+</samlWebSso20>
+----
