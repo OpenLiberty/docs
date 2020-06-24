@@ -38,13 +38,14 @@ To learn more about the Open Liberty Gradle plug-in, check out the link:https://
 == Packaging for containerization
 A Docker image is a multi-layered file that serves as a template for a Docker container.
 The simplest way to containerize your packaged application is by using the latest Open Liberty Docker images, which include the most recent feature versions and link:/docs/ref/general/#security-vulnerabilities.html[security fixes].
-Introduce the Docker images that we supply...
+You can find Open Liberty Docker images hosted on link:https://hub.docker.com/r/openliberty/open-liberty/[Docker Hub].
 
-You can create a Docker image based on one of these Open Liberty images and then copy your application to the container when it starts.
+These images are built on link:https://access.redhat.com/articles/4238681[Universal Base Images (UBI)] and can be used as the foundation for your Dockerfile.
+A Dockerfile is a text file that contains commands about how an image is built.
+You can create a Dockerfile based on an Open Liberty image and then copy your application to the container when it starts.
 The application that's copied is in a WAR file that's built by Maven or Gradle.
-A WAR file is a compressed archive file that contains...
+A WAR file is an archive file that contains...
 
-A Docker image is created based on commands that are contained in a text file that's called a Dockerfile.
 The following example Dockerfile copies a WAR file that contains the Java runtime and an Open Liberty server into a Docker image:
 
 ----
@@ -70,29 +71,28 @@ You can also choose to exclude the runtime binary files from the compressed file
 Open Liberty supports `zip`, `jar`, `tar`, and `tar.gz` package types.
 
 === Server packages for deployment to Open Liberty
-You build a WAR file that contains your application and its server configuration so that you can deploy the WAR file to a server that you created in your Open Liberty installation.
-With this packaging and deployment option, you can use the server commands to control your Open Liberty server.
-If you make updates to your application configuration, you must rebuild the WAR file and redeploy it to Open Liberty.
+You can build a WAR file that contains your application and its server configuration for deployment to an Open Liberty server.
+With this packaging option, you can use link:/docs/ref/command/#server-commands.html[server commands] to control the Open Liberty server.
+If you make updates to your application or server configuration, you must rebuild the WAR file and redeploy it to Open Liberty.
 
 Different options can be specified with the `include` parameter or attribute to tailor a server package to meet your needs.
-When you build your WAR file, all features that are installed in your Open Liberty installation are included in the WAR file, unless you specify the `minify` option.
+When you build a WAR file, all features that are installed in your Open Liberty installation are included in the WAR file, unless you specify the `minify` option.
 The `minify` option strips out anything that's not listed in the `server.xml` file and creates a package that contains just enough runtime to support the configured server.
 
-After you configure your Maven or Gradle configurations with packaging specifications, you're ready to build the project.
 For more information about Open Liberty packaging options with Maven, see the link:https://github.com/OpenLiberty/ci.maven/blob/master/docs/package.md#package[`package` goal in the Maven documentation].
 For more information about Open Liberty packaging options with Gradle, see the link:https://github.com/OpenLiberty/ci.gradle/blob/master/docs/libertyPackage.md#libertypackage-task[`libertyPackage` task in the Gradle documentation].
 
 === Runnable JAR files
-Another option you have is to package your __ into a runnable JAR file.
-When you package into a runnable JAR, you can run your applicdation from the command line without having to separately install Open Liberty on a production server.
+Another option is to package your application into a link:/docs/ref/general/#runnablejarfiles.html[runnable JAR file].
+The `runnable` option is used to package an application, server, and Open Liberty runtime into a runnable JAR file.
+When you package into a runnable JAR file, you can run your application from the command line without having to separately install Open Liberty on a production server.
 
-The `runnable` option is used to package an application, server and Open Liberty runtime into a link:/docs/ref/general/#runnablejarfiles.html[runnable JAR file].
-The server and application can then be started by simply running `java -jar myserver.jar`.
+The server and application can be started by simply running `java -jar myserver.jar`, where `myserver` is the name of your server.
 The JAR file is portable and ready to deploy both the application and server together.
 The `minify` option can be specified with the `runnable` option to package into a minimum runnable JAR file that contains only what you need to run your application.
 
-While runnable JAR files are useful for easy deployment on traditional environments, they're less useful for containerizing because every time the container is rebuilt, the layers of the container that contain both Open Liberty and your application have to be rebuilt.
-If you use WAR files when containerizing (which don't contain the Open Liberty installation), only the application layer (ie your application) has to be rebuilt when the container is rebuilt (as shown in the Dockerfile example above where it pulls the Open Liberty part of the container from a pre-built image in DockerHub).
+While runnable JAR files are useful for easy deployment on traditional environments, they're less useful for containerizing because every time a container is rebuilt, both the Open Liberty and application layers of the container must be rebuilt.
+Alternatively, WAR files don't contain an Open Liberty installation, so only the application layer must be rebuilt when a container is rebuilt.
 
 == See also
 
