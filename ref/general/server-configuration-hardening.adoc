@@ -6,44 +6,44 @@
 // Contributors:
 //     IBM Corporation
 //
-:page-description: Before you run a container in production, harden the container image to remove any potential vulnerabilities that might allow exploitation of your server config or installation.
+:page-description: Before you run a container in production, harden the container image to remove any potential vulnerabilities that might allow exploitation of your server configuration or installation.
 :seo-title: Operating system security hardening - OpenLiberty.io
-:seo-description: Before you run a container in production, harden the container image to remove any potential vulnerabilities that might allow exploitation of your server config or installation.
+:seo-description: Before you run a container in production, harden the container image to remove any potential vulnerabilities that might allow exploitation of your server configuration or installation.
 :page-layout: general-reference
 :page-type: general
 = Server configuration security hardening
 
 Operating system (OS) intrusions occur when unauthorized users are able to log in to the OS and gain access to sensitive resources.
-Employ best practices with Open Liberty to harden your server configuration against potential OS attacks. 
+Employ best practices with Open Liberty to harden your server configuration against potential OS attacks.
 
 One of the ways to protect against improper access to Open Liberty code is to ensure that the file system where Open Liberty binary files are located is mounted read-only.
 Another best practice is to ensure that the Open Liberty server configuration file system, which is the path where the `WLP_USER_DIR` environment variable points, is only writable to authorized server administrators.
 
 == Open Liberty Docker images
 A container that runs in production must have only the tools and packages that you need to run your application.
-Before you run a container in production, harden the container image to remove any potential vulnerabilities that might allow exploitation of your server config or installation.
-You can find Open Liberty Docker images and related information in link:https://hub.docker.com/_/open-liberty[Docker Hub].
+Before you run a container in production, harden the container image to remove any potential vulnerabilities that might allow exploitation of your server configuration or installation.
 
 The simplest way to securely run Open Liberty is to start with an existing Open Liberty Docker image, which is already set up with basic security protocols.
 Although Open Liberty Docker images have basic security that's already configured, take steps to harden an image if you intend to use it in production.
+You can find Open Liberty Docker images and related information in link:https://hub.docker.com/_/open-liberty[Docker Hub].
 Check the following things about your Open Liberty image to verify that it's hardened for production:
 
-* Confirm that the Open Liberty server identity doesn’t own the directory where the server config is stored (`WLP_USER_DIR`) and has only read access to it.
+* Confirm that the Open Liberty server identity doesn’t own the directory where the server configuration is stored (`WLP_USER_DIR`) and has only read access to it.
 Set the `WLP_OUTPUT_DIR` environment variable to point to the server logs with the same server identity as the owner of this directory.
 * Ensure that any sensitive information in the `server.xml` file is link:/docs/ref/general/#securityUtility.html[AES encrypted].
 * Disable all non-TLS ports by setting ports to `-1` in the `httpPort` argument of the `httpEndpoint` stanza.
 * Use the link:/docs/ref/feature/#transportSecurity-1.0.html[Transport Security feature] instead of the link:/docs/ref/feature/#ssl-1.0.html[SSL feature].
-* Add `webAppSecurity ssoRequiresSSL=’true’` to the `server.xml` file.
-* Add `webAppSecurity httpOnlyCookies=’true’` to the `server.xml` file.
-* Set `httpOptions removeServerHeader="true"` in the `server.xml` file.
-* Set `webContainer disableXPoweredBy="true"` in the `server.xml` file.
+* Add the `webAppSecurity ssoRequiresSSL=’true’` config to the `server.xml` file.
+* Add the `webAppSecurity httpOnlyCookies=’true’` config to the `server.xml` file.
+* Set the `httpOptions removeServerHeader="true"` config in the `server.xml` file.
+* Set the `webContainer disableXPoweredBy="true"` config in the `server.xml` file.
 
 If you extend an Open Liberty image for use in production, opt for the leanest possible configuration by adding only tools and packages that are essential to your application.
 Using a minimal image reduces the number of OS vulnerabilities that you bundle with your application.
 
 == Current Open Liberty version
 Keep your version of Open Liberty up to date.
-The zero migration policy of Open Liberty means that you can move to a later version without changing anything in your server config.
+The zero migration policy of Open Liberty means that you can move to a later version without changing anything in your server configuration.
 Staying on the latest version also ensures that you get the latest link:/docs/ref/general/#security-vulnerabilities.html[security fixes] because updates are first released in the current version.
 After security fixes are released for the current version of Open Liberty, they are rolled back to older releases.
 Container images in Docker Hub are updated every time a new version of Open Liberty is released.
@@ -66,7 +66,7 @@ A file with `770` permissions means that the file owner and any user in the grou
 All others have no permissions.
 Generally, the last digit in the file permissions ends in `0` because others shouldn't have access to protected information.
 
-Ensure that only administrative users are attached to the group that has write access to the server config files.
+Ensure that only administrative users are attached to the group that has write access to the server configuration files.
 
 By default, Open Liberty Docker images run with `USER 1001` (non-root) as part of group `0`.
 This setting ensures that these images don't run as root by default.
@@ -85,9 +85,9 @@ However, when hardening a server, this ID must be configured only with read acce
 This ID can also own files, or it can be a separate ID from the file owner.
 
 * *Users who are responsible for administering the server*:
-These users likely require read and write access to the server config files.
+These users likely require read and write access to the server configuration files.
 A best practice is to not share login IDs or passwords among administrators.
-Instead, set up the server config file system owner with a dedicated ID, and permit administrators to use sudo to switch to this ID to update the config.
+Instead, set up the server configuration file system owner with a dedicated ID, and permit administrators to use sudo to switch to this ID to update the config.
 
 * *Users who are involved in server-related activities*:
 Some of these users need read access to view the logs, while other users might need limited write access.
@@ -99,8 +99,8 @@ These users shouldn't have access to the config or product file systems, and are
 Include files can hold portions of the config outside of the `server.xml` file.
 These files are helpful in two primary situations:
 
-* When sensitive information needs to be available for select users or groups, for example, database administrators, but not the larger group with read access to the server config.
-* When a user needs to update only their portion of the server config.
+* When sensitive information needs to be available for select users or groups, for example, database administrators, but not the larger group with read access to the server configuration.
+* When a user needs to update only their portion of the server configuration.
 In this situation, it is important to ensure that a user can't override config in the `server.xml` file.
 To prevent users from overriding config in the `server.xml` file, use the `onConflict` tag in the `<include>` element:
 +
@@ -147,6 +147,6 @@ This separate config file must contain only a single property declaration, and m
 
 == Other potential vulnerabilities
 
-Hardening your server config is crucial to sealing off vulnerabilities and preventing attackers from gaining access to sensitive resources in your config file system.
-Protecting these points of attack hardens your server config for use in production, but there are other security vulnerabilities to consider before your container and application are production-ready.
+Hardening your server configuration is crucial to sealing off vulnerabilities and preventing attackers from gaining access to sensitive resources in your config file system.
+Protecting these points of attack hardens your server configuration for use in production, but there are other security vulnerabilities to consider before your container and application are production-ready.
 You must also ensure that you harden your link:/docs/ref/general/#network-hardening.html[network] and link:/docs/ref/general/#application-hardening.html[application configuration] to keep your application and users safe in production.
