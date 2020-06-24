@@ -1,0 +1,88 @@
+// Copyright (c) 2020 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description: It is important to harden your Open Liberty server for production to reduce vulnerabilities and prevent security intrusions.
+:seo-title: Introduction to Open Liberty server hardening for production - OpenLiberty.io
+:seo-description: It is important to harden your Open Liberty server for production to reduce vulnerabilities and prevent security intrusions.
+:page-layout: general-reference
+:page-type: general
+= Introduction to Open Liberty server hardening for production
+
+Hardening is a general term that is used to describe the measures that are taken to enhance your system security against potential threats and risks in production.
+It is important to harden your Open Liberty server configuration, application configuration, and network to reduce vulnerabilities and prevent security intrusions.
+
+Different types of security intrusions can threaten different parts of your system.
+You can employ best practices to make each part less vulnerable.
+Security intrusions and vulnerabilities can be broken down into different groups:
+
+* <<#server-configuration,Server configuration>>
+* <<#network,Network>>
+* <<#application-configuration,Application configuration>>
+
+[#server-configuration]
+== Server configuration
+Operating system (OS) intrusions occur when users with local access attempt to cause damage or extract sensitive information.
+One example of this type of intrusion is malware.
+If malware is introduced into a system, unauthorized users might be able to access the server configuration and its contents.
+
+=== Summary of server configuration hardening best practices
+* *Stay up to date with Open Liberty*: To reduce OS vulnerabilities, keep your version of Open Liberty up to date.
+Each version of Open Liberty is compatible with later versions, which means that you can move to a later version without changing anything in your server config.
+Keeping Open Liberty up to date helps ensure that you have the most recent link:/docs/ref/general/#security-vulnerabilities.html[critical security fixes].
+To get the latest version of Open Liberty, see the link:https://openliberty.io/downloads/[downloads page].
+* *Use user registries that are safe for production*: Basic and Quick Start Security user registries are useful for development environments, but they are not acceptable for readiness testing, QA, or production use.
+Instead, use an LDAP user registry, federated registries, or create a custom user registry.
+If you use an LDAP user registry, maintain your bind password in a separate `include` file, not in the `server.xml` file.
+If you use a custom registry, use the `UserRegistry` class to implement the registry, and make sure that the registry is thoroughly reviewed before you use it in production.
+* *Use web single-sign on*: For user authentication, it's common to use single-sign on (SSO) technologies, such as SAML, JWT, or OpenID Connect, instead of directly accessing user registries from Open Liberty.
+SSO provides better security and regulatory compliance.
+If you use SSO, maintain your SSO config in a separate include file, not in the `server.xml` file.
+For more information about configuring SSO, see link:/docs/ref/general/#configuring-spnego-auth.html[Configuring SPNEGO authentication in Open Liberty].
+* *Carefully configure file permissions*: When you configure file permissions, ensure that users who require access to the server config have no more than the required capability.
+For instance, a database administrator has access to only the data source config that is referenced in the `server.xml` file with an `include` statement.
+Users that aren't administrators or developers with specialized access, for example, users who need to view application or server logs, fall into the *other* group for server config files.
+In all files, configure the *other* group with no access, which is indicated by `0`.
+* *Encrypt passwords*: Use AES encryption for passwords instead of Base64 encoding.
+You can use the `securityUtility` command, which provides plain text encryption for Open Liberty.
+For more information about the `securityUtility` command, see the link:/docs/ref/general/#securityUtility.html[command documentation].
+
+To learn more about ways to prevent OS intrusions, see link:/docs/ref/general/#server-configuration-hardening.html[Server configuration security hardening].
+
+[#network]
+== Network
+Network intrusions occur when unauthorized users monitor or alter network traffic. Replay attacks and man-in-the-middle (MITM) attacks are two examples of network intrusions.
+
+=== Summary of network hardening best practices
+* *Use a firewall*: Use a firewall to shield production Open Liberty servers so that they don't run in the DMZ.
+The DMZ is an unsecured network segment that exists between internal and external networks.
+Firewalls help prevent security intrusions by monitoring network traffic and blocking specific traffic based on security rules.
+* *Enable the Transport Security feature*: The link:/docs/ref/feature/#transportSecurity-1.0.html[Transport Security feature] enables TLS for HTTP connections and adds the ability to configure outbound transports with TLS.
+Additionally, disable non-TLS ports by setting them to `-1` in the `server.xml` file, and use only certificates that are signed by a certificate authority for public-facing production servers.
+Also, enable TLS in your client and web server.
+Using TLS connections throughout your network communication flow helps protect your server from network intrusions.
++
+If you use SSO for user authentication, all SSO endpoint URLs must use a secure HTTP scheme (HTTPS), and the client must check the TLS server certificate.
+* *Run applications on a virtual host*: Configure applications to run on a virtual host.
+Open Liberty admin traffic comes in on the default host, so configuring your applications to run on a virtual host keeps Open Liberty admin traffic separate from application requests.
+
+To learn more about ways to prevent network intrusions, see link:/docs/ref/general/#network-hardening.html[Network security hardening].
+
+[#application-configuration]
+== Application configuration
+Application configuration intrusions occur when external users run applications that derive or inherit privileges that they are not authorized to.
+One example of this type of intrusion happens when an application inherits the identity of the server, giving the application unauthorized permissions.
+
+=== Summary of application configuration hardening best practices
+* *Understand application roles and access control*: Roles and mappings are crucial for securely configuring your application.
+Incorrect role mapping can give inadvertent levels of access to users, which can result in users who can gain unapproved access to sensitive resources.
+For more information about roles and mapping them to the appropriate users or groups, see link:/docs/ref/general/#authorization.html[Authorization in Open Liberty].
+* *Secure servlet aliases*: Servlets are secured by URLs, and each URL must be specified with security constraints.
+The security constraints can be outlined by using JAX-RS annotations, or they can be included in the `web.xml` file.
+Because Open Liberty secures URLs and not the underlying classes, if a single servlet URL is not secured, an intruder might be able to bypass security.
+
+To learn more about ways to prevent application intrusions, see link:/docs/ref/general/#application-hardening.html[Application configuration security hardening].
