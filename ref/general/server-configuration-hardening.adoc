@@ -33,10 +33,10 @@ Set the `WLP_OUTPUT_DIR` environment variable to point to the server logs with t
 * Ensure that any sensitive information in the `server.xml` file is link:/docs/ref/general/#securityUtility.html[AES encrypted].
 * Disable all non-TLS ports by setting ports to `-1` in the `httpPort` argument of the `httpEndpoint` stanza.
 * Use the link:/docs/ref/feature/#transportSecurity-1.0.html[Transport Security feature] instead of the link:/docs/ref/feature/#ssl-1.0.html[SSL feature].
-* Add the `webAppSecurity ssoRequiresSSL=’true’` config statement to the `server.xml` file.
-* Add the `webAppSecurity httpOnlyCookies=’true’` config statement to the `server.xml` file.
-* Set the `httpOptions removeServerHeader="true"` config statement in the `server.xml` file.
-* Set the `webContainer disableXPoweredBy="true"` config statement in the `server.xml` file.
+* Add the `webAppSecurity ssoRequiresSSL=’true’` statement to the `server.xml` file.
+* Add the `webAppSecurity httpOnlyCookies=’true’` statement to the `server.xml` file.
+* Set the `httpOptions removeServerHeader="true"` statement in the `server.xml` file.
+* Set the `webContainer disableXPoweredBy="true"` statement in the `server.xml` file.
 
 If you extend an Open Liberty image for use in production, opt for the leanest possible configuration by adding only tools and packages that are essential to your application.
 Using a minimal image reduces the number of OS vulnerabilities that you bundle with your application.
@@ -74,13 +74,13 @@ This setting ensures that these images don't run as root by default.
 == Access control
 It is critical to control users' access levels so that users have the appropriate access to Open Liberty files.
 Non-administrative users require minimal access, based on their needs.
-Different types of users might need to access the config or logs.
+Different types of users might need to access the configuration or logs.
 These users might include administrators, developers, or database support personnel.
 The following points provide guidance on controlling users' access:
 
 * *The ID that the Open Liberty server uses to run*:
-This ID needs to read its config and write to logs.
-However, when hardening a server, this ID must be configured only with read access to its own config files.
+This ID needs to read its configuration and write to logs.
+However, when hardening a server, this ID must be configured only with read access to its own configuration files.
 This ID can also own files, or it can be a separate ID from the file owner.
 
 * *Users who are responsible for administering the server*:
@@ -92,16 +92,16 @@ Instead, set up the server configuration file system owner with a dedicated ID, 
 Some of these users need read access to view the logs, while other users might need limited write access.
 
 * *Unauthorized users*:
-These users are treated as part of the other group, so they don't have access to the config or product file systems.
+These users are treated as part of the other group, so they don't have access to the configuration or product file systems.
 
 == Include file processing
-Include files can hold portions of the config outside of the `server.xml` file.
+Include files can hold portions of the configuration outside of the `server.xml` file.
 These files are helpful in two primary situations:
 
 * When sensitive information needs to be available for select users or groups, for example, database administrators, but not the larger group with read access to the server configuration.
 * When a user needs to update only a portion of the server configuration.
-In this situation, it is important to ensure that a user can't override config in the `server.xml` file.
-To prevent users from overriding config in the `server.xml` file, use the `onConflict` tag in the `<include>` element:
+In this situation, it is important to ensure that a user can't override configuration in the `server.xml` file.
+To prevent users from overriding configuration in the `server.xml` file, use the `onConflict` tag in the `<include>` element:
 +
 [source,xml]
 ----
@@ -111,24 +111,24 @@ To prevent users from overriding config in the `server.xml` file, use the `onCon
 In this example, Open Liberty ignores XML elements in the `myIncludeFile.xml` file that are also found in the  `server.xml` file.
 
 == Automated updates
-Config updates must be carefully controlled in production environments to reduce the possibility that unknown changes or vulnerabilities are deployed to users.
-You can disable automated config updates so that your production environment isn't changed unless you manually update it.
+Configuration updates must be carefully controlled in production environments to reduce the possibility that unknown changes or vulnerabilities are deployed to users.
+You can disable automated configuration updates so that your production environment isn't changed unless you manually update it.
 
 By default, each server contains a monitored application directory that's named `/dropins`.
 When an application is placed in this directory, the server automatically deploys and starts the application.
-If you update config in the `server.xml` file or `/dropins` directory, the server automatically deploys the config changes.
+If you update configuration in the `server.xml` file or `/dropins` directory, the server automatically deploys the configuration changes.
 
-Each server also contains a monitored directory that's named `/dropins/configDropins` for config snippets.
-If you update the config in this directory, the server automatically deploys the config changes.
+Each server also contains a monitored directory that's named `/dropins/configDropins` for configuration snippets.
+If you update the configuration in this directory, the server automatically deploys the configuration changes.
 
-To ensure that you deploy only explicitly pre-configured applications where their config is in the `server.xml` file, disable monitoring of the `/dropins` directory:
+To ensure that you deploy only explicitly pre-configured applications where their configuration is in the `server.xml` file, disable monitoring of the `/dropins` directory:
 
 [source,xml]
 ----
 <applicationMonitor updateTrigger="mbean" dropinsEnabled="false" />
 ----
 
-You can also disable automatic config updates in the `server.xml` file by using the following config statement:
+You can also disable automatic configuration updates in the `server.xml` file by using the following configuration statement:
 
 [source,xml]
 ----
@@ -141,11 +141,11 @@ You can use the link:/docs/ref/general/#securityUtility.html[`securityUtility` c
 AES encryption is also preferable to XOR encryption because an XOR-encoded password is visible to any administrator
 
 With AES encryption, the default encryption key that is used for decryption can be overridden by setting the `wlp.password.encryption.key` property.
-This property must not be set in the `server.xml` file, but in a separate config file that is included by the `server.xml` file.
-This separate config file must contain only a single property declaration, and must be stored outside the normal config directory for the server.
+This property must not be set in the `server.xml` file, but in a separate configuration file that is included by the `server.xml` file.
+This separate configuration file must contain only a single property declaration, and must be stored outside the normal configuration directory for the server.
 
 == Other potential vulnerabilities
 
-Hardening your server configuration is crucial to sealing off vulnerabilities and preventing attackers from gaining access to sensitive resources in your config file system.
+Hardening your server configuration is crucial to sealing off vulnerabilities and preventing attackers from gaining access to sensitive resources in your configuration file system.
 Protecting these points of attack hardens your server configuration for use in production, but you need to consider other security vulnerabilities before your container and application are production-ready.
 You must also ensure that you harden your link:/docs/ref/general/#application-hardening.html[application configuration] and your link:/docs/ref/general/#network-hardening.html[network] to keep your application and users safe in production.
