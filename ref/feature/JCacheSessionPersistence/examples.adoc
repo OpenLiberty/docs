@@ -1,43 +1,25 @@
 == Examples
 
-=== Configuring Open Liberty servers to persist session data with JCache
-After you enable the `sessionCache` feature, define a library that points to the location of your `JCache` provider:
+=== Configure Liberty servers to persist session data with `JCache`
+
+Following is an example to configure session persistence by using Hazelcast as the JCache provider:
+
 
 [source,java]
 ----
-<library id="jCacheVendorLib">
-  <fileset dir="${server.config.dir}/hazelcast" includes="hazelcast.jar"/>
-</library>
-----
 
-You can specify JCache vendor configuration by specifying a provider-specific URI, provider-specific properties, or Specify provider-specific system properties.
+  <library id="jCacheVendorLib">
+    <fileset dir="${shared.resource.dir}/hazelcast" includes="hazelcast.jar"/>
+  </library>
 
-The following example configures session persistence with Hazelcast as the JCache provider:
-
-[source,java]
-----
-<httpSessionCache libraryRef="jCacheVendorLib"
+  <httpSessionCache libraryRef="jCacheVendorLib"
                     uri="file:${shared.resource.dir}/hazelcast/hazelcast.xml"/>
 
-<httpSession cloneId="${cloneId}"/>
+  <httpSession cloneId="${cloneId}"/>
 ----
 
-The HTTP server plug-in uses the clone ID that is inserted into the response or request header to maintain session affinity between requests.
-While the clone ID usually doesn't change, in Liberty the clone ID is generated when you start a server for the first time, and it is regenerated if you start the server with the `--clean` option.
-For production use, manually assign a clone ID to ensure that the ID is stable and that request affinity is maintained.
-The clone ID must be unique for each server and consists of alphanumeric characters.
-
-Any needed Hazelcast configuration, such as for security, can be provided in the `${server.config.dir}/hazelcast/hazelcast.xml` file.
-
-Specify unique variables in the `bootstrap.properties` file of each server:
-
-- ${wlp.user.dir}/servers/s1/bootstrap.properties
-----
-httpPort=9081
-cloneId=s1
-----
-- ${wlp.user.dir}/servers/s2/bootstrap.properties
-----
-httpPort=9082
-cloneId=s2
-----
+The library element defines a library that points to the location of your JCache provider.
+The JCache provider in this example is Hazelcast, which is located in a JAR file called hazelcast.jar in the Hazelcast installation directory(The location of the installation?).
+A clone ID is xxxxx (what is it? or would that be obvious to someone configuring session caching?) and is unique for each server.
+In the example, the clone ID is server1, which matches the clone ID shown in (where?). 
+Additional Hazelcast configuration is provided in the hazelcast.xml file.
