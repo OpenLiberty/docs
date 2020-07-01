@@ -19,7 +19,7 @@ Open Liberty authenticates users by collecting credentials from them, such as a 
 
 For example, a user of a streaming music service might want to listen to a song, learn about the artist, and get recommendations for similar artists. Each of these tasks requires access to a different service, but authenticating to each service separately expends time and resources. Open Liberty supports a number of different strategies for single sign-on (SSO) authentication so that a user or service authenticates only one time to access the various resources in an application. For example, the link:/docs/ref/feature/#socialLogin-1.0.html[Social Media Login] feature enables users of an application that is running on Open Liberty to authenticate through their social media login. After authentication, an application can either obtain a JSON Web Token (JWT) from the social media service or associated OpenID Connect provider, or create a new one. This JWT can then authenticate the user to any service in the application.
 
-In the following diagram, a user requests access to protected resources in an application. During authentication, the user’s request is routed to an Open ID Connect identity provider, which confirms the user's identity and security roles. The identity provider sends authentication data back to the application, where it is used to authorize user access to protected resources. During authorization, Open Liberty checks the roles that are specified for the user against the roles that are defined for the application resources. The user is granted access to any resources that match their role.
+In the following diagram, a user requests access to protected resources in an application. During authentication, the user’s request is routed to an Open ID Connect identity provider, which confirms the user's identity and security roles. The identity provider sends authentication data back to the application, where it is used to authorize user access to protected resources. During link:/docs/ref/general/#authorization.html[authorization], Open Liberty checks the roles that are specified for the user against the roles that are defined for the application resources. The user is granted access to any resources that match their role.
 
 image::/docs/img/authn-ol-diagram.png[Authentication diagram,align="center"]
 
@@ -33,22 +33,17 @@ Depending on the kind of credentials that are provided, the user and group infor
 
 == User registries
 
-A link:/docs/ref/general/#user-registries-application-security.html[user registry] is a data source that contains security information about a set of users. When a user requests a protected resource in an application, the user's credentials are checked against the information in one or more user registries. Open Liberty provides an easy-to-use basic user registry for developers to use in test environments. Typically, applications in production are configured to use an external registry, such as a Lightweight Directory Access Protocol (LDAP) registry.
+A user registry is a data source that contains security information about a set of users. When a user requests a protected resource in an application, the user's credentials are checked against the information in one or more user registries. Open Liberty provides an easy-to-use basic user registry for developers to use in test environments. Typically, applications in production are configured to use an external registry, such as a Lightweight Directory Access Protocol (LDAP) registry.
 
 Open Liberty supports multiple user registries and federates them into a single logical view. Information from LDAP, basic, and custom user registries can be federated into a common registry to manage application security.
 
-If your application needs to reference a data store other than a basic or LDAP registry, you can configure a custom registry by implementing the `UserRegistry` interface. The `UserRegistry` interface is an API that enables support to virtually any type of account repository.
+If your application needs to reference a data store other than a basic or LDAP registry, you can configure a custom registry by implementing the `UserRegistry` interface. The `UserRegistry` interface is an API that enables support for virtually any type of account repository.
+
+link:/docs/ref/feature/#appSecurity-3.0.html[The Application Security feature] provides core support for user registries in Open Liberty. For more information, see link:link:/docs/ref/general/#user-registries-application-security.html[User registries for application security].
 
 == Single sign-on
 
 With link:/docs/ref/general/#single-sign-on.html[single sign-on] (SSO), users can authenticate at one location and access multiple servers or services without being repeatedly prompted to log in. SSO is especially important for microservice-based applications, where a single user request might require authentication to several different microservices.
-
-////
-removing per ajay
-
-SSO for applications that run on Open Liberty is supported by using the Lightweight Third Party Access (LTPA) protocol. The LTPA protocol uses cryptographic keys to share user data between servers that use the same user registry. When the link:/docs/ref/feature/#appSecurity.html[appSecurity-2.0] (or later) feature is enabled in Open Liberty, LTPA keys are automatically created if they do not exist.
-
-////
 
 When a user authenticates to one Open Liberty server, an SSO token is created for that user and is put in a cookie. The cookie is then sent to the HTTP client, for example, a browser. If the same user makes a request to access another application that is on a different server, but in the same SSO configuration, the cookie is sent along with the request. If the receiving server can validate the token, the user is authenticated without being prompted for another login. If the server cannot validate the token, for example, because of an LTPA key mismatch, the user is prompted to enter the credential information again.
 
@@ -67,10 +62,10 @@ LTPA provides a token-based SSO configuration to authenticate users when they ar
 OIDC is a simple identity protocol based on OAuth 2.0 that is widely used in SSO technologies. This protocol enables a client application to request the identity of the user as an ID token in a standardized, REST-like manner. The client application, or Relying Party, requests information about a user from an authorization server, which is known as an OIDC Provider. After users are authenticated by an OIDC Provider, they can access any Relying Party that is configured for that provider, without having to manage unique accounts for each application or website. link:/docs/ref/feature/#openidConnectServer-1.0.html[Open Liberty can act as an OIDC provider], which can be useful in development and testing environments. Although Open Liberty can also act as an OIDC provider in production, typically applications in deployment use a cloud-hosted SSO provider.
 
 === Security Assertion Markup Language (SAML)
-When SAML SSO is configured, web applications can delegate user authentication to a SAML identity provider instead of a configured user registry. With SAML  SSO, enterprises can manage and control user identities from a centralized location. You can configure SAML authentication for OPen Liberty with link:/docs/ref/feature/#samlWeb-2.0.html[the SAML web single sign-on feature].
+When SAML SSO is configured, web applications can delegate user authentication to a SAML identity provider instead of a configured user registry. With SAML  SSO, enterprises can manage and control user identities from a centralized location. You can configure SAML authentication for Open Liberty with link:/docs/ref/feature/#samlWeb-2.0.html[the SAML web single sign-on feature].
 
 === Simple and Protected GSS-API Negotiation Mechanism (SPNEGO)
-When SPNEGO SSO is enabled, users log in to the Microsoft (TM) domain controller one time to access and move between protected resources on Open Liberty servers.
+When SPNEGO SSO is enabled, users can log in to the Microsoft (TM) domain controller one time to access and move between protected resources on Open Liberty servers.
 For more information, see link:/docs/ref/general/#configuring-spnego-auth.html[Configuring SPNEGO authentication in Open Liberty].
 
 == See also
