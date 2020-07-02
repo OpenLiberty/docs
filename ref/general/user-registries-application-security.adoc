@@ -15,7 +15,7 @@
 
 A user registry is a data source that contains account information, such as usernames and passwords. An application server can retrieve this information to link:/docs/ref/general/#authentication.html[authenticate] and link:/docs/ref/general/#authorization.html[authorize] users.
 
-Typically, microservice-based applications in production run on an application server that is configured to use an external user registry, such as a Lightweight Directory Access Protocol (LDAP) registry. However, in test environments, a developer might want to set up a basic, file-based user registry within the application server to simplify security operations during the development process.
+Microservice-based applications in production often run on an application server that delegates identity management to a link:/docs/ref/general/#single-sign-on.html[single sign-on] provider, such as Google or Facebook. However, some enterprises maintain their own internal user registries, such as a Lightweight Directory Access Protocol (LDAP) registry. Furthermore, in test environments, a developer might want to set up a basic, file-based user registry within the application server to simplify security operations during the development process.
 
 == Basic user registries for application development
 
@@ -36,13 +36,11 @@ You can use this command regardless of whether the registry is configured with t
 
 == LDAP user registries for applications in production
 
-The Lightweight Directory Access Protocol (LDAP) is an open protocol that supports authentication and authorization services. LDAP specifies the language that application servers use to communicate with LDAP user registries, which store security information such as usernames, passwords, and user groups.
+The Lightweight Directory Access Protocol (LDAP) is an open protocol that supports authentication and authorization services. LDAP specifies the language that application servers use to communicate with LDAP user registries, which store security information such as usernames, passwords, and user groups. LDAP user registries are often used to manage authentication within a specific domain, such as a corporate intranet or email system.  Organizations might set up an LDAP registry if they want to manage their own authentication, without relying on a third party. However, it is possible to configure authentication to an LDAP registry through an external identity provider. 
 
-Although a basic user registry might be sufficient during development and testing of an application, an LDAP user registry provides the extra security that is required for applications in production.
-Many kinds of LDAP servers exist, such as the IBM Security Directory Server and the Microsoft Active Directory.
-Open source LDAP servers are also available, such as OpenLDAP and ApacheDS.
+Although a basic user registry might be sufficient during development and testing of an application, an LDAP user registry provides the extra security that is required for applications in production. If your app needs to control access to resources that are specific to a particular organization or enterprise, you might need to configure it to connect with an existing LDAP registry.
 
-To configure Open Liberty to manage authentication with an LDAP user registry, add the link:/docs/ref/feature/#appSecurity-3.0.html[Application Security] and link:/docs/ref/feature/#ldapRegistry-3.0.html features to your `server.xml` file.
+To configure Open Liberty to manage authentication with an LDAP user registry, add the link:/docs/ref/feature/#appSecurity-3.0.html[Application Security] and link:/docs/ref/feature/#ldapRegistry-3.0.html[the LDAP User Registry feature] features to your `server.xml` file.
 If you need to communicate with a TLS-enabled LDAP server, you must also add the link:/docs/ref/feature/#transportSecurity-1.0.html[Transport Security] feature.
 For configuration examples, see link:/docs/ref/feature/#ldapRegistry-3.0.html[the LDAP User Registry feature].
 
@@ -57,14 +55,14 @@ For more information, see the example configurations for the link:/docs/ref/feat
 In cases where user and group information is spread across multiple registries, federation enables Open Liberty to use distributed user information in a unified manner, with a continuous store of information.
 Different types of registries can be federated to combine information from LDAP, basic, and custom user registries and repositories into a common registry.
 
-If multiple basic user registries are configured in your `server.xml` file, they are federated by default if you enable both the Application Security feature and the Federated User Registry feature. For more information, see link:/docs/ref/feature/#federatedRegistry-1.0.html[the Federated User Registry feature]. However, user registries that are configured with the `quickStartSecurity` element cannot be federated with other registries.
+If multiple basic user registries are configured in your `server.xml` file, they are federated by default if you enable both the Application Security feature and the Federated User Registry feature. However, user registries that are configured with the `quickStartSecurity` element cannot be federated with other registries. For more information, see link:/docs/ref/feature/#federatedRegistry-1.0.html[the Federated User Registry feature].
 
 LDAP registries are federated by default.
 If you configure more than one LDAP registry in your `server.xml` file, then the registries are automatically federated into a common registry.
 This default federation occurs regardless of whether the LDAP registries are separate data stores or two subtrees of the same LDAP registry.
 Similarly, if one or more LDAP registries are configured with one or more basic or custom registries in the `server.xml` file, then they are federated by default.
 
-You can adjust the configuration of federated registries by enabling the link:/docs/ref/feature/#federatedRegistry-1.0.html[Federated User Registry feature] and configuring the `federatedRepository` element.
+You can adjust the configuration of federated registries by enabling the link:/docs/ref/feature/#federatedRegistry-1.0.html[Federated User Registry feature] and configuring the `federatedRepository` element. This configuration can be useful if you want to exclude certain registries from a federated group by selectively including only the registries you want to federate.
 For more information, see link:/docs/ref/config/#federatedRepository.html[User Registry Federation].
 
 == See also
