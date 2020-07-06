@@ -22,6 +22,12 @@ For a hung request, apart from printing a warning message along with the relevan
 Three Java cores are generated for a hung request, each a minute apart.
 If a previously hung request is completed, a detailed message is logged, including the ID and time of completion of the request.
 
+A slow request can be slow because the code path length of a request is particularly long or because some resource the request depends on, such as a database is busy.
+For a slow request users need to know what actions have occurred during the processing of that request, and where in the request the processing is currently at.
+Requests that take longer are typically blocked by lack of access to a shared resource, for example, a section of code that allows only serial access and transfers information sequentially.
+Such longer requests are likely to be hung, and can be blocked for a long time or even indefinitely.
+One particular form of hung request occurs when two threads are blocked waiting on each other to return shared resources, which is called a deadlock.
+For a hung request, users need to know where all the threads are at in their processing and which locks they are waiting on.
 For more information, see the link:/docs/ref/feature/#requestTiming-1.0.html[Request Timing] feature.
 
 == Detect slow requests
@@ -40,7 +46,7 @@ TRAS0112W: Request <(Request ID)> has been running on thread <THREADID> for at l
 ----
 
 The message helps you analyze the reason behind the slow request, though it is difficult to determine whether the request is hung at that point or is still running slowly.
-To address this issue, three messages are displayed for any slow request at the interval specified by the `slowRequestThreshold` attribute.
+To address this issue, three messages are displayed for any slow request at the interval that is specified by the `slowRequestThreshold` attribute.
 The stack trace data gives the information about the method that is running, while the request data gives details about the request, like the request ID and duration.
 The three stack traces and logged details of the request help you to better understand which parts of the code are taking the longest to run.
 No further warnings are logged about the request unless the duration of the request crosses the hung request detection threshold.
