@@ -1,0 +1,213 @@
+// Copyright (c) 2019 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description: You can build resilient microservices by including fault tolerance policies in your code.
+:seo-title: Fault tolerance
+:seo-description: You can build resilient microservices by including fault tolerance policies, such as Timeout, Fallback, Bulkhead and Circuit Breaker, in your code.
+:page-layout: general-reference
+:page-type: general
+= Fault tolerance
+
+You can build resilient microservices by including fault tolerance policies in your code.
+
+Microservice-based applications are resilient when they can continue operating if there is a failure or error in some part of the system. Fault tolerance helps applications fail fast and recover smoothly by guiding how and when certain requests occur and by providing fallback strategies to handle common errors. For example, in an airline ticket application, different microservices might support scheduling, purchasing, and customer preferences. If one service fails, fault tolerance policies help contain the error and keep it from taking down the whole application.
+
+== MicroProfile Fault Tolerance
+
+The link:https://download.eclipse.org/microprofile/microprofile-fault-tolerance-2.0/microprofile-fault-tolerance-spec.html[MicroProfile Fault Tolerance feature] defines a standard API to implement a set of fault tolerance policies. The policies that you implement in your code guide how long requests run, when they retry after an error, and what they do to recover when certain requests fail. MicroProfile Fault Tolerance makes it easy to build resilient microservices that provide reliable function, even when errors occur.
+
+MicroProfile Fault Tolerance supports the following policies:
+
+- <<#timeout,Timeouts>>
+- <<#retry,Retries>>
+- <<#fallback,Fallbacks>>
+- <<#circuit,Circuit Breakers>>
+- <<#bulkhead,Bulkheads>>
+- <<#asynchronous, Asynchronous>>
+
+[#timeout]
+=== Timeout
+
+
+The Timeout policy prevents a request from waiting forever by setting a time limit on how long it can run. If the request exceeds the time limit, the timeout policy fails the request, even if it returns successfully. This policy saves an application from allocating resources to an unresponsive service.
+
+The following example shows a `@Timeout` annotation that is applied to the method `serviceA`, with a time limit of 400 ms.
+
+[source,java]
+----
+@Timeout(400) // timeout is 400ms
+public Connection serviceA() {
+   Connection conn = null;
+   counterForInvokingServiceA++;
+   conn = connectionService();
+   return conn;
+}
+----
+
+
+For more information, see link:https://openliberty.io/docs/ref/microprofile/3.0/#package=org/eclipse/microprofile/faulttolerance/package-frame.html&class=org/eclipse/microprofile/faulttolerance/Timeout.html[the Timeout annotation].
+
+[#retry]
+=== Retry
+
+In some cases, the underlying causes of an error or delay are momentary. The Retry policy saves an operation from failing on a momentary error by trying the operation again and giving it another chance to succeed.
+
+The Retry policy can be applied at either the class or method level.  If it is applied to a class, all the methods in that class receive the same retry policy. If different retry policies are applied at a class level and at a method level within that class, the method level `@Retry` annotation overrides the class level policy for that particular method.
+
+The following example shows a @Retry that is annotation is configured to retry an underlying service if the service throws an exception.
+
+[source,java]
+----
+@Retry(retryOn = Exception.class)
+public void service() {
+    underlyingService();
+}
+
+----
+
+For more information, see link:https://openliberty.io/docs/ref/microprofile/3.0/#package=org/eclipse/microprofile/faulttolerance/package-frame.html&class=org/eclipse/microprofile/faulttolerance/Retry.html[the Retry annotation].
+
+[#circuit]
+=== Circuit Breaker
+
+
+The circuit breaker policy prevents repeated failures by setting conditions under which an operation fails immediately. If these conditions are met, the circuit breaker opens and fails the operation, which prevents repeated calls that are likely to fail.
+
+There are three possible circuit states that are set by the circuit breaker. The transition between these states is determined by how the failure condition parameters are configured on the `@CircuitBreaker` annotation.
+
+- Closed: Under normal conditions, the circuit breaker is closed, which allows operations to continue running.
+- Open: When the configured error conditions are met, the circuit breaker opens and calls to the service that is operating under the circuit breaker fail immediately.
+- Half-open: After the configured delay period, an open circuit moves to a half-open state. In this state, the circuit accepts a configured number of trial calls. If any of these calls fail, the circuit breaker returns to the open state. If the configured number of trial calls succeed, the circuit moves to the closed state, which resumes normal operations.
+
+
+The following example shows a circuit breaker policy that is configured on the `serviceA` method to open the circuit after three failures occur during a rolling window of four consecutive invocations. The circuit stays open for 1000 ms before it moves to half-open. After 10 consecutive successful invocations, the circuit moves back to the closed state.
+
+
+[source,java]
+----
+@CircuitBreaker(successThreshold = 10, requestVolumeThreshold = 4, failureRatio=0.75, delay = 1000)
+public Connection serviceA() {
+   Connection conn = null;
+   counterForInvokingServiceA++;
+   conn = connectionService();
+   return conn;
+}
+----
+
+
+For more information, see link:https://openliberty.io/docs/ref/microprofile/3.0/#package=org/eclipse/microprofile/faulttolerance/package-frame.html&class=org/eclipse/microprofile/faulttolerance/CircuitBreaker.html[the Circuit Breaker annotation].
+
+
+[#bulkhead]
+=== Bulkhead
+
+
+The Bulkhead policy prevents faults in one part of an application from cascading to the entire system and causing widespread failure. The `@Bulkhead` annotation limits the number of concurrent requests and saves an unresponsive service from wasting system resources.
+
+In the following example, the `@Bulkhead` annotation is configured on the `serviceA` method to limit the number of concurrent calls to five. After the total number of concurrent calls reaches five, any additional calls fail with a `BulkheadException` error.
+
+[source,java]
+----
+@Bulkhead(5) // maximum 5 concurrent requests allowed
+public Connection serviceA() {
+   Connection conn = null;
+   counterForInvokingServiceA++;
+   conn = connectionService();
+   return conn;
+}
+----
+
+
+For more information, see link:https://openliberty.io/docs/ref/microprofile/3.0/#package=org/eclipse/microprofile/faulttolerance/package-frame.html&class=org/eclipse/microprofile/faulttolerance/Bulkhead.html[the Bulkhead annotation].
+
+
+[#fallback]
+=== Fallback
+
+The `@Fallback` annotation can be used as a last line of defense when other policies fail to solve an issue. The fallback starts after any other fault tolerance processing is complete. For example,  if you use the `@Fallback` annotation together with the `@Retry` annotation, the fallback is called only after the maximum number of retries is exceeded.
+
+The following example shows a `@Fallback` annotation that is configured to call the `fallbackForServiceB` method after the maximum two retries are exceeded.
+
+[source,java]
+----
+@Retry(maxRetries = 2)
+  @Fallback(fallbackMethod= "fallbackForServiceB")
+  public String serviceB() {
+      counterForInvokingServiceB++;
+     return nameService();
+  }
+
+  private String fallbackForServiceB() {
+      return "myFallback";
+  }
+----
+
+
+For more information, see link:https://openliberty.io/docs/ref/microprofile/3.0/#package=org/eclipse/microprofile/faulttolerance/package-frame.html&class=org/eclipse/microprofile/faulttolerance/Fallback.html[the Fallback annotation].
+
+[#asynchronous]
+=== Asynchronous
+
+You can use the Asynchronous policy to configure the completion of a request so that it occurs on a separate thread from where the request was received. With this policy, a thread can continue to receive new requests while it waits for the initial request to complete on a separate thread. When you use this notation together with other fault tolerance policies, any fault tolerance processing occurs on a different thread.
+
+This configuration helps build resiliency into a microservice because fault tolerance policies such as Retry and Fallback can run on a different thread from where the initial call was received. That initial thread can continue receiving calls rather than having to wait for fault tolerance to resolve. The initial thread returns a `CompletionStage` object, which is completed after the execution thread is finished, whether successfully or by exception.
+
+The following example shows an `@Asynchronous` annotation that is implemented on the `serviceA` method. In this configuration, a request to the `serviceA` method returns a `CompletionStage` object immediately while the completion of the method occurs on a different thread.
+
+
+[source,java]
+----
+@Asynchronous
+public CompletionStage<Connection> serviceA() {
+   Connection conn = null;
+   counterForInvokingServiceA++;
+   conn = connectionService();
+   return CompletableFuture.completedFuture(conn);
+}
+----
+
+
+For more information, see link:https://openliberty.io/docs/ref/microprofile/3.0/#package=org/eclipse/microprofile/faulttolerance/package-frame.html&class=org/eclipse/microprofile/faulttolerance/Asynchronous.html[the Asynchronous annotation].
+
+== Coordinating multiple fault tolerance polices
+
+You can maximize the resiliency of your application by configuring multiple fault tolerance policies to work together. In the following example, an airline ticket application can recover from an outage in a ticket pricing microservice (`priceService`) by implementing the timeout, asynchronous and fallback policies.
+
+In this configuration, the `@Asynchronous` annotation immediately returns a `CompletionStage` object while the request to the pricing microservice is handled on a new thread. If the request waits for longer than 300 milliseconds, a `TimeoutException` is thrown on the new thread. Then, the `TimeoutException` triggers the fallback policy, which calls the `fallbackForPriceService` method, which might either display an error message or return the most recent cached pricing information. The result is then returned to the `CompletionStage` object.
+
+[source,java]
+----
+@Asynchronous
+@Timeout(300)
+ @Fallback(fallbackMethod= "fallbackForPriceService")
+ public CompletionStage<Connection> priceService() {
+     CompletableFuture<U> future = new CompletableFuture<>();
+     future.completeExceptionally(new TimeoutException("Failure"));
+    return future;
+}
+
+private CompletionStage<Connection> fallbackForPriceService() {
+    return CompletableFuture.completedFuture(connection);
+}
+
+----
+
+== See also
+
+Ready to start building more resilient microservices with MicroProfile Fault Tolerance? Check out the following guides to learn how different fault tolerance policies can work together to make your microservices resilient, reliable, and robust.
+
+
+* To explore how to use the Fallback policy to reduce the impact of failures and ensure continued operation, see link:/guides/microprofile-fallback.html[Building fault-tolerant microservices with the @Fallback annotation].
+
+* To learn how to use the Timeout and Retry policies to make your microservices more resilient to common network problems, see link:/guides/retry-timeout.html[Failing fast and recovering from errors].
+
+* To learn how to use the Bulkhead, Asynchronous, and Fallback policies to  prevent faults from stopping an entire system, see link:/guides/bulkhead.html[Limiting the number of concurrent requests to microservices].
+
+* To learn how to use the Circuit Breaker and Fallback policies to prevent repeated failed calls to a service, see link:/guides/circuit-breaker.html[Preventing repeated failed calls to microservices].
+
+* MicroProfile Fault Tolerance 2.0 contains changes that can cause an application that is written for an earlier version to fail when it uses the 2.0 feature. For more information, see link:/docs/ref/general/#fault-tolerance-1-dif.html[Differences between MicroProfile Fault Tolerance 1.0 and 2.0].
