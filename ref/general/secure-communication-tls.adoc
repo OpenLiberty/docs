@@ -16,70 +16,38 @@
 
 Transport Layer Security (TLS) is a security protocol that uses verified certificates and encryption keys to secure communications over the internet. TLS is an update to the Secure Sockets Layer (SSL) protocol.
 
-With TLS, client and server applications can authenticate each other and communicate with confidentiality and data integrity.
-TLS is a widely adopted protocol that is designed to address the security challenges of the modern internet.
-Although SSL is still used, it entails many known security vulnerabilities that can be avoided by using TLS instead.
-Most websites now use TLS, which can be easily identified by the presence of the padlock icon in the address bar of an internet browser.
-In order for a website to comply with the secure HTTPS protocol, its communications must be encrypted according to the TLS protocol. Most web browsers flag sites that do not comply with the HTTPS protocol as `not secure`.
+You can enable TLS on your Open Liberty servers to protect communications among applications and services.
+TLS helps ensure that sensitive data such as user passwords, credit card numbers, and other personal information can be transmitted securely between a client and server. It is also an important protocol for authenticated access to websites. Securing the transmission of authentication tokens such as JSON Web Tokens with TLS helps ensure that user credentials are not exposed as they are passed among different applications and services.
+
+Most websites now use the HTTPS protocol, which requires that website traffic is authenticated and encrypted with TLS. The use of HTTPS can be easily identified by the padlock icon in the address bar of an internet browser. Most web browsers flag sites that do not use HTTPS as `not secure`.
 
 == TLS protocol
 
-The TLS protocol is made up of two component protocols: the TLS handshake and the TLS record.
-The TLS handshake sets the terms for secure communication between client and server during the session.
-The TLS record secures and verifies the integrity of the data that is exchanged.
-
-TLS provides authentication, confidentiality, and integrity for internet communications.
-Authentication confirms that each communicating party is who they claim to be through the exchange of asymmetrically encrypted keys and digitally signed certificates.
-This exchange takes place before any message data is transmitted, during the TLS handshake.
-
-TLS ensures confidentiality through a combination of symmetric and asymmetric encryption.
+TLS provides end-to-end authentication, confidentiality, and data integrity for internet communications.
+Before any data is sent between a client and server, TLS confirms that each party is who they claim to be through the exchange of asymmetrically encrypted keys and digitally signed certificates.
 During the TLS handshake, the client and server agree upon an encryption algorithm and a shared secret key that are used for that session only.
-All messages that are transmitted between the client and server are encrypted by using that algorithm and key, which only the communicating parties can access.
-This configuration helps ensure that even if messages are intercepted, they remain private.
-
-TLS-secured messages establish data integrity by creating a digital signature that is used to verify that a message was not tampered with. A digital signature is formed by computing and encrypting a message digest, which is transmitted together with the full encrypted message.
-Upon receipt and decryption of the message, the receiver also computes a message digest, which is compared with the decrypted digest from the sender.
-If the two digests match, the receiver knows that the message was not modified during transmission.
-
-=== TLS and SSL
-
-TLS updates and replaces SSL, which is now deprecated though still in use in some older devices.
-TLS is more secure than SSL, thanks to stronger encryption algorithms and better message authentication.
-TLS addresses many known security vulnerabilities from SSL, and adds extra capabilities, such as secure remote passwords and Kerberos support.
-Although TLS replaces SSL for most websites, the term SSL is still widely used as a colloquialism and in many cases can refer to either SSL or TLS-enabled connections.
-TLS and SSL are not interoperable, though TLS does provide compatibility support for older devices that still use SSL.
+Any data that is transmitted is encrypted by using that algorithm and key, which only the communicating parties can access.
+Furthermore, TLS-secured messages establish data integrity by creating a digital signature that the receiver uses to verify that a message was not tampered with during transmission.
 
 === TLS handshakes
 
 The TLS handshake is a process by which a client and server set the terms for secure communications during a connection.
 The handshake occurs before any data is exchanged.
 Through this process, client and server agree on a version of the TLS protocol, select cryptographic algorithms that are called cipher suites, and authenticate one another by exchanging and verifying digital certificates.
-They also generate a shared secret key to encrypt and decrypt messages during the session.
+These digital certificates are data files that contain cryptographic keys and other identifying information about a client or server. TLS certificates are digitally signed by a certificate authority, which acts as a trusted third party that can verify the identity of the parties that are exchanging information.
 
-The TLS handshake uses a combination of asymmetric and symmetric encryption.
-The initial exchanges of the handshake are asymmetrically encrypted by the client and server by using a pair of keys, public and private.
-Initially, the client uses the server public key to encrypt the data it sends, but only the server private key can decrypt the data.
-However, asymmetric encryption requires considerable computing resources.
-Therefore, client and server use these initial exchanges to generate a shared secret key that is used to symmetrically encrypt communications for the remainder of the session.
-Since this shared key is privately generated by each party, rather than exchanged between them, there is less chance for the key to be exposed to eavesdroppers.
+If one or both parties do not recognize a TLS certificate, the handshake fails and the secure connection is not established. A handshake can fail for different reasons, such as an expired or revoked certificate, or a mismatch between the TLS versions that are used by the client and server.
 
-A basic TLS handshake comprises the following high-level steps:
+== TLS and Open Liberty
 
-. The TLS client sends a `client hello` message, which includes the TLS version, a list of preferred cipher suites, and a random bite string that is used in subsequent computations.
-. The TLS server responds with a `server hello` message, which includes the CypherSuite, the session ID, another random byte string, and the server digital certificate. The client can use this certificate to verify the server authentication. If the server requires the client certificate, it sends a client certificate request that lists the types of certificates it can accept.
-. The client verifies the server digital certificate and sends an encrypted random byte string that is used to generate the shared secret key. If the server requested the client certificate, the client sends either the certificate or a `no certificate` alert. This alert can cause the handshake to fail if the certificate is configured as mandatory by the server. If a certificate is sent, the server verifies the client certificate.
-. The client sends a `finished` message, which is encrypted with the shared secret key and indicates that the client side of the handshake is complete.
-. The server sends a `finished` message, which is encrypted with the shared secret key and indicates that the server side of the handshake is complete.
-. For the remainder of the session, client and server can exchange symmetrically encrypted messages by using the shared secret key.
+To configure TLS for your Open Liberty applications, enable link:/docs/ref/feature/#transportSecurity-1.0.html[the Transport Security feature]. You can configure TLS to specify how the details of the handshake and other aspects of the protocol are implemented for your application.
 
-=== TLS record protocol
+You can also create and configure a TLS certificate for your Open Liberty server by specifying the `createSSLCertificate` action for link:/docs/ref/general/#securityUtility-createSSLCertificate.html[the securityUtility command].
 
-After the TLS handshake establishes authentication and encryption details, the TLS record protocol handles the transmission and verification of encrypted messages during the session.
-The TLS record reads the messages to be transmitted, breaks them into manageable chunks, and encrypts them according to the terms agreed on during the TLS handshake.
-The TLS record also specifies a means to compute the message digest so that message integrity can be verified by both parties.
-On the receiving side, the record decrypts the messages and verifies their integrity by comparing the message digests.
+== TLS and SSL
 
+Before the wide adoption of the TLS protocol, Secure Sockets Layer (SSL) was the standard protocol to secure web communications. Over time, many security vulnerabilities were identified for SSL and it is no longer in widespread use. However, for historic reasons, the term SSL is often used to refer to encrypted network connections even when TLS is in use. In Open Liberty, the term SSL is still used in feature and configuration names, even though TLS is the underlying protocol. Effectively, SSL is now a synonym for TLS.
 
 == See also
 
-The TLS protocol is the standard for secure communications over the internet. TLS manages how parties authenticate and ensures that communications are confidential and unaltered during transmission.  You can configure TLS to specify how the details of the handshake and other aspects of the protocol are implemented for your application. For more information about configuring TLS for Open Liberty, see link:/docs/ref/feature/#transportSecurity-1.0.html[the Transport Security feature].
+To learn more about the TLS protocol, check out link:https://www.internetsociety.org/deploy360/tls/basics/[TLS Basics] from the Internet Society.
