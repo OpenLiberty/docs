@@ -17,16 +17,17 @@ Building observability into microservices externalizes the internal status of a 
 It is important that microservices are written to produce metrics that can be used by operations teams when the microservices are running in production.
 link:https://github.com/eclipse/microprofile-metrics/[Microprofile Metrics] provides a `/metrics` endpoint from which you can access all metrics emitted by the Open Liberty server and deployed applications.
 
+
 When the application is running, you can view your metrics from any browser by visiting, for example, `https://localhost:9443/metrics`.
 You can further narrow down the scope of the metric data by accessing the `/metrics/base`, `/metrics/application`, and `/metrics/vendor` endpoints.
 By default, metric data is emitted in link:https://prometheus.io/docs/instrumenting/exposition_formats/[Prometheus format].
 Metric data can be retrieved in JSON format by configuring the `Accept` header of your request to the `application/json` value.
 A `GET` request returns a list of metrics, and an `OPTIONS` request returns a list of metrics with their metadata.
 
-Operations teams can gather the metrics and store them in a database by using tools like Prometheus.
+Operations teams can gather the metrics and store them in a database by using web-based tools like Prometheus.
 They can then visualize the metrics in dashboards, such as Grafana, to analyze the data.
 
-== Adding metrics to your applications
+== Add MicroProfile metrics to your applications
 
 To add metrics to your applications, you must create and register metrics with the application registry so that they are known to the system and can be reported on from the `/metrics` endpoint.
 The easiest way to add metrics to your application is by using metrics annotations.
@@ -171,8 +172,34 @@ public void donationLiveStream() {
 
 '''
 
-These types of metrics are available to add to your applications to make them observable.
-In production, operations teams can use these metrics to monitor the application, along with metrics that are automatically emitted from the JVM and the Open Liberty server runtime.
+[#jmx-metrics]
+== JMX performance metrics
+In addition to accessing metrics from a `/metrics` endpoint, you can also access Java Management Extensions (JMX) metrics.
+Use the link:/docs/ref/feature/#monitor-1.0.html[Performance Monitoring feature] to monitor JMX metrics for your Open Liberty runtime environment.
+While the link:/docs/ref/feature/#mpMetrics.html[MicroProfile Metrics feature] provides a `/metrics` endpoint that you can use with link:https://prometheus.io/[Prometheus] or other web-based tools, the Performance Monitoring feature provides JMX MXBeans that you can use with JConsole or other JMX-based tools.
+
+If you use the Performance Monitoring feature with the MicroProfile Metrics feature, then you get both JMX metrics and `/metrics` endpoint metrics, and the JMX metrics are included in the `/metrics` output.
+The MicroProfile Metrics 2.3 feature and later automatically enables the Performance Monitoring feature.
+For a list of all JMX metrics that are available for Open Liberty, see the link:/docs/ref/general/#jmx-metrics.html[JMX metrics reference list].
+
+=== Enable JMX metrics
+You can enable JMX metrics by adding the Performance Monitoring feature to your `server.xml` file.
+After you add this feature to your server configuration, monitoring of JMX metrics automatically starts.
+If you don't use the server script on a JVM to launch the server, ensure that the JavaAgent is configured for JVM, as shown in the following example:
+
+[source,xml]
+----
+agentlib=-javaagent:<path to liberty install>/bin/tools/ws-javaagent.jar
+----
+
+After you enable monitoring for Open Liberty, you can use JConsole to connect to the JVM and view performance data by clicking each attribute of the MXBeans.
+JConsole is a JVM tool used for viewing monitoring and performance data.
+If you prefer, you can choose to use other products that consume JMX metrics to view your metrics information.
+
+'''
+
+Different types of metrics are available to add to your applications to make them observable.
+In production, operations teams can use these metrics to monitor applications.
 If you're interested in learning more about using MicroProfile Metrics to build observability into your microservices, see the Open Liberty guide for link:https://openliberty.io/guides/microprofile-metrics.html[Providing metrics from a microservice].
 
 == See also
