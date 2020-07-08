@@ -16,27 +16,9 @@
 
 The `securityUtility createSSLCertificate` command supports TLS certificate creation for Open Liberty.
 
-This command creates a default keystore that includes a TLS certificate for use in a server or client configuration.
-The following details apply to the default keystore and TLS certificate that are created when you run the command:
-
-* Keystore details:
-
-** location: From 19.0.0.3, the location is the `resource/security/key.p12` file of the server or client directory.
-Through 19.0.0.2, the location is the `resource/security/key.jks` file of the server or client directory.
-** type: From 19.0.0.3, the type is PKCS12.
-Through 19.0.0.2, the type is JKS.
-The type can be cusomized with the `--keyType` option.
-** password: The password that is provided with the `--password` option.
-The password is required to open the keystore file and retrieve the key.
-
-* Certificate details:
-
-** type: The type is a self-signed certificate.
-** size: The size is 2048, and it can be customized with the `--keySize` option.
-** signature algorithm: The signature algorithm is SHA256withRSA, and it can be customized with the `--sigAlg` option.
-** validity: The validity period is 365 days, and it can be customized with the `--validity` option.
-** subject DN: The subject DN is `CN=<hostname>,OU=<client or server name>,O=ibm,C=us`, and it can be customized with the `--subject` option.
-** Subject Alternative Name (SAN): hostname
+This command creates a default keystore that includes a self-signed TLS certificate for use in a server or client configuration.
+From 19.0.0.3, the default keystore location is the `resource/security/key.p12` file of the server or client directory.
+Through 19.0.0.2, the default keystore location is the `resource/security/key.jks` file of the server or client directory.
 
 == Usage example
 
@@ -51,8 +33,11 @@ securityUtility createSSLCertificate --server=myserver --password=mypassword --v
 Run the command from the `path_to_liberty/bin` directory.
 
 ----
-securityUtility createSSLCertificate [options]
+securityUtility createSSLCertificate --password[=pwd] [options]
 ----
+
+--password[=pwd]::
+The keystore password, which must be at least six characters long. If no value is specified, then you’re prompted for a value.
 
 options::
 One or more optional parameters.
@@ -69,9 +54,10 @@ One or more optional parameters.
 This option cannot be used if the `--server` option is specified.
 
 |--extInfo
-|This option is available starting in 19.0.0.6.
-Specifies any X.509 certificate extension information that it uses to create the default certificate.
-By default, the Subject Alternative Name extension is added to the certificate with the host name of the server.
+|Specifies any X.509 certificate extension information that it uses to create the default certificate.
+By default, the Subject Alternative Name (SAN) extension is added to the certificate with the hostname of the server.
+{empty} +
+{empty} +
 If the `--extInfo` option is used, the value is passed directly to the link:https://docs.oracle.com/en/java/javase/13/docs/specs/man/keytool.html[`keytool` command].
 Use the syntax of the `--ext` flag on the `keytool` command.
 
@@ -80,24 +66,20 @@ Use the syntax of the `--ext` flag on the `keytool` command.
 The default value is 2048.
 
 |--keyType=keystore_type
-|This option is available starting in 19.0.0.5.
-Specifies the keystore type to generate.
-To generate a JKS keystore, specify the `--keyType` option with the value of `JKS`.
+|Specifies the keystore type to generate.
 By default, a PKCS12 keystore is generated.
-However, to explicitly specify the generation of a PKCS12 keystore, specify the `--keyType` option with the value of `PKCS12`.
+To generate a JKS keystore, specify the `--keyType` option with the value of `JKS`.
+To explicitly specify the generation of a PKCS12 keystore, specify the `--keyType` option with the value of `PKCS12`.
 {empty} +
 {empty} +
 A PKCS12 keystore has a number of advantages over a JKS keystore.
 The PKCS12 keystore is more extensible, supports stronger cryptographic algorithms, and is widely adopted.
 Certificate authorities frequently issue certificates in the PKCS12 format.
 
-|--password=password
-|Specifies the password to be used in the keystore, which must be at least six characters in length.
-This option is required.
-
 |--passwordEncoding=password_encoding_type
-|Specifies how to encode the keystore password. Supported encoding values are `xor` or `aes`.
-If this option is not provided, a default value of `xor` is used.
+|Specifies how to encode the keystore password.
+Supported encoding types are `xor` and `aes`.
+If this option is not provided, a default encoding type of `xor` is used.
 
 |--passwordKey=password_encryption_key
 |Specifies the key to use to encode the keystore password by using AES encryption.
@@ -111,11 +93,12 @@ This option cannot be used if the `--client` option is specified.
 
 |--sigAlg
 |Specifies the signature algorithm that is used to sign the self-signed certificate.
+By default, the signature algorithm is SHA256withRSA.
 The signature algorithm that is supported depends on what is supported by the underlying JRE.
-Stronger signature algorithms might require the JRE to have the unrestricted policy file in place.
+Stronger signature algorithms might require the JRE to have an unrestricted policy file in place.
 {empty} +
 {empty} +
-The command accepts SHA256withRSA, SHA1withRSA, SHA384withRSA, SHA512withRSA, SHA1withECDSA, SHA256withECDSA, SHA384withECDSA, and SHA512withECDSA.
+The command accepts the following signature algorithms: SHA256withRSA, SHA1withRSA, SHA384withRSA, SHA512withRSA, SHA1withECDSA, SHA256withECDSA, SHA384withECDSA, and SHA512withECDSA.
 The signature algorithms that end with RSA create certificates with RSA keys.
 The signature algorithms that end with ECDSA create certificates with Elliptical Curve (EC) keys.
 {empty} +
@@ -127,7 +110,7 @@ If you use certificates that are created with EC keys, then include a customized
 If this option is not provided, a default value of `CN=<hostname>,OU=<server or client name>,O=ibm,C=us` is used.
 {empty} +
 {empty} +
-The CN value is retrieved by using a Java method to get the machine's local hostname.
+The DN value is retrieved by using a Java method to get the machine's local hostname.
 If the hostname cannot be resolved, the IP address is returned.
 
 |--validity=days
