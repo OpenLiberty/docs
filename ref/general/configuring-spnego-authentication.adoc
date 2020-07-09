@@ -15,31 +15,31 @@
 You can enable sign-on (SSO) for HTTP requests by using Simple and Protected GSS-API Negotiation Mechanism (SPNEGO) web authentication for Open Liberty.
 With SPNEGO SSO, HTTP users log in only once to a Microsoft domain controller at their desktop.
 
+link:https://access.redhat.com/documentation/en-us/red_hat_jboss_enterprise_application_platform/6.4/html/security_guide/about_spnego[SPNEGO] enables users to log in to applications by using their Microsoft Windows account login instead of using a separate account to log in to their Windows operating system.
+SPNEGO can be used to provide SSO in your application if the organization uses Microsoft Active Directory.
+SPNEGO can also be configured to work on Linux operating systems.
+This task demonstrates how to configure an Open Liberty server to support SSO for HTTP requests by using SPNEGO.
+
 == Prerequisites
 
-To enable SPNEGO, the clocks for the client, Microsoft Active Directory server, and Open Liberty server must be synchronized to within 5 minutes of each other.
+To enable SPNEGO, the clocks for the client, Active Directory server, and Open Liberty server must be synchronized to within 5 minutes of each other.
 This allowable difference in synchronization is configurable.
 
 Before you begin, ensure that the following software is available:
 
 - A Microsoft Windows Server running an Active Directory Domain Controller and associated Kerberos Key Distribution Center (KDC).
 In this example, the hostname for the domain controller is `myAdMachine.example.com`, the domain controller name is `mydomain.example.com`, and the Kerberos realm name is `MYDOMAIN.EXAMPLE.COM`.
-- A Microsoft Windows domain member (client) that supports the SPNEGO authentication mechanism as defined in IETF RFC 2478.
+- A Microsoft Windows domain member (client) that supports SPNEGO.
 In this example, the hostname for the client is `myClientMachine.example.com`.
 - A server platform with an Open Liberty server that has an application with a protected resource.
-Users in the Active Directory must be able to access Open Liberty server-protected resources by using a native Open Liberty server authentication mechanism.
+Users in the Active Directory must be able to access Open Liberty server-protected resources by using a native Open Liberty server authentication mechanism, such as link:/docs/ref/feature/#socialLogin-1.0.html[Social Media Login].
 In this example, the Open Liberty server hostname  is `myLibertyMachine.example.com`.
 
-== About this task
-SPNEGO SSO is also known as Integrated Windows Authentication (IWA).
-Open Liberty supports SPNEGO for IWA but not for NT LAN Manager (NTLM) tokens.
-This task demonstrates how to configure an Open Liberty server to support SSO for HTTP requests by using SPNEGO.
+== Procedure
 
 First, you'll create a Kerberos service principal name and keytab file and copy the keytab file to Open Liberty.
 Then, you'll create a Kerberos configuration file on Open Liberty, and link:/docs/ref/feature/#spnego-1.0.html[configure the SPENGO feature].
 Last, you'll configure the browser client so users can access SPNEGO-protected resources from a browser.
-
-== Procedure
 
 === Create a Kerberos service principal name and keytab file
 
@@ -72,8 +72,8 @@ The following example shows how to run the `ktpass` command:
 ----
 C:\> ktpass -out krb5.keytab -princ HTTP/myLibertyMachine.example.com@MYDOMAIN.EXAMPLE.COM -mapUser myLibertyMachine_http -mapOp set -pass security -crypto RC4-HMAC-NT -ptype KRB5_NT_PRINCIPAL
 ----
-
-.. To verify that the command worked correctly and there isn't a duplicated SPN in the Microsoft forest, run the Microsoft `ldif` command:
++
+To verify that the command worked correctly and there isn't a duplicated SPN in the Microsoft forest, run the Microsoft `ldif` command:
 +
 ----
 C:\>ldifde -f check_SPN.txt -t 3268 -d "" -l servicePrincipalName -r "
@@ -114,7 +114,7 @@ keysize 93 HTTP/myLibertyMachine.example.com@MYDOMAIN.EXAMPLE.COM ptype 1 (KRB5_
 === Copy the Kerberos keytab and configuration files and enable SPNEGO web authentication
 . Copy the Kerberos keytab file from the domain controller to the Open Liberty server.
 The default location of the file is the same directory as the Kerberos configuration file, which varies depending on the operating system:
-* For Windows platforms, the default location is `c:\windows\krb5.ini`.
+* For Windows platforms, the default location is `C:\windows\krb5.ini`.
 * For Mac and LINUX platforms, the default location is `/etc/krb5.conf`.
 
 . Create a Kerberos configuration file.
@@ -165,9 +165,9 @@ If you use the Oracle JDK or Java 11, add the `java.security.krb5.kdc` and `java
 The following steps are for users who are accessing SPNEGO-protected resources from a browser and must be completed on the client machine.
 Ensure that browser supports SPNEGO authentication and that the user is logged in to the domain controller.
 
-* **Microsoft Internet Explorer**
-+
-. Log in to the Windows Active Directory domain.
+==== Microsoft Internet Explorer
+
+. Log in to the Active Directory domain.
 . In an Internet Explorer window, click **Tools > Internet Options**.
 In the window that's displayed, click the **Security** tab.
 . Select the **Local** intranet icon and click **Sites**.
@@ -178,10 +178,10 @@ Close the second Local intranet window.
 . In the Internet Options window, click the **Advanced** tab and scroll to **Security** settings. Ensure that the **Enable Integrated Windows Authentication** box is selected.
 . Click **OK**.
 Restart Internet Explorer to activate this configuration.
-+
-* **Mozilla Firefox**
-+
-. Log in to the Windows Active Directory domain.
+
+==== Mozilla Firefox
+
+. Log in to the Active Directory domain.
 . In the Firefox address field, type `about:config`.
 . In the search box, type `network.n`.
 . Double-click **network.negotiate-auth.trusted-uris**.
@@ -195,7 +195,7 @@ Restart Firefox to activate this configuration.
 
 == Results
 
-After you configure SPNEGO authentication, you can use applications with secured resources that are deployed on Open Liberty servers without being prompted for a user ID and password.
+After you configure SPNEGO authentication, you can deploy applications in your company that users only have to log in to once.
 To verify that SPNEGO is working, log in to the domain controller and access a protected resource on Open Liberty.
 Because you are logged in to the domain controller, you aren't prompted for credentials.
 If you aren't logged in to the domain controller and attempt to access a protected resource, you are prompted for credentials.
