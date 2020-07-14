@@ -50,7 +50,7 @@ The following example shows a message log event:
 [source,json]
 ----
 {
-	"type":"liberty_message",
+    "type":"liberty_message",
 	"host":"9e1eceec70c1",
 	"ibm_userDir":"\/opt\/ol\/wlp\/usr\/",
 	"ibm_serverName":"defaultServer",
@@ -94,7 +94,7 @@ The following example of shows a trace log event:
 [source,json]
 ----
 {
-	"type":"liberty_trace",
+    "type":"liberty_trace",
 	"host":"9e1eceec70c1",
 	"ibm_userDir":"\/opt\/ol\/wlp\/usr\/",
 	"ibm_serverName":"defaultServer",
@@ -163,17 +163,26 @@ The following table provides the fields for HTTP access log events and a descrip
 |host |Host name of the server that was the source of the event.
 |ibm_userDir |User directory of the server that was the source of the event.
 |ibm_serverName |Server name of the server that was the source of the event.
-|ibm_uriPath |Path information for the requested URL. This path information does not contain the query parameters, for example, `/pushworksserver/push/apps/tags`.
-|ibm_requestMethod |HTTP verb, for example, GET
-|ibm_requestHost |Request host IP address, for example, 127.0.0.1.
-|ibm_requestPort |Port number of the request.
 |ibm_remoteHost |Remote host IP address, for example, 127.0.0.1
-|ibm_userAgent |The userAgent value in the request.
 |ibm_requestProtocol |Protocol type, for example, HTTP/1.1.
-|ibm_queryString |String representing query string from the HTTP request, for example, color=blue&size=large.
-|ibm_bytesReceived |Bytes received in the URL, for example, 94.
+|ibm_userAgent |The userAgent value in the request.
+|ibm_requestHeader_{headername} |Header value from the request.
+|ibm_requestMethod |HTTP verb, for example, GET
+|ibm_responseHeader_{headername} |Header value from the response.
+|ibm_requestPort |Port number of the request.
+|ibm_requestFirstLine |First line of the request.
 |ibm_responseCode |HTTP response code, for example, 200.
+|ibm_requestStartTime |The start time of the request, in NCSA format.
+|ibm_remoteUserID |Remote user according to the WebSphere Application Server specific $WSRU header
+|ibm_uriPath |Path information for the requested URL. This path information does not contain the query parameters, for example, `/pushworksserver/push/apps/tags`.
 |ibm_elapsedTime |Time that is taken to serve the request, in microseconds.
+|ibm_accessLogDatetime |The time when the message to the access log is queued to be logged, in normal NCSA format.
+|ibm_remoteIP |Remote IP address, e.g. 127.0.0.1
+|ibm_requestHost |Request host IP address, for example, 127.0.0.1.
+|ibm_bytesSent |Response size in bytes excluding headers.
+|ibm_bytesReceived |Bytes received in the URL, for example, 94.
+|ibm_cookie_{cookiename} |Cookie value from the request.
+|ibm_requestElapsedTime |The elapsed time of the request - millisecond accuracy, microsecond precision.
 |ibm_datetime |Time at which the event occurred.
 |ibm_sequence |Sequence number of event (useful for sorting records with the same time stamp).
 
@@ -188,18 +197,28 @@ The following example shows a HTTP access log event:
     "host":"79e8ad2347b3",
     "ibm_userDir":"\/opt\/ibm\/wlp\/usr\/",
     "ibm_serverName":"defaultServer",
-    "ibm_uriPath":"\/customer\/internal\/validateid",
-    "ibm_requestMethod":"POST",
-    "ibm_requestHost":"172.27.0.9",
-    "ibm_requestPort":"9080",
     "ibm_remoteHost":"172.27.0.10",
-    "ibm_userAgent":"Apache-CXF/3.3.3-SNAPSHOT",
     "ibm_requestProtocol":"HTTP\/1.1",
-    "ibm_bytesReceived":18,
+    "ibm_userAgent":"Apache-CXF/3.3.3-SNAPSHOT",
+    "ibm_requestHeader_headername":"header_value"
+    "ibm_requestMethod":"GET",
+    "ibm_responseHeader_connection":"Close",
+    "ibm_requestPort":"9080,
+    "ibm_requestFirstLine":"GET \/favicon.ico HTTP\/1.1",
     "ibm_responseCode":200,
-    "ibm_elapsedTime":1639930,
-    "ibm_datetime":"2020-03-24T19:08:17.073+0000",
-    "ibm_sequence":"1585076895433_0000000000003"
+    "ibm_requestStartTime":"[14\/Jul\/2020:13:28:19 -0400]",
+    "ibm_remoteUserID":"user",
+    "ibm_uriPath":"\/favicon.ico",
+    "ibm_elapsedTime":834,
+    "ibm_accessLogDatetime":"[14\/Jul\/2020:13:28:19 -0400]",
+    "ibm_remoteIP":"172.27.0.9",
+    "ibm_requestHost":"172.27.0.9",
+    "ibm_bytesSent":15086,
+    "ibm_bytesReceived":15086,
+    "ibm_cookie_cookiename":"cookie_value",
+    "ibm_requestElapsedTime":3034,
+    "ibm_datetime":"2020-07-14T13:28:19.887-0400",
+    "ibm_sequence":"1594747699884_0000000000001"
 }
 ----
 
@@ -268,7 +287,7 @@ The following example shows the SECURITY_AUDIT_MGMT event capturing the start of
 {
     "type":"liberty_audit",
     "host":"sage.xyz.com",
-    "ibm_userDir":"/opt/ol/wlp/usr/",
+    "ibm_userDir":"\/opt\/ol\/wlp\/usr\/",
     "ibm_serverName":"TestServer.audit",
     "ibm_datetime":"2018-07-10T16:15:35.110-0400",
     "ibm_sequence":"1536171863908_0000000000001",
@@ -282,13 +301,12 @@ The following example shows the SECURITY_AUDIT_MGMT event capturing the start of
     "ibm_audit_outcome":"success",
     "ibm_audit_target.id":"websphere: sage.xyz.com:/opt/ol/wlp/usr/:TestServer.audit",
     "ibm_audit_target.typeURI":"service/audit/start"
-	}
+}
 
 {
-    
     "type":"liberty_audit",
     "host":"sage.xyz.com",
-    "ibm_userDir":"/opt/ol/wlp/usr/",
+    "ibm_userDir":"\/opt\/ol\/wlp\/usr\/",
     "ibm_serverName":"TestServer.audit",
     "ibm_datetime":"2018-07-10T16:15:35.740-0400",
     "ibm_sequence":"1536171863908_0000000000002",
@@ -355,7 +373,7 @@ The following example shows a SECURITY_MEMBER_MGMT user record creation action:
 {
     "type":"liberty_audit",
     "host":"sage.xyz.com",
-    "ibm_userDir":"/opt/ol/wlp/usr/",
+    "ibm_userDir":"\/opt\/ol\/wlp\/usr\/",
     "ibm_serverName":"scim.custom.repository.audit",
     "ibm_datetime":"2018-07-24T14:59:82.321-0400",
     "ibm_sequence":"1536329056532_0000000000047",
@@ -396,7 +414,7 @@ The following example shows a SECURITY_MEMBER_MGMT user lookup action:
 
     "type":"liberty_audit",
     "host":"sage.xyz.com",
-    "ibm_userDir":"/opt/ol/wlp/usr/",
+    "ibm_userDir":"\/opt\/ol\/wlp\/usr\/",
     "ibm_serverName":"scim.custom.repository.audit",
     "ibm_datetime":"2018-07-24T14:59:82.433-0400",
     "ibm_sequence":"1536329056532_0000000000048",
@@ -474,35 +492,34 @@ The following example shows a SECURITY_API_AUTHN event that results in a redirec
 [source,json]
 ----
 {
-
-  "type":"liberty_audit",
-  "host":"sage.xyz.com",
-  "ibm_userDir":"/opt/ol/wlp/usr/",
-  "ibm_serverName":"com.ibm.ws.webcontainer.security.fat.loginmethod.audit",
-  "ibm_datetime":"2018-07-24T17:03:25.628-0400",
-  "ibm_sequence":"1536329078239_0000000000020",
-  "ibm_threadId":"000000b7",
-  "ibm_audit_eventName":"SECURITY_API_AUTHN",
-  "ibm_audit_eventSequenceNumber":"2",
-  "ibm_audit_eventTime":"2018-07-24T17:03:24.142-0400",
-  "ibm_audit_initiator.host.address":"127.0.0.1",
-  "ibm_audit_initiator.host.agent":"Apache-HttpClient/4.1.2 (java 1.5)",
-  "ibm_audit_observer.id":"websphere: sage.xyz.com:/opt/ol/wlp/usr/:com.ibm.ws.webcontainer.security.fat.loginmethod.audit",
-  "ibm_audit_observer.name":"SecurityService",
-  "ibm_audit_observer.typeURI":"service/server",
-  "ibm_audit_outcome":"failure",
-  "ibm_audit_reason.reasonCode":"401",
-  "ibm_audit_reason.reasonType":"HTTP",
-  "ibm_audit_target.appname":"ProgrammaticAPIServlet",
-  "ibm_audit_target.credential.token":"user2",
-  "ibm_audit_target.credential.type":"BASIC",
-  "ibm_audit_target.host.address":"127.0.0.1:8010",
-  "ibm_audit_target.id":"websphere: sage.xyz.com:/opt/ol/wlp/usr/:com.ibm.ws.webcontainer.security.fat.loginmethod.audit",
-  "ibm_audit_target.method":"GET",
-  "ibm_audit_target.name":"/basicauth/ProgrammaticAPIServlet",
-  "ibm_audit_target.params":"testMethod=login,logout,login&user=user2&password=*******", "ibm_audit_target.realm":"BasicRealm",
-  "ibm_audit_target.session":"MDqMWXO--7cmdu4Oqkt8J3i",
-  "ibm_audit_target.typeURI":"service/application/web"
+    "type":"liberty_audit",
+    "host":"sage.xyz.com",
+    "ibm_userDir":"\/opt\/ol\/wlp\/usr\/",
+    "ibm_serverName":"com.ibm.ws.webcontainer.security.fat.loginmethod.audit",
+    "ibm_datetime":"2018-07-24T17:03:25.628-0400",
+    "ibm_sequence":"1536329078239_0000000000020",
+    "ibm_threadId":"000000b7",
+    "ibm_audit_eventName":"SECURITY_API_AUTHN",
+    "ibm_audit_eventSequenceNumber":"2",
+    "ibm_audit_eventTime":"2018-07-24T17:03:24.142-0400",
+    "ibm_audit_initiator.host.address":"127.0.0.1",
+    "ibm_audit_initiator.host.agent":"Apache-HttpClient/4.1.2 (java 1.5)",
+    "ibm_audit_observer.id":"websphere: sage.xyz.com:/opt/ol/wlp/usr/:com.ibm.ws.webcontainer.security.fat.loginmethod.audit",
+    "ibm_audit_observer.name":"SecurityService",
+    "ibm_audit_observer.typeURI":"service/server",
+    "ibm_audit_outcome":"failure",
+    "ibm_audit_reason.reasonCode":"401",
+    "ibm_audit_reason.reasonType":"HTTP",
+    "ibm_audit_target.appname":"ProgrammaticAPIServlet",
+    "ibm_audit_target.credential.token":"user2",
+    "ibm_audit_target.credential.type":"BASIC",
+    "ibm_audit_target.host.address":"127.0.0.1:8010",
+    "ibm_audit_target.id":"websphere: sage.xyz.com:/opt/ol/wlp/usr/:com.ibm.ws.webcontainer.security.fat.loginmethod.audit",
+    "ibm_audit_target.method":"GET",
+    "ibm_audit_target.name":"/basicauth/ProgrammaticAPIServlet",
+    "ibm_audit_target.params":"testMethod=login,logout,login&user=user2&password=*******", "ibm_audit_target.realm":"BasicRealm",
+    "ibm_audit_target.session":"MDqMWXO--7cmdu4Oqkt8J3i",
+    "ibm_audit_target.typeURI":"service/application/web"
 }
 ----
 
@@ -552,7 +569,7 @@ The following example shows a successful SECURITY_API_AUTHN_TERMINATE event:
 {
     "type":"liberty_audit",
     "host":"sage.xyz.com",
-    "ibm_userDir":"/opt/ol/wlp/usr/",
+    "ibm_userDir":"\/opt\/ol\/wlp\/usr\/",
     "ibm_serverName":"com.ibm.ws.webcontainer.security.fat.loginmethod.audit",
     "ibm_datetime":"2018-07-24T17:03:25.845-0400",
     "ibm_sequence":"1536329078239_0000000000021",
@@ -626,36 +643,35 @@ The following example shows a successful SECURITY_AUTHN event:
 [source,json]
 ----
 {
-
-  "type":"liberty_audit",
-  "host":"sage.xyz.com",
-  "ibm_userDir":"/opt/ol/wlp/usr/",
-  "ibm_serverName":"com.ibm.ws.webcontainer.security.fat.loginmethod.audit",
-  "ibm_datetime":"2018-07-24T17:04:53.213-0400",
-  "ibm_sequence":"1536171867413_0000000000003",
-  "ibm_threadId":"00000050",
-  "ibm_audit_eventName":"SECURITY_AUTHN",
-  "ibm_audit_eventSequenceNumber":"6",
-  "ibm_audit_eventTime":"2018-07-24T17:03:28.652-0400",
-  "ibm_audit_initiator.host.address":"127.0.0.1",
-  "ibm_audit_initiator.host.agent":"Apache-HttpClient/4.1.2 (java 1.5)",
-  "ibm_audit_observer.id":"websphere: sage.xyz.com:/opt/ol/wlp/usr/:com.ibm.ws.webcontainer.security.fat.loginmethod.audit",
-  "ibm_audit_observer.name":"SecurityService",
-  "ibm_audit_observer.typeURI":"service/server",
-  "ibm_audit_outcome":"success",
-  "ibm_audit_reason.reasonCode":"200",
-  "ibm_audit_reason.reasonType":"HTTP",
-  "ibm_audit_target.appname":"ProgrammaticAPIServlet",
-  "ibm_audit_target.credential.token":"user1",
-  "ibm_audit_target.credential.type":"BASIC",
-  "ibm_audit_target.host.address":"127.0.0.1:8010",
-  "ibm_audit_target.id":"websphere: sage.xyz.com:/opt/ol/wlp/usr/:com.ibm.ws.webcontainer.security.fat.loginmethod.audit",
-  "ibm_audit_target.method":"GET",
-  "ibm_audit_target.name":"/basicauth/ProgrammaticAPIServlet",
-  "ibm_audit_target.params":"testMethod=login,logout,login&user=invalidUser&password=*********",
-  "ibm_audit_target.realm":"BasicRealm",
-  "ibm_audit_target.session":"vvmysQmVNHt4OfCRNIflZBt",
-  "ibm_audit_target.typeURI":"service/application/web"
+    "type":"liberty_audit",
+    "host":"sage.xyz.com",
+    "ibm_userDir":"\/opt\/ol\/wlp\/usr\/",
+    "ibm_serverName":"com.ibm.ws.webcontainer.security.fat.loginmethod.audit",
+    "ibm_datetime":"2018-07-24T17:04:53.213-0400",
+    "ibm_sequence":"1536171867413_0000000000003",
+    "ibm_threadId":"00000050",
+    "ibm_audit_eventName":"SECURITY_AUTHN",
+    "ibm_audit_eventSequenceNumber":"6",
+    "ibm_audit_eventTime":"2018-07-24T17:03:28.652-0400",
+    "ibm_audit_initiator.host.address":"127.0.0.1",
+    "ibm_audit_initiator.host.agent":"Apache-HttpClient/4.1.2 (java 1.5)",
+    "ibm_audit_observer.id":"websphere: sage.xyz.com:/opt/ol/wlp/usr/:com.ibm.ws.webcontainer.security.fat.loginmethod.audit",
+    "ibm_audit_observer.name":"SecurityService",
+    "ibm_audit_observer.typeURI":"service/server",
+    "ibm_audit_outcome":"success",
+    "ibm_audit_reason.reasonCode":"200",
+    "ibm_audit_reason.reasonType":"HTTP",
+    "ibm_audit_target.appname":"ProgrammaticAPIServlet",
+    "ibm_audit_target.credential.token":"user1",
+    "ibm_audit_target.credential.type":"BASIC",
+    "ibm_audit_target.host.address":"127.0.0.1:8010",
+    "ibm_audit_target.id":"websphere: sage.xyz.com:/opt/ol/wlp/usr/:com.ibm.ws.webcontainer.security.fat.loginmethod.audit",
+    "ibm_audit_target.method":"GET",
+    "ibm_audit_target.name":"/basicauth/ProgrammaticAPIServlet",
+    "ibm_audit_target.params":"testMethod=login,logout,login&user=invalidUser&password=*********",
+    "ibm_audit_target.realm":"BasicRealm",
+    "ibm_audit_target.session":"vvmysQmVNHt4OfCRNIflZBt",
+    "ibm_audit_target.typeURI":"service/application/web"
 }
 ----
 
@@ -710,7 +726,7 @@ The following example shows a successful SECURITY_AUTHN_DELEGATION event:
 {
     "type":"liberty_audit",
     "host":"sage.xyz.com",
-    "ibm_userDir":"/opt/ol/wlp/usr/",
+    "ibm_userDir":"\/opt\/ol\/wlp\/usr\/",
     "ibm_serverName":"com.ibm.ws.ejbcontainer.security.fat.audit",
     "ibm_datetime":"2018-07-16T14:39:22.521-0400",
     "ibm_sequence":"1536329023162_0000000000001",
@@ -720,7 +736,7 @@ The following example shows a successful SECURITY_AUTHN_DELEGATION event:
     "ibm_audit_eventTime":"2018-07-16T14:38:02.281-0400",
     "ibm_audit_initiator.host.address":"127.0.0.1",
     "ibm_audit_initiator.host.agent":"Apache-HttpClient/4.1.2 (java 1.5 ",
-    "ibm_audit_observer.id":"websphere:sage.xyz.com:/opt/ol/wlp/usr/:com.ibm.ws.ejbcontainer.security.fat.audit",
+    "ibm_audit_observer.id":"websphere: sage.xyz.com:/opt/ol/wlp/usr/:com.ibm.ws.ejbcontainer.security.fat.audit",
     "ibm_audit_observer.name":"SecurityService",
     "ibm_audit_observer.typeURI":"service/server",
     "ibm_audit_outcome":"success",
@@ -787,15 +803,14 @@ The following example shows a SECURITY_AUTHN_FAILOVER event:
 [source,json]
 ----
 {
-    
     "type": "liberty_audit",
     "host":"sage.xyz.com",
-    "ibm_userDir":"/opt/ol/wlp/usr/", 
+    "ibm_userDir":"\/opt\/ol\/wlp\/usr\/", 
     "ibm_serverName":"com.ibm.ws.webcontainer.security.fat.clientcertfailover.audit",
     "ibm_datetime":"2018-07-24T17:06:42.201-0400",
     "ibm_sequence":"1541329052120_0000000000001",
     "ibm_threadId":"00000010",
-    "ibm_audit_eventName" "SECURITY_AUTHN_FAILOVER”,
+    "ibm_audit_eventName" "SECURITY_AUTHN_FAILOVER",
     "ibm_audit_eventSequenceNumber":"4",
     "ibm_audit_eventTime":"2018-07-24T17:05:03.777-0400",
     "ibm_audit_initiator.host.address":"127.0.0.1",
@@ -870,7 +885,7 @@ The following example shows a SECURITY_AUTHN_TERMINATE event:
 {
     "type": "liberty_audit",
     "host":"sage.xyz.com",
-    "ibm_userDir":"/opt/ol/wlp/usr/",
+    "ibm_userDir":"\/opt\/ol\/wlp\/usr\/",
     "ibm_serverName":"com.ibm.ws.webcontainer.security.fat.formlogout.audit",
     "ibm_datetime":"2018-07-24T17:03:24.122-0400",
     "ibm_sequence":"1521382001206_0000000000003",
@@ -949,7 +964,7 @@ The following example shows a successful WEB authorization event:
 {
     "type": "liberty_audit",
     "host":"sage.xyz.com",
-    "ibm_userDir":"/opt/ol/wlp/usr/",
+    "ibm_userDir":"\/opt\/ol\/wlp\/usr\/",
     "ibm_serverName":"com.ibm.ws.ejbcontainer.security.fat.audit",
     "ibm_datetime":"2018-07-16T14:38:32.111-0400",
     "ibm_sequence":"1502020152076_0000000000001",
@@ -959,7 +974,7 @@ The following example shows a successful WEB authorization event:
     "ibm_audit_eventTime":"2018-07-16T14:37:56.259-0400",
     "ibm_audit_initiator.host.address":"127.0.0.1",
     "ibm_audit_initiator.host.agent":"Apache-HttpClient/4.1.2 (java 1.5)",
-    "ibm_audit_observer.id":"websphere:sage.xyz.com:/opt/ol/wlp/usr/:com.ibm.ws.ejbcontainer.security.fat.audit",
+    "ibm_audit_observer.id":"websphere: sage.xyz.com:/opt/ol/wlp/usr/:com.ibm.ws.ejbcontainer.security.fat.audit",
     "ibm_audit_observer.name":"SecurityService",
     "ibm_audit_observer.typeURI":"service/server",
     "ibm_audit_outcome":"success",
@@ -969,7 +984,7 @@ The following example shows a successful WEB authorization event:
     "ibm_audit_target.credential.token":"user2",
     "ibm_audit_target.credential.type":"BASIC",
     "ibm_audit_target.host.address":"127.0.0.1:8010",
-    "ibm_audit_target.id":"websphere:sage.xyz.com:/opt/ol/wlp/usr/:com.ibm.ws.ejbcontainer.security.fat.audit",
+    "ibm_audit_target.id":"websphere: sage.xyz.com:/opt/ol/wlp/usr/:com.ibm.ws.ejbcontainer.security.fat.audit",
     "ibm_audit_target.method":"GET",
     "ibm_audit_target.name":"/securityejb/SimpleServlet",
     "ibm_audit_target.params":"testInstance=ejb01&testMethod=runAsSpecified",
@@ -986,17 +1001,17 @@ The following example shows a successful EJB authorization:
 {
     "type": "liberty_audit",
     "host":"sage.xyz.com",
-    "ibm_userDir":"/opt/ol/wlp/usr/",
+    "ibm_userDir":"\/opt\/ol\/wlp\/usr\/",
     "ibm_serverName":"com.ibm.ws.ejbcontainer.security.fat.audit",
     "ibm_datetime":"2018-07-16T14:38:45.326-0400",
     "ibm_sequence":"1502020152076_0000000000002",
     "ibm_threadId":"000000a2",
-    "ibm_audit_eventName": "SECURITY_AUTHZ”,
+    "ibm_audit_eventName": "SECURITY_AUTHZ",
     "ibm_audit_eventSequenceNumber": "5",
     "ibm_audit_eventTime":"2018-07-16T14:37:56.719-0400",
     "ibm_audit_initiator.host.address":"127.0.0.1",
     "ibm_audit_initiator.host.agent":"Apache-HttpClient/4.1.2 (java 1.5)",
-    "ibm_audit_observer.id":"websphere:sage.xyz.com:/opt/ol/wlp/usr/:com.ibm.ws.ejbcontainer.security.fat.audit",
+    "ibm_audit_observer.id":"websphere: sage.xyz.com:/opt/ol/wlp/usr/:com.ibm.ws.ejbcontainer.security.fat.audit",
     "ibm_audit_observer.name":"SecurityService",
     "ibm_audit_observer.typeURI":"service/server",
     "ibm_audit_outcome":"success",
@@ -1010,7 +1025,7 @@ The following example shows a successful EJB authorization:
     "ibm_audit_target.ejb.method.signature":"runAsSpecified:",
     "ibm_audit_target.ejb.module.name":"SecurityEJB.jar",
     "ibm_audit_target.host.address":"127.0.0.1:8010",
-    "ibm_audit_target.id":"websphere:sage.xyz.com:/opt/ol/wlp/usr/:com.ibm.ws.ejbcontainer.security.fat.audit",
+    "ibm_audit_target.id":"websphere: sage.xyz.com:/opt/ol/wlp/usr/:com.ibm.ws.ejbcontainer.security.fat.audit",
     "ibm_audit_target.method":"runAsSpecified",
     "ibm_audit_target.name":"/securityejb/SimpleServlet",
     "ibm_audit_target.params":"testInstance=ejb01&testMethod=runAsSpecified",
@@ -1066,7 +1081,7 @@ The following example shows a successful SECURITY_JMS_AUTHN event:
 {
     "type": "liberty_audit",
     "host":"sage.xyz.com",
-    "ibm_userDir":"/opt/ol/wlp/usr/",
+    "ibm_userDir":"\/opt\/ol\/wlp\/usr\/",
     "ibm_serverName":"TestServer.audit",
     "ibm_datetime":"2018-07-19T18:34:72.599-0400",
     "ibm_sequence":"1587056204736_0000000000001",
@@ -1143,7 +1158,7 @@ The following example shows a successful SECURITY_JMS_AUTHZ event:
 {
     "type": "liberty_audit",
     "host":"sage.xyz.com",
-    "ibm_userDir":"/opt/ol/wlp/usr/",
+    "ibm_userDir":"\/opt\/ol\/wlp\/usr\/",
     "ibm_serverName":"TestServer.audit",
     "ibm_datetime":"2018-07-19T18:34:96.324-0400",
     "ibm_sequence":"1587056204736_0000000000002",
@@ -1213,10 +1228,9 @@ The following example shows a successful JMX_MBEAN_REGISTRATION event:
 [source,json]
 ----
 {
-
     "type": "liberty_audit",
     "host":"sage.xyz.com",
-    "ibm_userDir":"/opt/ol/wlp/usr/",
+    "ibm_userDir":"\/opt\/ol\/wlp\/usr\/",
     "ibm_serverName":"jmxConnectorAuditServer",
     "ibm_datetime":"2018-07-25T18:43:28.130-0400",
     "ibm_sequence":"1592033306612_0000000000003",
@@ -1278,7 +1292,7 @@ The following example shows a successful query of an MBean JMS_MBEAN event:
 {
     "type": "liberty_audit",
     "host":"sage.xyz.com",
-    "ibm_userDir":"/opt/ol/wlp/usr/",
+    "ibm_userDir":"\/opt\/ol\/wlp\/usr\/",
     "ibm_serverName":"jmxConnectorAuditServer",
     "ibm_datetime":"2018-07-25T18:43:02.822-0400",
     "ibm_sequence":"1592033306612_0000000000002",
@@ -1341,7 +1355,7 @@ The following example shows a successful JMX_MBEAN_ATTRIBUTES event:
 {
     "type": "liberty_audit",
     "host":"sage.xyz.com",
-    "ibm_userDir":"/opt/ol/wlp/usr/",
+    "ibm_userDir":"\/opt\/ol\/wlp\/usr\/",
     "ibm_serverName":"jmxConnectorAuditServer",
     "ibm_datetime":"2018-07-25T18:43:92.347-0400",
     "ibm_sequence":"1592033306612_0000000000008",
@@ -1404,7 +1418,7 @@ The following example shows a successful JMX_NOTIFICATION:
 {
     "type": "liberty_audit",
     "host":"sage.xyz.com",
-    "ibm_userDir":"/opt/ol/wlp/usr/",
+    "ibm_userDir":"\/opt\/ol\/wlp\/usr\/",
     "ibm_serverName":"jmxConnectorAuditServer",
     "ibm_datetime":"2018-07-25T19:28:34.664-0500",
     "ibm_sequence":"1503082313712_0000000000003",
