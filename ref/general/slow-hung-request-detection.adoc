@@ -1,0 +1,74 @@
+:page-layout: general-reference
+:page-type: general
+:page-description: The request timing feature automatically detects slow requests and logs the information when the request is completed.
+:page-categories: MicroProfile
+:seo-title: The request timing feature automatically detects slow and hung requests
+:seo-description: The request timing feature automatically detects slow and hung requests and logs the information when the request is completed.
+= Slow and hung request detection
+
+When an application takes longer than expected to complete a request, the request can be logged as slow or hung.
+Your applications need a continuous monitoring tool to detect and analyze slow and hung requests.
+The link:https://draft-openlibertyio.mybluemix.net/docs/ref/feature/#requestTiming-1.0.html[Request Timing] feature automatically detects slow and hung requests and provides detailed information to help you find the root cause.
+
+The  Request Timing feature identifies and informs about requests that have run for longer than a slow request threshold.
+For each request that takes too long to complete, request timing prints a warning message into the log file with details about the request.
+A maximum of three messages are printed per slow request after which request timing stops monitoring the request.
+The  Request Timing feature assigns a slow or hung request a request ID that is logged along with the completion time and other information about the request.
+
+The  Request Timing feature also detects hung requests.
+The hung request detection works similarly to slow request detection.
+A request is considered to be hung when it runs for longer than a hung request threshold.
+For a hung request, apart from printing a warning message along with the relevant details, the  Request Timing feature initiates Java cores.
+Three Java cores are generated for a hung request, each a minute apart.
+If a previously hung request is completed, a detailed message is logged, including the ID and time of completion of the request.
+
+A slow request can be slow because the code path length of a request is particularly long or because some resource the request depends on, such as a database is busy.
+For a slow request users need to know what actions have occurred during the processing of that request, and where in the request the processing is currently at.
+Requests that take longer are typically blocked by lack of access to a shared resource, for example, a section of code that allows only serial access and transfers information sequentially.
+Such longer requests are likely to be hung, and can be blocked for a long time or even indefinitely.
+One particular form of hung request occurs when two threads are blocked waiting on each other to return shared resources, which is called a deadlock.
+For a hung request, users need to know where all the threads are at in their processing and which locks they are waiting on.
+
+Since the Request Timing feature runs all the time, it documents slow and hung requests as they occur, without the need for problem recreation to collect more data.
+In addition to the global settings for slow and hung request thresholds, you can set thresholds for specific servlets or JDBC requests.
+For more information about configuration, see the link:/docs/ref/feature/#requestTiming-1.0.html[Request Timing] feature.
+
+== Detect slow requests
+
+When a request runs for longer than the slow request threshold, the Request Timing feature generates a warning message in the messages log file.
+The message includes details about the request and events that made up the request.
+The default threshold value is 10 seconds.
+
+The following example shows the format of a log message:
+
+[source,java]
+----
+TRAS0112W: Request <(Request ID)> has been running on thread <THREADID> for at least <DURATION>. The following stack trace shows that this thread is currently running.
+<STACK TRACE>
+<DURATION AND OPERATIONS Table>
+----
+
+The message helps you analyze the reason behind the slow request, though it is difficult to determine whether the request is hung at that point or is still running slowly.
+To address this issue, three messages are displayed for any slow request at the interval that is specified by the `slowRequestThreshold` attribute.
+The stack trace data gives the information about the method that is running, while the request data gives details about the request, like the request ID and duration.
+The three stack traces and logged details of the request help you to better understand which parts of the code are taking the longest to run.
+No further warnings are logged about the request unless the duration of the request crosses the hung request detection threshold.
+
+== Detect hung requests
+
+If the request exceeds the hung request threshold, a warning message is generated in the messages log file with the details about the request and events that made up the request.
+A series of three Java cores is taken with a 1-minute delay between them.
+Further Java cores are created only if new requests are detected.
+
+The following log message sample shows the log messages for a request that crossed the hung request detection threshold.
+The default duration value is 10 min.
+The value that is configured in the following example is 4 min.
+
+[source,java]
+----
+[WARNING ] TRAS0114W: Request AAA7WlpP7l7_AAAAAAAAAAA was running on thread 00000021 for at least 240001.015ms. The following table shows the events that have run during this request.
+Duration       Operation
+240001.754ms + websphere.servlet.service | TestWebApp | TestServlet?sleepTime=480000
+     0.095ms       websphere.session.setAttribute | mCzBMyzMvAEnjMJJx9zQYIw | userID
+     0.007ms       websphere.session.setAttribute | mCzBMyzMvAEnjMJJx9zQYIw | visitCount
+----

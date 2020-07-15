@@ -1,0 +1,243 @@
+// Copyright (c) 2013, 2019 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-layout: general-reference
+:page-type: general
+= Log and trace configuration 
+
+Open Liberty has a unified logging component that handles messages that are written by applications and the runtime, and provides First Failure Data Capture (FFDC) capability. Logging data written by applications using `System.out`, `System.err`, or `java.util.logging.Logger` are combined into the server logs.
+
+There are three primary log files for a server:
+
+- `console.log` - This file is created by the `server start` command. It contains the redirected standard output and standard error streams from the JVM process. This console output is intended for direct human consumption so lacks some information useful for automated log analysis.
+- `messages.log` - This file contains all messages that are written or captured by the logging component. All messages that are written to this file contain additional information such as the message time stamp and the ID of the thread that wrote the message. This file is suitable for automated log analysis. This file does not contain messages that are written directly by the JVM process.
+- `trace.log` - This file contains all messages that are written or captured by the logging component and any additional trace. This file is created only if you enable additional trace. This file does not contain messages that are written directly by the JVM process.
+
+== Logging configuration
+The logging component can be controlled through the server configuration. The logging component can be fully configured in `server.xml` using the `logging` element. However, logging is initialized before `server.xml` has been processed so configuring logging through `server.xml` can result in early log entries using a different log configuration from later ones. For this reason it is also possible to provide much of the logging configuration using `boostrap.properties` and in some cases using environment variables.
+
+== Example logging configuration
+
+Some common logging configuration examples are given in the following sections.
+
+=== Managing log file storage
+
+
+The `console.log` file is created by redirecting the process `stdout` and `stderr` to a file. As a result, Liberty is unable to offer the same level of management, like log rollover, as it offers for `messages.log`. If you are concerned about the increasing size of the `console.log` file, you can disable the `console.log` file and use the `messages.log` file instead. All the log messages sent to `console.log` are written to the `messages.log` file, and you can configure file rollover.
+
+To disable the console log, and configure `messages.log` to roll over three times at 100Mb, use the following configuration:
+
+[source,properties,linenums,role="code_column"]
+----
+com.ibm.ws.logging.max.file.size=100
+com.ibm.ws.logging.max.files=3
+com.ibm.ws.logging.console.log.level=OFF
+com.ibm.ws.logging.copy.system.streams=false
+----
+
+=== JSON logging
+When feeding log files into modern log aggregation and management tools it can be advantageous to have the log files stored using JSON format. This can be done in one of three ways:
+
+* Using the `bootstrap.properties` file:
++
+[source,properties,linenums,role="code_column"]
+----
+com.ibm.ws.logging.message.format=json
+com.ibm.ws.logging.message.source=message,trace,accessLog,ffdc,audit
+----
++
+* Using environment variables:
++
+[source,properties,linenums,role="code_column"]
+----
+WLP_LOGGING_MESSAGE_FORMAT=json
+WLP_LOGGING_MESSAGE_SOURCE=message,trace,accessLog,ffdc,audit
+----
++
+* Using the `server.xml` file:
++
+[source,xml,linenums,role="code_column"]
+----
+<logging messageFormat="json" messageSource="message,trace,accessLog,ffdc,audit" />
+----
++
+When using `server.xml` to configure json format some log lines are written in the default non-JSON format prior to `server.xml` startup which can cause issues with some tools. For example, https://stedolan.github.io/jq/[`jq`] would have trouble understanding the log files.
+
+=== Configuring logging for a Docker image
+
+It is common in Docker environments to disable `messages.log` and instead format the console output as JSON. This can be done using environment variables:
+
+[source,properties,linenums,role="code_column"]
+----
+WLP_LOGGING_MESSAGE_FORMAT=json
+WLP_LOGGING_MESSAGE_SOURCE=
+WLP_LOGGING_CONSOLE_FORMAT=json
+WLP_LOGGING_CONSOLE_LOGLEVEL=info
+WLP_LOGGING_CONSOLE_SOURCE=message,trace,accessLog,ffdc,audit
+----
+
+This can be simply set when running the `docker run` command by using `-e` to set the envrionment variables:
+
+[role='command']
+```
+docker run -e "WLP_LOGGING_CONSOLE_SOURCE=message,trace,accessLog,ffdc"
+           -e "WLP_LOGGING_CONSOLE_FORMAT=json"
+           -e "WLP_LOGGING_CONSOLE_LOGLEVEL=info"
+           -e "WLP_LOGGING_MESSAGE_FORMAT=json"
+           -e "WLP_LOGGING_MESSAGE_SOURCE=" open-liberty
+```
+
+=== Binary logging
+
+Liberty has a high performance binary log format option that significantly reduces the overhead of writing trace files. Generally, when configuring binary logging, the `console.log` is disabled for best performance. This must be enabled using `bootstrap.properties`:
+
+[source,properties,linenums,role="code_column"]
+----
+websphere.log.provider=binaryLogging-1.0
+com.ibm.ws.logging.console.log.level=OFF
+com.ibm.ws.logging.copy.system.streams=false
+----
+
+The `binaryLog` command line tool can be used to convert the binary log to a text file:
+
+[role='command']
+```
+binaryLog view defaultServer
+```
+
+== Configuration settings by source
+
+The following table shows the equivalent `server.xml`, `bootstrap.properties`, and environment variable configurations along with brief descriptions. Full configuration documentation is available in the config reference for the config:logging[] element.
+
+[%header,cols="6,9,9,9"]
+|===
+| Server XML Attribute|bootstrap property|Env var|Description
+
+|hideMessage
+|com.ibm.ws.logging.hideMessage
+|
+|You can use this attribute to configure the messages keys that you want to hide from the `console.log` and `messages.log` files. If the messages are configured to be hidden, then they are redirected to the `trace.log` file.
+
+|jsonFieldMappings
+|com.ibm.ws.logging.json.field.mappings
+|WLP_LOGGING_JSON_FIELD_MAPPINGS
+|When logs are in JSON format, use this attribute to replace default field names with new field names or to omit fields from the logs. Configure the new field name by using the following format:
+
+
+`defaultFieldName:newFieldName`
+
+For field names that are associated with logs of a specified source, use the following format:
+
+`[source:]?defaultFieldName:newFieldName`
+
+where `[source]` is the source you want to specify (such as `message`, `trace`, or `accessLog`).
+
+To omit a field from the logs, specify the field name without a replacement, as shown in the following example:
+
+`defaultFieldName:`
+
+To rename or omit multiple fields, specify a comma-separated list of field name mappings.
+
+
+|logDirectory
+|com.ibm.ws.logging.log.directory
+|LOG_DIR
+|You can use this attribute to set a directory for all log files, excluding the `console.log` file, but including FFDC. The default is `WLP_OUTPUT_DIR/serverName/logs`. It is not recommended to set the `logDirectory` in `server.xml` since it can result in some log data being written to the default location prior to `server.xml` being read.
+
+|consoleFormat
+|com.ibm.ws.logging.console.format
+|WLP_LOGGING_CONSOLE_FORMAT
+|The required format for the console. Valid values are `basic` or `json` format. By default, `consoleFormat` is set to `basic`.
+
+|consoleLogLevel
+|com.ibm.ws.logging.console.log.level
+|WLP_LOGGING_CONSOLE_LOGLEVEL
+|This filter controls the granularity of messages that go to the console. The valid values are INFO, AUDIT, WARNING, ERROR, and OFF. The default is AUDIT. If using with the Eclipse developer tools this must be set to the default.
+
+|consoleSource
+|com.ibm.ws.logging.console.source
+|WLP_LOGGING_CONSOLE_SOURCE
+|The list of comma-separated sources that route to the console. This property applies only when `consoleFormat="json"`. Valid values are `message`, `trace`, `accessLog`, `ffdc`, and `audit`. By default, `consoleSource` is set to `message`. To use the `audit` source, enable the Liberty feature:audit-1.0[] feature. To use the `accessLog` source you need to have configured config:httpAccessLogging[].
+
+|copySystemStreams
+|com.ibm.ws.logging.copy.system.streams
+|
+|If true, messages that are written to the System.out and System.err streams are copied to process `stdout` and `stderr` and so appear in `console.log`. If false, those messages are written to configured logs such as `messages.log` or `trace.log`, but they are not copied to `stdout` and `stderr` and do not appear in `console.log`. The default value is true.
+
+|
+|com.ibm.ws.logging.newLogsOnStart
+|
+|If set to true when Liberty starts, any existing `messages.log` or `trace.log` files are rolled over and logging writes to a new `messages.log` or `trace.log` file. If set to false `messages.log` or trace.log files only refresh when they hit the `maxFileSize`. The default is `true`. This setting cannot be provided using the `logging` element in `server.xml` because it is only processed during server bootstrap.
+
+|isoDateFormat
+|com.ibm.ws.logging.isoDateFormat
+|
+|Specifies whether to use ISO-8601 formatted dates in log files. The default value is false.
+
+If set to true, the ISO-8601 format is used in the `messages.log` file, the `trace.log` file, and the FFDC logs. The format is `yyyy-MM-dd'T'HH:mm:ss.SSSZ`.
+
+If you specify a value of `false`, the date and time are formatted according to the default locale set in the system. If the default locale is not found, the format is `dd/MMM/yyyy HH:mm:ss:SSS z`.
+
+|maxFiles
+|com.ibm.ws.logging.max.files
+|
+|How many of each of the logs files are kept. This setting also applies to the number of exception summary logs for FFDC. So if this number is `10`, you might have 10 message logs, 10 trace logs, and 10 exception summaries in the `ffdc/` directory. By default, the value is `2`. The `console.log` does not roll so this setting does not apply.
+
+|maxFileSize
+|com.ibm.ws.logging.max.file.size
+|
+|The maximum size (in MB) that a log file can reach before it is rolled. Setting the value to `0` disables log rolling. The default value is `20`. The `console.log` does not roll so this setting does not apply.
+
+|messageFileName
+|com.ibm.ws.logging.message.file.name
+|
+|The message log has a default name of `messages.log`. This file always exists, and contains INFO and other (AUDIT, WARNING, ERROR, FAILURE) messages in addition to `System.out` and `System.err`. This log also contains time stamps and the issuing thread ID. If the log file is rolled over, the names of earlier log files have the format `messages_timestamp.log`
+
+|messageFormat
+|com.ibm.ws.logging.message.format
+|WLP_LOGGING_MESSAGE_FORMAT
+|The required format for the `messages.log` file. Valid values are `basic` or `json` format. By default, `messageFormat` is set to `basic`.
+
+|messageSource
+|com.ibm.ws.logging.message.source
+|WLP_LOGGING_MESSAGE_SOURCE
+|The list of comma-separated sources that route to the `messages.log` file. This property applies only when `messageFormat="json"`. Valid values are `message`, `trace`, `accessLog`, `ffdc`, and `audit`. By default, `messageSource` is set to `message`. To use the `audit` source, enable the Liberty feature:audit-1.0[] feature. To use the `accessLog` source you need to have configured config:httpAccessLogging[].
+
+|suppressSensitiveTrace
+|
+|
+|The server trace can expose sensitive data when it traces untyped data, such as bytes received over a network connection. This attribute, when set to `true`, prevents potentially sensitive information from being exposed in log and trace files. The default value is `false`.
+
+|traceFileName
+|com.ibm.ws.logging.trace.file.name
+|
+|The `trace.log` file is only created if additional or detailed trace is enabled. `stdout` is recognized as a special value, and causes trace to be directed to the original standard out stream.
+
+|traceFormat
+|com.ibm.ws.logging.trace.format
+|
+|This attribute controls the format of the trace log. The default format for Liberty is `ENHANCED`. You can also use `BASIC` and `ADVANCED` formats.
+
+|traceSpecification
+|com.ibm.ws.logging.trace.specification
+|
+a|The trace string is used to selectively enable trace. The format of the log detail level specification:
+
+component = level
+
+where `component` specifies what log sources the `level` should be set to, and `level` specifies how much trace should be output using one of: `off`, `fatal`, `severe`, `warning`, `audit`, `info`, `config`, `detail`, `fine`, `finer`, `finest`, `all`. Multiple log detail level specifications can be provided by separating them with colons.
+
+A component can be a logger name, trace group or class name. An asterisk pass:[*] acts as a wildcard to match multiple components based on a prefix. For example:
+
+- `pass:[*]` Specifies all traceable code that is running in the application server, including the product system code and customer code.
+
+- `com.ibm.ws.pass:[*]` Specifies all classes with the package name beginning with com.ibm.ws.
+
+- `com.ibm.ws.classloading.AppClassLoader` Specifies the AppClassLoader class only.
+
+|===
