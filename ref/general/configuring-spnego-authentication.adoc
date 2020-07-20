@@ -22,7 +22,7 @@ This task demonstrates how to configure an Open Liberty server to support SSO fo
 
 == Prerequisites
 
-To enable SPNEGO, the clocks for the client, Active Directory server, and Open Liberty server must be synchronized to within five minutes of each other.
+To enable SPNEGO, the clocks for the client, Active Directory server, and Open Liberty server must be synchronized to within 5 minutes of each other.
 This allowable difference in synchronization is configurable.
 
 Before you begin, ensure that the following software is available:
@@ -37,18 +37,18 @@ In this example, the Open Liberty server hostname  is `myLibertyMachine.example.
 
 == Procedure
 
-To configure SPNEGO, you'll complete the following items:
+To configure SPNEGO, you complete the following items:
 
 . Create a Kerberos service principal name and keytab file and copy the keytab file to Open Liberty.
-. Create a Kerberos configuration file on Open Liberty, and link:/docs/ref/feature/#spnego-1.0.html[configure the SPENGO feature].
+. Create a Kerberos configuration file on Open Liberty, and configure the link:/docs/ref/feature/#spnego-1.0.html[SPENGO feature].
 . Configure the browser client so users can access SPNEGO-protected resources from a browser.
 
 === Create a Kerberos service principal name and keytab file
 
 . Create a user account for the Open Liberty server.
 This account is used to map to the Kerberos service principal name (SPN).
-For Active Directory machines, create this account by going to **Start > Administrative Tools > Active Directory Users and Computers**.
-Then, right-click **Users** in the panel, and click **New > User**.
+On Active Directory machines, create this account by going to **Start > Administrative Tools > Active Directory Users and Computers**.
+Then, right-click **Users** in the pane, and click **New > User**.
 Ensure that you create the user account with password security.
 
 . Run the Microsoft `setspn` command to map the user account to a Kerberos SPN.
@@ -116,8 +116,8 @@ keysize 93 HTTP/myLibertyMachine.example.com@MYDOMAIN.EXAMPLE.COM ptype 1 (KRB5_
 === Copy the Kerberos keytab and configuration files and enable SPNEGO web authentication
 . Copy the Kerberos keytab file from the domain controller to the Open Liberty server.
 The default location of the file is the same directory as the Kerberos configuration file, which varies depending on the operating system:
-* For Windows platforms, the default location is `C:\windows\krb5.ini`.
-* For Mac and LINUX platforms, the default location is `/etc/krb5.conf`.
+* For Windows operating systems, the default location is `C:\windows\krb5.ini`.
+* For Mac and Linux operating systems, the default location is `/etc/krb5.conf`.
 
 . Create a Kerberos configuration file.
 The Kerberos configuration file contains client configuration information.
@@ -167,6 +167,30 @@ If you use the Oracle JDK or Java 11, add the `java.security.krb5.kdc` and `java
 The following steps are for users who are accessing SPNEGO-protected resources from a browser and must be completed on the client machine.
 Ensure that browser supports SPNEGO authentication and that the user is logged in to the domain controller.
 
+==== Google Chrome on Windows
+
+. Open the Control Panel and click **Internet Options**.
+In the window that's displayed, click the **Security** tab.
+. Select the **Local** intranet icon and click **Sites**.
+. Click **Advanced** in the Local intranet window.
+. Complete the **Add this website to the zone** field with the web address of the hostname so that SSO can be enabled for the list of websites that are shown in the websites field.
+Close the second Local intranet window.
+. Click **OK**, and close the Local intranet window.
+. In the Internet Options window, click the **Advanced** tab and scroll to **Security** settings. Ensure that the **Enable Integrated Windows Authentication** box is selected.
+. Click **OK**.
+Restart Internet Explorer to activate this configuration.
+
+==== Google Chrome on Mac or Linux
+
+. Add the `--auth-server-whitelist` parameter to the `google-chrome` command.
+For example, to configure SPNEGO for Chrome on Linux, run the following command:
++
+----
+google-chrome --auth-server-whitelist = "hostname/domain"
+----
++
+This command runs Chrome and sets the `--auth-server-whitelist` parameter so that SPNEGO can work in the browser.
+
 ==== Microsoft Internet Explorer
 
 . Log in to the Active Directory domain.
@@ -174,7 +198,7 @@ Ensure that browser supports SPNEGO authentication and that the user is logged i
 In the window that's displayed, click the **Security** tab.
 . Select the **Local** intranet icon and click **Sites**.
 . Click **Advanced** in the Local intranet window.
-. Complete the **Add this website to the zone** field with the web address of the hostname so that SSO can be enabled for the list of websites that are shown in the websites field.
+. Complete the **Add this website to the zone** field with the web address of the hostname so that SSO can be enabled for the websites that are shown in the **websites** field.
 Close the second Local intranet window.
 . Click **OK**, and close the Local intranet window.
 . In the Internet Options window, click the **Advanced** tab and scroll to **Security** settings. Ensure that the **Enable Integrated Windows Authentication** box is selected.
@@ -197,7 +221,7 @@ Restart Firefox to activate this configuration.
 
 == Results
 
-After you configure SPNEGO authentication, you can deploy applications in your company that users only have to log in to once.
+After you configure SPNEGO authentication, you can deploy applications in your company that users must log in to only once.
 To verify that SPNEGO is working, log in to the domain controller and access a protected resource on Open Liberty.
 Because you are logged in to the domain controller, you aren't prompted for credentials.
 If you aren't logged in to the domain controller and attempt to access a protected resource, you are prompted for credentials.
