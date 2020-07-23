@@ -1,0 +1,80 @@
+// Copyright (c) 2020 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description: You can use the Elastic Stack to analyze your Open Liberty logs. The Elastic Stack, sometimes know as the ELK stack, is a widely used open source platform to collect, manage, and build dashboards for log data.
+:seo-title: You can use the Elastic Stack to analyze your Open Liberty logs. The Elastic Stack, sometimes know as the ELK stack, is a widely used open source platform to collect, manage, and build dashboards for log data.
+:page-layout: general-reference
+:page-type: general
+= Analyzing logs with Elastic Stack
+
+You can use the Elastic Stack to analyze your Open Liberty logs. link:https://www.elastic.co/log-monitoring[The Elastic Stack], sometimes know as the ELK stack, is a widely used open source platform to collect, manage, and build dashboards for log data.
+
+== About this task
+
+The Elastic Stack is a log analysis platform that consists of link:https://www.elastic.co/elasticsearch/[Elasticsearch], link:https://www.elastic.co/logstash/[Logstash], link:https://www.elastic.co/kibana/[Kibana], and link:https://www.elastic.co/beats/[Beats]. You can use these products to collect, parse, and visualize your Open Liberty log data.
+
+The following procedure assumes that your Open Liberty server is in an environment, such as a Kubernetes cluster, where logs can be made directly available to the Elastic stack. However, some server configurations cannot make logging data directly available for an external agent to manage. In these cases, you can use the Open Liberty Logstash collector feature to internally collect your log data at run time and send it to a remote Logstash server. For more information, see xref:forwarding-logs-logstash.adoc[Forwarding logs and events to Logstash with Logstash collector].
+
+== Before you begin
+
+- Set up the Elastic Stack by following link:https://www.elastic.co[the instructions from Elastic].
+- Set your Open Liberty `messages.log` file link:/docs/ref/general/#log-trace-configuration#_json_logging.html[to JSON format].
+
+== Procedure
+
+Complete the following steps to configure your Elasticsearch, Logstash, Kibana, and Filebeat products to use and visualize your logs.
+
+. Start the server.
+
+. Download the `liberty_logstash.conf` sample Logstash configuration file from the directory that corresponds to your version of the Elastic stack in link:https://github.com/WASdev/sample.dashboards[Sample dashboards for Liberty].
+
+. In the Logstash configuration file, customize the Beats port, `port:port_number`, and the Elasticsearch hosts value `Elasticsearch_host_name:port_number` with your port number and Elasticsearch hostname.
+
+. Download the sample Filebeat configuration file for your Filebeat version from link:https://github.com/WASdev/sample.dashboards[Sample dashboards for Liberty]. For Filebeat 5.x, use the `liberty_filebeat5.yml` file. For Filebeat 6.x and 7.x, use the `liberty_filebeat6_7.yml file`.
+
+. In the Filebeat configuration file, change the path of the log to the location of the `messages.log` file.
+
+. Start Elasticsearch, Logstash, Kibana, and Filebeat. +
+See link:https://www.elastic.co/[the Elastic website] for instructions.
+
+. Open Kibana in a browser and create an index.
++
+Click **Management** > **Index Patterns**.
+
+- For Kibana 6 and 7:
+** Enter `logstash-*` as the **Index Pattern**.
+** Click **Next** > **Advanced Options** and enter `logstash-*` as the **Index Pattern ID**.
+** Select `ibm_datetime` as the **Time filter** field name and click **Create**.
+- For Kibana 5.6 or later:
+** Enter `logstash-*` as the **Index Pattern**.
+** Click **Advanced Options** and enter `logstash-*` as the **Index Pattern ID**.
+** Select `ibm_datetime` as the **Time filter** field name and click **Create**.
+- For Kibana 5.0-5.5:
+** Select `ibm_datetime` as the **Time filter** field name and click **Create**.
+
+. Download one or more of the sample dashboards from the directory that corresponds to your version of the Elastic stack in link:https://github.com/WASdev/sample.dashboards[Sample dashboards for Liberty.]
++
+- For Kibana 5.x, download JSON files that start with `kibana5`.
+- For Kibana 6.x and 7.x, download JSON files that start with `kibana6_7`.
+
+. Import the dashboard into Kibana.
++
+Click **Management** > **Saved Object** > **Import** and select a dashboard that you downloaded in step 8.
+
+. View the dashboard.
++
+Click **Dashboard** > **Open** and select the dashboard that you imported in step 9.
+
+== Results
+
+You can now send your Open Liberty logs to the Elastic Stack and analyze them by using the provided sample Kibana dashboards.
+
+== See also
+
+- To learn more about log management solutions for Open Liberty, see link:/docs/ref/general/#log-management.html[Log management].
+- To learn about Open Liberty logs and logging configuration options, see link:/docs/ref/general/#logging.html[Log and trace configuration].
