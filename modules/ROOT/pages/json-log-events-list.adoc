@@ -245,6 +245,8 @@ The audit events are captured in the following formats to help identify differen
 * <<SECURITY_AUTHZ, EJB authorization (SECURITY_AUTHZ)>>
 * <<SECURITY_JMS_AUTHN, JMS Authentication (SECURITY_JMS_AUTHN)>>
 * <<SECURITY_JMS_AUTHZ, JMS Authorization (SECURITY_JMS_AUTHZ)>>
+* <<SECURITY_SAF_AUTHZ, SAF Authorization Service API request (SECURITY_SAF_AUTHZ)>>
+* <<SECURITY_SAF_AUTHZ_DETAILS, SAF Authorization Exception (SECURITY_SAF_AUTHZ_DETAILS)>>
 * <<JMX_MBEAN_REGISTER, JMX MBean registration (JMX_MBEAN_REGISTER)>>
 * <<JMX_MBEAN, JMX MBean Operations (JXM_MBEAN)>>
 * <<JMX_MBEAN_ATTRIBUTES, JMX MBean attribute operations (JMX_MBEAN_ATTRIBUTES)>>
@@ -358,7 +360,7 @@ event.
 |ibm_audit_target.host.address |Host and port of the target
 |ibm_audit_target.id |Identifier of the target of the action
 |ibm_audit_target.method |Method being invoked on the target, i.e.,GET, POST
-|ibm_audit_target.name |Name of the target. Note that the name will include "urbridge”, "scim” or "vmmservice”, depending on the flow of the request (for example, is it a call coming through scim).
+|ibm_audit_target.name |Name of the target. Note that the name will include "urbridge", "scim" or "vmmservice", depending on the flow of the request (for example, is it a call coming through scim).
 |ibm_audit_target.realm |Realm name associated with the target
 |ibm_audit_target.repositoryId |Repository identifier associated with the target
 |ibm_audit_target.session |Session identifier associated with the target
@@ -1189,6 +1191,146 @@ The following example shows a successful SECURITY_JMS_AUTHZ event:
 ----
 
 
+=== SECURITY_SAF_AUTHZ
+
+You can use the SECURITY_SAF_AUTHZ event to capture the audit information from a request to the SAF Authorization Service API. The following table provides the fields for the SECURITY_SAF_AUTHZ event and a description of each field.
+
+[cols=",",options="header",]
+|===
+|FIELDS |DESCRIPTION
+|type |A string that identifies the type of event
+|host |Host name of the server that was the source of the event
+|ibm_userDir |User directory of the server that was the source of the event.
+|ibm_serverName |Server name of the server that was the source of the
+event.
+|ibm_datetime |Time at which the event occurred.
+|ibm_sequence |Sequence number of event (useful for sorting records with the same time stamp).
+|ibm_threadId |Thread ID in the log line, for example, 00000015. The thread ID is a string and not a number.
+|ibm_audit_eventName |Name of the audit event
+|ibm_audit_eventSequenceNumber |Sequence number of the audit event
+|ibm_audit_eventTime |Time the event occurred
+|ibm_audit_observer.id |Identifier of the observer of the event
+|ibm_audit_observer.name |Name of the observer of the event: `JMXService`
+|ibm_audit_observer.typeURI |Unique URI of the observer of the event: `service/server`
+|ibm_audit_outcome |Outcome of the event
+|ibm_audit_target.access.level |Level of access requested
+|ibm_audit_target.applid |Identifier of APPL class
+|ibm_audit_target.authorization.decision |True if user is authorized to access SAF resource in SAF Class, otherwise false
+|ibm_audit_target.credential.token |Token name of user that performs action
+|ibm_audit_target.id |Identifier of the target of the action
+|ibm_audit_target.racf.reason.code |RACF reason code
+|ibm_audit_target.racf.return.code |RACF return code
+|ibm_audit_target.saf.class |Name of SAF Class that contains SAF resource
+|ibm_audit_target.saf.profile |Name of SAF resource user requests access to
+|ibm_audit_target.saf.return.code |SAF return code
+|ibm_audit_target.typeURI |Unique URI of the target of the event:  service/application/web
+|ibm_audit_target.user.security.name |Username whose access to a SAF resource is being checked
+|===
+
+The following example shows a successful SECURITY_SAF_AUTHZ event:
+
+[source,json]
+----
+
+{
+   "type":"liberty_audit",
+   "host":"sage.xyz.com",
+   "ibm_userDir":"\/opt\/ol\/wlp\/usr\/",
+   "ibm_serverName":"TestServer.audit",
+   "ibm_datetime":"2018-07-19T18:34:96.324-0400",
+   "ibm_sequence":"1587056204736_0000000000002",
+   "ibm_threadId":"00000003",
+   "ibm_audit_eventName": "SECURITY_SAF_AUTHZ",
+   "ibm_audit_eventSequenceNumber": "4",
+   "ibm_audit_eventTime": "2019-04-29T19:45:16.161+0000",
+   "ibm_audit_observer.id": "websphere: sage.xyz.com:/opt/ol/wlp/usr/:TestServer.audit",
+   "ibm_audit_observer.name": "SecurityService",
+   "ibm_audit_observer.typeURI": "service/server",
+   "ibm_audit_outcome": "success",
+   "ibm_audit_target.access.level": "READ",
+   "ibm_audit_target.applid": "BBGZDFLT",
+   "ibm_audit_target.authorization.decision": "true",
+   "ibm_audit_target.credential.token": "WSGUEST",
+   "ibm_audit_target.id": "websphere: sage.xyz.com:/opt/ol/wlp/usr/:TestServer.audit",
+   "ibm_audit_target.racf.reason.code": "0",
+   "ibm_audit_target.racf.return.code": "0",
+   "ibm_audit_target.saf.class": "EJBROLE",
+   "ibm_audit_target.saf.profile": "BBGZDFLT.AUTHSERV",
+   "ibm_audit_target.saf.return.code": "0",
+   "ibm_audit_target.typeURI": "service/application/web",
+   "ibm_audit_target.user.security.name": "WSGUEST"
+}
+----
+
+=== SECURITY_SAF_AUTHZ_DETAILS
+
+You can use the SECURITY_SAF_AUTHZ_DETAILS event to capture the audit information from a SAF Authorization event that is configured to throw a SAF Authorization Exception on failure. The following table provides the fields for the SECURITY_SAF_AUTHZ_DETAILS event and a description of each field.
+
+[cols=",",options="header",]
+|===
+|FIELDS |DESCRIPTION
+|type |A string that identifies the type of event
+|host |Host name of the server that was the source of the event
+|ibm_userDir |User directory of the server that was the source of the event.
+|ibm_serverName |Server name of the server that was the source of the
+event.
+|ibm_datetime |Time at which the event occurred.
+|ibm_sequence |Sequence number of event (useful for sorting records with the same time stamp).
+|ibm_threadId |Thread ID in the log line, for example, 00000015. The thread ID is a string and not a number.
+|ibm_audit_eventName |Name of the audit event
+|ibm_audit_eventSequenceNumber |Sequence number of the audit event
+|ibm_audit_eventTime |Time the event occurred
+|ibm_audit_observer.id |Identifier of the observer of the event
+|ibm_audit_observer.name |Name of the observer of the event: `JMXService`
+|ibm_audit_observer.typeURI |Unique URI of the observer of the event: `service/server`
+|ibm_audit_outcome |Outcome of the event
+|ibm_audit_target.access.level |Level of access requested
+|ibm_audit_target.applid |Identifier of APPL class
+|ibm_audit_target.authorization.decision |True if user is authorized to access SAF resource in SAF Class, otherwise false
+|ibm_audit_target.credential.token |Token name of user that performs action
+|ibm_audit_target.id |Identifier of the target of the action
+|ibm_audit_target.racf.reason.code |RACF reason code
+|ibm_audit_target.racf.return.code |RACF return code
+|ibm_audit_target.saf.class |Name of SAF Class that contains SAF resource
+|ibm_audit_target.saf.profile |Name of SAF resource user requests access to
+|ibm_audit_target.saf.return.code |SAF return code
+|ibm_audit_target.typeURI |Unique URI of the target of the event:  service/application/web
+|ibm_audit_target.user.security.name |Username whose access to a SAF resource is being checked
+|===
+
+[source,json]
+----
+
+{
+   "type":"liberty_audit",
+   "host":"sage.xyz.com",
+   "ibm_userDir":"\/opt\/ol\/wlp\/usr\/",
+   "ibm_serverName":"TestServer.audit",
+   "ibm_datetime":"2018-07-19T18:34:96.324-0400",
+   "ibm_sequence":"1587056204736_0000000000002",
+   "ibm_threadId":"00000003",
+   "ibm_audit_eventName": "SECURITY_SAF_AUTHZ",
+   "ibm_audit_eventSequenceNumber": "5",
+   "ibm_audit_eventTime": "2019-04-30T13:59:11.688+0000",
+   "ibm_audit_observer.id": "websphere: sage.xyz.com:/opt/ol/wlp/usr/:TestServer.audit",
+   "ibm_audit_observer.name": "SecurityService",
+   "ibm_audit_observer.typeURI": "service/server",
+   "ibm_audit_outcome": "success",
+   "ibm_audit_target.access.level": "READ",
+   "ibm_audit_target.applid": "BBGZDFLT",
+   "ibm_audit_target.authorization.decision": "true",
+   "ibm_audit_target.credential.token": "WSGUEST",
+   "ibm_audit_target.id": "websphere: sage.xyz.com:/opt/ol/wlp/usr/:TestServer.audit",
+   "ibm_audit_target.racf.reason.code": "0",
+   "ibm_audit_target.racf.return.code": "0",
+   "ibm_audit_target.saf.class": "EJBROLE",
+   "ibm_audit_target.saf.profile": "BBGZDFLT.AUTHSERV",
+   "ibm_audit_target.saf.return.code": "0",
+   "ibm_audit_target.typeURI": "service/application/web",
+   "ibm_audit_target.user.security.name": "RSTUSR1"
+}
+----
+
 === JMX_MBEAN_REGISTER
 
 You can use the JMX_MBEAN_REGISTER event to capture the audit information from JMX MBean registration. The following table provides the fields for the JMX_MBEAN_REGISTER event and a description of each field.
@@ -1441,4 +1583,5 @@ The following example shows a successful JMX_NOTIFICATION:
 }
 ----
 
- 
+
+
