@@ -1,0 +1,102 @@
+// Copyright (c) 2020 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description:
+:seo-title: Authorization in Open Liberty
+:seo-description: Authorization determines which resources a user can access in an application.
+:page-layout: general-reference
+:page-type: general
+= Authorization
+
+For an application to be secure, it must be able to manage access to protected resources. Authorization determines which resources a user can access.
+
+In an application where only certain users or groups are entitled to access certain resources, users and groups are assigned roles that represent which resources they can access.
+For example, in a payroll application, users in the `Employee` role can view a page that lists their hourly wages and hours worked.
+However, only users in the `Manager` role can edit employee wages.
+During xref:authentication.adoc[authentication], Open Liberty identifies users and determines what access groups they belong to.
+When a user attempts to access a protected resource on the server, this information determines whether the user is authorized to access the resource.
+
+During authentication, the user's identity and security roles are confirmed.
+During authorization, Open Liberty checks the roles that are specified for the user against the roles that are defined for the application resources. In the following diagram, a user requests access to protected resources in an application. During authentication, the user’s request is routed to an Open ID Connect identity provider, which confirms the user's identity and security roles. The identity provider sends authentication data back to the application, where it is used to authorize user access to protected resources.
+The user is granted access to any resources that match their role.
+
+.Authentication and authorization
+image::/docs/img/authn-ol-diagram.png[diagram that shows the flow of an authentication request,align="center"]
+
+== Defining user roles in your application code
+
+You can specify which roles can access an application resource directly in the source code by setting the `@RolesAllowed` annotation to contain the permissible roles, as shown in the following example:
+
+[source,java]
+----
+@RolesAllowed({ "admin", "user" })
+----
+
+You can map the roles that are declared in the application to existing user groups from a user registry or single sign-on (SSO) provider. Specify the `security-role` element within the `application-bnd` element in the `server.xml` file, as shown in the following example:
+
+[source,java]
+----
+<application-bnd>
+   <security-role name="admin">
+     <group name="Manager" />
+     <group name="TeamLead" />
+   </security-role>
+   <security-role name="user">
+     <group name="Employee" />
+   </security-role>
+</application-bnd>
+----
+
+The `name` attribute of the `security-role` element corresponds to a security role specified in the application. The `group name` elements correspond to the user groups that are specified by a user registry or SSO provider.
+If the role names match the group names exactly, the server maps the group to the role with a matching name by default.
+If you use this default mapping, you do not need specify an `application-bnd` element in the `server.xml` file.
+
+In some cases, an application needs to know only the user’s authentication status.
+In such cases, you can specify `**` as the role name in the `@RolesAllowed` annotation.
+This value denotes that any authenticated user can access a resource.
+Alternatively, you can authorize all users by setting the `@PermitAll` annotation, which specifies that anyone can access a resource, even users who are not authenticated.
+
+For more information, see the link:/guides/microprofile-jwt.html#securing-the-system-service[Securing the inventory service section of the guide to Securing microservices with JSON Web Tokens].
+
+=== Configuring servlet security roles
+
+The `@RolesAllowed` annotation typically specifies role-based access to business-logic application resources, such as calls to a database.
+To control authorization for front-end resources, such as HTTP calls, you can configure security roles at the servlet level.
+If you want to specify security roles in the servlet code, configure the `@ServletSecurity` annotation. You can set the `rolesAllowed` attribute within the `@HttpConstraint` or `@HttpMethodConstraint` parameters to the permissible roles, as shown in the following example:
+
+[source,java]
+----
+@ServletSecurity (value = @HttpConstraint(rolesAllowed = { "user", "admin" }))
+----
+
+The `@HttpMethodConstraint` parameter specifies HTTP methods-specific constraints. The `@HttpConstraint` parameter specifies constraints for any HTTP methods that are not otherwise specified by the `@HttpMethodConstraint` parameter.
+
+For more information, see link:/guides/security-intro.html#adding-authentication-and-authorization[the Adding authentication and authorization section of the Securing a web application guide].
+
+
+=== Authorizing requests between web services
+
+Authorization occurs not only between users and applications, but also between microservices within an application. When one service requests data from another, the requesting service often must be able to demonstrate that it is authorized to access the data.
+xref:single-sign-on.adoc[Token-based authorization], such as with JSON Web Tokens (JWT), provides a lightweight way for security controls and security tokens to propagate user identities and roles across different services.
+Open Liberty supports token-based authorization through the xref:reference:feature/jwt-1.0.adoc[MicroProfile JWT feature].
+
+=== Configuring authorization with a deployment descriptor file
+
+Although annotations are the most common way to define user roles in microservices, you can also define roles by specifying `security-constraint` elements in a `web.xml` deployment descriptor file.
+This configuration might be necessary in situations where you want to keep the security configuration separate from development and apply it at deployment time.
+
+Some applications rely on a combination of declarative annotations and a deployment descriptor file. In these cases, deployment descriptor values supersede annotations.
+Therefore, you can specify security roles in a deployment descriptor file if you want to override security settings or defaults from elsewhere in the application code.
+For more information, see link:/guides/security-intro.html#adding-authentication-and-authorization[the Adding authentication and authorization section of the Securing a web application guide].
+
+== See also
+
+Ready to try out authorization with Open Liberty for yourself? Check out these guides for securing applications:
+
+- Learn how to secure a web application through authentication and authorization in the guide to link:/guides/security-intro.html[Securing a web application].
+- Explore how to control user and role access to microservices with JSON Web Tokens in the guide to link:/guides/microprofile-jwt.html[Securing microservices with JSON Web Tokens].
