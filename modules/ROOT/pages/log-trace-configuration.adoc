@@ -21,11 +21,7 @@ There are three primary log files for a server:
 == Logging configuration
 The logging component can be controlled through the server configuration. The logging component can be fully configured in `server.xml` using the `logging` element. However, logging is initialized before `server.xml` has been processed so configuring logging through `server.xml` can result in early log entries using a different log configuration from later ones. For this reason it is also possible to provide much of the logging configuration using `boostrap.properties` and in some cases using environment variables.
 
-== Example logging configuration
-
-Some common logging configuration examples are given in the following sections.
-
-=== Managing log file storage
+== Managing log file storage
 
 
 The `console.log` file is created by redirecting the process `stdout` and `stderr` to a file. As a result, Liberty is unable to offer the same level of management, like log rollover, as it offers for `messages.log`. If you are concerned about the increasing size of the `console.log` file, you can disable the `console.log` file and use the `messages.log` file instead. All the log messages sent to `console.log` are written to the `messages.log` file, and you can configure file rollover.
@@ -40,7 +36,7 @@ com.ibm.ws.logging.console.log.level=OFF
 com.ibm.ws.logging.copy.system.streams=false
 ----
 
-=== JSON logging
+== JSON logging
 When feeding log files into modern log aggregation and management tools it can be advantageous to have the log files stored using JSON format. This can be done in one of three ways:
 
 * Using the `bootstrap.properties` file:
@@ -85,7 +81,22 @@ WLP_LOGGING_JSON_FIELD_MAPPINGS=loglevel:level
 WLP_LOGGING_JSON_FIELD_MAPPINGS=message:message:log
 ----
 
-=== Configuring logging for a Docker image
+=== Replacing default HTTP access log fields
+
+When logs are in JSON format, you can use the `jsonAccessLogFields` attribute to replace the default JSON HTTP access log fields with fields that are specified by the `logFormat` property of the `accesLogging` attribute for xref:reference:config/httpEndpoint.adoc#accessLogging[the `httpEndpoint` element]. With this configuration, you can receive information that is otherwise not available in JSON logs, such as the remote user ID, request headers, and more. These logs can be used by log analysis tools, such as the Elastic stack, to better monitor your server.
+
+The following example shows a configuration in the `server.xml` file to replace the default HTTP access log fields with the custom fields. xref:access-logging.adoc[HTTP access logging] must be enabled to receive JSON access logs.
+
+[source,xml]
+----
+<httpEndpoint httpPort="9080" httpsPort="9443" id="defaultHttpEndpoint">
+    <accessLogging logFormat='%R{W} %u %{my_cookie}C %s'/>
+</httpEndpoint>
+<logging jsonAccessLogFields="logFormat"/>
+----
+
+
+== Configuring logging for a Docker image
 
 It is common in Docker environments to disable `messages.log` and instead format the console output as JSON. This can be done using environment variables:
 
@@ -109,7 +120,7 @@ docker run -e "WLP_LOGGING_CONSOLE_SOURCE=message,trace,accessLog,ffdc"
            -e "WLP_LOGGING_MESSAGE_SOURCE=" open-liberty
 ```
 
-=== Binary logging
+== Binary logging
 
 Liberty has a high performance binary log format option that significantly reduces the overhead of writing trace files. Generally, when configuring binary logging, the `console.log` is disabled for best performance. This must be enabled using `bootstrap.properties`:
 
