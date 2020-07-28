@@ -1,0 +1,29 @@
+== Examples
+
+=== Logstash Collector configuration
+There are several parameters that you can use to configure the Logstash collector feature in the `server.xml` file. You can change the maximum number of characters that are allowed for the message field in a message or trace event or for the stack trace in an FFDC event. Each log event type has customizable fields that help to manage the data that is sent to the configured Logstash log collection server. For more information, see xref:logstash-events-list.adoc[Logstash collector event fields]. The default maximum is 2048 characters. You can set this specification in the 'server.xml' file as shown in the following example that sets the `maxFieldLength` parameter to 3000 characters in the `logstashCollector` element. For an unlimited number of characters, you can set the `maxFieldLength` parameter to 0 or -1.
+
+In the `server.xml` file, you can also limit the maximum number of events that are sent for each type of event per second. The default maximum number of events is 0, which means that no throttling is applied. If the `maxEvents` parameter is set to greater than 0, there is a limit to the number of events that are sent per second. The `maxEvents` parameter value must be an integer between 0 and 2147483647. The following example also has two `tag` elements in the `logstashcollector` element to add custom tags that decorate events within the application:
+
+----
+<featureManager>
+    <feature>logstashCollector-1.0</feature>
+</featureManager>
+
+<keyStore id="defaultKeyStore" password="Liberty" />
+<keyStore id="defaultTrustStore" location="trust.jks" password="Liberty" />
+<ssl id="mySSLConfig" trustStoreRef="defaultTrustStore" keyStoreRef="defaultKeyStore" />
+
+<logstashCollector
+	source="message,trace,garbageCollection,ffdc,accessLog,audit"
+	hostName="localhost"
+	port="5043"
+	sslRef="mySSLConfig"
+	maxEvents="10"
+	maxFieldLength="3000">
+	<tag>serverRackA5</tag>
+	<tag>billingAppTeam</tag>
+</logstashCollector>
+----
+
+For more information, see https://draft-openlibertyio.mybluemix.net/docs/ref/general/#forwarding-logs-logstash.html[Forwarding logs and events to Logstash with Logstash collector].
