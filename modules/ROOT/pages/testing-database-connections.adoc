@@ -1,0 +1,53 @@
+// Copyright (c) 2020 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:seo-description:
+:page-layout: general-reference
+:page-type: general
+:seo-title: Testing database connections - OpenLiberty.io
+= Testing database connections
+
+It is important to validate the database connections in your Open Liberty applications to ensure the integrity of the server runtime environment. You can test your database connections with REST endpoints that help to support configuration validation within applications.
+
+== About this task
+
+Testing your database connections with REST endpoints provides a simpler method of validating the server runtime environment. To test your database connection, you must validate the data source and view the data source configuration to confirm the validation.
+
+== Before you begin
+
+The REST endpoints that are used to validate database connections are automatically enabled by combining the Rest Connector 2.0 feature with other features that support configuration validation. You must complete authentication with the Open Liberty server to access these endpoints.  The config endpoint requires a minimum of `reader-role` access and the validation endpoint requires `administrator-role` access. The following example shows a server.xml configuration for enabling REST endpoints that uses the Configuration Validator and JDBC features:
+
+[source,xml]
+----
+<server>
+  <featureManager>
+    <feature>appSecurity-2.0</feature>
+    <feature>restConnector-2.0</feature>
+    <feature>jdbc-4.2</feature>
+  </featureManager>
+
+  <keyStore id="defaultKeyStore" password="Liberty"/>
+  <quickStartSecurity userName="blogAdmin" userPassword="blogAdminPassword"/>
+
+  <library id="derby">
+    <file name="${server.config.dir}/derby/derby.jar"/>
+  </library>
+
+  <dataSource id="DefaultDataSource">
+    <jdbcDriver libraryRef="derby"/>
+    <!-- Example properties referencing an in-memory Derby Embedded database -->
+    <properties.derby.embedded databaseName="memory:defaultdb" createDatabase="create" user="dbuser" password="dbpass"/>
+  </dataSource>
+...
+</server>
+----
+
+== Procedure
+
+=== Validating a data source
+1. Find the endpoint
