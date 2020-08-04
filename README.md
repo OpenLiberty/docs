@@ -1,23 +1,13 @@
 # docs
-# Writing and publishing blog posts on the OpenLiberty.io blog
-
-* [Authors: creating a new blog post](#Authors-creating-a-new-blog-post)
-* [Editors: editing and publishing a post](#Editors-editing-and-publishing-a-post)
-* [Authors and Editors: updating a published post](#Authors-and-Editors-updating-a-published-post)
-* [Troubleshooting Asciidoc](#Troubleshooting-Asciidoc)
-* [Running a Docker container for local preview](#Running-a-Docker-container-for-local-preview)
-
-
-## Authors: creating a new doc
+# Writing and publishing docs on the OpenLiberty.io 
 
 These steps are to be completed by the author of the doc:
   
-
 1. Clone [the docs repo](https://github.com/OpenLiberty/docs) and create your feature branch off of the default `vNext` branch. Include the number of the Git issue for the doc in the name of your branch (e.g. `1234-concept-topic`). Do _all_ your writing and editing in this branch.
 
-2. Create your doc using [Asciidoc](https://asciidoctor.org/docs/asciidoc-syntax-quick-reference/) markup (use an editor such as [Atom](https://atom.io/) or [VSCode with the Asciidoc plugin](https://marketplace.visualstudio.com/items?itemName=joaompinto.asciidoctor-vscode)).
+2. Create your doc by using [Asciidoc](https://asciidoctor.org/docs/asciidoc-syntax-quick-reference/) markup. Use an editor such as [Atom](https://atom.io/) or [VSCode with the Asciidoc plugin](https://marketplace.visualstudio.com/items?itemName=joaompinto.asciidoctor-vscode).
 
-3. When you have finished the post, check that it renders correctly by using the preview function in your editor. Make sure to run [Acrolinx](https://www.acrolinx.com/) to check for grammar and IBM style issues. 
+3. When you have finish the initial draft, check that it renders correctly by using the preview function in your editor. Make sure to run [Acrolinx](https://www.acrolinx.com/) to check for grammar and IBM style issues. 
 
 4. Push the file to GitHub, then create a pull request (PR) into the `draft` branch.
 
@@ -43,7 +33,7 @@ These steps are to be completed by the author of the doc:
 
   Link the PR to the issue. Request a review of the PR from David Mueller (`dmuelle`) or Charlotte Holt (`Charlotte-Holt`).
 
-  In the PR, provide a link to your post on the [draft site](https://draft-openlibertyio.mybluemix.net/blog/).
+  In the PR, provide a link to your post on the [draft site](https://draft-openlibertyio.mybluemix.net/docs/).
    
 9. If any changes are requested to the PR, make them in your branch, push the changes to the draft branch, then run the draft site build from Travis CI again to check that they are fine on the draft site.
 
@@ -51,7 +41,7 @@ These steps are to be completed by the author of the doc:
 
 10. Once the PR to staging is approved and merged, request a build of the [staging openliberty.io site from Travis CI](https://travis-ci.com/github/OpenLiberty/openliberty.io). To trigger a staging build, use the same procedure that you used in step 5 to trigger a draft build.
 
-11. When the build finishes, check to make sure the doc renders correctly on the [staging site](https://staging-openlibertyio.mybluemix.net/blog/). If any changes are needed make sure to add them to the draft branch and review on the draft site before making a PR to staging.
+11. When the build finishes, check to make sure the doc renders correctly on the [staging site](https://staging-openlibertyio.mybluemix.net/docs/). If any changes are needed make sure to add them to the draft branch and review on the draft site before making a PR to staging.
 
 12. Once you verify the doc, post a link to it on the staging site to the Git issue and change the issue status to `Ready to publish`. The ID focals will merge the staging draft to `vNext` so that it publishes with the next release.
 
