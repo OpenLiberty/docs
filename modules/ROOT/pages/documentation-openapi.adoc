@@ -33,38 +33,37 @@ In the code-first approach, you can generate basic API documentation from your J
 Then, you can augment the existing JAX-RS annotations with OpenAPI annotations, which are processed to generate the documentation.
 Adding annotations takes less work and gives useful explanation of the different parts of the API.
 
-The following example shows a JAX-RS request to list hostnames in the inventory.
-The OpenAPI annotations in the example provide more useful and explanatory information about the operation:
+In the following example, the OpenAPI annotations `@APIResponses`,`@Operation`, and `@Parameter` are added to the two JAX-RS methods, `getPropertiesForHost()` and `listContents()`.
 
 [source,java]
 ----
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    @APIResponse(
-        responseCode = "200",
-        description = "host:properties pairs stored in the inventory.",
-        content = @Content(
-            mediaType = "application/json",
-            schema = @Schema(
-                type = SchemaType.OBJECT,
-                implementation = InventoryList.class)))
-    @Operation(
-        summary = "List inventory contents.",
-        description = "Returns the currently stored host:properties pairs in the "
-        + "inventory.")
-    public InventoryList listContents() {
-        return manager.list();
-    }
-----
 
-In the following OpenAPI documentation example that is generated from the example code, the JAX-RS framework generates the `inventory/systems` path based on the value of the `@Path` annotation.
-The JAX-RS framework also generates the value of the `operationId` key `listContents` based on the name of the method `listContents()`.
-The other parts of the document are generated from the OpenAPI annotations in the code.
-For example, the `@Operation` annotation provides more meaningful information about what the operation does and why.
-In this case, the operation returns a list of the hostnames with properties of each host that are currently stored by the inventory web service.
+/inventory/systems/{hostname}:
+  get:
+    summary: Get JVM system properties for particular host
+    description: Retrieves and returns the JVM system properties from the system
+      service running on the particular host.
+    operationId: getPropertiesForHost
+    parameters:
+    - name: hostname
+      in: path
+      description: The host for whom to retrieve the JVM system properties for.
+      required: true
+      schema:
+        type: string
+      example: foo
+    responses:
+      404:
+        description: Missing description
+        content:
+          text/plain: {}
+      200:
+        description: JVM system properties of a particular host.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Properties'
 
-[source,java]
-----
 /inventory/systems:
   get:
     summary: List inventory contents.
