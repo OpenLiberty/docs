@@ -1,23 +1,44 @@
 == Examples
 
-=== Managing audit log files
+=== Audit File Handler
 
+The audit file handler is made available by specifying the audit-1.0 feature. It can be customized by specifying any of the config attributes, along with the <auditFileHandler> element. For more information, see link:https://www.openliberty.io/docs/ref/config/#auditFileHandler.html[Default Audit File Handler].
 
-The following example shows how to increase the individual file size to 100 MB, reduce the maximum number of archived audit log files to 50, and specify the `compact` attribute:
+When the maximum number of archived audit logs is reached, after the audit.log file that is being written to reaches its maximum size, then the oldest archived audit log is overwritten.
+
+The following example shows an Audit file handler with maxFiles, maxFileSize, and compact mode specified:
 
 [source,xml]
 ----
+<featureManager>
+    <feature>appSecurity-2.0</feature>
+    <feature>[.underline]#jsp#-2.2</feature>
+    <feature>[.underline]#servlet#-3.1</feature>
+    <feature>audit-1.0</feature>
+    <feature>[.underline]#timedexit#-1.0</feature>
+</featureManager>
+
 <auditFileHandler maxFiles="50" maxFileSize="100" compact=”true”>
 </auditFileHandler>
 ----
 
+In the example, the audit logs are written to the default $\{server.output.dir}/logs directory. Each audit file has a maximum 100 MB size before they are archived and new audit records are written to a new audit.log file. The maximum number of archived audit logs is 50. Once 50 audit logs are archived, and the current audit.log file that is written to reaches the 100 MB size, then the oldest archived audit.log file is overwritten.
 
-=== Configuring the audit events to log
+All audit events and possible outcomes are emitted to the audit logs.
 
-To specify only the audit events and outcomes that might be relevant in an environment, the `events` element can be defined with the audit event name and outcome. The following example specifies audit events and outcomes in the `auditFileHandler` element:
+=== Events
 
-[source,xml]
+To specify only those audit events and outcomes that may be of relevance in an environment, the <event> element can be defined with the audit event name and outcome:
+
+The following example specifies audit events and outcomes:
+
 ----
+<featureManager>
+    <feature>appSecurity-2.0</feature>
+    <feature>[.underline]#servlet#-4.0</feature>
+    <feature>audit-1.0</feature>
+</featureManager>
+
 <auditFileHandler maxFiles="5" maxFileSize="20" compact="true">
     <events name="AuditEvent_1" eventName="SECURITY_AUTHN" outcome="SUCCESS"/>
     <events name="AuditEvent_2" eventName="SECURITY_AUTHN" outcome="REDIRECT"/>
@@ -26,26 +47,34 @@ To specify only the audit events and outcomes that might be relevant in an envir
 </auditFileHandler>
 ----
 
+In the example, only the security authentication events whose outcome is success, redirect, or failure, and security authorization events whose outcome includes all supported outcomes are captured.
 
-=== Encrypting and signing audit data
+If an event is specified with only an outcome attribute, with no eventName specified, then no audit records are produced. However, an eventName can be specified without an outcome attribute, in which case all possible outcomes for that eventName are emitted.
 
-The following example shows the audit file handler with encryption and signing enabled. The `encrypt` and `sign` attributes must be specified in the `auditFileHandler` element along with the alias names of the certificates and the keystores that contain the certificates. The `keystore` element contains the private or public key that is used to encrypt and sign the data:
+=== Encrypting and Signing Audit
 
-[source,xml]
+It is important for the recorded audit data to be preserved in such a way that not only can the access be restricted but also so that the data itself is tamper-proof. The ability to both encrypt and sign the audit records data is provided.
+
+To encrypt audit records, the encrypt attribute must be specified in the auditFileHandler element, along with the alias name of the certificate that is used to encrypt the audit data, and the keystore in which that certificate exists.
+
+To sign audit records, the sign attribute must be specified in the auditFileHandler element, along with the alias name of the certificate that is used to sign the audit data, and the keystore in which that certificate exists.
+
+SHA256withRSA is used as the default crypto algorithm for both encryption and signing. The following example shows the audit file handler with encryption and signing enabled:
+
 ----
-<keyStore id="auditEncKeyStore” password="Liberty" location="${server.config.dir}/resources/security/AuditEncryptionKeyStore.jks" type="JKS" />
+<featureManager>
+    <feature>appSecurity-2.0</feature>
+    <feature>[.underline]#jsp#-2.2</feature>
+    <feature>[.underline]#servlet#-3.1</feature>
+    <feature>audit-1.0</feature>
+</featureManager>
 
-<keyStore id="auditSignKeyStore" password="{aes}EzY9Oi0rJg==" location="${server.config.dir}/resources/security/AuditSigningKeyStore2.jks" type="JKS" />
+<keyStore id="auditEncKeyStore” password="Liberty" location="$\{server.config.dir}/resources/security/AuditEncryptionKeyStore.jks" type="JKS" />
 
-<auditFileHandler encrypt="true" encryptAlias="#auditencryption#" encryptKeyStoreRef="auditEncKeyStore" sign="true" signingAlias="auditsigning2" signingKeyStoreRef="auditSignKeyStore"
+<keyStore id="auditSignKeyStore" password="\{[.underline]#xor#}EzY9Oi0rJg==" location="$\{server.config.dir}/resources/security/AuditSigningKeyStore2.[.underline]#jks#" type="JKS" />
+
+<auditFileHandler encrypt="true" encryptAlias="[.underline]#auditencryption#" encryptKeyStoreRef="auditEncKeyStore" sign="true" signingAlias="auditsigning2" signingKeyStoreRef="auditSignKeyStore"
 </auditFileHandler>
 ----
 
-=== Configuring the audit log format
-
-The JSON logging format makes it easier to manage log data by providing more structure to generated data. The following example shows how to configure the Audit feature to generate audit logs in the JSON logging format:
-
-[source,xml]
-----
-<logging messageFormat="json" messageSource="audit,message"/>
-----
+All audit events and possible outcomes are emitted to the audit logs.
