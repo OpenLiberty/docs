@@ -14,7 +14,7 @@ The following example shows how to configure your application to request that th
 <googleLogin clientId="your_app_id" clientSecret="your_app_secret"  />
 
 <!-- protected apps need to have a security constraint defined -->
-<application type="war" id="formlogin" name="formlogin" location="${server.config.dir}/apps/formlogin.war">
+<application type="war" id="formlogin" name="formlogin" location="server1/apps/formlogin.war">
     <application-bnd>
         <security-role name="Employee">
             <special-subject type="ALL_AUTHENTICATED_USERS" />
@@ -25,10 +25,10 @@ The following example shows how to configure your application to request that th
 
 === Provide a choice of social media providers to the user
 
+
 You can configure multiple social media providers for users to choose from.
 The user receives a customizable selection form before authentication with the available providers.
 The following example includes a choice of Google, GitHub, Facebook, LinkedIn, and Twitter:
-
 
 [source,xml]
 ----
@@ -39,7 +39,7 @@ The following example includes a choice of Google, GitHub, Facebook, LinkedIn, a
 <twitterLogin  consumerKey="your_app_id"       consumerSecret="your_app_secret"/>
 
 <!-- protected apps need to have a security constraint defined -->
-<application type="war" id="formlogin" name="formlogin" location="${server.config.dir}/apps/formlogin.war">
+<application type="war" id="formlogin" name="formlogin" location="server1/apps/formlogin.war">
     <application-bnd>
         <security-role name="Employee">
             <special-subject type="ALL_AUTHENTICATED_USERS" />
@@ -48,7 +48,7 @@ The following example includes a choice of Google, GitHub, Facebook, LinkedIn, a
 </application>
 ----
 
-=== Request log in with a social media ID only if the users is also in another registry
+=== Require authenticated users to also be present in the configured registry
 
 You can restrict the presentation of a social media provider to only users who are also in another configured registry.
 For example, use the `mapToUserRegistry` attribute to configure your app.
@@ -66,7 +66,8 @@ For more information on configuring an LDAP registry, see the LDAP User Registry
 
 === Request log in with a social media ID or with their account for the configured registry
 
-You can give users the option of logging in with either a social media provider or with their account on the configured registry. For example, use the `enableLocalAuthentication` attribute to configure your app so that users can have the option of logging in with a Google ID or with their account on their company's LDAP registry:
+You can give users the option of logging in with either a social media provider or with their account on the configured registry.
+For example, use the `enableLocalAuthentication` attribute to configure your app so that users can have the option of logging in with a Google ID or with their account on their company's LDAP registry:
 
 [source,xml]
 ----
@@ -79,12 +80,12 @@ You can give users the option of logging in with either a social media provider 
 
 ----
 
-=== Request log in with a social media ID for only a subset of applications, URLs, browsers, or IP addresses
+=== Request log in with a social media ID for a subset of applications, URLs, browsers, or IP addresses
 
-To protect only a subset of applications, URLs, or IP addresses, use an authentication filter.
-The security configuration takes effect only when the conditions in the filter are met.
-For example,
-you might want a web app to be secured with the Social Media Login feature and a microservice app to be secured with the MicroProfile JWT (feature:mp-jwt[]) feature:
+To protect only a subset of applications, URLs, or IP addresses, use an link:https://docs/ref/general/#authentication-filters-specifying-mechanism.html[authentication filter].
+The security configuration takes effect only when the conditions in the filter are met. For example,
+you might want a web app to be secured with the Social Media Login feature and a microservice app to be secured with the link:https://docs/ref/feature/#mp-jwt.html[MicroProfile JWT] feature:
+
 
 // tag::authfilter[]
 [source,xml]
@@ -101,14 +102,14 @@ you might want a web app to be secured with the Social Media Login feature and a
 ----
 // end::authfilter[]
 
-For more information, see config:authFilter[].
+For more information, see the link:https://docs/ref/config/#authFilter.html[`authFilter`] configuration element..
 
 === Provide other social media logins as options to the user
 
-To authenticate with a social media provider that is not configured out-of-the-box with Open Liberty, use a
-config:oauth2Login[] (for OAuth providers) or config:oidcLogin[] (for OpenID Connect providers) element.
-These elements supply the configuration details needed to work with the provider. These details can usually be
-obtained from the social media provider's developer instructions.  Here is an example for Instagram:
+To authenticate with a social media provider that isn't configured out-of-the-box with Open Liberty, use the link:https://docs/ref/config/#oauth2Login.html[`oauth2Login`] element for OAuth providers or the link:https://docs/ref/config/#oidcLogin.html[`oidcLogin`] element for OpenID Connect providers.
+These elements supply the configuration details that are needed to work with the provider.
+The details can usually be obtained from the developer instructions of the social media provider.
+The following example configures Instagram as the social media provider::
 
 [source,xml]
 ----
@@ -129,37 +130,16 @@ obtained from the social media provider's developer instructions.  Here is an ex
 
 === Use OpenShift service accounts to authenticate and authorize protected resource requests
 
-The `socialLogin-1.0` feature can be configured to use OpenShift service accounts to authenticate and authorize protected resource requests.
-This configuration allows server administrators to secure endpoints, for example, monitoring and metrics endpoints that might produce sensitive information but require repeated access by an automated process or non-human entity.
-Thus, the service accounts can authenticate themselves by providing a service account token that was created within the OpenShift cluster in the request.
-
-To configure the socialLogin-1.0 feature ,specify the okdServiceLogin element.
+You can configure the `socialLogin-1.0` feature to use OpenShift service accounts for authentication and authorization of protected resource requests.
+With this configuration, server administrators can secure endpoints, for example, monitoring and metrics endpoints, that might produce sensitive information.
+To configure the `socialLogin-1.0` feature, specify the `okdServiceLogin` element:
 
 [source,xml]
 ----
-<server>
-
-<featureManager>
-  <feature>socialLogin-1.0</feature>
-</featureManager>
 
 <okdServiceLogin />
 
-</server>
 ----
 
-The configuration assumes that the Liberty server is packaged and deployed within an OpenShift cluster.
-By default, the `okdServiceLogin` element is used to authenticate all protected resource requests that the Liberty server receives.
-
-Incoming requests to protected resources must include a service account token.
-The token must be specified as a bearer token in the Authorization header of the request.
-The Liberty server uses the service account token to query information about the associated service account from the OpenShift cluster.
+The `okdServiceLogin` element authenticates all protected resource requests received by the Open Liberty server, by default.
 The OpenShift project is used as the group for the service account for authorization decisions.
-Similarly, the name of the service account is used as the username.
-
-If the Liberty server is not deployed within an OpenShift cluster, the `userValidationApi` attribute must be configured to the value of the appropriate User API endpoint in the OpenShift cluster:
-
-<okdServiceLogin userValidationApi="https://cluster.domain.example.com/apis/user.openshift.io/v1/users/~" />
-
-Multiple `okdServiceLogin` elements can be configured if each element has a unique `id` attribute.
-In those cases, authentication filters must also be configured so that appropriate endpoints are protected by a unique `okdServiceLogin` instance.
