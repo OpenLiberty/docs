@@ -10,27 +10,33 @@
 :seo-title: You can use the Elastic Stack to analyze your Open Liberty logs. The Elastic Stack, sometimes know as the ELK stack, is a widely used open source platform to collect, manage, and build dashboards for log data.
 :page-layout: general-reference
 :page-type: general
-= Analyzing logs with Elastic Stack
+= Analyzing JSON logs with Elastic Stack
 
-You can use the Elastic Stack to analyze your Open Liberty logs. link:https://www.elastic.co/log-monitoring[The Elastic Stack], sometimes know as the ELK stack, is a widely used open source platform to collect, manage, and build dashboards for log data.
+You can collect logs and events from your Open Liberty server and display them in a dashboard for analysis and troubleshooting purposes. Use JSON logging to emit logs from Open Liberty and send them to link:https://www.elastic.co/log-monitoring[The Elastic Stack], where they can be managed and visualized.
 
 == About this task
 
 The Elastic Stack is a log analysis platform that consists of link:https://www.elastic.co/elasticsearch/[Elasticsearch], link:https://www.elastic.co/logstash/[Logstash], link:https://www.elastic.co/kibana/[Kibana], and link:https://www.elastic.co/beats/[Beats]. You can use these products to collect, parse, and visualize your Open Liberty log data.
 
-The following procedure assumes that your Open Liberty server is in an environment, such as a Kubernetes cluster, where logs can be made directly available to the Elastic stack. However, some server configurations cannot make logging data directly available for an external agent to manage. In these cases, you can use the Open Liberty Logstash collector feature to internally collect your log data at run time and send it to a remote Logstash server. For more information, see xref:forwarding-logs-logstash.adoc[Forwarding logs and events to Logstash with Logstash collector].
+If your Open Liberty server is deployed in a managed environment, such as a Kubernetes cluster, your logs are typically aggregated by agents in that environment.
+
+In cases where your server logs are not managed by an external agent, you might be able to configure Filebeat to forward your logs to Logstash. If you can install Filebeat on the same host as your Open Liberty server, you can configure Open Liberty to write logs in JSON format and Filebeat can forward the logs. For more information, see xref:analyzing-logs-elk.adoc[Analyzing JSON logs with the Elastic stack].
+
+If it is not possible to install Filebeat on the same host as your Open Liberty server, you can use the Open Liberty Logstash collector feature to forward your logs to Logstash. This feature internally collects log data at run time and sends it directly to a Logstash server. For more information, see xref:forwarding-logs-logstash.adoc[Forwarding logs and events to Logstash with Logstash collector].
+
+The following procedure assumes that your Open Liberty server is in an environment where Filebeat has access to the Open Liberty server logs.
 
 
 == Before you begin
 
-- Set up the Elastic Stack by following link:https://www.elastic.co[the instructions from Elastic].
+- Set up Filebeat, Logstash, Elasticsearch and Kibana by following link:https://www.elastic.co[the instructions from Elastic].
 - Set your Open Liberty `messages.log` file xref:log-trace-configuration.adoc#_json_logging[to JSON format].
 
 == Procedure
 
 Complete the following steps to configure your Elasticsearch, Logstash, Kibana, and Filebeat products to use and visualize your logs.
 
-. Start the server.
+. Start the Open Liberty server.
 
 . Download the `liberty_logstash.conf` sample Logstash configuration file from the directory that corresponds to your version of the Elastic stack in link:https://github.com/WASdev/sample.dashboards[Sample dashboards for Liberty].
 
@@ -47,14 +53,11 @@ See link:https://www.elastic.co/[the Elastic website] for instructions.
 +
 Click **Management** > **Index Patterns**.
 
-- For Kibana 6 and 7:
-** Enter `logstash-*` as the **Index Pattern**.
-** Click **Next** > **Advanced Options** and enter `logstash-*` as the **Index Pattern ID**.
-** Select `ibm_datetime` as the **Time filter** field name and click **Create**.
-- For Kibana 5.6 or later:
+- For Kibana 7, 6 and 5.6:
 ** Enter `logstash-*` as the **Index Pattern**.
 ** Click **Advanced Options** and enter `logstash-*` as the **Index Pattern ID**.
 ** Select `ibm_datetime` as the **Time filter** field name and click **Create**.
+
 - For Kibana 5.0-5.5:
 ** Select `ibm_datetime` as the **Time filter** field name and click **Create**.
 
