@@ -1,0 +1,58 @@
+
+== Examples
+
+=== Bind constants into the default Java™ Naming and Directory Interface (JNDI) namespace
+
+You can bind constants into the default JNDI namespace from the server configuration files by configuring the `jndiEntry` element in your `server.xml` file.
+
+The default JNDI namespace is available to provide bindings to miscellaneous objects that are required by applications. Any data sources that are declared in the server configuration files are available in the default JNDI namespace. Additionally, you can bind Java strings and primitive data types in the configuration file into JNDI namespace. These constants are then made available to an application at run time, providing a simple and portable way to pass configuration values into the application.
+
+Bind constants into the JNDI namespace by specifying the `jndiEntry` elements with `jndiName` and value attributes in the `server.xml` file, as shown in the following example:
+
+[source,xml]
+----
+<jndiEntry jndiName="schoolOfAthens/defaultAdminUserName" value='"plato"' />
+----
+
+If you want to bind an instance of java.net.URL` into the JNDI namespace, configure the `jndiURLEntry` element with `jndiName` and value attributes, as shown in the following example:
+
+[source,xml]
+----
+<jndiURLEntry jndiName="urls/openLiberty" value="https://www.openliberty.io" />
+----
+=== Look up constants from an application by using a JNDI context
+
+You can look up constants by calling the `lookup` method  for the `jndiConstant` object in your application code, as shown in the following example:
+
+[source,java]
+----
+Object jndiConstant = new InitialContext().lookup("schoolOfAthens/defaultAdminUserName");
+----
+
+The `lookup` method returns an object to the application. The type of the object is determined by interpreting the value that is stored in the `jndiEntry` element as a Java literal string or primitive data type. If the parsing fails, the exact value is provided as an unmodified string.
+The jndiEntry element supports the integer, floating-point, boolean, character, and string literals as described in Java Language Specification, https://docs.oracle.com/javase/specs/jls/se7/html/jls-3.html#jls-3.10[Java SE 7 Edition, section 3.10].
+
+=== Provide programmatic access to location properties
+
+Some directories in Open Liberty have xref:ROOT:directory-locations-properties.adoc[properties that can be used to specify file locations] when you configure the server. You can bind these location properties into the JNDI namespace under names of your choice by specifying the `jndiEntry` element in your `server.xml` file, as shown in the following example:
+
+[source,xml]
+----
+<jndiEntry jndiName="serverName" value="server1"/>
+----
+
+This entry is accessible by any code that runs in the server, such as applications, shared libraries, or features, through a JNDI lookup, as shown in the following example:
+
+[source,java]
+----
+Object serverName = new InitialContext().lookup("serverName");
+----
+
+Feature code can also use a system programming interface (SPI) that is provided by the Open Liberty kernel to resolve the values of these properties, as shown in the following example:
+
+[source,java]
+----
+ServiceReference <WsLocationAdmin>locationAdminRef = bundleContext.getServiceReference(WsLocationAdmin.class);
+WsLocationAdmin locationAdmin = bundleContext.getService(locationAdminRef);
+String serverName = locationAdmin.resolveString("server1");
+----
