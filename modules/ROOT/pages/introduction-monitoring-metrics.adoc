@@ -1,0 +1,79 @@
+// Copyright (c) 2020 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-layout: general-reference
+:page-type: general
+= Introduction to monitoring with metrics
+
+With Open Liberty, you can use two types of metrics to monitor your applications, REST endpoint-style metrics provided by MicroProfile Metrics and JMX metrics.
+
+== MicroProfile Metrics
+MicroProfile Metrics provides an API for developers to add metrics to their applications. Metrics come in a variety of forms, including counters, gauges, timers, histograms, and meters.
+You can access MicroProfile Metrics by enabling the xref:reference:feature/mpMetrics-2.3.adoc[MicroProfile Metrics feature].
+The MicroProfile Metrics feature provides a `/metrics` REST interface that conforms to the MicroProfile Metrics specification.
+Real-time values of all metrics are available from a call to the `/metrics` endpoint.
+For more information about adding these metrics to your applications, see xref:microservice-observability-metrics.adoc[Microservice observability with metrics].
+For a list of all REST endpoint-style metrics that are available for Open Liberty, see the xref:metrics-list.adoc[Metrics reference list].
+
+The `/metrics` endpoint provides two output formats.
+The format that is used for each response is dependent on the HTTP accept header of the corresponding request.
+Prometheus format is a representation of the metrics that is compatible with the https://prometheus.io/[Prometheus monitoring tool], which is an open source metrics scraper, data store, and basic visualization tool.
+This format is returned for requests with a `text/plain` accept header.
+JSON format is a JSON representation of the metrics. This format is returned for requests with an `application/json` accept header.
+
+The following table illustrates the different endpoints that can be accessed to provide metrics:
+
+.A formal table
+[%header,cols="6,3,3,6"]
+|===
+|Endpoints |Request type |Supported formats |Description
+
+|`/metrics`
+|GET
+|JSON, Prometheus
+|Returns all registered metrics.
+
+|`/metrics/<scope>`
+|GET
+|JSON, Prometheus
+|Returns metrics that are registered for the respective scope.
+
+|`/metrics/<scope>/<metric name>`
+|GET
+|JSON, Prometheus
+|Returns the metrics that match the metric name for the respective scope.
+
+|`/metrics`
+|OPTIONS
+|JSON
+|Returns all registered metrics metadata.
+
+|`/metrics/<scope>`
+|OPTIONS
+|JSON
+|Returns metrics metadata registered for the respective scope.
+
+|`/metrics/<scope>/<metric name>`
+|OPTIONS
+|JSON
+|Returns metrics metadata that matches the metric name for the respective scope.
+|===
+
+== JMX metrics
+You can access Java Management Extensions (JMX) metrics by enabling the xref:reference:feature/monitor-1.0.adoc[Performance Monitoring feature].
+After you add this feature to your server configuration, monitoring of JMX metrics automatically starts.
+While the MicroProfile Metrics feature provides a `/metrics` REST endpoint that you can use with Prometheus or other web-based tools, the Performance Monitoring feature provides JMX MXBeans that you can use with JConsole.
+
+JConsole is a graphical monitoring tool that's used to monitor JVM and Java applications.
+After you enable monitoring for Open Liberty, you can use JConsole to connect to the JVM and view performance data by clicking attributes of the MXBeans.
+If you prefer, you can choose to use other products that consume JMX metrics to view your metrics information.
+For a list of all JMX metrics that are available for Open Liberty, see the xref:jmx-metrics-list.adoc[JMX metrics reference list].
+
+== Using both types of metrics
+If you enable the MicroProfile Metrics feature with the Performance Monitoring feature, then you get both REST endpoint-style metrics and JMX metrics, and the JMX metrics are included in the `/metrics` output.
+The MicroProfile Metrics feature version 2.3 and later automatically enables the Performance Monitoring feature.

@@ -24,13 +24,13 @@ The certificate is self-signed, with a validity period of 365 days and a signatu
 The certified name (CN) value of the certificate `subjectDN` attribute is the hostname of the computer where the server is running.
 
 Open Liberty creates a keystore password during profile creation and puts it in the `server.env` file that is in the server home directory.
-If no `keystore` element exists for the `defaultKeyStore` file, this password is used to create a keystore file.
+If no `keyStore` element exists for the `defaultKeyStore` file, this password is used to create a keystore file.
 This keystore file is then used as the `defaultKeyStore` file.
 Likewise, if a `defaultKeyStore` entry exists without a password in the `server.xml` file, the password from the `server.env` file is used to open the file.
 If you don't want to use the generated keystore password, remove the `keystore_password` entry from the `server.env` file.
 If a default keystore file was already generated with the password from the `server.env` file, you might need to remove it.
 
-You can designate a different ssl element in the configuration as the default SSL configuration by specifying the `sslRef` attribute on the `defaultSSLContfig` element, as shown in the following example:
+You can designate a different `ssl` element in the configuration as the default SSL configuration by specifying the `sslRef` attribute on the `defaultSSLContfig` element, as shown in the following example:
 
 [source,java]
 ----
@@ -39,7 +39,7 @@ You can designate a different ssl element in the configuration as the default SS
 
 For more information, see link:/docs/ref/config/#ssl.html[SSL Repertoire].
 
-=== Java virtual machine (JVM) default truststore configuration
+=== Java Virtual Machine (JVM) default truststore configuration
 
 You can set the `trustDefaultCert` attribute to `true` to specify that the JVM default truststore can be used, in addition to the configured truststore, as shown in the following example:
 
@@ -54,9 +54,9 @@ You can set the `trustDefaultCert` attribute to `true` to specify that the JVM d
 
 === Outbound TLS configuration
 
-You can configure Liberty to have a global outbound default TLS configuration that is different from the inbound default configuration. Outbound TLS filters are configured on the `outboundConnection` element that is nested in the `ssl` element. You can specify either a host or a host and port to indicate where the outbound SSL connection goes by setting attributes on the `outboundConnection` element.
+You can configure Open Liberty to have a global outbound default TLS configuration that is different from the inbound default configuration. Outbound TLS filters are configured on the `outboundConnection` element that is nested in the `ssl` element. You can specify either a host or a host and port to indicate where the outbound SSL connection goes by setting attributes on the `outboundConnection` element.
 
-In the following example, outbound TLS connections that go to any port on the `otherhost` host use the `defaultSSLConfig`. All other outbound TLS connections use the outbound default TLS configuration that is specified by the `outboundSSLRef` attribute called `outboundSSLSettings`.
+In the following example, outbound TLS connections that go to any port on the `otherhost` host use the `defaultSSLConfig`. All other outbound TLS connections use the outbound default TLS configuration that is specified by the `outboundSSLRef` attribute called `outboundSSLSettings`:
 
 [source,java]
 ----
@@ -83,9 +83,29 @@ In the following example, outbound TLS connections that go to any port on the `o
 </ssl>
 
 <keyStore id="outboundKeyStore"
-           location="${server.config.dir}/outboundKeyFile.p12"
+           location="server1/outboundKeyFile.p12"
            password="yourpassword" />
 <keyStore id="outboundTrustStore"
-           location="${server.config.dir}/outboundTrustFile.p12"
+           location="server1/outboundTrustFile.p12"
            password="yourpassword" />
+----
+
+=== Provide certificates from an environment variable or a file
+
+At startup, Open Liberty can read certificates from an environment variable so that they can be used to establish trust. To provide a certificate, set the `cert_(name of existing truststore)` environment variable to the value of the certificate or the path to the file that contains one or more certificates. The environmental variable must reference either a certificate in the base 64-bit format (PEM format) or the path to a file that contains a base 64-bit encode or DER encoded certificate. Environment variables are set in the `server.env` file.
+
+In the following example, an environment variable supplies a certificate to a truststore that is called `defaultKeyStore`:
+
+[source,java]
+----
+cert_defaultKeyStore="-----BEGIN CERTIFICATE-----
+....
+-----END CERTIFICATE-----"
+----
+
+Any value that does not start with the `-----BEGIN CERTIFICATE-----` tag is treated like a file. In the following example, an environment variable supplies certificates from a file that is called `certs.crt`:
+
+[source,java]
+----
+cert_defaultKeyStore=/var/certs.crt
 ----
