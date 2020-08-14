@@ -9,7 +9,7 @@ The author of the doc must complete the following steps:
 
 3. When you finish the initial draft, check that it renders correctly by using the preview function in your editor. Make sure to run [Acrolinx](https://www.acrolinx.com/) to check for grammar and IBM style issues. 
 
-4. Push the file to GitHub, then create a pull request (PR) into the `draft` branch. Link the PR to the issue you created in Step 1.
+4. Push the file to GitHub, then create a pull request (PR) into the `draft` branch. Link the PR to the issue you created in Step 1. Request a review of the PR from one of the doc maintainers.
 
 5. Request a build of the [draft openliberty.io site](https://draft-openlibertyio.mybluemix.net/docs/):
     1. Sign in to [Travis CI](https://travis-ci.com/github/OpenLiberty/openliberty.io) with your GitHub account.
@@ -26,19 +26,19 @@ The author of the doc must complete the following steps:
 
    _If the doc is a task_, it must be tested so that the steps are verified. Coordinate testing with the technical reviewer and add the `doc tested` label when the steps have been verified.
 
-8. When all the reviews are complete, if your doc is targeted to publish in the next release, create a PR from your branch (_not_ from the `draft` branch) to the `staging` branch. Do not create the PR to staging until the week before the release in which your doc is targeted to publish. If your doc is not targeted to publish until a later release, do not make the PR to staging.
+8. When all the reviews are complete, if your doc is targeted to publish in the next release, create a PR from your branch (_not_ from the `draft` branch) to the `staging` branch. If your doc is not targeted to publish until a later release, do not make the PR to staging until the target release is the next scheduled release. For example, if you doc is targeted for the 20.0.0.10 release, do not create a PR to staging until after the 20.0.0.9 release is published.
 
    Link the PR to the issue. Request a review of the PR from David Mueller (`dmuelle`) or Charlotte Holt (`Charlotte-Holt`).
 
    In the PR, provide a link to your post on the [draft site](https://draft-openlibertyio.mybluemix.net/docs/).
    
-9. If any changes are requested to the PR, make them in your branch, push the changes to the draft branch, then run the draft site build from Travis CI again to check that they are fine on the draft site. This automatically updates the PR to staging.
+9. If any changes are requested to the PR, make them in your branch and push them to draft first. Then run the draft site build from Travis CI again to check that they are fine on the draft site. Then open a new PR to staging and request another review.
 
 10. Once the PR to staging is approved and merged, request a build of the [staging openliberty.io site from Travis CI](https://travis-ci.com/github/OpenLiberty/openliberty.io). To trigger a staging build, use the same procedure that you used in step 5 to trigger a draft build.
 
 11. When the build finishes, check to make sure the doc renders correctly on the [staging site](https://staging-openlibertyio.mybluemix.net/docs/). If any changes are needed make sure to add them to the draft branch and review on the draft site before making a new PR to staging.
 
-12. Once you verify the doc, post a link to it on the staging site to the Git issue and change the issue status to `Ready to publish`. The ID focals will merge the staging draft to the `vNext` branch so that it publishes with the next release.
+12. Once you verify the doc, post a link to it on the staging site to the Git issue and change the issue status to `Ready to publish`.  Open a PR from `staging` to `vNext` and request approval of the PR from one of the doc publishers. Once the PR is approved and merged to `vNext`, it will publish with the next scheduled release.
 
 
 
