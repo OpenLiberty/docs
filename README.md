@@ -1,4 +1,4 @@
-# docs
+
 # Writing and publishing docs on OpenLiberty.io 
 
 The author of the doc must complete the following steps:
@@ -9,7 +9,7 @@ The author of the doc must complete the following steps:
 
 3. When you finish the initial draft, check that it renders correctly by using the preview function in your editor. Make sure to run [Acrolinx](https://www.acrolinx.com/) to check for grammar and IBM style issues. 
 
-4. Push the file to GitHub, then create a pull request (PR) into the `draft` branch. Link the PR to the issue you created in Step 1. Request a review of the PR from one of the doc maintainers.
+4. Push the file to GitHub, then create a pull request (PR) into the `draft` branch. Link the PR to the issue you created in Step 1. Request a review of the PR from David Mueller (`dmuelle`), Charlotte Holt (`Charlotte-Holt`) or one of [the doc maintainers](https://github.com/orgs/OpenLiberty/teams/docs-maintainers/members).
 
 5. Request a build of the [draft openliberty.io site](https://draft-openlibertyio.mybluemix.net/docs/):
     1. Sign in to [Travis CI](https://travis-ci.com/github/OpenLiberty/openliberty.io) with your GitHub account.
@@ -22,13 +22,13 @@ The author of the doc must complete the following steps:
 
 7. Submit your doc for technical, strategist, peer, and editorial reviews. 
 
-   Reviewers should leave comments in the git issue for the doc. Make sure to respond to their comments in the issue and document hwo the concerns that they raised have been addressed. When the reviewer is satisfied with the draft, they can sign off by adding the appropriate label to the Git issue:`technical reviewed`, `peer reviewed`, `strategist reviewed`, or `editorial reviewed`. Make sure to keep the Git "Pipelines" status updated in the issue to reflect the stage of review that the doc is ready for or undergoing.
+   Reviewers should leave comments in the git issue for the doc. Make sure to respond to their comments in the issue and document how the concerns that they raised have been addressed. When the reviewer is satisfied with the draft, they can sign off by commenting their approval in the issue and adding the appropriate label to the Git issue:`technical reviewed`, `peer reviewed`, `strategist reviewed`, or `editorial reviewed`. Make sure to keep the Git "Pipelines" status updated in the issue to reflect the stage of review that the doc is ready for or undergoing.
 
-   _If the doc is a task_, it must be tested so that the steps are verified. Coordinate testing with the technical reviewer and add the `doc tested` label when the steps have been verified.
+   _If the doc is a task_, it must be tested so that the steps are verified. Add the `requires doc testing` label to the issue. Coordinate testing with the technical reviewer and ask the tester to comment their approval in the issue and add the `doc tested` label when the steps have been verified.
 
 8. When all the reviews are complete, if your doc is targeted to publish in the next release, create a PR from your branch (_not_ from the `draft` branch) to the `staging` branch. If your doc is not targeted to publish until a later release, do not make the PR to staging until the target release is the next scheduled release. For example, if you doc is targeted for the 20.0.0.10 release, do not create a PR to staging until after the 20.0.0.9 release is published.
 
-   Link the PR to the issue. Request a review of the PR from David Mueller (`dmuelle`) or Charlotte Holt (`Charlotte-Holt`).
+   Link the PR to the issue. Request a review of the PR from David Mueller (`dmuelle`), Charlotte Holt (`Charlotte-Holt`) or one of [the doc maintainers](https://github.com/orgs/OpenLiberty/teams/docs-maintainers/members).
 
    In the PR, provide a link to your post on the [draft site](https://draft-openlibertyio.mybluemix.net/docs/).
    
