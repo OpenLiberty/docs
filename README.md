@@ -1,6 +1,11 @@
 
 # Writing and publishing docs on OpenLiberty.io 
 
+* [Overview](#Overview)
+* [Publishing a new topic](#Publishing-a-new-topic)
+* [Updating an existing topic](#Updating-an-existing-topic)
+* [Editing the docs navigation](#Editing-the-docs-navigation)
+
 ## Overview
 
 The Open Liberty website is built on the [Antora](https://antora.org/) framework, which provides a structure for publishing and managing versioned documentation. The documentation in [Open Liberty Docs](https://www.openliberty.io/docs/latest/overview.html) defaults to the most recent release version. You can view previous release versions by selecting them from the version picker that precedes the sidebar navigation. Each release version is managed from a separate branch.
@@ -24,7 +29,7 @@ The author of the doc must complete the following steps:
 
 3. When you finish the initial draft, check that it renders correctly by using the preview function in your editor. Make sure to run [Acrolinx](https://www.acrolinx.com/) to check for grammar and IBM style issues. 
 
-4. Push the file to GitHub, then create a pull request (PR) into the `draft` branch. Link the PR to the issue you created in Step 1. Request a review of the PR from David Mueller (`dmuelle`), Charlotte Holt (`Charlotte-Holt`) or one of [the doc members](https://github.com/orgs/OpenLiberty/teams/docs-members). Notify your reviewer that this is a new topic that needs to be added to the draft navigation. They will work with you to determine the appropriate section of the navigation for your topic and to update the nav.adoc file.
+4. Push the file to GitHub, then create a pull request (PR) into the `draft` branch. Link the PR to the issue you created in Step 1. Request a review of the PR from David Mueller (`dmuelle`), Charlotte Holt (`Charlotte-Holt`) or one of [the doc members](https://github.com/orgs/OpenLiberty/teams/docs-members). Notify your reviewer that this is a new topic that needs to be added to the draft navigation. They will work with you to determine the appropriate section of the navigation for your topic and [to update the nav.adoc file]((#Editing-the-docs-navigation)).
 
 
 5. Request a build of the [draft openliberty.io site](https://draft-openlibertyio.mybluemix.net/docs/):
@@ -63,7 +68,7 @@ All edits and updates to existing Open Liberty docs must be documented and track
 
 2. Make the necessary edits to the doc or docs that are detailed in your Git Hub issue. Check that the content renders correctly by using the preview function in your editor. Make sure to run [Acrolinx](https://www.acrolinx.com/) to check for grammar and IBM style issues.
 
-3. Push the file to GitHub, then create a pull request (PR) into the `draft` branch. Link the PR to the issue you created in Step 1. Request a review of the PR from David Mueller (`dmuelle`), Charlotte Holt (`Charlotte-Holt`) or one of [the doc members](https://github.com/orgs/OpenLiberty/teams/docs-members). Notify your reviewer if any changes to the navigation are required. They will work with you to update the nav.adoc file.
+3. Push the file to GitHub, then create a pull request (PR) into the `draft` branch. Link the PR to the issue you created in Step 1. Request a review of the PR from David Mueller (`dmuelle`), Charlotte Holt (`Charlotte-Holt`) or one of [the doc members](https://github.com/orgs/OpenLiberty/teams/docs-members). Notify your reviewer if any changes to the navigation are required. They will work with you to [update the nav.adoc file]((#Editing-the-docs-navigation)).
 
 4. Request a build of the [draft openliberty.io site](https://draft-openlibertyio.mybluemix.net/docs/):
     1. Sign in to [Travis CI](https://travis-ci.com/github/OpenLiberty/openliberty.io) with your GitHub account.
@@ -95,4 +100,16 @@ All edits and updates to existing Open Liberty docs must be documented and track
 
 1. Once you verify the doc, post a link to it on the staging site to the Git issue and change the issue status to `Ready to publish`.  Open a PR from `staging` to `vNext` and Request a review of the PR from David Mueller (`dmuelle`), Charlotte Holt (`Charlotte-Holt`) or one of [the doc maintainers](https://github.com/orgs/OpenLiberty/teams/docs-maintainers/members). Once the PR is approved and merged to `vNext`, the changes will publish with the next scheduled release.
 
+
+## Editing the docs navigation
+
+[Site navigation in the Antora framework](https://docs.antora.org/antora/2.3/navigation/files-and-lists/) is controlled by a `nav.adoc` file. The Open Liberty docs navigation is split between two `nav.adoc` files, one for the main docs content and one for the reference topics, which appear in the navigation under the `REFERENCE` heading. The `nav.adoc` file for the main docs content is kept in [the ROOT module of the docs repository](https://github.com/OpenLiberty/docs/tree/vNext/modules/ROOT) and the `nav.adoc` file for the reference content is kept in [the reference module of the docs repository](https://github.com/OpenLiberty/docs/tree/vNext/modules/reference).
+
+The content of each of these files is an [unordered Asciidoc list](https://docs.antora.org/antora/2.3/navigation/files-and-lists/#list-structure), which determines the order and hierarchy of the navigation entries. To edit the navigation, add a properly formed [Antora page reference](https://docs.antora.org/antora/2.3/navigation/xrefs-and-link-text/) to the appropriate section of the list.
+
+Since the Open Liberty [draft](https://draft-openlibertyio.mybluemix.net/), [staging](https://staging-openlibertyio.mybluemix.net/) and [production](https://www.openliberty.io/) sites each maintain a unique navigation and navigation files, it is important that you update them individually, otherwise, unwanted changes and merge conflicts will occur.
+
+For both the `draft` and `staging`branches, there is a single dedicated branch for editing the navigation. For the draft branch, this branch is called `draft-nav` and for the staging branch it is called `staging-nav`. It is important when working in these branches to only edit the `nav.adoc` file and to only open pull requests to the branch for which they are specified: `draft` for `draft-nav` and staging for `staging-nav`). The production navigation is automatically updated from `vNext` with each release. _You should never update the nav.adoc file in the `vNext` branch_. This file is updated each time the staging branch is pulled to vNext to prep for a release.
+
+If you are unsure of how you should update the Open Liberty navigation or unfamiliar with the Antora navigation schema, work with a [doc maintainer](https://github.com/orgs/OpenLiberty/teams/docs-maintainers/members) to plan and commit your update.
 
