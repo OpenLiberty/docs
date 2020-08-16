@@ -98,18 +98,41 @@ All edits and updates to existing Open Liberty docs must be documented and track
 
 10. When the build finishes, check to make sure the doc renders correctly on the [staging site](https://staging-openlibertyio.mybluemix.net/docs/). If any changes are needed make sure to add them to the draft branch and review on the draft site before making a new PR to staging.
 
-1. Once you verify the doc, post a link to it on the staging site to the Git issue and change the issue status to `Ready to publish`.  Open a PR from `staging` to `vNext` and Request a review of the PR from David Mueller (`dmuelle`), Charlotte Holt (`Charlotte-Holt`) or one of [the doc maintainers](https://github.com/orgs/OpenLiberty/teams/docs-maintainers/members). Once the PR is approved and merged to `vNext`, the changes will publish with the next scheduled release.
+11. Once you verify the doc, post a link to it on the staging site to the Git issue and change the issue status to `Ready to publish`.  Open a PR from `staging` to `vNext` and Request a review of the PR from David Mueller (`dmuelle`), Charlotte Holt (`Charlotte-Holt`) or one of [the doc maintainers](https://github.com/orgs/OpenLiberty/teams/docs-maintainers/members). Once the PR is approved and merged to `vNext`, the changes will publish with the next scheduled release.
 
 
 ## Editing the docs navigation
 
-[Site navigation in the Antora framework](https://docs.antora.org/antora/2.3/navigation/files-and-lists/) is controlled by a `nav.adoc` file. The Open Liberty docs navigation is split between two `nav.adoc` files, one for the main docs content and one for the reference topics, which appear in the navigation under the `REFERENCE` heading. The `nav.adoc` file for the main docs content is kept in [the ROOT module of the docs repository](https://github.com/OpenLiberty/docs/tree/vNext/modules/ROOT) and the `nav.adoc` file for the reference content is kept in [the reference module of the docs repository](https://github.com/OpenLiberty/docs/tree/vNext/modules/reference).
-
-The content of each of these files is an [unordered Asciidoc list](https://docs.antora.org/antora/2.3/navigation/files-and-lists/#list-structure), which determines the order and hierarchy of the navigation entries. To edit the navigation, add a properly formed [Antora page reference](https://docs.antora.org/antora/2.3/navigation/xrefs-and-link-text/) to the appropriate section of the list.
-
-Since the Open Liberty [draft](https://draft-openlibertyio.mybluemix.net/), [staging](https://staging-openlibertyio.mybluemix.net/) and [production](https://www.openliberty.io/) sites each maintain a unique navigation and navigation files, it is important that you update them individually, otherwise, unwanted changes and merge conflicts will occur.
-
-For both the `draft` and `staging`branches, there is a single dedicated branch for editing the navigation. For the draft branch, this branch is called `draft-nav` and for the staging branch it is called `staging-nav`. It is important when working in these branches to only edit the `nav.adoc` file and to only open pull requests to the branch for which they are specified: `draft` for `draft-nav` and staging for `staging-nav`). The production navigation is automatically updated from `vNext` with each release. _You should never update the nav.adoc file in the `vNext` branch_. This file is updated each time the staging branch is pulled to vNext to prep for a release.
 
 If you are unsure of how you should update the Open Liberty navigation or unfamiliar with the Antora navigation schema, work with a [doc maintainer](https://github.com/orgs/OpenLiberty/teams/docs-maintainers/members) to plan and commit your update.
+
+[Site navigation in the Antora framework](https://docs.antora.org/antora/2.3/navigation/files-and-lists/) is controlled by a `nav.adoc` file. The Open Liberty docs navigation is split between two `nav.adoc` files, one for the main docs content and one for the reference topics.  The content of each of these files is an [unordered Asciidoc list](https://docs.antora.org/antora/2.3/navigation/files-and-lists/#list-structure), which determines the order and hierarchy of the navigation entries. 
+
+Since the Open Liberty [draft](https://draft-openlibertyio.mybluemix.net/), [staging](https://staging-openlibertyio.mybluemix.net/) and [production](https://www.openliberty.io/) sites each maintain a unique navigation files, it is important that you update them individually, otherwise, unwanted changes and merge conflicts will occur.
+
+The `draft` and `staging`branches each have a dedicated branch for editing the navigation. For the draft branch, this branch is called `draft-nav` and for the staging branch it is called `staging-nav`. It is important when you are working in these branches to only edit the `nav.adoc` file and to only open pull requests to the branch for which they are specified: `draft` for `draft-nav` and `staging` for `staging-nav`. The production navigation is automatically updated from `vNext` with each release. _You should never update the nav.adoc file in the `vNext` branch_. This file is updated each time the staging branch is pulled to vNext to prep for a release.
+
+To add an item to the navigation or to edit an existing item, complete the following steps:
+1. Pull down the `draft-nav` branch and open the `nav.adoc` file for the section of the navigation where you want you to add an entry. 
+
+    The `nav.adoc` file for the main docs content is kept in [the ROOT module of the docs repository](https://github.com/OpenLiberty/docs/tree/vNext/modules/ROOT) and the `nav.adoc` file for the reference content is kept in [the reference module of the docs repository](https://github.com/OpenLiberty/docs/tree/vNext/modules/reference).
+
+2. Add a properly formed [Antora page reference](https://docs.antora.org/antora/2.3/navigation/xrefs-and-link-text/) to the a section of the navigation list where you want your entry to appear. If you are editing an existing item, make sure your changes maintain the proper syntax for an Antora page reference.
+
+3. Open a pull request from the `draft-nav` branch to the `draft` branch and request a review from a [doc maintainer](https://github.com/orgs/OpenLiberty/teams/docs-maintainers/members).
+
+4. After the PR is approved and merged, request a build of the [draft openliberty.io site](https://draft-openlibertyio.mybluemix.net/docs/). For build instructions, see step 5 of [Publishing a new topic](#Publishing-a-new-topic).
+
+5. After you have reviewed and verified your navigation updates on the draft site, add your changes to staging.
+
+    _Do not open a PR from `draft-nav` to `staging`_. Since `draft` and `staging` have separate navigation files with different content, you must re-create your changes on the `staging-nav` branch and PR that branch top `staging`. Follow the same process you used in steps 1-4, but instead of working in the`draft-nav` and `draft` branches, make your changes in `staging-nav` and PR them to `staging`.
+
+6. After your PR to staging has been reviewed, approved, and merged, request a build of the staging site. For build instructions, see step 5 of [Publishing a new topic](#Publishing-a-new-topic).
+
+7. Once you have verified your changes on the [staging site](https://staging-openlibertyio.mybluemix.net/docs/), ask a docs maintainer to open a PR from `staging` to `vNext`. Your updates will publish with the next scheduled release.
+    
+
+
+
+
 
