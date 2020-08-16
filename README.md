@@ -12,7 +12,7 @@ The Open Liberty website is built on the [Antora](https://antora.org/) framework
 
 To write and publish content in Open Liberty docs, you work with only the following three branches:
 * `draft`+
- The branch where new content and updates to existing content is initially delivered so that the docs team can review it. All content updates stay in this branch until they are targeted to publish in the next release.
+ The branch where new content and updates to existing content is initially delivered so that the docs team can review it. All content updates stay in this branch until they're targeted to publish in the next release.
 * `staging`+
  When content is approved for publication and is targeted for the next scheduled release, push it to the staging branch. The staging branch is the final opportunity to review the content and check that it’s ready to publish. Content stays in the staging branch only for the time it takes to verify it, after which a doc maintainer will push the entire branch to `vNext`
  * `vNext`+
@@ -23,7 +23,7 @@ To write and publish content in Open Liberty docs, you work with only the follow
 ## Publishing a new topic
 The author of the doc must complete the following steps:
   
-1. Clone [the docs repo](https://github.com/OpenLiberty/docs) and create your feature branch off  the default `vNext` branch. Include the number of the Git issue for the doc in the name of your branch (for example, `1234-concept-topic`). Do _all_ your writing and editing in this branch.
+1. Clone [the docs repo](https://github.com/OpenLiberty/docs) and create your feature branch off the default `vNext` branch. Include the number of the Git issue for the doc in the name of your branch (such as `1234-concept-topic`). Do _all_ your writing and editing in this branch.
 
 2. Create your doc by using [Asciidoc](https://asciidoctor.org/docs/asciidoc-syntax-quick-reference/) markup. Use an editor such as [Atom](https://atom.io/) or [VSCode with the Asciidoc plug-in](https://marketplace.visualstudio.com/items?itemName=joaompinto.asciidoctor-vscode).
 
@@ -43,7 +43,7 @@ The author of the doc must complete the following steps:
 
 7. Submit your doc for technical, strategist, peer, and editorial reviews. 
 
-   Reviewers should leave comments in the git issue for the doc. Make sure to respond to their comments in the issue and document how the concerns that they raised have been addressed. When the reviewer is satisfied with the draft, they can sign off by commenting their approval and adding the appropriate label to the Git issue:`technical reviewed`, `peer reviewed`, `strategist reviewed`, or `editorial reviewed`. Make sure to keep the Git "Pipelines" status updated in the issue to reflect the stage of review that the doc is ready for or undergoing.
+   Reviewers can leave comments in the git issue for the doc. Make sure to respond to their comments in the issue and document how the concerns that they raised have been addressed. When the reviewer is satisfied with the draft, they can sign off by commenting their approval and adding the appropriate label to the Git issue:`technical reviewed`, `peer reviewed`, `strategist reviewed`, or `editorial reviewed`. Make sure to keep the Git "Pipelines" status updated in the issue to reflect the stage of review that the doc is ready for or undergoing.
 
    _If the doc is a task_, it must be tested so that the steps are verified. Add the `requires doc testing` label to the issue. Coordinate testing with the technical reviewer and ask the tester to comment their approval in the issue and add the `doc tested` label when the steps have been verified.
 
@@ -125,11 +125,11 @@ To add an item to the navigation or to edit an existing item, complete the follo
 
 5. After you have reviewed and verified your navigation updates on the draft site, add your changes to staging.
 
-    _Do not open a PR from `draft-nav` to `staging`_. Since `draft` and `staging` have separate navigation files with different content, you must re-create your changes on the `staging-nav` branch and PR that branch top `staging`. Follow the same process you used in steps 1-4, but instead of working in the`draft-nav` and `draft` branches, make your changes in `staging-nav` and PR them to `staging`.
+    _Don’t open a PR from `draft-nav` to `staging`_. Since `draft` and `staging` have separate navigation files with different content, you must re-create your changes on the `staging-nav` branch and PR that branch to `staging`. Follow the same process you used in steps 1 - 4, but instead of working in the`draft-nav` and `draft` branches, make your changes in `staging-nav` and PR them to `staging`.
 
 6. After your PR to staging has been reviewed, approved, and merged, request a build of the staging site. For build instructions, see step 5 of [Publishing a new topic](#Publishing-a-new-topic).
 
-7. After you have verified your changes on the [staging site](https://staging-openlibertyio.mybluemix.net/docs/), ask a docs maintainer to open a PR from `staging` to `vNext`. Your updates will publish with the next scheduled release.
+7. After you verify your changes on the [staging site](https://staging-openlibertyio.mybluemix.net/docs/), ask a docs maintainer to open a PR from `staging` to `vNext`. Your updates will publish with the next scheduled release.
     
 
 
