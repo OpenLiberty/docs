@@ -10,13 +10,16 @@
 
 The Open Liberty website is built on the [Antora](https://antora.org/) framework, which provides a structure for publishing and managing versioned documentation. The documentation in the [Open Liberty Docs](https://www.openliberty.io/docs/latest/overview.html) section of the Open Liberty website defaults to the most recent release version. You can view previous release versions by selecting them from the version picker that precedes the sidebar navigation. Each release version is managed from a separate branch.
 
-To write and publish content in Open Liberty Docs, you work with only the following three branches:
+To write and publish content in Open Liberty Docs, you work with the following branches:
+* your personal branch
+
+    For each new doc or edit to an existing doc, create a new branch based on the default `vNext` branch. Name this branch after the GitHub issue that tracks your work. Do all your writing and editing for that issue in this branch. When you're ready for the docs team to review your work, open a pull request from this branch to the `draft` branch. After your content publishes, delete this branch and start a new one for any new work. For more information, see [Publishing a new topic](#Publishing-a-new-topic) and [Updating an existing topic](#Updating-an-existing-topic).
 * `draft`
 
-     The branch where new content and updates to existing content is initially delivered so that the Docs team can review it. All content updates stay in this branch until they're targeted to publish in the next release.
+     Deliver new content from your personal branch to `draft` so the Docs team can review it. All content updates stay in this branch until they're targeted to publish in the next release.
 * `staging`
 
-    When content is approved for publication and is targeted for the next scheduled release, push it to the staging branch. The staging branch is the final opportunity to review the content and check that it’s ready to publish. Content stays in the staging branch only for the time it takes to verify it, after which a doc maintainer pushes the entire branch to `vNext`
+    When content is approved for publication targeted for the next scheduled release, push it from your personal branch to the staging branch. The staging branch is the final opportunity to review the content and check that it’s ready to publish. Content stays in the staging branch only for the time it takes to verify it, after which a doc maintainer pushes the entire branch to `vNext`
  * `vNext`
  
     `vNext` is source of each upcoming release. At release time, a cut is taken from this branch to make the release branch, which is then named `vX.0.0.x` according to the release version.
