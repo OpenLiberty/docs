@@ -1,0 +1,180 @@
+// Copyright (c) 2020 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description: Network intrusions occur when unauthorized users gain access to network activity and can alter traffic and steal network resources. Employ best practices with Open Liberty to harden your network against potential attacks.
+:seo-title: Network security hardening - OpenLiberty.io
+:seo-description: Network intrusions occur when unauthorized users gain access to network activity and can alter traffic and steal network resources. Employ best practices with Open Liberty to harden your network against potential attacks.
+:page-layout: general-reference
+:page-type: general
+= Network security hardening
+
+Network intrusions occur when unauthorized users gain access to network activity and can alter traffic and steal network resources.
+Employ best practices with Open Liberty to harden your network against potential attacks.
+
+[#firewalls]
+== Firewalls
+Production environments need to run inside a firewall.
+Firewalls help prevent security intrusions by monitoring network traffic and blocking specific traffic based on security rules.
+Use a firewall to shield production Open Liberty servers so that they don’t run in the DMZ.
+The DMZ is an intermediary zone where proxy and web servers run between public and private networking zones.
+Typically, a network setup includes two firewalls, a perimeter firewall and a backend firewall.
+The perimeter firewall exists between the public zone and the DMZ, and the backend firewall exists between the DMZ and the private zone.
+The backend firewall, or overall network design, limits ingress traffic to trusted addresses and limits egress traffic to the minimum addresses required by the application.
+
+[#security-in-containers]
+== Security in container environments
+In container environments, running either on-premises or in the cloud, applications can be spread across multiple nodes.
+Another best practice is to isolate workloads from one another across a cluster of nodes.
+When Open Liberty is deployed in container environments, segment network traffic based on users, teams, or applications.
+Collections of containers, or pods, apportioned by namespace, offer the ability to provide IP and port isolation.
+Pods with different namespaces shouldn't be able to interact by default.
+For more information about network security in container environments, see the information about network isolation in https://www.redhat.com/en/resources/container-security-openshift-cloud-devops-whitepaper[Ten layers of container security].
+
+[#tls]
+== TLS connectivity
+The Transport Security feature enables TLS for HTTP connections and adds the ability to configure outbound transports with TLS.
+For production purposes, also enable TLS in your client and web server.
+Using TLS connections throughout your network communication flow helps protect your server from network intrusions.
+
+TLS uses key pairs and signed X.509 certificates to protect HTTP, IIOP, LDAP, IBM MQ, JDBC, and messaging traffic among Open Liberty messaging engines, J2C, and SOAP traffic.
+The default TLS configuration is simple to configure, but it is not suitable for use in production because it generates a self-signed certificate.
+The auto-generated certificate is convenient for development purposes, but a certificate that's used in production must be signed by a trusted authority, such as Verisign.
+If you use SSO for user authentication, all SSO endpoint URLs must use a secure HTTP scheme (HTTPS), and the client must check the TLS server certificate.
+
+With Open Liberty, ingress proxies are configurable and no proxies are trusted by default.
+For protection at the transport level when traffic comes in by proxy, make required Open Liberty servers accessible to only trusted proxies.
+Disable non-TLS ports wherever possible.
+Exposing only TLS-enabled ports requires careful consideration of the `server.xml` file because some features might automatically enable non-TLS ports.
+Disable non-TLS ports by setting them to the value of `-1` in the `server.xml` file, as shown in the following example:
+
+[source,xml]
+----
+<httpEndpoint id="defaultHttpEndpoint" httpPort="-1" httpsPort="9445" />
+----
+
+=== Mutual authentication
+For production environments, use mutual TLS authentication whenever possible.
+Mutual authentication, also known as 2-way authentication, is certificate-based authentication for clients.
+Methods of authentication are configurable by application.
+For example, one application might use client authentication while the other application uses basic authentication.
+Open Liberty has two modes for client certificate authentication:
+
+* *Supported*: The client might present a TLS certificate, but it is not required.
+If the client presents an untrusted certificate, the certificate is ignored.
+If the certificate is trusted, it can be used for application authentication.
+For supported mode, set the xref:reference:config/ssl.adoc[`clientAuthenticationSupported` attribute] to the value of `true` in your TLS configuration.
+* *Required*: The client must present a trusted TLS certificate.
+If the certificate isn't sent or an untrusted certificate is sent, the connection is rejected.
+For required mode, set the xref:reference:config/ssl.adoc[`clientAuthentication` attribute] to the value of `true` in your TLS configuration.
+
+If you use mutual authentication along with a proxy, consider specifying the xref:reference:config/httpDispatcher.adoc[`httpDispatcher`] parameter with the `trustedHeaderOrigin` or `trustedSensitiveHeaderOrigin` options.
+This parameter permits proxies by using the specified IP addresses to pass along certificate details on behalf of clients, as shown in the following example:
+
+[source,xml]
+----
+<httpDispatcher trustedSensitiveHeaderOrigin=“10.20.30.40, 10.20.50.60” />
+----
+
+If your Open Liberty deployment does not include any proxies, set the following parameters in the `server.xml` file:
+
+[source,xml]
+----
+<webcontainer trusted=“false” /> or
+<httpDispatcher trustedHeaderOrigin=“none” />
+----
+
+=== LDAP servers
+Ensure that any links from the Open Liberty server to LDAP servers are secured by TLS.
+Securing these LDAP connections with TLS encrypts communication so that your network configuration is hardened for production.
+To secure LDAP connections with TLS, enable the Lightweight Directory Access Protocol Over Secure Socket Links (LDAPS) protocol in your feature configuration.
+For more information about enabling and configuring LDAPS, see the xref:reference:feature/ldapRegistry-3.0.adoc[LDAP User Registry feature].
+
+[#ltpa]
+== LTPA best practices
+Lightweight Third-Party Authentication (LTPA) is a single sign-on (SSO) technology that uses cookies or binary tokens for authentication.
+You can take several measures to harden your network when you use LTPA with SSO.
+By default, LTPA cookies are sent over HTTPS or HTTP connections.
+For production purposes, the cookie that carries the LTPA token must be protected.
+If this cookie is stolen, an intruder can act in place of the authenticated user until the token expires.
+Cookies support the `secure` attribute, which tells the browser to send a cookie over HTTPS connections only.
+Set the following option in the `server.xml` file to require that LTPA cookies are sent over TLS connections:
+
+[source,xml]
+----
+<webAppSecurity ssoRequiresSSL='true' />
+----
+
+As a best practice, replace LTPA keys regularly.
+Replacing LTPA keys regularly reduces the risk vector in which a bad actor is able to access a copy of a file and decrypt its contents.
+To replace the keys, delete the `ltpa.keys` file and wait for the server to automatically regenerate them.
+Then, copy the new keys file to the file systems for other servers that share the keys.
+
+In production environments, the cookie for LTPA must be used only for HTTP requests and not for anything else, such as JavaScript applications.
+The following example tells browsers to restrict the use of LTPA cookies to only HTTP connections:
+
+[source,xml]
+----
+<webAppSecurity httpOnlyCookies='true' />
+----
+
+You can also use the `cookieHttpOnly` attribute to help prevent cross-site scripting attacks.
+When the value is set to `true`, this attribute specifies that session cookies must include the `HttpOnly` field.
+Browsers that support the `HttpOnly` field don't allow client-side scripts to access cookies:
+
+[source,xml]
+----
+<httpSession cookieHttpOnly='true' />
+----
+
+[#welcome-page-headers]
+== Welcome page and headers
+For production, you can disable the Open Liberty welcome page.
+The welcome page is enabled by default, and accessing the `/` root context displays the Open Liberty welcome page.
+Disable this welcome page by setting the `enableWelcomePage` custom property to the value of `false` in the `server.xml` file:
+
+[source,xml]
+----
+<httpDispatcher enableWelcomePage="false" />
+----
+
+Open Liberty server headers are also enabled by default.
+Because these headers are enabled by default, in certain situations, information might be returned to browsers or web clients about the server implementation that is running.
+Setting the `removeServerHeader` custom property to the value of `true` removes server implementation information from HTTP headers:
+
+[source,xml]
+----
+<httpOptions removeServerHeader="true" />
+----
+
+You can disable the X-Powered-By header if you don’t want to reveal that an Open Liberty server is running.
+Setting the `disableXPoweredBy` custom property to the value of `true` disables the X-Powered-By header, which prevents the header from being sent on the HTTP response:
+
+[source,xml]
+----
+<webContainer disableXPoweredBy="true" />
+----
+
+[#session-overflow]
+== Session overflow
+Restrict the number of sessions that can be created for applications that use in-memory sessions by disabling HTTP session overflow.
+Restricting sessions can help prevent denial-of-service attacks in which attackers continually generate new sessions until all JVM memory is exhausted:
+
+[source,xml]
+----
+<httpSession allowOverflow="false" maxInMemorySessionCount="1000" alwaysEncodeURL="true" cookieSecure="true" cookieHttpOnly="true" />
+----
+
+[#jmx-connector]
+== JMX connector
+When you use the IBM HTTP Server (IHS), you can secure access to the Open Liberty JMX connector for remote administrative services in the web server plug-in by removing or commenting out the following entries:
+
+[source,xml]
+----
+<Uri AffinityCookie="JSESSIONID" AffinityURLIdentifier="jsessionid" Name="/ibm/api/*" />
+<Uri AffinityCookie="JSESSIONID" AffinityURLIdentifier="jsessionid" Name="/IBMJMXConnectorREST/*" />
+----

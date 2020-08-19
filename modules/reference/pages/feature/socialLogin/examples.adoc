@@ -1,10 +1,13 @@
 == Examples
 
-You can require that users log in with a specific social media provider, or you can give them a list of providers so that they can choose which they prefer to log in with. You can also restrict when they have certain log in options based on browser type, the application, and so on. The following examples show how to configure different scenarios in your `server.xml`.
+The Social Media Login feature provides a set of built-in configuration elements for popular social media providers, in addition to generic configuration elements.
+The following examples show how to configure different scenarios in the `server.xml` file.
 
 === Request log in with a social media ID
 
-A customizable selection form is presented so the user can choose which provider they prefer to sign in with. The following example shows how to configure your application to request that the user logs in with their Google ID:
+If multiple social media providers are configured, a customizable selection form is presented.
+The user can then sign in with a social media provider of their choice.
+The following example shows how to configure your application to request that the user logs in with their Google ID:
 
 [source,xml]
 ----
@@ -22,7 +25,10 @@ A customizable selection form is presented so the user can choose which provider
 
 === Provide a choice of social media providers to the user
 
-You can provide the user with a choice of social media providers on a form from which they choose one to log in with. The following example presents the user with the choice of Google, GitHub, Facebook, LinkedIn, and Twitter with which to log in:
+
+You can configure multiple social media providers for users to choose from.
+The user receives a customizable selection form before authentication with the available providers.
+The following example includes a choice of Google, GitHub, Facebook, LinkedIn, and Twitter:
 
 [source,xml]
 ----
@@ -42,9 +48,11 @@ You can provide the user with a choice of social media providers on a form from 
 </application>
 ----
 
-=== Request log in with a social media ID only if the users is also in another registry
+=== Require authenticated users to also be present in the configured registry
 
-You can restrict the presentation of a social media provider to only users who are also in another configured registry. For example, use the `mapToUserRegistry` attribute to configure your app so that only users in the company LDAP registry can log in with their Google ID:
+You can restrict the presentation of a social media provider to only users who are also in another configured registry.
+For example, use the `mapToUserRegistry` attribute to configure your app.
+The user must authenticate through Google and also verify as an existing user in the company LDAP registry:
 
 [source,xml]
 ----
@@ -58,7 +66,8 @@ For more information on configuring an LDAP registry, see the LDAP User Registry
 
 === Request log in with a social media ID or with their account for the configured registry
 
-You can give users the option of logging in with either a social media provider or with their account on the configured registry. For example, use the `enableLocalAuthentication` attribute to configure your app so that users can have the option of logging in with a Google ID or with their account on their company's LDAP registry:
+You can give users the option of logging in with either a social media provider or with their account on the configured registry.
+For example, use the `enableLocalAuthentication` attribute to configure your app so that users can have the option of logging in with a Google ID or with their account on their company's LDAP registry:
 
 [source,xml]
 ----
@@ -73,9 +82,10 @@ You can give users the option of logging in with either a social media provider 
 
 === Request log in with a social media ID for only a subset of applications, URLs, browsers, or IP addresses
 
-To protect only a subset of applications, URLs, or IP addresses, use an authentication filter.
+To protect only a subset of applications, URLs, or IP addresses, use an link:https://docs/ref/general/#authentication-filters-specifying-mechanism.html[authentication filter].
 The security configuration takes effect only when the conditions in the filter are met. For example,
-you might want a web app to be secured with the Social Media Login feature and a microservice app to be secured with the MicroProfile JWT (feature:mp-jwt[]) feature:
+you might want a web app to be secured with the Social Media Login feature and a microservice app to be secured with the link:https://docs/ref/feature/#mp-jwt.html[MicroProfile JWT] feature:
+
 
 // tag::authfilter[]
 [source,xml]
@@ -92,14 +102,14 @@ you might want a web app to be secured with the Social Media Login feature and a
 ----
 // end::authfilter[]
 
-For more information, see config:authFilter[].
+For more information, see the link:https://docs/ref/config/#authFilter.html[`authFilter`] configuration element..
 
 === Provide other social media logins as options to the user
 
-To authenticate with a social media provider that is not configured out-of-the-box with Open Liberty, use a
-config:oauth2Login[] (for OAuth providers) or config:oidcLogin[] (for OpenID Connect providers) element.
-These elements supply the configuration details needed to work with the provider. These details can usually be
-obtained from the social media provider's developer instructions.  Here is an example for Instagram:
+To authenticate with a social media provider that isn't configured out-of-the-box with Open Liberty, use the link:https://docs/ref/config/#oauth2Login.html[`oauth2Login`] element for OAuth providers or the link:https://docs/ref/config/#oidcLogin.html[`oidcLogin`] element for OpenID Connect providers.
+These elements supply the configuration details that are needed to work with the provider.
+The details can usually be obtained from the developer instructions of the social media provider.
+The following example configures Instagram as the social media provider::
 
 [source,xml]
 ----
@@ -117,3 +127,20 @@ obtained from the social media provider's developer instructions.  Here is an ex
 // LC: Leaving the following links in the source for now to show where this topic should link to when the relevant equivalent topics are published in the Open Liberty docs (do not link to the KC from Open Liberty docs). Remove this commented section when the relevant links are added in future.
 //More information on using the socialLogin feature is available https://www.ibm.com/support/knowledgecenter/en/SSEQTP_liberty/com.ibm.websphere.wlp.doc/ae/twlp_sec_sociallogin.html[here].
 //More information on using authentication filters is available https://www.ibm.com/support/knowledgecenter/en/SSEQTP_liberty/com.ibm.websphere.wlp.doc/ae/rwlp_auth_filter.html[here].
+
+=== Use OpenShift service accounts to authenticate and authorize protected resource requests
+
+The `socialLogin-1.0` feature can be configured to use OpenShift service accounts to authenticate and authorize protected resource requests.
+With this configuration, server administrators can secure endpoints, for example, monitoring and metrics endpoints, that might produce sensitive information.
+The service accounts can authenticate themselves by providing a service account token that was created within the OpenShift cluster in the request.
+
+The following example shows how to configure the Social Media Login feature to use OpenShift service accounts as a single sign-on provider:
+[source,xml]
+----
+
+<okdServiceLogin />
+
+----
+
+The `okdServiceLogin` element authenticates all protected resource requests received by Open Liberty.
+The OpenShift project t that the service account is in, is used as the group for the service account for authorization decisions.
