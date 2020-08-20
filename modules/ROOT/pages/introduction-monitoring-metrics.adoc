@@ -10,18 +10,25 @@
 :page-type: general
 = Introduction to monitoring with metrics
 
-With Open Liberty, you can use two types of metrics to monitor your applications, REST endpoint-style metrics provided by MicroProfile Metrics and JMX metrics.
+With Open Liberty, two types of metrics are available to monitor your applications, REST endpoint-style metrics that are provided by MicroProfile Metrics, and Java Management Extensions (JMX) metrics.
+
+MicroProfile Metrics can be accessed by monitoring tools, such as Prometheus, and by any client that's capable of making REST requests.
+
+JMX metrics are suitable for use by Java-based monitoring tools that can communicate with JMX servers, or by custom JMX clients.
 
 == MicroProfile Metrics
-MicroProfile Metrics provides an API for developers to add metrics to their applications. Metrics come in a variety of forms, including counters, gauges, timers, histograms, and meters.
-You can access MicroProfile Metrics by enabling the xref:reference:feature/mpMetrics-2.3.adoc[MicroProfile Metrics feature].
-The MicroProfile Metrics feature provides a `/metrics` REST interface that conforms to the MicroProfile Metrics specification.
+The xref:reference:feature/mpMetrics-2.3.adoc[MicroProfile Metrics feature] provides a `/metrics` REST interface that conforms to the MicroProfile Metrics specification.
+Open Liberty uses MicroProfile Metrics to expose metrics that describe the internal state of many of its components.
+Developers can also use the MicroProfile Metrics API to expose metrics from their applications.
+
+Metrics come in various forms, including counters, gauges, timers, histograms, and meters.
+You can access MicroProfile Metrics by enabling the MicroProfile Metrics feature.
 Real-time values of all metrics are available from a call to the `/metrics` endpoint.
 For more information about adding these metrics to your applications, see xref:microservice-observability-metrics.adoc[Microservice observability with metrics].
 For a list of all REST endpoint-style metrics that are available for Open Liberty, see the xref:metrics-list.adoc[Metrics reference list].
 
 The `/metrics` endpoint provides two output formats.
-The format that is used for each response is dependent on the HTTP accept header of the corresponding request.
+The format that is used for each response depends on the HTTP accept header of the corresponding request.
 Prometheus format is a representation of the metrics that is compatible with the https://prometheus.io/[Prometheus monitoring tool], which is an open source metrics scraper, data store, and basic visualization tool.
 This format is returned for requests with a `text/plain` accept header.
 JSON format is a JSON representation of the metrics.
@@ -53,7 +60,7 @@ The following table displays the different endpoints that can be accessed to pro
 == JMX metrics
 You can access Java Management Extensions (JMX) metrics by enabling the xref:reference:feature/monitor-1.0.adoc[Performance Monitoring feature].
 After you add this feature to your server configuration, monitoring of JMX metrics automatically starts.
-While the MicroProfile Metrics feature provides a `/metrics` REST endpoint that you can use with Prometheus or other web-based tools, the Performance Monitoring feature provides JMX MXBeans that you can use with JConsole.
+The Performance Monitoring feature provides JMX MXBeans that you can use with monitoring tools that use JMX, such as JConsole.
 
 JConsole is a graphical monitoring tool that's used to monitor JVM and Java applications.
 After you enable monitoring for Open Liberty, you can use JConsole to connect to the JVM and view performance data by clicking attributes of the MXBeans.
@@ -61,5 +68,8 @@ If you prefer, you can choose to use other products that consume JMX metrics to 
 For a list of all JMX metrics that are available for Open Liberty, see the xref:jmx-metrics-list.adoc[JMX metrics reference list].
 
 == Using both types of metrics
-If you enable the MicroProfile Metrics feature with the Performance Monitoring feature, then you get both REST endpoint-style metrics and JMX metrics, and the JMX metrics are included in the `/metrics` output.
+The MicroProfile Metrics feature provides basic metrics about the JVM and about metrics that are added to applications by using the MicroProfile Metrics API. However, the MicroProfile Metrics feature doesn't provide metrics about Open Liberty server components unless it's used along with the Performance Monitoring feature.
+
+If you enable both the MicroProfile Metrics and Performance Monitoring features, then the JMX MXBeans for monitoring and the `/metrics` REST endpoint are activated.
+In this case, metrics for Open Liberty server components are exposed though both interfaces.
 The MicroProfile Metrics feature version 2.3 and later automatically enables the Performance Monitoring feature.
