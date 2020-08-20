@@ -42,39 +42,39 @@ Set up https://www.elastic.co/logstash[Logstash], https://www.elastic.co/elastic
 == Procedure
 
 . Create or acquire certificate and key pair files to enable SSL or TLS connections for Logstash. +
-The following example command for https://www.openssl.org/[OpenSSL] generates a certificate and key pair. Customize the number of days that the keys are valid as needed.
+The following example command for https://www.openssl.org/[OpenSSL] generates a certificate and key pair. Customize the number of days that the keys are valid as needed:
 +
 [role,command]
 ----
 openssl req -x509 -newkey rsa:2048 -keyout logstash.key -out logstash.crt -days 365 -nodes
 ----
 
-. Download a sample Logstash configuration file and an index template file from https://github.com/WASdev/sample.logstash.collector[Sample Logstash Collector dashboards for Liberty].
+. Download a sample Logstash configuration file and an index template file from the https://github.com/WASdev/sample.logstash.collector[Sample Logstash Collector dashboards for Liberty repository].
 
 .. Download the `liberty_logstash.conf` Logstash configuration file and the `liberty_logstash_template_ibm.json` index template file from the directory that corresponds to your Elastic version.
 
 .. In the `liberty_logstash.conf` file: +
-* Customize the Beats `ssl_certificate` and `ssl_key` paths with the certificate and key pair files you generated in step 1.
+* Customize the Beats `ssl_certificate` and `ssl_key` paths with the certificate and key pair files that you generated in step 1.
 * Customize the `Elasticsearch_host_name:port_number` Elasticsearch hosts value with the hostname and port number from your Elasticsearch configuration.
 * Customize the Elasticsearch template path with the path to your `liberty_logstash_template_ibm.json` index template file.
 
 . Complete the following steps for each Open Liberty server that you want to collect events from:
 
-.. Acquire or create a keystore for the Open Liberty server. To create a self-signed certificate, use the following command. Customize the server name, password, and subject as needed.
+.. Acquire or create a keystore for the Open Liberty server. To create a self-signed certificate, use the following command. Customize the server name, password, and subject as needed:
 +
 [role,command]
 ----
 d:\wlp\bin\securityUtility createSSLCertificate --server=myServerName --password="Liberty" --subject=CN=myHostname,OU=defaultServer,O=ibm,C=us
 ----
 
-.. Import the `logstash.crt` file that you created in step 1 into the `trust.jks` file in your server. Customize the `wlp_install_dir` directory and server name as needed. When prompted for a password, use the certificate password that you specified in step 3a.
+.. Import the `logstash.crt` file that you created in step 1 into the `trust.jks` file in your server. Customize the `wlp_install_dir` directory and server name as needed. When prompted for a password, use the certificate password that you specified in step 3a:
 +
 [role,command]
 ----
 d:\java\bin\keytool -import -noprompt -alias logstash -file logstash.crt -keystore wlp_install_dir\usr\servers\myServerName\resources\security\trust.jks -storepass Liberty
 ----
 
-.. Use the following command to install Logstash Collector feature if it is not already installed on your server:
+.. Use the following command to install the Logstash Collector feature if it is not already installed on your server:
 +
 [role,command]
 ----
