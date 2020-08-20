@@ -20,11 +20,11 @@ In the past, certificate issuance required significant human involvement. https:
 
 == ACME and Open Liberty
 
-The acmeCA client feature (link pending) can request certificates and respond to challenges from the CA. The feature can also manage certificate renewals and revocations. This feature requires configuration. At a minimum,  you must provide the URL of an ACME CA and the name of one or more domains that your server controls. To receive a callback from the ACME provider, port 80 must be open to comply with the standards for https://letsencrypt.org/docs/challenge-types/[the HTTP-01 challenge type]. For more information, see the acmeCA feature (link pending).
+To use an ACME CA with your Open Liberty server you must enable and configure the acmeCA client feature. At a minimum, you must provide the URL of an ACME CA and the name of one or more domains that your server controls. To receive a callback from the ACME provider, port 80 must be open to comply with the standards for https://letsencrypt.org/docs/challenge-types/[the HTTP-01 challenge type]. For more information, see the acmeCA feature (link pending).
 
 When an Open Liberty server starts with transport layer security (TLS) enabled, a self-signed server certificate is created for the server. This certificate can be used for testing and development purposes. However, since the certificate isn't signed by a CA, clients that connect to the server over TLS don't trust it. Browsers then require clients to confirm whether they trust the server, which can cause problems for containerized environments and microservices, even during testing and development.
 
-To avoid problems with self-signed certificates, services such as LetsEncrypt use the ACME protocol to provide free CA-signed certificates over the public web. When the acmeCA client feature is enabled, the Open Liberty server automatically requests a certificate from your configured CA provider at startup if a new certificate is needed.
+To avoid problems with self-signed certificates, services such as LetsEncrypt use the ACME protocol to provide free CA-signed certificates over the public web. When the acmeCA client feature is enabled, the Open Liberty server automatically requests a certificate from your configured CA provider at startup if a new certificate is needed. The feature can also respond to challenges from the CA and manage certificate renewals and revocations.
 
 == Acme CA Account management
 
@@ -41,7 +41,7 @@ Some certificate authorities provide terms of service. If an ACME CA modifies it
 
 === Certificate renewal and revocation
 
-You can configure the acmeCA client feature to automatically renew any expiring or revoked certificates. The `renewBeforeExpiration` property specifies the amount of time before a certificate expires that the server requests a new certificate.
+You can configure the acmeCA client feature to automatically renew any expiring or revoked certificates. The `renewBeforeExpiration` property specifies the amount of time before a certificate expires that the server requests a new certificate. The default value for this property is 7 days.
 
 When the server starts, it checks the expiration date on the CA-signed certificate. If the expiration date is within the specified range of time, or if the certificate is already expired or revoked, the server automatically requests a new certificate. While the server is running, it checks the certificate daily and automatically renews any expiring or revoked certificate. If a renew request fails, the background process continues to request a new certificate hourly until the request is successful. For more information, see the acmeCA client feature (link pending).
 
@@ -117,7 +117,7 @@ You can enable trace by using the following trace specification:  `ACME=all`. To
 === CWPKI2058W warning
 The following warning occurs: ` CWPKI2058W: Certificate revocation status checking ignored soft failures. Revocation checking might be incomplete. The failures are: '[java.security.cert.CertPathValidatorException: Unable to determine revocation status due to network error, java.security.cert.CertPathValidatorException: Unable to determine revocation status due to network error]'.`
 
-If you see this network error warning and you are running with a test CA server, you can add a custom `ocspResponderUrl` URL. If the test CA does not support revocation testing, you can disable it. See the `Tips for using a  local or test Certificate Authority` for examples.
+If you see this network error warning and you are running with a test CA server, you can add a custom `ocspResponderUrl` URL. If the test CA does not support revocation testing, you can disable revocation testing. See the `Tips for using a  local or test Certificate Authority` for examples.
 
 === Slow server startup
 The ACME protocol entails remote communication in some calls to the configured CA. This communication can cause a perceived delay in server startup if the server fetches a new certification. If the CA provider is not accessible or is slow to respond, the Open Liberty server startup is delayed.
@@ -126,9 +126,9 @@ For example, some CA providers can take 10-20 seconds to complete a certificate 
 
 - initial certificate request
 - expired certificate
--  certificate is about to expire according to the `renewBeforeExpiration` property
--  revoked certificate
-- some configuration changes
+- certificate is about to expire according to the `renewBeforeExpiration` property
+- revoked certificate
+- acmeCA client feature configuration changes
 
 === Certificate request times out
 If the certificate request times out, you can set a longer timeout value by using the  `challengePollTimeout` and `orderPollTimeout` properties.
@@ -140,29 +140,33 @@ To prevent too many immediate certificate-renew requests and a possible negative
 Some CA, such as LetsEncrypt, enforce a rate limit on requesting new certificates. If you are testing and request several certificates in a short amount of time, use an appropriate testing server. For example, LetsEncrypt provides a staging server with higher rate limits.
 
 === The certificate is renewed at startup when it isn't expired
-If the certificate is marked as revoked, it is automatically renewed. If the certificate is expiring, it is renewed. The expiring window is calculated by the expiration date minus the value of the renewBeforeExpiration property. By default, a certification is marked as expiring 7 days before the expiration of the certificate.
-
-The directory URI, the domain or other account information was changed and a new certificate is required.
-
-If the server starts with the `--clean` option, historical information on the certificate is removed and the server requests a new certificate.
+The following conditions can can cause an unexpired certificate to be automatically renewed at startup:
+- The certificate is marked as revoked
+- The certificate expiration date within the window set by the `renewBeforeExpiration` property.
+- The directory URI, the domain, or other account information was changed and a new certificate is required.
+- The server was started with the `--clean` option and historical information on the certificate was removed.
 
 === After a failure to fetch the certificate, the keystore produces errors
 If the server cannot fetch a certificate, a keystore is still created. There is a fixed Java bug where an empty keystore file causes an exception. Examples of this error include:
-```
+----
 CWPKI2030E: The ACME service could not install a certificate under the default alias into the defaultKeyStore keystore. The error is 'The keystore [defaultKeyStore] is not present in the configuration'.```
-```
+----
+----
 CWWKS9582E: The [defaultSSLConfig] sslRef attributes required by the orb element with the defaultOrb id have not been resolved within 10 seconds. As a result, the applications will not start. Ensure that you have included a keyStore element and that Secure Sockets Layer (SSL) is configured correctly. If the sslRef is defaultSSLConfig, then add a keyStore element with the id defaultKeyStore and a password.
-```
-To resolve this error, remove the empty keystore. Update to a Java level that includes the fix to allow empty key stores (See Java bug IJ19292).
+----
+
+To resolve this error, remove the empty keystore. Update to a Java level that includes the fix to allow empty key stores. For more information, see Java bug IJ19292.
 
 === Failed to fetch certificate: CWPKI2001E
-```
+
+----
 CWPKI0804E: SSL certificate creation error. The error is: CWPKI2001E: The ACME certificate authority at the http://my-configured-ca.com/directory URI responded that the authorization challenge failed for the mydomainname.com domain. The challenge status is INVALID.  The error is 'Fetching http://mydomainname.com/.well-known/acme-challenge/FXCFcGCv4Ov2ofJ2i-PgMsO1kECwKB0XfTzsPjNIXBs: Connection refused'.
-```
+----
+
 Verify that the provided domain name is accessible by the CA. Review the logs and confirm that the expected domain name or IP address is used for the acme-challenge web application.
 
-```
+----
 CWWKT0016I: Web application available (default_host): http://mydomainname.com:80/.well-known/acme-challenge/
-```
+----
 
 To configure the hostname used for web applications, add or update the `host` attribute for the `httpEndpoint` configuration.
