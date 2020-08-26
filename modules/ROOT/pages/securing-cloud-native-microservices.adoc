@@ -1,4 +1,5 @@
-// Copyright (c) 2018 IBM Corporation and others.
+
+// Copyright (c) 2020 IBM Corporation and others.
 // Licensed under Creative Commons Attribution-NoDerivatives
 // 4.0 International (CC BY-ND 4.0)
 //   https://creativecommons.org/licenses/by-nd/4.0/
@@ -6,68 +7,54 @@
 // Contributors:
 //     IBM Corporation
 //
-:page-description: Securing cloud-native microservices addresses the vulnerabilities in your applications based on microservices architecture.
-:seo-description: Securing cloud-native microservices addresses the vulnerabilities in your applications based on microservices architecture.
+:page-description: Securing your application from vulnerabilities helps to make sure that your application is secure earlier, rather than later during development.
+:seo-title: Designing cloud-native microservices
+:seo-description: Securing your application from vulnerabilities helps to make sure that your application is secure earlier, rather than later during development.
 :page-layout: general-reference
 :page-type: general
 = Securing cloud-native microservices
 
-Securing cloud-native microservices addresses the vulnerabilities in your applications based on microservices architecture.
-Microservices communicate in a distributed manner and the points of communication are vulnerable to security attacks.
-Furthermore, the technological diversity of cloud-native microservices can create security issues.
-The prevalence of fast-paced development cycles in microservice-based architectures hinders comprehensive security tests in development pipelines.
-Consequently, vulnerable microservices could be pushed to production environments.
-You can secure your cloud native microservices in Open Liberty.
-Here are the resources that you can access to secure your cloud native microservices.
+Securing your application from vulnerabilities is important to prevent unauthorized access to your application.
+Make sure that your application is secure earlier, rather than later during development, and not overlook the important security steps only to revisit them later.
 
-== Authentication
 
-In order for an application to be secure, it must be able to determine who its users are.
-Authentication is the process of confirming a user’s identity.
-Open Liberty authenticates users by collecting credentials from them, such as a username and password, and checking these credentials against a configured registry of users. Authentication is completed in different ways, depending on the details of an application and the resources that are available to it. For microservice-based applications, authentication must be lightweight and configurable, since any user request might need to authenticate to multiple services. In many cases, a user’s credentials are placed in a token that can be passed from the server to different microservices to authenticate requests for protected resources.
+A the end-user of your application might be the employee of an organization who wants to log in to the organization system for regular work.
+The user might sometimes need to access external resources subscribed by the organization, for example, a peer reviewed journal.
+It's important to identify the user and direct them to the right resources.
+It's also important make sure that there are no security vulnerabilities in the system, or any unauthorized access to resources.
+When users try to access your application, you need to make sure that the users are who they claim to be.
+xref:authentication.adoc[Authentication] verifies the identity of the user and give user access to the system.
+xref:authorization.adoc[Authorization] further filters user access based on the role of the user, and the groups that the user belongs to.
+With single sign-on, the user to log into external resources, without the need for a separate account.
 
-== Authorization
+In the following diagram, a user requests access to the organization protected resources.
+During authentication the user identity is confirmed.
+The identity provider sends authentication data back to the application, where it's used to authorize user access to protected resources.
+During authorization, Open Liberty checks the roles that are specified for the user against the roles that are defined for the application resources.
+The user is granted access to any resources that match their role.
+If the user wants to access an external resource, which is subscribed by the organization, then the organization can use Single sign-on (SSO).
 
-For an application to be secure, it must be able to manage access to protected resources.
-Authorization determines which resources a user can access.
-In an application where only certain users or groups are entitled to access certain resources, users and groups are assigned roles that represent which resources they can access. For example, in a payroll application, users in the Employee role can view a page that lists their hourly wages and hours worked. However, only users in the Manager role can edit employee wages. During authentication, Open Liberty identifies users and determines what access groups they belong to. When a user attempts to access a protected resource on the server, this information determines whether the user is authorized to access the resource.
+(The illustration displayed here)
 
-== Single sign-on (SSO)
+You can use different authentication and authorization strategies to secure your application during development and production.
 
-Single sign-on (SSO) enables users to sign in to applications by using one account instead of creating an account specifically for each application that they want to use. By configuring SSO for your applications, you can simplify the registrations and logins for your users.
-As the developer of the application, you are not responsible for securing and maintaining users' personal information. Open Liberty supports several commonly used methods of implementing SSO in applications; the method you choose to use depends on the needs of your organization.
+== For development purposes
 
-== Password encryption
+You can create a basic registry, which is a text-based xref:user-registries-application-security.adoc#_basic_user_registries_for_application_development[user registry], directly in the applications `server.xml` file, or a quickstart registry if you need a single user for a start.
+You can also xref:password-encryption.adoc[encrypt] the password so it's not stored in plain text in your application.
+For more information on securing your application, see the link:/guides/security-intro.html[Securing a web application] guide.
 
-Open Liberty supports AES encryption for passwords that are stored in the server.xml file.
-When you use this option for protecting system passwords in the Open Liberty configuration, you need to understand the limits to the protection it provides.
 
-== User registries for application security
+== For production purposes
 
-A user registry is a data source that contains account information, such as usernames and passwords.
-An application server can retrieve this information to authenticate and authorize users.
-Typically, microservice-based applications in production run on an application server that is configured to use an external user registry, such as a Lightweight Directory Access Protocol (LDAP) registry.
-However, in test environments, a developer might want to set up a basic, file-based user registry within the application server to simplify security operations during the development process.
+For production, you can use xref:single-sign-on.adoc[Single sign-on] (SSO), for example, Open ID Connect (OIDC), so that the user can log in to the application without creating a separate account.
+If there exists a user registry, for example, a Lightweight Directory Access Protocol (LDAP) registry, you can set up authentication with xref:single-sign-on.adoc#_saml[Security Assertion Markup Language] (SAML).
+For Windows Active Directory, you can use xref:single-sign-on.adoc#_spnego[Simple and Protected GSS-API Negotiation] (SPNEGO) for authentication.
+If there aren't requirements to use an existing user registry, you can use a social media provider, for example, the xref:single-sign-on.adoc#_social_media_login[Social Media Login] feature, so that the social media platform manages the user registry and login procedure for you.
+For more information see, link:/guides/social-media-login.html[Social media login] guide.
 
-== Configuring SPNEGO authentication in Open Liberty
+Within the application, if you want to permit services to access information from other services on behalf of the user, your application needs to generate a link:/guides/microprofile-jwt.html[JSON web token] (JWT).
+The service can send a JSON web token with its request to another service to that show it has permission to request that information.
+Encrypt traffic between services with xref:secure-communication-tls.adoc[Transport Layer Security] (TLS) so that no one can intercept data or tokens being transmitted between services or between the client and a service.
 
-You can enable sign-on (SSO) for HTTP requests by using Simple and Protected GSS-API Negotiation Mechanism (SPNEGO) web authentication for Open Liberty.
-With SPNEGO SSO, HTTP users log in only once to a Microsoft domain controller at their desktop.
-
-== Secure communication with Transport Layer Security (TLS)
-
-Transport Layer Security (TLS) is a security protocol that uses verified certificates and encryption keys to secure communications over the internet. TLS is an update to the Secure Sockets Layer (SSL) protocol.
-You can enable TLS on your Open Liberty servers to protect communications among applications and services. TLS helps ensure that sensitive data such as user passwords, credit card numbers, and other personal information can be transmitted securely between a client and server. It is also an important protocol for authenticated access to websites. Securing the transmission of authentication tokens such as JSON Web Tokens with TLS helps ensure that user credentials are not exposed as they are passed among different applications and services.
-
-== Application configuration security hardening
-
-Before you can run an application in production, you must carefully harden its configuration.
-If your application isn’t properly secured, external users might derive or inherit unauthorized privileges when they run it.
-These unauthorized privileges can give users unauthorized access to sensitive information about your application and other users.
-By hardening your application’s configuration, you can prevent unauthorized exposure of sensitive information.
-
-==	Network security hardening
-
-Network intrusions occur when unauthorized users gain access to network activity.
-With this access, they can alter traffic and steal network resources.
-Employ best practices with Open Liberty to harden your network against potential attacks.
+Finally, before production, make sure that you work through the advice for xref:security-hardening.adoc[hardening] your application.

@@ -6,26 +6,28 @@
 // Contributors:
 //     IBM Corporation
 //
-:page-description: The Logstash collector feature collects logs from Open Liberty and sends them to a remote Logstash server, where they can be managed and visualized by products such as Elasticsearch and Kibana.
-:seo-title: The Logstash collector feature collects logs from Open Liberty and sends them to a remote Logstash server, where they can be managed and visualized by products such as Elasticsearch and Kibana.
+:page-description: The Logstash Collector feature collects logs from Open Liberty and sends them to a remote Logstash server, where they can be managed and visualized by products such as Elasticsearch and Kibana.
+:seo-title: The Logstash Collector feature collects logs from Open Liberty and sends them to a remote Logstash server, where they can be managed and visualized by products such as Elasticsearch and Kibana.
 :page-layout: general-reference
 :page-type: general
-= Forwarding logs and events to Logstash with Logstash collector
+= Forwarding logs and events to Logstash with Logstash Collector
 
 You can collect logs and events from your Open Liberty server and display them in a dashboard for analysis and troubleshooting purposes.
-xref:reference:feature/logstashCollector-1.0.adoc[The Logstash collector feature] collects logs from Open Liberty and sends them to a remote Logstash server, where they can be managed and visualized by products such as Elasticsearch and Kibana.
+The Logstash Collector feature collects logs from Open Liberty and sends them to a remote Logstash server, where they can be managed and visualized by products such as Elasticsearch and Kibana.
 
 == About this task
 
 Logstash is an open source log management tool that prepares log data for analysis. Logstash can process and transform data, and then send it to various outputs, such as Elasticsearch, Kafka, PagerDuty, or an email server.
 
-If your Open Liberty server is deployed in a managed environment, such as a Kubernetes cluster, your logs are typically aggregated by agents in that environment. However, some server configurations cannot use an external agent to manage log data. In these cases, you can use the Open Liberty Logstash collector feature to internally collect your log data at run time and send it directly to a Logstash server.
+If your Open Liberty server is deployed in a managed environment, such as a Kubernetes cluster, your logs are typically aggregated by agents in that environment.
 
-If your log data is managed by an external agent, you do not need to use the Logstash collector feature. For more information, see xref:analyzing-logs-elk.adoc[Analyzing logs with the Elastic stack].
+In cases where your server logs are not managed by an external agent, you might be able to configure https://www.elastic.co/beats/filebeat[Filebeat] to forward your logs to Logstash. If you can install Filebeat on the same host as your Open Liberty server, you can configure Open Liberty to write logs in JSON format and Filebeat can forward the logs. For more information, see xref:analyzing-logs-elk.adoc[Analyzing JSON logs with the Elastic stack].
+
+If you can't install Filebeat on the same host as your Open Liberty server, you can use the Open Liberty xref:reference:feature/logstashCollector-1.0.adoc[Logstash Collector feature] to forward your logs to Logstash. This feature internally collects log data at run time and sends it directly to a Logstash server.
 
 Although this feature can send log data for analysis by any of https://www.elastic.co/guide/en/logstash/current/output-plugins.html[the available output plug-ins from Logstash], many users choose to use Logstash with Elasticsearch and Kibana. These three tools are widely used together to collect, manage, and build dashboards for log data. For more information, see https://www.elastic.co/downloads/[the Elastic website].
 
-The Logstash collector feature was tested with the following products:
+The Logstash Collector feature was tested with the following products:
 
 - Logstash V5.3.x, Elasticsearch V5.3.x, and Kibana V5.3.x
 - Logstash V6.4.x, Elasticsearch V6.4.x, and Kibana V6.4.x
@@ -35,51 +37,51 @@ The following procedure demonstrates how to collect your Open Liberty log data w
 
 == Before you begin
 
-Set up https://www.elastic.co/logstash[Logstash], https://www.elastic.co/elasticsearch/[Elasticsearch], and https://www.elastic.co/kibana[Kibana] by following https://www.elastic.co[the instructions from Elastic].
+Set up https://www.elastic.co/logstash[Logstash], https://www.elastic.co/elasticsearch/[Elasticsearch], and https://www.elastic.co/kibana[Kibana] by following https://www.elastic.co/guide/index.html[the instructions from Elastic].
 
 == Procedure
 
 . Create or acquire certificate and key pair files to enable SSL or TLS connections for Logstash. +
-The following example command for https://www.openssl.org/[OpenSSL] generates a certificate and key pair. Customize the number of days that the keys are valid as needed.
+The following example command for https://www.openssl.org/[OpenSSL] generates a certificate and key pair. Customize the number of days that the keys are valid as needed:
 +
 [role,command]
 ----
 openssl req -x509 -newkey rsa:2048 -keyout logstash.key -out logstash.crt -days 365 -nodes
 ----
 
-. Download a sample Logstash configuration file and an index template file from https://github.com/WASdev/sample.logstash.collector[Sample Logstash Collector dashboards for Liberty].
+. Download a sample Logstash configuration file and an index template file from the https://github.com/WASdev/sample.logstash.collector[Sample Logstash Collector dashboards for Liberty repository].
 
 .. Download the `liberty_logstash.conf` Logstash configuration file and the `liberty_logstash_template_ibm.json` index template file from the directory that corresponds to your Elastic version.
 
 .. In the `liberty_logstash.conf` file: +
-* Customize the Beats `ssl_certificate` and `ssl_key` paths with the certificate and key pair files you generated in step 1.
+* Customize the Beats `ssl_certificate` and `ssl_key` paths with the certificate and key pair files that you generated in step 1.
 * Customize the `Elasticsearch_host_name:port_number` Elasticsearch hosts value with the hostname and port number from your Elasticsearch configuration.
 * Customize the Elasticsearch template path with the path to your `liberty_logstash_template_ibm.json` index template file.
 
 . Complete the following steps for each Open Liberty server that you want to collect events from:
 
-.. Acquire or create a keystore for the Open Liberty server. To create a self-signed certificate, use the following command. Customize the server name, password, and subject as needed.
+.. Acquire or create a keystore for the Open Liberty server. To create a self-signed certificate, use the following command. Customize the server name, password, and subject as needed:
 +
 [role,command]
 ----
 d:\wlp\bin\securityUtility createSSLCertificate --server=myServerName --password="Liberty" --subject=CN=myHostname,OU=defaultServer,O=ibm,C=us
 ----
 
-.. Import the `logstash.crt` file that you created in step 1 into the `trust.jks` file in your server. Customize the `wlp_install_dir` directory and server name as needed. When prompted for a password, use the certificate password that you specified in step 3a.
+.. Import the `logstash.crt` file that you created in step 1 into the `trust.jks` file in your server. Customize the `wlp_install_dir` directory and server name as needed. When prompted for a password, use the certificate password that you specified in step 3a:
 +
 [role,command]
 ----
 d:\java\bin\keytool -import -noprompt -alias logstash -file logstash.crt -keystore wlp_install_dir\usr\servers\myServerName\resources\security\trust.jks -storepass Liberty
 ----
 
-.. Use the following command to install Logstash collector feature if it is not already installed on your server:
+.. Use the following command to install the Logstash Collector feature if it is not already installed on your server:
 +
 [role,command]
 ----
 d:\wlp\bin\featureUtility installFeature logstashCollector-1.0
 ----
 
-.. /docs/ref/feature/#logstashCollector-1.0.html[Configure the Logstash collector feature] in your `server.xml` file.
+.. xref:reference:feature/logstashCollector-1.0.adoc[Configure the Logstash Collector feature] in your `server.xml` file.
 
 .. Enable xref:access-logging.adoc[HTTP access logging].
 
@@ -90,28 +92,30 @@ d:\wlp\bin\featureUtility installFeature logstashCollector-1.0
 . Open Kibana in a browser and create an index.
 
 - For Kibana 7, 6, or 5.6, click **Management** > **Index Patterns**.
-** Enter `logstash-*` as the **Index Pattern**.
-** Click **Advanced Options** and enter `logstash-*` as the **Index Pattern ID**.
-** Select `datetime` as the **Time filter** field name, and click **Create**.
+1. Enter `logstash-*` as the **Index Pattern**.
+2. Click **Advanced Options**, and enter `logstash-*` as the **Index Pattern ID**.
+3. Select `datetime` as the **Time filter** field name, and click **Create**.
 
-- For Kibana 5.0 - 5.5, click **Management** > **Index Patterns** and select `datetime` as the **Time filter** field name. Click **Create**.
+- For Kibana 5.0 - 5.5:
++
+Click **Management** > **Index Patterns**, and select `datetime` as the **Time filter** field name. Click **Create**.
 
 
-. Download a sample dashboard from the directory that corresponds to your version of Elastic in the https://github.com/WASdev/sample.logstash.collector[Sample Logstash Collector dashboards for Liberty] repository.
+. In the https://github.com/WASdev/sample.logstash.collector[Sample Logstash Collector dashboards for Liberty] repository, download a sample dashboard from the directory that corresponds to your version of Elastic.
 
 . Import the dashboard into Kibana.
 +
-Click **Management** > **Saved Object** > **Import** and select a dashboard that you downloaded in step 7.
+Click **Management** > **Saved Object** > **Import**, and select a dashboard that you downloaded in step 7.
 
 . View the dashboard.
 +
-Click **Dashboard** > **Open** and select the dashboard that you imported in step 8.
+Click **Dashboard** > **Open**, and select the dashboard that you imported in step 8.
 
 == Results
 
-You configured your Open Liberty servers to send events to your Logstash server with the Logstash collector feature and can now view your events in the Liberty dashboards by using Kibana.
+You configured your Open Liberty servers to send events to your Logstash server with the Logstash Collector feature and can now view your events in the Liberty dashboards by using Kibana.
 
 == See also
-- To see a full list of the available Logstash collector event fields for each log event type, see xref:logstash-event-fields.adoc[Logstash collector event fields].
-- To learn more about log management solutions for Open Liberty, see xref:log-management.adoc[Log management].
-- To learn about Open Liberty logs and logging configuration options, see xref:log-trace-configuration.adoc[Log and trace configuration].
+- xref:logstash-events-list.adoc[Logstash Collector events reference list]
+- xref:log-management.adoc[Log management]
+- xref:log-trace-configuration.adoc[Log and trace configuration]
