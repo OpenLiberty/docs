@@ -1,0 +1,179 @@
+// Copyright (c) 2020 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description:
+:seo-title:
+:page-layout: general-reference
+:page-type: general
+= Automated certificate management with ACME
+
+The Automatic Certificate Management Environment (ACME) protocol automates the process of certificate verification and issuance. You can use the Open Liberty acmeCA client feature to automatically get a browser-trusted certificate for domains on your server from an ACME certificate authority (CA).
+
+Clients use certificates to authenticate domain names on a server. These certificates verify that the server legitimately controls a domain and protect clients from man-in-the-middle attacks. The certificate is a record that server control over a domain is tested and verified by a CA. To get a certificate, the server must generate a certificate signing request (CSR) and respond to several challenges from the CA. These challenges prove the server controls the domain that is being verified.
+
+In the past, certificate issuance required significant human involvement. https://tools.ietf.org/html/draft-ietf-acme-acme-18[The ACME protocol] standardizes the process so that it can be carried out between an automated certificate management agent on the server and an ACME CA, such as https://letsencrypt.org/[LetsEncrypt].
+
+== ACME and Open Liberty
+
+To use an ACME CA with your Open Liberty server, you must enable and configure [the acmeCA client feature. At a minimum, you must provide the URL of an ACME CA and the name of one or more domains that your server controls. To receive a callback from the ACME provider, port 80 must be open to comply with the standards for https://letsencrypt.org/docs/challenge-types/[the HTTP-01 challenge type]. For more information, see the acmeCA feature (link pending).
+
+When an Open Liberty server starts with transport layer security (TLS) enabled, a self-signed server certificate is created for the server. This certificate can be used for testing and development purposes. However, since the certificate isn't signed by a CA, clients that connect to the server over TLS don't trust it. Browsers then require clients to confirm whether they trust the server, which can cause problems for containerized environments and microservices, even during testing and development.
+
+To avoid problems with self-signed certificates, services such as LetsEncrypt use the ACME protocol to provide free CA-signed certificates over the public web. When the acmeCA client feature is enabled, the Open Liberty server automatically requests a certificate from your configured CA provider at startup if a new certificate is needed. The feature can also respond to challenges from the CA and manage certificate renewals and revocations.
+
+== Acme CA Account management
+
+The acmeCA client feature requires a valid account with an ACME CA. Account details are stored in an account key file. Before a CSR is sent, the feature first checks for an existing account key file. If no account key file exists, the feature generates a new one. This file is then used to either register a new account or log in to an existing account. Like any security credential, the account key file must be backed up and protected.
+
+You can request a new account key at any time by using the REST API. Renewing an account key might be necessary if your existing key is compromised, or as a periodic security precaution. To renew the account key, a user that is in the administrator role can send the following HTTPS request:
+
+[source,command]
+----
+curl -kv https://mydomain.com:443/ibm/api/acmeca/account -X post -H "content-type: application/json" -d '{"operation":"renewAccountKeyPair"}'
+----
+
+Some certificate authorities provide terms of service. If an ACME CA modifies its terms of service, you might be required to agree to the new terms manually. If you fail to agree to the modified terms of service, the ACME CA server might refuse any future requests from your account until you confirm your agreement. To avoid service interruption, provide an account contact in your ACME configuration that specifies a monitored email address.
+
+=== Certificate renewal and revocation
+
+You can configure the acmeCA client feature to automatically renew any expiring or revoked certificates. The `renewBeforeExpiration` property specifies the amount of time before a certificate expires that the server requests a new certificate. The default value for this property is 7 days.
+
+When the server starts, it checks the expiration date on the CA-signed certificate. If the expiration date is within the specified range of time, or if the certificate is already expired or revoked, the server automatically requests a new certificate. While the server is running, it checks the certificate daily and automatically renews any expiring or revoked certificate. If a renew request fails, the background process continues to request a new certificate hourly until the request is successful. For more information, see the acmeCA client feature (link pending).
+
+Runtime changes to the acmeCA configuration can trigger an automatic certificate renewal request. For example, if the directory URI is changed to a different endpoint, the server requests a new certificate.
+
+You can also choose to manually renew the active certificate. To renew the active certificate, a user that is in the administrator role can send the following HTTPS request:
+
+[source,command]
+----
+curl -kv https://mydomain.com:443/ibm/api/acmeca/certificate -X POST -u admin:password -H "content-type: application/json" -d '{"operation":"renewCertificate"}'
+----
+
+The certificate that is replaced is revoked automatically after the new certificate is installed. When a certificate is renewed, new connections use the new certificate. Existing connections are not interrupted.
+
+You might need to revoke a certificate before you retire a server, during testing, or before you move from one ACME CA to another. To revoke a certificate, a user that is in the administrator role can send the following HTTPS request:
+
+[source,command]
+----
+curl -kv https://mydomain.com:443/ibm/api/acmeca/certificate -X POST -u admin:password -H "content-type: application/json" -d '{"operation":"revokeCertificate","reason":"key_compromise"}'
+----
+
+You can specify a revocation reason by using the reason key-value pair. The following reason values are valid:
+
+* `unspecified`
+* `key_compromise`
+* `ca_compromise`
+* `affiliation_changed`
+* `superseded`
+* `cessation_of_operations`
+* `certificate_hold`
+* `remove_from_crl`
+* `privilege_withdrawn`
+* `aa_compromise`
+
+If you don't specify a reason, the default value is `unspecified`.
+
+=== ACME CA account and certificate monitoring with the REST API
+
+You can monitor the active ACME CA account and any active certificates by issuing HTTPS requests for the REST API. You can check your account details and contact information or view the current CA signed certificate details, such as the validity dates for the certificate and the issuer. If you request a certificate renewal, you can see the updated certificate information. However, the content that is returned from these HTTPS endpoints is for informational purposes only and cannot be used or depended on programmatically.
+
+To view both the active ACME CA account and certificate, a user that is in either the administrator or reader role can send the following HTTPS request:
+
+[source,command]
+----
+curl -kv https://mydomain.com:443/ibm/api/acmeca -X GET -u admin:password
+----
+
+To view only the active account, a user that is in either the administrator or reader role can send the following HTTPS request:
+
+[source,command]
+----
+curl -kv https://mydomain.com:443/ibm/api/acmeca/account -X GET -u admin:password
+----
+To view only the active certificate, a user that is in either the administrator or reader role can send the following HTTPS request:
+
+[source,command]
+----
+curl -kv https://mydomain.com:443/ibm/api/acmeca/certificate -X GET -u admin:password
+----
+
+You can also access the REST endpoint by using a browser and providing administrator or reader role credentials, as shown in the following examples:
+
+----
+https://mydomain.com:443/ibm/api/acmeca
+https://mydomain.com:443/ibm/api/acmeca/account
+https://mydomain.com:443/ibm/api/acmeca/certificate
+----
+
+== Troubleshooting
+
+To help troubleshoot problems with ACME CA certificates, you can enable trace by using the following trace specification:
+----
+ACME=all
+----
+
+To add transport security trace, use the following specification:
+----
+com.ibm.ws.ssl.*=all
+----
+
+The following sections describe common problems that you might encounter with ACME CA accounts and connections. For configuration examples, see the acmeCA client feature (link pending).
+
+=== Certificate request times out
+If the certificate request times out, you can set a longer timeout value by using the  `challengePollTimeout` and `orderPollTimeout` properties.
+
+=== Received an HTTP code 429 message on a renew request
+To prevent too many immediate certificate-renew requests and a possible negative impact on the server, certificate-renew requests are blocked for a small window of time. After this window expires, new requests can be made. The 429 message indicates when new requests can be made.
+
+=== Received a `rate limit exceeded` message
+Some CA, such as LetsEncrypt, enforce a rate limit on requesting new certificates. If you are testing and request several certificates in a short amount of time, use an appropriate testing server. For example, LetsEncrypt provides a staging server with higher rate limits.
+
+=== The certificate is renewed at startup when it isn't expired
+The following conditions can cause an unexpired certificate to be automatically renewed at startup:
+- The certificate is marked as revoked
+- The certificate expiration date within the window set by the `renewBeforeExpiration` property.
+- The directory URI, the domain, or other account information was changed and a new certificate is required.
+- The server was started with the `--clean` option and historical information on the certificate was removed.
+
+=== The authorization challenge fails with a CWPKI2001E message
+
+If the server fails to fetch a certificate, you might see an error message like the following example:
+----
+CWPKI0804E: SSL certificate creation error. The error is: CWPKI2001E: The ACME certificate authority at the http://my-configured-ca.com/directory URI responded that the authorization challenge failed for the mydomainname.com domain. The challenge status is INVALID.  The error is 'Fetching http://mydomainname.com/.well-known/acme-challenge/FXCFcGCv4Ov2ofJ2i-PgMsO1kECwKB0XfTzsPjNIXBs: Connection refused'.
+----
+
+If you see this message, verify that the provided domain name is accessible by the CA. Review the logs and confirm that the expected domain name or IP address is used for the `acme-challenge` web application. Look for the following message in the logs:
+
+----
+CWWKT0016I: Web application available (default_host): http://mydomainname.com:80/.well-known/acme-challenge/
+----
+
+To configure the hostname used for web applications, add or update the `host` attribute for the `httpEndpoint` configuration in your `server.xml` file.
+
+
+=== After a failure to fetch the certificate, the keystore produces errors
+
+If the server cannot fetch a certificate, an empty keystore is created. In older versions of Java, an empty keystore can cause an exception. Examples of this error include the following messages:
+----
+CWPKI2030E: The ACME service could not install a certificate under the default alias into the defaultKeyStore keystore. The error is 'The keystore [defaultKeyStore] is not present in the configuration'.```
+----
+----
+CWWKS9582E: The [defaultSSLConfig] sslRef attributes required by the orb element with the defaultOrb id have not been resolved within 10 seconds. As a result, the applications will not start. Ensure that you have included a keyStore element and that Secure Sockets Layer (SSL) is configured correctly. If the sslRef is defaultSSLConfig, then add a keyStore element with the id defaultKeyStore and a password.
+----
+
+To work around this error after a failure to fetch the initial certificate, remove the empty keystore.
+
+=== Received a CWPKI2058W warning message during a revocation check
+
+When you run containerized versions of ACME CA servers, the OCSP responder URL that is defined in the certificate might not be reachable. You can override the OCSP responder URL in the certificate by specifying the 'ocspResponderUrl' attribute in the 'acmeRevocationChecker' element. If this URL is not configured, the following  warning can occur during revocation checks:
+
+----
+CWPKI2058W: Certificate revocation status checking ignored soft failures. Revocation checking might be incomplete. The failures are: '[java.security.cert.CertPathValidatorException: Unable to determine revocation status due to network error, java.security.cert.CertPathValidatorException: Unable to determine revocation status due to network error]'
+----
+
+If you see this network error warning and you are running with a test CA server, you can add a custom `ocspResponderUrl` URL. If the test CA does not support revocation testing, you can disable revocation testing.

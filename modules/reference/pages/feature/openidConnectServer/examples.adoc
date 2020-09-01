@@ -1,0 +1,81 @@
+== Examples
+
+=== Managing OAuth clients with `localStore`
+
+The following example shows how to create a basic configuration to run an OpenID Connect Provider.
+This configuration is especially useful during development and testing before deployment to the cloud, where the application typically uses a cloud-based SSO provider instead.
+The example uses a simple xref:feature/appSecurity-3.0.adoc[basic registry], which is defined in the server configuration, to manage a single user:
+
+[source,xml]
+----
+<keyStore id="defaultKeyStore" password="keyspass" />
+
+<basicRegistry id="basic" realm="customRealm">
+    <user
+      name="demouser"
+      password="demopassword" />
+</basicRegistry>
+
+<openidConnectProvider id="OP"
+    oauthProviderRef="OAuth"
+    signatureAlgorithm="RS256" keyStoreRef="defaultKeyStore"
+    jwkEnabled="true">
+</openidConnectProvider>
+
+<oauthProvider id="OAuth" tokenFormat="mpjwt" >
+    <localStore>
+      <client displayname="RP" enabled="true"
+            name="RP" secret="thesecret"
+            scope="openid profile email"
+            preAuthorizedScope="openid profile email">
+            <redirect>https://localhost:19443/oidcclient/redirect/RP</redirect>
+      </client>
+    </localStore>
+</oauthProvider>
+
+<oauth-roles>
+    <authenticated>
+        <special-subject type="ALL_AUTHENTICATED_USERS" />
+    </authenticated>
+</oauth-roles>
+----
+
+In the example, the `openidConnectProvider` element is configured to use the `oauthProvider`element.
+The `signatureAlgorithm` attribute specifies the RS256 signature algorithm that is used to sign the ID token.
+The `jwkEnabled` attribute set to true indicates that the OpenID Connect provider supports JSON Web Keys (JWKs).
+The OpenID Connect provider generates a JSON Web Key by using the certificate in the keystore that is referenced by the `keyStoreRef` attribute.
+The generated JSON Web Key is used to sign ID tokens.
+OpenID Connect clients can contact the provider's JWK endpoint to retrieve the corresponding signing key to verify the signatures of ID tokens that are issued by the provider.
+
+The example configuration uses local store to store client data and token status.
+All client data and token status are held in memory, which works for test and development purposes.
+However, if you reconfigure the server, the local store might be cleared, so it is not suitable to use for production purposes.
+A database must be used instead.
+
+
+=== Managing OAuth clients with an authenticated database
+
+The following example uses a database as the store:
+
+[source, xml]
+----
+
+<oauthProvider id="OAuth" tokenFormat="mpjwt" >
+
+<localStore>
+  <client displayname="RP" enabled="true"
+        name="RP" secret="thesecret"
+        scope="openid profile email"
+        preAuthorizedScope="openid profile email">
+        <redirect>https://localhost:19443/oidcclient/redirect/RP</redirect>
+  </client>
+
+  <clientManager>
+     <user name="testuser" />
+     <group name="oidcadmin" />
+  </clientManager>
+</localStore>
+----
+
+When you connect to a database, users in the `clientManager` role can add or modify clients by accessing the registration endpoint.
+In the example the `clientManager` role is granted to the user `testuser` or members of the `oidcadmin` group.
