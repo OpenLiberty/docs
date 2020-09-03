@@ -1,0 +1,29 @@
+== Examples
+
+=== Configuring the Servlet Filter
+
+In Open Liberty, the BELL feature can provide a `ServletContainerInitializer` interface that is used to create the `ServletContext` object when an application starts. In the following example, a `ServletContainerInitializer` interface is used to configure a Servlet Filter implementation. The interface passes the `ServletContext.addFilter(String, Filter)` object to the `ServletContainerInitializer.onStartup(Set<Class<?>>, ServletContext)` method to configure the Servlet Filter:
+
+[source,java]
+----
+public class SCI implements ServletContainerInitializer {
+  @Override
+  public void onStartup(Set<Class<?>> arg0, ServletContext arg1)
+    throws ServletException {
+    arg1.addFilter("myFilter", MyFilter.class).addMappingForUrlPatterns(null, false, "/*");
+  }
+}
+----
+
+To register the `ServletContainerInitializer` interface that adds the Servlet Filter for an application, a class name is specified in the library JAR file as shown in the following example:
+
+[source,xml]
+----
+<library id="init">
+  <file name="path/to/jar"/>
+</library>
+
+<bell libraryRef="init"/>
+----
+
+The library JAR file contains a `META-INF/services/javax.servlet.ServletContainerInitializer` file that specifies the fully qualified `ServletContainerInitializer` implementation class name that is contained in the library.
