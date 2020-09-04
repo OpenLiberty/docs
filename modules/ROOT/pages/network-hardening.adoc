@@ -13,8 +13,9 @@
 :page-type: general
 = Network security hardening
 
-Network intrusions occur when unauthorized users gain access to network activity and can alter traffic and steal network resources.
-Employ best practices with Open Liberty to harden your network against potential attacks.
+Employ best practices with Open Liberty to harden your network for production against potential attacks.
+Network attacks occur when unauthorized users gain access to network activity.
+With this access, unauthorized users can alter traffic and steal network resources.
 
 [#firewalls]
 == Firewalls
@@ -43,13 +44,13 @@ Using TLS connections throughout your network communication flow helps protect y
 
 TLS uses key pairs and signed X.509 certificates to protect HTTP, IIOP, LDAP, IBM MQ, JDBC, and messaging traffic among Open Liberty messaging engines, J2C, and SOAP traffic.
 The default TLS configuration is simple to configure, but it is not suitable for use in production because it generates a self-signed certificate.
-The auto-generated certificate is convenient for development purposes, but a certificate that's used in production must be signed by a trusted authority, such as Verisign.
-If you use SSO for user authentication, all SSO endpoint URLs must use a secure HTTP scheme (HTTPS), and the client must check the TLS server certificate.
+The automatically generated certificate is convenient for development purposes, but a certificate that's used in production must be signed by a trusted authority, such as Verisign.
+If you use SSO for user authentication, all SSO endpoint URLs must use the HTTPS protocol, and the client must check the TLS server certificate.
 
 With Open Liberty, ingress proxies are configurable and no proxies are trusted by default.
 For protection at the transport level when traffic comes in by proxy, make required Open Liberty servers accessible to only trusted proxies.
 Disable non-TLS ports wherever possible.
-Exposing only TLS-enabled ports requires careful consideration of the `server.xml` file because some features might automatically enable non-TLS ports.
+Exposing only TLS-enabled ports requires careful consideration of the `server.xml` file because some features automatically enable non-TLS ports.
 Disable non-TLS ports by setting them to the value of `-1` in the `server.xml` file, as shown in the following example:
 
 [source,xml]
@@ -60,19 +61,19 @@ Disable non-TLS ports by setting them to the value of `-1` in the `server.xml` f
 === Mutual authentication
 For production environments, use mutual TLS authentication whenever possible.
 Mutual authentication, also known as 2-way authentication, is certificate-based authentication for clients.
-Methods of authentication are configurable by application.
+Methods of authentication are configurable per application.
 For example, one application might use client authentication while the other application uses basic authentication.
 Open Liberty has two modes for client certificate authentication:
 
 * *Supported*: The client might present a TLS certificate, but it is not required.
 If the client presents an untrusted certificate, the certificate is ignored.
 If the certificate is trusted, it can be used for application authentication.
-For supported mode, set the xref:reference:config/ssl.adoc[`clientAuthenticationSupported` attribute] to the value of `true` in your TLS configuration.
+For supported mode, set the xref:reference:config/ssl.adoc[clientAuthenticationSupported attribute] to the value of `true` in your TLS configuration.
 * *Required*: The client must present a trusted TLS certificate.
 If the certificate isn't sent or an untrusted certificate is sent, the connection is rejected.
-For required mode, set the xref:reference:config/ssl.adoc[`clientAuthentication` attribute] to the value of `true` in your TLS configuration.
+For required mode, set the xref:reference:config/ssl.adoc[clientAuthentication attribute] to the value of `true` in your TLS configuration.
 
-If you use mutual authentication along with a proxy, consider specifying the xref:reference:config/httpDispatcher.adoc[`httpDispatcher`] parameter with the `trustedHeaderOrigin` or `trustedSensitiveHeaderOrigin` options.
+If you use mutual authentication along with a proxy, consider specifying the xref:reference:config/httpDispatcher.adoc[httpDispatcher parameter] with the `trustedHeaderOrigin` or `trustedSensitiveHeaderOrigin` options.
 This parameter permits proxies by using the specified IP addresses to pass along certificate details on behalf of clients, as shown in the following example:
 
 [source,xml]
@@ -80,7 +81,7 @@ This parameter permits proxies by using the specified IP addresses to pass along
 <httpDispatcher trustedSensitiveHeaderOrigin=“10.20.30.40, 10.20.50.60” />
 ----
 
-If your Open Liberty deployment does not include any proxies, set the following parameters in the `server.xml` file:
+If your Open Liberty deployment doesn't include any proxies, set the following parameters in the `server.xml` file:
 
 [source,xml]
 ----
@@ -97,7 +98,7 @@ For more information about enabling and configuring LDAPS, see the xref:referenc
 [#ltpa]
 == LTPA best practices
 Lightweight Third-Party Authentication (LTPA) is a single sign-on (SSO) technology that uses cookies or binary tokens for authentication.
-You can take several measures to harden your network when you use LTPA with SSO.
+You can take several measures to harden your network when you use LTPA.
 By default, LTPA cookies are sent over HTTPS or HTTP connections.
 For production purposes, the cookie that carries the LTPA token must be protected.
 If this cookie is stolen, an intruder can act in place of the authenticated user until the token expires.
@@ -162,7 +163,8 @@ Setting the `disableXPoweredBy` custom property to the value of `true` disables 
 [#session-overflow]
 == Session overflow
 Restrict the number of sessions that can be created for applications that use in-memory sessions by disabling HTTP session overflow.
-Restricting sessions can help prevent denial-of-service attacks in which attackers continually generate new sessions until all JVM memory is exhausted:
+Restricting sessions can help prevent denial-of-service attacks in which attackers continually generate new sessions until all JVM memory is exhausted.
+You can disable HTTP session overflow by setting the `allowOverflow` custom property to the value of `false`:
 
 [source,xml]
 ----
