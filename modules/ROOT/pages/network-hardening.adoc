@@ -72,21 +72,26 @@ For supported mode, set the xref:reference:config/ssl.adoc[clientAuthenticationS
 If the certificate isn't sent or an untrusted certificate is sent, the connection is rejected.
 For required mode, set the xref:reference:config/ssl.adoc[clientAuthentication attribute] to the value of `true` in your TLS configuration.
 
-If you use mutual authentication along with a proxy, consider specifying the xref:reference:config/httpDispatcher.adoc[httpDispatcher parameter] with the `trustedHeaderOrigin` or `trustedSensitiveHeaderOrigin` options.
-This parameter permits proxies by using the specified IP addresses to pass along certificate details on behalf of clients, as shown in the following example:
+If you use mutual authentication along with a proxy, consider specifying the xref:reference:config/httpDispatcher.adoc[httpDispatcher custom property] with the `trustedHeaderOrigin` or `trustedSensitiveHeaderOrigin` options.
+This custom property permits proxies by using the specified IP addresses to pass along certificate details on behalf of clients, as shown in the following example:
 
 [source,xml]
 ----
 <httpDispatcher trustedSensitiveHeaderOrigin=“10.20.30.40, 10.20.50.60” />
 ----
 
-If your Open Liberty deployment doesn't include any proxies, set the following parameters in the `server.xml` file:
+If your Open Liberty deployment doesn't include any proxies, set the following custom properties in the `server.xml` file:
 
 [source,xml]
 ----
-<webcontainer trusted=“false” /> or
+<webContainer trusted=“false” /> or
 <httpDispatcher trustedHeaderOrigin=“none” />
 ----
+
+The `trusted` option on the `webContainer` custom property enables the application server to use inbound private headers from the web server plug-in.
+By default, the `trustedHeaderOrigin` option on the `httpDispatcher` custom property is set to the value of `*` so that all non-sensitive private headers are trusted from any host.
+However, when the `trusted` option on the `webContainer` custom property is set to the value of `false`, the configurations of the `trustedHeaderOrigin` custom property and the `trustedSensitiveHeaderOrigin` custom property are overridden.
+These configurations are overridden so that no inbound private headers are processed, which secures the network against attackers that can connect directly to the application server and bypass the web server.
 
 === LDAP servers
 Ensure that any links from the Open Liberty server to LDAP servers are secured by TLS.
