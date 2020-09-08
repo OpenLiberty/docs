@@ -80,7 +80,7 @@ All edits and updates to existing Open Liberty Docs must be documented and track
 
 4. Request a build of the [draft openliberty.io site](https://draft-openlibertyio.mybluemix.net/docs/):
     1. Sign in to [Travis CI](https://travis-ci.com/github/OpenLiberty/openliberty.io) with your GitHub account.
-    2. Click **More Options > Trigger Build**. Make sure the `master` branch is selected, then click **Trigger custom build**. The draft site build starts running.            
+    2. Click **More Options > Trigger Build**. Make sure the `draft` branch is selected, then click **Trigger custom build**. The draft site build starts running.            
 
 5. When the build finishes, check that the doc renders correctly on the [draft site](https://draft-openlibertyio.mybluemix.net/docs/). Post a link to your draft in the Git issue for the doc.
 
@@ -102,7 +102,8 @@ All edits and updates to existing Open Liberty Docs must be documented and track
    
 8. If any changes are requested to the PR, make them in your branch and push them to draft first. Then, run the draft site build from Travis CI again to check that they look right on the draft site. Open a new PR to staging and request another review.
 
-9. After the PR to staging is approved and merged, request a build of the [staging openliberty.io site from Travis CI](https://travis-ci.com/github/OpenLiberty/openliberty.io). To trigger a staging build, use the same procedure that you used in step 5 to trigger a draft build.
+9. After the PR to staging is approved and merged, request a build of the [staging openliberty.io site from Travis CI](https://travis-ci.com/github/OpenLiberty/openliberty.io). 
+    1. Click **More Options > Trigger Build**. Make sure the `staging` branch is selected, then click **Trigger custom build**. The staging site build starts running.
 
 10. When the build finishes, check to make sure the doc renders correctly on the [staging site](https://staging-openlibertyio.mybluemix.net/docs/). If any changes are needed make sure to add them to the draft branch and review on the draft site before you make a new PR to staging.
 
