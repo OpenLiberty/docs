@@ -13,10 +13,10 @@
 :page-type: general
 = Application configuration security hardening
 
-Before you can run an application in production, carefully harden its configuration by following some best practices.
-If your application isn't properly secured, external users might derive or inherit unauthorized privileges when they run it.
+Before you can run an application in production, carefully harden its configuration by following best practices.
+If your application isn't properly secured, external users might derive or inherit unauthorized privileges when they run it and gain access to sensitive information.
 
-These unauthorized privileges can give users unauthorized access to sensitive information about your application and other users.
+This sensitive information might contain information about your application and other users.
 By hardening your application configuration, you can prevent unauthorized exposure of sensitive information.
 
 [#user-roles-access]
@@ -48,14 +48,14 @@ Information in this directory is never served by the web container.
 [#secure-servlets]
 == Secure servlets
 Servlets can be served by class name or with a normal URL alias.
+You can serve servlets by class name by setting the `serveServletsByClassnameEnabled` property to `true` in the `ibm-web-ext.xml` file of the application.
+For production purposes, don't enable this property.
+Enabling the `serveServletsByClassnameEnabled` property makes it possible for anyone that knows the class name of any servlet to directly start it.
+
 By default, Open Liberty does not allow servlets to be served by class name.
 Instead of defining a mapping for each servlet, a single generic URI, such as `/servlet`, serves all servlets.
 The component of the path after the base is assumed to be the class name for the servlet.
 For example, the `/servlet/com.ibm.sample.MyServlet` path refers to the `com.ibm.sample.MyServlet` servlet class.
-
-You can serve servlets by class name by setting the `serveServletsByClassnameEnabled` property to `true` in the `ibm-web-ext.xml` file of the application.
-For production purposes, don't enable this property.
-Enabling the `serveServletsByClassnameEnabled` property makes it possible for anyone that knows the class name of any servlet to directly start it.
 
 === Servlet aliases
 Servlets are secured by URLs, and each URL must be specified with security constraints.
@@ -65,10 +65,9 @@ A servlet can have more than one alias. For example, multiple URLs can access th
 If a servlet has more than one alias, it can be easy to forget to secure an alias.
 Because Open Liberty secures URLs and not the underlying classes, if just one servlet URL is insecure, an intruder might be able to bypass security.
 To alleviate this risk, use wildcards to secure servlets wherever possible.
-If using wildcards isn't appropriate, carefully double check your `web.xml` file before deployment.
+If using wildcards isn't appropriate, carefully check your `web.xml` file before deployment.
 
-When you specify authorization constraints for servlets, ensure that you either list no methods or carefully list all the methods for a servlet, including GET, POST, PUT, and HEAD methods.
-If you are using multiple constraints, list all the methods.
+When you specify security constraints for servlets, ensure that you either list no methods or carefully list all the methods for a servlet, including GET, POST, PUT, and HEAD methods.
 
 Specify the `<deny-uncovered-http-methods>` element in the `web.xml` file.
 When the `<deny-uncovered-http-methods>` element is specified, the container denies any uncovered HTTP methods.
