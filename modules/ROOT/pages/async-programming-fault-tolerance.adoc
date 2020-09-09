@@ -18,7 +18,7 @@ Combining the `CompletionStage` interface with MicroProfile Fault Tolerance prov
 xref:fault-tolerance.adoc[MicroProfile Fault Tolerance provides different annotations] that can help you deal with failure, including `@Retry`, `@Timeout`, `@CircuitBreaker`, `@Bulkhead`, and `@Fallback`.
 However, the `@Asynchronous` annotation, specifically, can help you make your asynchronous methods resilient to faults.
 
-== About the @Asynchronous annotation
+== The @Asynchronous annotation
 A method that is annotated with the `@Asynchronous` annotation runs asynchronously, which means that the method doesn't run immediately on the main thread when it's called.
 Instead, it runs sometime later, usually on another thread.
 
@@ -31,9 +31,7 @@ The following example uses the `CompletableFuture.completedFuture()` method to m
 ----
 @Asynchronous
 public CompletionStage<String> serviceA() {
-
-  return CompletableFuture.completedFuture("serviceA");
-
+    return CompletableFuture.completedFuture("serviceA");
 }
 ----
 
@@ -78,14 +76,11 @@ You can build up a request to fetch a String from a URL with a GET request, wher
 private Client client = ClientBuilder.newClient();
 
 public CompletionStage<String> clientDemo() {
-
-  CompletionStage<String> response = client.target("http://example.com/resource")
-          .request(MediaType.TEXT_PLAIN)
-          .rx()
-          .get(String.class);
-
-  return response;
-
+    CompletionStage<String> response = client.target("http://example.com/resource")
+        .request(MediaType.TEXT_PLAIN)
+        .rx()
+        .get(String.class);
+    return response;
 }
 ----
 
@@ -98,11 +93,11 @@ response.thenAccept(System.out::println);
 --> responseText
 ----
 
-In this example, you can't add the `@Retry` annotation to the method.
+In this example, nothing happens if you add the `@Retry` annotation to the method.
 Even if the HTTP request fails, the request isn't retried because Fault Tolerance acts around method calls.
 Normally, if you annotate a method with the `@Retry` annotation and it throws an exception, then it's retried.
 
-However, when you do an HTTP request through the JAX-RS Client API, an exception can't be thrown if there's a problem with a request.
+However, when you do an HTTP request through the JAX-RS Client API, an exception can't be thrown if there's a problem with the request.
 The request is processed asynchronously, so when the method returns, the request probably hasn't started yet.
 If an exception does occur, it's propagated  to the `CompletionStage` object and can be handled there.
 The method never throws an exception, even if the request fails, meaning that the request is never retried.
@@ -114,9 +109,7 @@ If you add the `@Asynchronous` annotation and the method returns a `CompletionSt
 @Asynchronous
 @Retry
 public CompletionStage<String> clientDemo() {
-
-  ...
-
+    ...
 }
 ----
 
@@ -138,12 +131,9 @@ private RequestScopedClass1 requestScopedBean1;
 private RequestScopedClass2 requestScopedBean2;
 
 public CompletionStage<String> callServicesAsynchronously()  {
-
-  CompletionStage<String> result1 = requestScopedBean1.serviceA(); // Where serviceA is annotated with @Asynchronous
-  CompletionStage<String> result2 = requestScopedBean2.serviceB(); // Where serviceB is annotated with @Asynchronous
-
-  ...
-
+    CompletionStage<String> result1 = requestScopedBean1.serviceA(); // Where serviceA is annotated with @Asynchronous
+    CompletionStage<String> result2 = requestScopedBean2.serviceB(); // Where serviceB is annotated with @Asynchronous
+    ...
 }
 ----
 
@@ -158,27 +148,23 @@ For example, you can add the `@Retry` annotation to the `serviceA()` method and 
 @RequestScoped
 public class RequestScopedClass1 {
 
-  @Retry
-  @Asynchronous
-  public CompletionStage<String> serviceA() {
-
-    doSomethingWhichMightFail()
-    return CompletableFuture.completedFuture("serviceA");
-
-  }
+    @Retry
+    @Asynchronous
+    public CompletionStage<String> serviceA() {
+        doSomethingWhichMightFail()
+        return CompletableFuture.completedFuture("serviceA");
+    }
 }
 
 @RequestScoped
 public class RequestScopedClass2 {
 
-  @Timeout
-  @Asynchronous
-  public CompletionStage<String> serviceB() {
-
-    doSomethingWhichMightFail()
-    return CompletableFuture.completedFuture("serviceB");
-
-  }
+    @Timeout
+    @Asynchronous
+    public CompletionStage<String> serviceB() {
+        doSomethingWhichMightFail()
+        return CompletableFuture.completedFuture("serviceB");
+    }
 }
 ----
 
