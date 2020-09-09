@@ -16,16 +16,14 @@
 Operating system intrusions occur when unauthorized users log in to the operating system and gain access to sensitive resources.
 Employ best practices with Open Liberty to harden your server configuration against potential operating system attacks.
 
-One of the ways to protect against improper access to Open Liberty code is to ensure that the file system where Open Liberty binary files are located is mounted read-only.
-Another best practice is to ensure that the Open Liberty server configuration file system, which is the path where the `WLP_USER_DIR` environment variable points, is only writable to authorized server administrators.
-
 [#basic-best-practices]
-== Basic server configuration hardening best practices
+== Basic best practices
 
 The following list of best practices outlines basic guidelines to harden your server configuration and ensure that it is fit for production.
 These best practices also apply to hardening Open Liberty Docker images if you're working with containers:
 
-* Confirm that the Open Liberty server identity doesn’t own the directory where the server configuration is stored, `WLP_USER_DIR`, and has only read access to it.
+* Make the Open Liberty server configuration file system, which is the path where the `WLP_USER_DIR` environment variable points, writable only to authorized server administrators.
+* Confirm that the Open Liberty server identity doesn’t own the directory where the server configuration is stored and has only read access to it.
 Set the `WLP_OUTPUT_DIR` environment variable to point to the server logs with the same server identity as the owner of this directory.
 * Ensure that any sensitive information in the `server.xml` file is xref:reference:command/securityUtility-encode.adoc[AES-encrypted].
 * Disable all non-TLS ports by setting ports to the value of `-1` in the `httpPort` argument of the `httpEndpoint` stanza.
@@ -41,7 +39,7 @@ A container that runs in production must have only the tools and packages that y
 Before you run a container in production, harden the container image to remove any potential vulnerabilities that might allow exploitation of your server configuration or installation.
 
 The simplest way to securely run Open Liberty is to start with an existing Open Liberty Docker image, which is already set up with basic security protocols.
-Although Open Liberty Docker images have basic security that's already configured, take steps to harden an image if you intend to use it in production.
+Although Open Liberty Docker images have basic security that's already configured, you need to harden an image if you intend to use it in production.
 You can https://hub.docker.com/_/open-liberty[find Open Liberty Docker images and related information] in Docker Hub.
 
 If you extend an Open Liberty image for use in production, opt for the leanest possible configuration by adding only tools and packages that are essential to your application.
@@ -98,7 +96,7 @@ This ID can also own files, or it can be a separate ID from the file owner.
 * *Users who are responsible for administering the server*:
 These users likely require read and write access to the server configuration files.
 A best practice is to not share login IDs or passwords among administrators.
-Instead, set up the server configuration file system owner with a dedicated ID, and permit administrators to use sudo authority to switch to this ID to update the configuration.
+Instead, set up the server configuration file system owner with a dedicated ID, and permit administrators to use sudo authority to update the configuration by switching to the dedicated ID.
 
 * *Users who are involved in server-related activities*:
 Some of these users need read access to view the logs, while other users might need limited write access.
@@ -127,8 +125,7 @@ These files are helpful in two situations:
 
 * When sensitive information needs to be available for select users or groups, for example, database administrators, but not the larger group with read access to the server configuration.
 * When a user needs to update only a portion of the server configuration.
-In this situation, it is important to ensure that a user can't override configuration in the `server.xml` file.
-To prevent users from overriding configuration in the `server.xml` file, use the `onConflict` tag in the `<include>` element:
+In this situation, ensure that a user can’t override the configuration in the `server.xml` file by using the `onConflict` tag in the `<include>` element:
 +
 [source,xml]
 ----
@@ -166,7 +163,7 @@ You can also disable automatic configuration updates in the `server.xml` file by
 [#password-encryption]
 == Password encryption
 Use AES encryption for passwords instead of Base64 encoding.
-You can use the xref:reference:command/securityUtility-encode.adoc[securityUtility encode command] with Open Liberty for plain text encryption.
+You can use the xref:reference:command/securityUtility-encode.adoc[securityUtility encode command] with Open Liberty for plain text obfuscation.
 AES encryption is also preferable to XOR encryption because an XOR-encoded password is visible to any administrator.
 
 With AES encryption, the default encryption key that is used for decryption can be overridden by setting the `wlp.password.encryption.key` property.
