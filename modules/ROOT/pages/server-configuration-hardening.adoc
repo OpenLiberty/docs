@@ -28,8 +28,8 @@ These best practices also apply to hardening Open Liberty Docker images if you'r
 * Confirm that the Open Liberty server identity doesn’t own the directory where the server configuration is stored, `WLP_USER_DIR`, and has only read access to it.
 Set the `WLP_OUTPUT_DIR` environment variable to point to the server logs with the same server identity as the owner of this directory.
 * Ensure that any sensitive information in the `server.xml` file is xref:reference:command/securityUtility-encode.adoc[AES-encrypted].
-* Disable all non-TLS ports by setting ports to `-1` in the `httpPort` argument of the `httpEndpoint` stanza.
-* Use the xref:reference:feature/transportSecurity-1.0.adoc[Transport Security feature] instead of the xref:reference:feature/ssl-1.0.adoc[SSL feature].
+* Disable all non-TLS ports by setting ports to the value of `-1` in the `httpPort` argument of the `httpEndpoint` stanza.
+* Use xref:reference:feature/transportSecurity-1.0.adoc[Transport Layer Security (TLS)] instead of the SSL.
 * Add the `webAppSecurity ssoRequiresSSL=’true’` statement to the `server.xml` file.
 * Add the `webAppSecurity httpOnlyCookies=’true’` statement to the `server.xml` file.
 * Set the `httpOptions removeServerHeader="true"` statement in the `server.xml` file.
@@ -42,7 +42,7 @@ Before you run a container in production, harden the container image to remove a
 
 The simplest way to securely run Open Liberty is to start with an existing Open Liberty Docker image, which is already set up with basic security protocols.
 Although Open Liberty Docker images have basic security that's already configured, take steps to harden an image if you intend to use it in production.
-You can find Open Liberty Docker images and related information in https://hub.docker.com/_/open-liberty[Docker Hub].
+You can https://hub.docker.com/_/open-liberty[find Open Liberty Docker images and related information] in Docker Hub.
 
 If you extend an Open Liberty image for use in production, opt for the leanest possible configuration by adding only tools and packages that are essential to your application.
 Using a minimal image reduces the number of operating system vulnerabilities that you bundle with your application.
@@ -65,7 +65,7 @@ The output message that you receive indicates whether the Open Liberty installat
 [#unix-file-permissions]
 == UNIX file permissions
 A critical aspect of server security is ensuring that files and directories have the appropriate permissions, and users and groups are configured properly.
-All UNIX files have the following attributes: *file owner*, *group*, and *other*.
+All UNIX files have the following attributes: *owner*, *group*, and *other*.
 For each of these attributes, 3 bits are assigned as an octal digit.
 The first bit indicates read access.
 The second bit indicates write access.
@@ -107,7 +107,7 @@ Some of these users need read access to view the logs, while other users might n
 These users are treated as part of the *other* group, so they don't have access to the configuration or product file systems.
 
 * *User registries that are safe for production*:
-Basic and Quick Start Security user registries are useful for development environments, but they are not acceptable for readiness testing, QA, or production use.
+Basic and Quick Start Security user registries are useful for development environments, but they are not acceptable for readiness testing, quality assurance, or production use.
 For production, use an LDAP user registry, federated registries, or create a custom user registry.
 +
 If you use an LDAP user registry, maintain your bind password in a separate include file, not in the `server.xml` file.
@@ -115,7 +115,7 @@ If you use a custom registry, use the `UserRegistry` class to implement the regi
 For more information about user registries, see xref:user-registries-application-security.adoc[User registries for application security].
 
 * *Single-sign on*:
-Rather than directly accessing user registries from Open Liberty, use single-sign on (SSO) technologies, such as SAML, JWT, or OpenID Connect, for better security.
+Rather than directly accessing user registries from Open Liberty, use single-sign on (SSO) technologies, such as SAML, JWT, or OpenID Connect.
 SSO provides better security and regulatory compliance.
 If you use SSO, maintain your SSO configuration in a separate include file, not in the `server.xml` file.
 For more information about SSO, see xref:single-sign-on.adoc[Single sign-on].
@@ -123,7 +123,7 @@ For more information about SSO, see xref:single-sign-on.adoc[Single sign-on].
 [#include-file-processing]
 == Include file processing
 Include files can hold portions of the configuration outside of the `server.xml` file.
-These files are helpful in two primary situations:
+These files are helpful in two situations:
 
 * When sensitive information needs to be available for select users or groups, for example, database administrators, but not the larger group with read access to the server configuration.
 * When a user needs to update only a portion of the server configuration.
@@ -144,7 +144,7 @@ You can disable automated configuration updates so that your production environm
 
 By default, each server contains a monitored application directory that's named `/dropins`.
 When an application is placed in this directory, the server automatically deploys and starts the application.
-If you update configuration in the `server.xml` file or `/dropins` directory, the server automatically deploys the configuration changes.
+If you update the configuration in the `server.xml` file or the `/dropins` directory, the server automatically deploys the configuration changes.
 
 Each server also contains a monitored directory that's named `/dropins/configDropins` for configuration snippets.
 If you update the configuration in this directory, the server automatically deploys the configuration changes.
@@ -166,15 +166,9 @@ You can also disable automatic configuration updates in the `server.xml` file by
 [#password-encryption]
 == Password encryption
 Use AES encryption for passwords instead of Base64 encoding.
-You can use the xref:reference:command/securityUtility-encode.adoc[`securityUtility encode` command] with Open Liberty for plain text encryption.
+You can use the xref:reference:command/securityUtility-encode.adoc[securityUtility encode command] with Open Liberty for plain text encryption.
 AES encryption is also preferable to XOR encryption because an XOR-encoded password is visible to any administrator.
 
 With AES encryption, the default encryption key that is used for decryption can be overridden by setting the `wlp.password.encryption.key` property.
 This property must not be set in the `server.xml` file, but in a separate configuration file that is included by the `server.xml` file.
 This separate configuration file must contain only a single property declaration, and must be stored outside the normal configuration directory for the server.
-
-== Other potential vulnerabilities
-
-Hardening your server configuration is crucial to sealing off vulnerabilities and preventing attackers from gaining access to sensitive resources in your configuration file system.
-Protecting these points of attack hardens your server configuration for use in production, but you need to consider other security vulnerabilities before your container and application are production-ready.
-You must also ensure that you harden your xref:application-configuration-hardening.adoc[application configuration] and your xref:network-hardening.adoc[network] to keep your application and users safe in production.
