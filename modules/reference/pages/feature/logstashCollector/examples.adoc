@@ -1,0 +1,62 @@
+== Examples
+
+=== Basic configuration
+
+The following example shows how to configure the Logstash Collector feature to enable a source for data collection, which is, by default, message:
+
+[source,xml]
+----
+<logstashCollector
+    hostName="localhost"
+    port="5043"
+    sslRef="mySSLConfig"/>
+----
+
+
+=== Customizing Logstash Collector
+
+With the Logstash Collector feature, you can change the maximum number of characters that are allowed for the message field in a message or trace event or for the stack trace in an FFDC event. You can also limit the maximum number of events that are sent for each type of event per second. The following example sets the `maxFieldLength` parameter to 3000 characters and sets the `maxEvents` parameter to 10 events per second in the `logstashCollector` element:
+
+[source,xml]
+----
+<logstashCollector
+    source="message,trace,garbageCollection,ffdc,accessLog,audit"
+    hostName="localhost"
+    port="5043"
+    sslRef="mySSLConfig"
+    maxEvents="10"
+    maxFieldLength="3000">
+</logstashCollector>
+----
+
+For more information, see xref:ROOT:forwarding-logs-logstash.adoc[Forwarding logs and events to Logstash with Logstash collector].
+
+=== Adding custom event tags
+
+The following example sets two `tag` elements in the `logstashcollector` element to add custom tags that decorate events within the application. The tags annotate the events to show that they come from `serverRackA5` and `billingAppTeam` systems:
+
+[source,xml]
+----
+<logstashCollector
+    hostName="localhost"
+    port="5043"
+    sslRef="mySSLConfig"
+    <tag>serverRackA5</tag>
+    <tag>billingAppTeam</tag>
+/>
+----
+
+=== Replacing default HTTP access log fields
+
+The following example shows a configuration to replace the default HTTP access log fields with custom fields. The `logFormat` attribute specifies the log format options for the custom fields, which are listed in xref:ROOT:access-logging.adoc[HTTP access logging].
+
+[source,xml]
+----
+<httpEndpoint httpPort="9080" httpsPort="9443" id="defaultHttpEndpoint">
+    <accessLogging logFormat='%R{W} %u %{my_cookie}C %s'/>
+</httpEndpoint>
+<logstashCollector
+    source="accessLog"
+    jsonAccessLogFields="logFormat">
+</logstashCollector>
+----

@@ -7,7 +7,6 @@
 * [Editing the Docs navigation](#Editing-the-docs-navigation)
 
 ## Overview
-
 The Open Liberty website is built on the [Antora](https://antora.org/) framework, which provides a structure for publishing and managing versioned documentation. The documentation in the [Open Liberty Docs](https://www.openliberty.io/docs/latest/overview.html) section of the Open Liberty website defaults to the most recent release version. You can view previous release versions by selecting them from the version picker that precedes the sidebar navigation. Each release version is managed from a separate branch.
 
 To write and publish content in Open Liberty Docs, you work with the following branches:
@@ -37,11 +36,9 @@ The author of the doc must complete the following steps:
 
 4. Push the file to GitHub, then create a pull request (PR) into the `draft` branch. Link the PR to the issue you created in Step 1. Request a review of the PR from David Mueller (`dmuelle`), Charlotte Holt (`Charlotte-Holt`) or one of [the doc members](https://github.com/orgs/OpenLiberty/teams/docs-members). Notify your reviewer that the doc is a new topic that needs to be added to the draft navigation. They can work with you to determine the best section of the navigation for your topic and [to update the nav.adoc file]((#Editing-the-docs-navigation)).
 
-
 5. Request a build of the [draft openliberty.io site](https://draft-openlibertyio.mybluemix.net/docs/):
     1. Sign in to [Travis CI](https://travis-ci.com/github/OpenLiberty/openliberty.io) with your GitHub account.
     2. Click **More Options > Trigger Build**. Make sure the `draft` branch is selected, then click **Trigger custom build**. The draft site build starts running.
-
 
 6. When the build finishes, check that the doc looks right on the [draft site](https://draft-openlibertyio.mybluemix.net/docs/). Post a link to your draft in the Git issue for the doc.
 
@@ -63,7 +60,8 @@ The author of the doc must complete the following steps:
 
 9. If any changes are requested to the PR, make them in your branch and push them to draft first. Then, run the draft site build from Travis CI again to check that the changes look right on the draft site. Open a new PR to staging and request another review.
 
-10. After the PR to staging is approved and merged, request a build of the [staging openliberty.io site from Travis CI](https://travis-ci.com/github/OpenLiberty/openliberty.io). To trigger a staging build, use the same procedure that you used in step 5 to trigger a draft build.
+10. After the PR to staging is approved and merged, request a build of the [staging openliberty.io site from Travis CI](https://travis-ci.com/github/OpenLiberty/openliberty.io). 
+    1. Click **More Options > Trigger Build**. Make sure the `staging` branch is selected, then click **Trigger custom build**. The staging site build starts running.
 
 11. When the build finishes, check to make sure the doc renders correctly on the [staging site](https://staging-openlibertyio.mybluemix.net/docs/). If any changes are needed make sure to add them to the draft branch and review on the draft site before you make a new PR to staging.
 
@@ -102,16 +100,14 @@ All edits and updates to existing Open Liberty Docs must be documented and track
 
 8. If any changes are requested to the PR, make them in your branch and push them to draft first. Then, run the draft site build from Travis CI again to check that they look right on the draft site. Open a new PR to staging and request another review.
 
-9. After the PR to staging is approved and merged, request a build of the [staging openliberty.io site from Travis CI](https://travis-ci.com/github/OpenLiberty/openliberty.io). To trigger a staging build, use the same procedure that you used in step 5 to trigger a draft build.
+9. After the PR to staging is approved and merged, request a build of the [staging openliberty.io site from Travis CI](https://travis-ci.com/github/OpenLiberty/openliberty.io). 
+    1. Click **More Options > Trigger Build**. Make sure the `staging` branch is selected, then click **Trigger custom build**. The staging site build starts running.
 
 10. When the build finishes, check to make sure the doc renders correctly on the [staging site](https://staging-openlibertyio.mybluemix.net/docs/). If any changes are needed make sure to add them to the draft branch and review on the draft site before you make a new PR to staging.
 
 11. After you verify the doc, post a link to it on the staging site to the Git issue and change the issue status to `Ready to publish`.  Open a PR from `staging` to `vNext` and Request a review of the PR from David Mueller (`dmuelle`), Charlotte Holt (`Charlotte-Holt`) or one of [the doc maintainers](https://github.com/orgs/OpenLiberty/teams/docs-maintainers/members). After the PR is approved and merged to `vNext`, the changes publish with the next scheduled release.
 
-
 ## Editing the Docs navigation
-
-
 _If you’re unsure of how to update the Open Liberty navigation or unfamiliar with the Antora navigation schema, work with a [doc maintainer](https://github.com/orgs/OpenLiberty/teams/docs-maintainers/members) to plan and commit your update._
 
 [Site navigation in the Antora framework](https://docs.antora.org/antora/2.3/navigation/files-and-lists/) is controlled by a `nav.adoc` file. The Open Liberty Docs navigation is split between two `nav.adoc` files, one for the main Docs content and one for the reference topics. The content of each of these files is an [unordered Asciidoc list](https://docs.antora.org/antora/2.3/navigation/files-and-lists/#list-structure), which determines the order and hierarchy of the navigation entries.

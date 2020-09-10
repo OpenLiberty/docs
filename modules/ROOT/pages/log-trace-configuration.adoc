@@ -10,23 +10,35 @@
 :page-type: general
 = Log and trace configuration
 
-Open Liberty has a unified logging component that handles messages that are written by applications and the runtime, and provides First Failure Data Capture (FFDC) capability. Logging data written by applications using `System.out`, `System.err`, or `java.util.logging.Logger` are combined into the server logs.
+Open Liberty has a unified logging component that handles messages that are written by applications and the runtime, and provides First Failure Data Capture (FFDC) capability. Logging data that is written by applications by using `System.out`, `System.err`, or `java.util.logging.Logger` streams are combined into the server logs.
 
-There are three primary log files for a server:
+A server has three primary log files:
 
-- `console.log` - This file is created by the `server start` command. It contains the redirected standard output and standard error streams from the JVM process. This console output is intended for direct human consumption so lacks some information useful for automated log analysis.
-- `messages.log` - This file contains all messages that are written or captured by the logging component. All messages that are written to this file contain additional information such as the message time stamp and the ID of the thread that wrote the message. This file is suitable for automated log analysis. This file does not contain messages that are written directly by the JVM process.
-- `trace.log` - This file contains all messages that are written or captured by the logging component and any additional trace. This file is created only if you enable additional trace. This file does not contain messages that are written directly by the JVM process.
+- `console.log` - This file is created by the `server start` command. It contains the redirected standard output and standard error streams from the JVM process. This console output is intended for direct human consumption and it lacks some information that is useful for automated log analysis.
+- `messages.log` - This file contains all messages that are written or captured by the logging component. All messages that are written to this file contain additional information such as the message timestamp and the ID of the thread that wrote the message. This file is suitable for automated log analysis. This file does not contain messages that are written directly by the JVM process.
+- `trace.log` - This file contains all messages that are written or captured by the logging component and any enabled trace. This file is created only if you enable trace. This file does not contain messages that are written directly by the JVM process.
 
+The following sections provide more information about configuring your Open Liberty logs:
+
+* <<#configuaration,Logging configuration>>
+* <<#storage,Log file storage management>>
+* <<#json,JSON logging>>
+  ** <<#names,Configurable JSON field names>>
+  ** <<#fields,Custom JSON log fields>>
+  ** <<#http,Expanded JSON HTTP access log fields>>
+* <<#docker,Docker image logging configuration>>
+* <<#binary,Binary logging>>
+* <<#settings,Configuration settings by source>>
+
+[#configuaration]
 == Logging configuration
-The logging component can be controlled through the server configuration. The logging component can be fully configured in `server.xml` using the `logging` element. However, logging is initialized before `server.xml` has been processed so configuring logging through `server.xml` can result in early log entries using a different log configuration from later ones. For this reason it is also possible to provide much of the logging configuration using `boostrap.properties` and in some cases using environment variables.
+The logging component can be controlled through the server configuration. The logging component can be fully configured in `server.xml` by the `logging` element. However, logging is initialized before `server.xml` is processed so configuring logging through `server.xml` can result in early log entries that use a different log configuration from later ones. To avoid this problem, you can provide much of the logging configuration in the `boostrap.properties` file and in some cases by using environment variables.
 
-== Managing log file storage
-
-
+[#storage]
+== Log file storage management
 The `console.log` file is created by redirecting the process `stdout` and `stderr` to a file. As a result, Liberty is unable to offer the same level of management, like log rollover, as it offers for `messages.log`. If you are concerned about the increasing size of the `console.log` file, you can disable the `console.log` file and use the `messages.log` file instead. All the log messages sent to `console.log` are written to the `messages.log` file, and you can configure file rollover.
 
-To disable the console log, and configure `messages.log` to roll over three times at 100Mb, use the following configuration:
+To disable the console log, and configure `messages.log` to roll over three times at 100 Mb, use the following configuration:
 
 [source,properties,linenums,role="code_column"]
 ----
@@ -36,10 +48,11 @@ com.ibm.ws.logging.console.log.level=OFF
 com.ibm.ws.logging.copy.system.streams=false
 ----
 
+[#json]
 == JSON logging
-When feeding log files into modern log aggregation and management tools it can be advantageous to have the log files stored using JSON format. This can be done in one of three ways:
+You can simplify log parsing by producing your logs in JSON format. JSON is a self-describing format that many log analysis tools can consume without requiring format-specific parsing instructions. You can configure Open Liberty logs to produce logs in JSON format either by editing the `bootstrap.properties` file or by specifying an environment variable. The following two examples show the configuration for each of these options:
 
-* Using the `bootstrap.properties` file:
+* Configure JSON logging in the `bootstrap.properties` file:
 +
 [source,properties,linenums,role="code_column"]
 ----
@@ -47,43 +60,79 @@ com.ibm.ws.logging.message.format=json
 com.ibm.ws.logging.message.source=message,trace,accessLog,ffdc,audit
 ----
 +
-* Using environment variables:
+* Configure JSON logging with environment variables:
 +
 [source,properties,linenums,role="code_column"]
 ----
 WLP_LOGGING_MESSAGE_FORMAT=json
 WLP_LOGGING_MESSAGE_SOURCE=message,trace,accessLog,ffdc,audit
 ----
-+
-* Using the `server.xml` file:
-+
-[source,xml,linenums,role="code_column"]
-----
-<logging messageFormat="json" messageSource="message,trace,accessLog,ffdc,audit" />
-----
-+
-When using `server.xml` to configure json format some log lines are written in the default non-JSON format prior to `server.xml` startup which can cause issues with some tools. For example, https://stedolan.github.io/jq/[`jq`] would have trouble understanding the log files.
 
-=== Configuring JSON field names
-When logs are in JSON format, you can use the `jsonFieldMappings` attribute to replace default field names with new field names. The following examples show sample configurations for renaming a JSON field:
+[#names]
+=== Configurable JSON field names
+When logs are in JSON format, you can use the `jsonFieldMappings` attribute to replace default field names with new field names. Replacing the default field names might be necessary if other servers in the same logging configuration use different field names than the Open Liberty default names. For example, an Open Liberty message is referred to by the `message` field name, but the message in another container might be in a field called `log`. In this case, two different visualizations of the messages show in the logs on a dashboard. If you modify the Open Liberty output field name so that it matches the other log, you can view them in the same visualization. The following examples show sample configurations for renaming a JSON field:
 
-* To configure a field name, include the following in the `server.env.` file:
+* To configure a new field name, include the following environmental variable in the `server.env` file:
 +
 [source,properties,linenums,role="code_column"]
 ----
 WLP_LOGGING_JSON_FIELD_MAPPINGS=loglevel:level
 ----
 +
-* To configure a field name for a specific source, include the following in the `server.env.` file:
+In this example, the `loglevel` field name is replaced by the `level` field name.
+
+
+* To configure a field name for a specific source, include the following environmental variable in the `server.env` file:
 +
 [source,properties,linenums,role="code_column"]
 ----
 WLP_LOGGING_JSON_FIELD_MAPPINGS=message:message:log
 ----
++
+In this example, the `message` field name is replaced by the `log` field name in the message log.
 
-=== Replacing default HTTP access log JSON fields
+For more information, see link:/blog/2019/10/11/configure-logs-JSON-format-190010.html#jlog[Configurable JSON log field names].
 
-When logs are in JSON format, you can use the `jsonAccessLogFields` attribute to replace the default JSON HTTP access log fields with a set of custom fields. You specify the replacement fields in the `logFormat` attribute of the `accesLogging` element within the `httpEndpoint` element. With this configuration, you can receive information that is otherwise not available in JSON logs, such as the remote user ID, request headers, and more. These logs can be used by log analysis tools, such as the Elastic stack, to better monitor your server. For more information about HTTP access log format options, see xref:access-logging.adoc[HTTP access logging].
+[#fields]
+=== Custom JSON log fields
+
+You can add custom fields to your JSON logs to gather information about a particular issue or incident. For example, if you want to check the requests made from a specific user, you can add a custom field to filter application logs by that user’s ID. Furthermore, it might be useful to have another field for the session ID so that you can analyze and filter application logs for a specific session.
+
+The Open Liberty `LogRecordContext` API can add custom fields to your log and trace records. This API adds a field by specifying a value for an extension. To use LogRecordContext, first import the `com.ibm.websphere.logging.hpel.LogRecordContext` class. The following examples show how to add different kinds of custom fields to your JSON logs:
+
+To add a string-valued field to your application logs, include the following line in your application:
+
+[source,java]
+----
+LogRecordContext.addExtension("userName","bob");
+----
+
+In this example, a custom field that is called `userName` is added for the `bob` user ID.
+
+To add fields with boolean, float, int, or long values, the extension name must include the suffixes `_bool`, `_float`, `_int`, or `_long`, as shown in the following examples:
+
+[source,java]
+----
+LogRecordContext.addExtension("extensionName_bool","true");
+LogRecordContext.addExtension("extensionName_int","112233");
+LogRecordContext.addExtension("extensionName_float","1.2");
+LogRecordContext.addExtension("extensionName_long","132");
+----
+
+To remove custom fields from the logs, use the following method to remove the extension that created the field:
+
+[source,java]
+----
+LogRecordContext.removeExtension(extensionName);
+----
+
+After you remove an extension, JSON output for subsequent logs and trace that are made on the same thread do not include that field.
+
+For more information, see link:/blog/2019/12/03/custom-fields-json-logs.html[Adding custom fields to JSON logs in Open Liberty].
+
+[#http]
+=== Expanded JSON HTTP access log fields
+You can use the `jsonAccessLogFields` attribute to replace the default JSON HTTP access log fields with an expanded set of fields. You specify the replacement fields in the `logFormat` attribute of the `accesLogging` element within the `httpEndpoint` element. With this configuration, you can receive information that is otherwise not available in JSON logs, such as the remote user ID, request headers, and more. These logs can be used by log analysis tools, such as the Elastic stack, to better monitor your server. For more information about HTTP access log format options, see xref:access-logging.adoc[HTTP access logging].
 
 The following example shows a configuration in the `server.xml` file to replace the default HTTP access log fields with custom fields that are specified by the `logFormat` attribute. xref:access-logging.adoc[HTTP access logging] must be enabled to receive JSON access logs.
 
@@ -97,10 +146,10 @@ The following example shows a configuration in the `server.xml` file to replace 
 
 For more information, see link:/blog/2020/07/30/json-logging-open-liberty-20008.html#accessJSON[HTTP access log fields in JSON logs].
 
-== Configuring logging for a Docker image
+[#docker]
+== Docker image logging configuration
 
-
-It is common in Docker environments to disable `messages.log` and instead format the console output as JSON. This can be done using environment variables:
+In Docker environments, you can disable the messages log and instead format the console output as JSON by using environment variables, as shown in the following example:
 
 [source,properties,linenums,role="code_column"]
 ----
@@ -111,7 +160,7 @@ WLP_LOGGING_CONSOLE_LOGLEVEL=info
 WLP_LOGGING_CONSOLE_SOURCE=message,trace,accessLog,ffdc,audit
 ----
 
-This can be simply set when running the `docker run` command by using `-e` to set the envrionment variables:
+You can specify this configuration when you run the `docker run` command by using the `-e` flag to set the environment variables:
 
 [role='command']
 ```
@@ -122,9 +171,10 @@ docker run -e "WLP_LOGGING_CONSOLE_SOURCE=message,trace,accessLog,ffdc"
            -e "WLP_LOGGING_MESSAGE_SOURCE=" open-liberty
 ```
 
+[#binary]
 == Binary logging
 
-Liberty has a high performance binary log format option that significantly reduces the overhead of writing trace files. Generally, when configuring binary logging, the `console.log` is disabled for best performance. This must be enabled using `bootstrap.properties`:
+Liberty has a high-performance binary log format option that significantly reduces the resources that are needed to write trace files. Generally, when you are configuring binary logging, the `console.log` is disabled for best performance. You can configure binary logging in the `bootstrap.properties` file, as shown in the following example:
 
 [source,properties,linenums,role="code_column"]
 ----
@@ -133,16 +183,16 @@ com.ibm.ws.logging.console.log.level=OFF
 com.ibm.ws.logging.copy.system.streams=false
 ----
 
-The `binaryLog` command line tool can be used to convert the binary log to a text file:
+The `binaryLog` command-line tool can be used to convert the binary log to a text file:
 
 [role='command']
 ```
 binaryLog view defaultServer
 ```
-
+[#settings]
 == Configuration settings by source
 
-The following table shows the equivalent `server.xml`, `bootstrap.properties`, and environment variable configurations along with brief descriptions. Full configuration documentation is available in the config reference for the config:logging[] element.
+The following table shows the equivalent `server.xml`, `bootstrap.properties`, and environment variable configurations along with brief descriptions. For more information, see the xref:reference:config/logging.adoc[logging element].
 
 .Logging configuration settings
 [%header,cols="6,9,9,9"]
@@ -152,7 +202,7 @@ The following table shows the equivalent `server.xml`, `bootstrap.properties`, a
 |hideMessage
 |com.ibm.ws.logging.hideMessage
 |
-|You can use this attribute to configure the messages keys that you want to hide from the `console.log` and `messages.log` files. If the messages are configured to be hidden, then they are redirected to the `trace.log` file.
+|You can use this attribute to configure the messages keys that you want to hide from the `console.log` and `messages.log` files. When the messages are hidden, they are redirected to the `trace.log` file.
 
 |jsonFieldMappings
 |com.ibm.ws.logging.json.field.mappings
