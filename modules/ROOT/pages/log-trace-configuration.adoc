@@ -25,7 +25,7 @@ The following sections provide more information about configuring your Open Libe
 * <<#json,JSON logging>>
   ** <<#names,Configurable JSON field names>>
   ** <<#fields,Custom message and trace JSON fields>>
-  ** <<#http,Custom HTTP access log JSON fields>>
+  ** <<#http,Selectable HTTP access log JSON fields>>
 * <<#docker,Docker image logging configuration>>
 * <<#binary,Binary logging>>
 * <<#settings,Configuration settings by source>>
@@ -107,7 +107,7 @@ To add a string-valued field to your application logs, include the following lin
 LogRecordContext.addExtension("userName","bob");
 ----
 
-The newly specified field is added to log and trace entries that are created on the same thread. In this example, a custom field that is called `userName` is added for the `bob` user ID.
+The newly specified field is added to log and trace entries that are created on the same thread that executes the `addExtension` method. In this example, a custom field that is called `userName` is added for the `bob` user ID.
 
 To add fields with boolean, float, int, or long values, the extension name must include the suffixes `_bool`, `_float`, `_int`, or `_long`, as shown in the following examples:
 
@@ -118,6 +118,8 @@ LogRecordContext.addExtension("extensionName_int","112233");
 LogRecordContext.addExtension("extensionName_float","1.2");
 LogRecordContext.addExtension("extensionName_long","132");
 ----
+
+When you specify these suffixes to add non-string values, the resulting JSON fields are not enclosed in quotes in the logs. Only string-valued JSON fields are enclosed in quotes in the logs.
 
 To remove custom fields from the logs, use the following method to remove the extension that created the field:
 
@@ -131,10 +133,10 @@ After you remove an extension, JSON output for subsequent logs and trace that ar
 For more information, see link:/blog/2019/12/03/custom-fields-json-logs.html[Adding custom fields to JSON logs in Open Liberty].
 
 [#http]
-=== Custom HTTP access log JSON fields
-You can use the `jsonAccessLogFields` attribute to replace the default HTTP access log JSON fields with a custom set of fields. You specify the replacement fields in the `logFormat` attribute of the `accesLogging` element within the `httpEndpoint` element. With this configuration, you can receive information that is otherwise not available in JSON logs, such as the remote user ID, request headers, and more. These logs can be used by log analysis tools, such as the Elastic stack, to better monitor your server. For more information about HTTP access log format options, see xref:access-logging.adoc[HTTP access logging].
+=== Selectable HTTP access log JSON fields
+You can use the `jsonAccessLogFields` attribute to replace the default HTTP access log JSON fields with a larger set of fields. You specify the replacement fields in the `logFormat` attribute of the `accesLogging` element within the `httpEndpoint` element. With this configuration, you can receive information that is otherwise not available in JSON logs, such as the remote user ID, request headers, and more. These logs can be used by log analysis tools, such as the Elastic stack, to better monitor your server. For more information about HTTP access log format options, see xref:access-logging.adoc[HTTP access logging].
 
-The following example shows a configuration in the `server.xml` file to replace the default HTTP access log fields with custom fields that are specified by the `logFormat` attribute. xref:access-logging.adoc[HTTP access logging] must be enabled to receive JSON access logs.
+The following example shows a configuration in the `server.xml` file to replace the default HTTP access log fields with fields that are specified by the `logFormat` attribute. xref:access-logging.adoc[HTTP access logging] must be enabled to receive JSON access logs.
 
 [source,xml]
 ----
