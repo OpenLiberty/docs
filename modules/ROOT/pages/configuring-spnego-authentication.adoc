@@ -19,12 +19,11 @@ https://access.redhat.com/documentation/en-us/red_hat_jboss_enterprise_applicati
 You can also configure SPNEGO to work on Linux operating systems.
 This task demonstrates how to configure an Open Liberty server to support SSO for HTTP requests with SPNEGO.
 
-== Prerequisites
+== Before you begin
 
 To enable SPNEGO, the clocks for the client, Active Directory server, and Open Liberty server must be synchronized within 5 minutes of each other.
-You can configure this allowable difference in synchronization.
 
-Before you begin, ensure that the following software is available:
+Make sure that the following software is available:
 
 - A Microsoft Windows Server running an Active Directory Domain Controller and associated Kerberos Key Distribution Center (KDC).
 In this example, the hostname for the domain controller is `myAdMachine.example.com`, the domain controller name is `mydomain.example.com`, and the Kerberos realm name is `MYDOMAIN.EXAMPLE.COM`.
@@ -34,21 +33,10 @@ In this example, the hostname for the client is `myClientMachine.example.com`.
 Users in the Active Directory must be able to access Open Liberty server-protected resources by using a native Open Liberty server authentication mechanism, such as xref:reference:feature/socialLogin-1.0.adoc[Social Media Login].
 In this example, the Open Liberty server hostname  is `myLibertyMachine.example.com`.
 
-== Procedure
-
-To configure SPNEGO, complete the following items:
-
-. Create a Kerberos service principal name and keytab file and copy the keytab file to Open Liberty.
-. Create a Kerberos configuration file on Open Liberty, and configure the xref:reference:feature/spnego-1.0.adoc[SPENGO feature].
-. Configure the browser client so users can access SPNEGO-protected resources from a browser.
-
-=== Create a Kerberos service principal name and keytab file
+== Creating a Kerberos service principal name and keytab file
 
 . Create a user account for the Open Liberty server.
 This account is used to map to the Kerberos service principal name (SPN).
-On Active Directory servers, create this account by going to **Start > Administrative Tools > Active Directory Users and Computers**.
-Then, right-click **Users** in the pane, and click **New > User**.
-Ensure that you create the user account with password security.
 
 . Run the Microsoft `setspn` command to map the user account to a Kerberos SPN.
 This user account represents the Open Liberty server as a Kerberos service with the KDC.
@@ -56,14 +44,6 @@ The following example shows how to run the `setspn` command:
 +
 ----
 setspn -S HTTP/myLibertyMachine.example.com myLibertyMachine_http
-----
-+
-The previous example command produces the following output:
-+
-----
-Registering ServicePrincipalNames for CN=myLibertyMachine_http,CN=Users,DC=MYDOMAIN,DC=EXAMPLE,DC=COM
-                 HTTP/myLibertyMachine.example.com
-Updated object
 ----
 
 . Create the Kerberos keytab file by running the Microsoft `ktpass` command.
@@ -99,30 +79,18 @@ The following example includes the `myOtherKrb5.keytab` file:
 ----
 ktpass -in myOtherKrb5.keytab -out krb5.keytab -princ HTTP/myLibertyMachine.example.com@MYDOMAIN.EXAMPLE.COM -mapUser myLibertyMachine_http -mapOp set -pass security -crypto RC4-HMAC-NT -ptype KRB5_NT_PRINCIPAL
 ----
-+
-The previous example command produces the following output:
-+
-----
-Targeting domain controller: myAdMachine.MYDOMAIN.EXAMPLE.COM
-Using legacy password setting method
-Successfully mapped HTTP/myLibertyMachine.example.com to myLibertyMachine_http.
-Key created.
-Output keytab to krb5.keytab:
-Keytab version: 0x502
-keysize 93 HTTP/myLibertyMachine.example.com@MYDOMAIN.EXAMPLE.COM ptype 1 (KRB5_NT_PRINCIPAL) vno 3 etype 0x17 (RC4-HMAC) keylength 16 (0x148d643db283327d3f3d44547da8cade)
-----
 
-=== Copy the Kerberos keytab and configuration files and enable SPNEGO web authentication
+== Copying the Kerberos keytab and configuration files
+
 . Copy the Kerberos keytab file from the domain controller to the Open Liberty server.
 The default location of the file is the same directory as the Kerberos configuration file, which varies depending on the operating system:
 * For Windows operating systems, the default location is `C:\windows\krb5.ini`.
 * For Mac and Linux operating systems, the default location is `/etc/krb5.conf`.
 
 . Create a Kerberos configuration file.
-The Kerberos configuration file contains client configuration information.
-This information includes the locations of KDCs for the realms of interest, defaults for the current Kerberos realm, and mappings of hostnames onto Kerberos realms.
+This file includes the locations of KDCs for the realms of interest, defaults for the current Kerberos realm, and mappings of hostnames onto Kerberos realms.
 +
-Before you choose an encryption type, ensure that you have a common encryption type for the Kerberos configuration file, Kerberos keytab file, Kerberos SPN, and Kerberos client.
+Ensure that you have a common encryption type for the Kerberos configuration file, Kerberos keytab file, Kerberos SPN, and Kerberos client.
 For example, if the Kerberos client uses the RC4-HMAC encryption type, the target server must support the RC4-HMAC encryption type.
 The Kerberos configuration file must also list RC4-HMAC first in the `default_tgt_enctypes` and `default_tkt_enctypes` parameters.
 
@@ -138,40 +106,24 @@ klist -k -t /etc/krb5.keytab
 ----
 kinit -k -t /etc/krb5.keytab HTTP/myLibertyMachine.example.com
 ----
-.. Run the `klist` command again to list the Kerberos ticket.
-If you get the Kerberos ticket, then the Kerberos keytab and configuration files are valid.
 
-. Configure and enable SPNEGO web authentication for Open Liberty.
-Enable SPNEGO web authentication by enabling the Simple and Protected GSSAPI Negotiation Mechanism (SPNEGO) feature (`spnego-1.0`).
-When you add the SPNEGO feature to your `server.xml` file, xref:reference:feature/spnego-1.0.adoc#_default_spnego_configuration[the default SPNEGO configuration] is automatically enabled.
-+
-You can also specify any additional configuration options as necessary.
-Open Liberty supports many common SPNEGO scenarios and configurations.
-For example, you can filter HTTP requests to require SPNEGO authentication for only certain requests, web applications, hosts, or user agents.
-For information about how to enable this feature and configuration examples, see the xref:reference:feature/spnego-1.0.adoc[Open Liberty feature documentation].
-+
-The runtime forms the default SPN by using the fully qualified hostname.
-If the default SPN doesn't match the SPN that's in the `krb5.keytab` file, then you need to specify the xref:reference:config/spnego.adoc[`servicePrincipalNames` attribute], for example:
-+
-----
-<spnego id="mySpnego" servicePrincipalNames="HTTP/myLibertyMachine.example.com"/>
-----
-+
-When values for the `krb5Config` or `krb5Keytab` attributes aren't provided, each file is expected to exist at its default location.
-+
-If you use the Oracle JDK or Java 11, add the `java.security.krb5.kdc` and `java.security.krb5.realm` JVM system properties to the `jvm.options` file, as shown in the following example:
+== Enabling SPNEGO web authentication
+
+. Enable SPNEGO web authentication by adding xref:reference:feature/spnego-1.0.adoc[the SPNEGO feature] (`spnego-1.0`) to your `server.xml` file.
+
+. If you use any Oracle JDK or Java 11, add the `java.security.krb5.kdc` and `java.security.krb5.realm` JVM system properties to the `jvm.options` file, as shown in the following example:
 +
 ----
 -Djava.security.krb5.kdc=myKdcMachine.example.com
 -Djava.security.krb5.realm=EXAMPLE.COM
 ----
 
-=== Configure the client application on the client computer
+== Configuring the client application on the client computer
 
 The following steps are for users who access SPNEGO-protected resources from a browser and must be completed on the client computer.
 Ensure that browser supports SPNEGO authentication and that the user is logged in to the domain controller.
 
-==== Google Chrome on Windows
+=== Google Chrome on Windows
 
 . Open the Control Panel and click **Internet Options**.
 In the window that's displayed, click the **Security** tab.
@@ -182,9 +134,9 @@ Close the second Local intranet window.
 . Click **OK**, and close the Local intranet window.
 . In the Internet Options window, click the **Advanced** tab and scroll to **Security** settings. Ensure that the **Enable Integrated Windows Authentication** box is selected.
 . Click **OK**.
-Restart Internet Explorer to activate this configuration.
+Restart Chrome to activate this configuration.
 
-==== Google Chrome on Mac or Linux
+=== Google Chrome on Mac or Linux
 
 . Add the `--auth-server-whitelist` parameter to the `google-chrome` command.
 For example, to configure SPNEGO for Chrome on Linux, run the following command:
@@ -195,7 +147,7 @@ google-chrome --auth-server-whitelist = "hostname/domain"
 +
 This command runs Chrome and sets the `--auth-server-whitelist` parameter so that SPNEGO can work in the browser.
 
-==== Microsoft Internet Explorer
+=== Microsoft Internet Explorer
 
 . Log in to the Active Directory domain.
 . In an Internet Explorer window, click **Tools > Internet Options**.
@@ -209,7 +161,7 @@ Close the second Local intranet window.
 . Click **OK**.
 Restart Internet Explorer to activate this configuration.
 
-==== Mozilla Firefox
+=== Mozilla Firefox
 
 . Log in to the Active Directory domain.
 . In the Firefox address field, type `about:config`.
@@ -223,9 +175,14 @@ Enter a comma-delimited list of trusted domains or URLs.
 . Click **OK**.
 Restart Firefox to activate this configuration.
 
-== Results
+== What to do next
 
-After you configure SPNEGO authentication, you can deploy applications in your company that users must log in to only once.
 To verify that SPNEGO is working, log in to the domain controller and access a protected resource on Open Liberty.
 Because you are logged in to the domain controller, you aren't prompted for credentials.
 If you aren't logged in to the domain controller and attempt to access a protected resource, you are prompted for credentials.
+
+After you configure SPNEGO authentication, you can deploy applications in your company that users must log in to only once.
+
+== See also
+
+xref:single-sign-on.adoc[Single sign-on]
