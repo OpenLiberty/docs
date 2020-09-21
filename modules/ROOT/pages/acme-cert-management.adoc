@@ -20,7 +20,7 @@ In the past, certificate issuance required significant human involvement. https:
 
 == ACME and Open Liberty
 
-To use an ACME CA with your Open Liberty server, you must enable and configure [the acmeCA client feature. At a minimum, you must provide the URL of an ACME CA and the name of one or more domains that your server controls. To receive a callback from the ACME provider, port 80 must be open to comply with the standards for https://letsencrypt.org/docs/challenge-types/[the HTTP-01 challenge type]. For more information, see the acmeCA feature (link pending).
+To use an ACME CA with your Open Liberty server, you must enable and configure the acmeCA client feature. At a minimum, you must provide the URL of an ACME CA and the name of one or more domains that your server controls. To receive a callback from a public ACME provider, port 80 must be open to comply with the standards for https://letsencrypt.org/docs/challenge-types/[the HTTP-01 challenge type]. For internal or test ACME providers, you can use any open port to complete the ACME challenge. For more information, see the acmeCA feature (link pending).
 
 When an Open Liberty server starts with transport layer security (TLS) enabled, a self-signed server certificate is created for the server. This certificate can be used for testing and development purposes. However, since the certificate isn't signed by a CA, clients that connect to the server over TLS don't trust it. Browsers then require clients to confirm whether they trust the server, which can cause problems for containerized environments and microservices, even during testing and development.
 
@@ -114,31 +114,32 @@ https://mydomain.com:443/ibm/api/acmeca/certificate
 
 To help troubleshoot problems with ACME CA certificates, you can enable trace by using the following trace specification:
 ----
-ACME=all
+ACMECA=all
 ----
 
 To add transport security trace, use the following specification:
 ----
-com.ibm.ws.ssl.*=all
+com.ibm.ws.security.acme.*=all
 ----
 
 The following sections describe common problems that you might encounter with ACME CA accounts and connections. For configuration examples, see the acmeCA client feature (link pending).
 
-=== Certificate request times out
+=== The certificate request times out
 If the certificate request times out, you can set a longer timeout value by using the  `challengePollTimeout` and `orderPollTimeout` properties.
 
-=== Received an HTTP code 429 message on a renew request
+=== You received an HTTP code 429 message on a renew request
 To prevent too many immediate certificate-renew requests and a possible negative impact on the server, certificate-renew requests are blocked for a small window of time. After this window expires, new requests can be made. The 429 message indicates when new requests can be made.
 
-=== Received a `rate limit exceeded` message
+=== You received message that indicates the rate limit was exceeded
 Some CA, such as LetsEncrypt, enforce a rate limit on requesting new certificates. If you are testing and request several certificates in a short amount of time, use an appropriate testing server. For example, LetsEncrypt provides a staging server with higher rate limits.
 
 === The certificate is renewed at startup when it isn't expired
 The following conditions can cause an unexpired certificate to be automatically renewed at startup:
-- The certificate is marked as revoked
-- The certificate expiration date within the window set by the `renewBeforeExpiration` property.
-- The directory URI, the domain, or other account information was changed and a new certificate is required.
-- The server was started with the `--clean` option and historical information on the certificate was removed.
+
+* The certificate is marked as revoked
+* The certificate expiration date is within the window set by the `renewBeforeExpiration` property.
+* The directory URI, the domain, or other account information was changed and a new certificate is required.
+* The server was started with the `--clean` option and historical information on the certificate was removed.
 
 === The authorization challenge fails with a CWPKI2001E message
 
@@ -168,7 +169,7 @@ CWWKS9582E: The [defaultSSLConfig] sslRef attributes required by the orb element
 
 To work around this error after a failure to fetch the initial certificate, remove the empty keystore.
 
-=== Received a CWPKI2058W warning message during a revocation check
+=== You received a CWPKI2058W warning message during a revocation check
 
 When you run containerized versions of ACME CA servers, the OCSP responder URL that is defined in the certificate might not be reachable. You can override the OCSP responder URL in the certificate by specifying the 'ocspResponderUrl' attribute in the 'acmeRevocationChecker' element. If this URL is not configured, the following  warning can occur during revocation checks:
 
@@ -176,4 +177,11 @@ When you run containerized versions of ACME CA servers, the OCSP responder URL t
 CWPKI2058W: Certificate revocation status checking ignored soft failures. Revocation checking might be incomplete. The failures are: '[java.security.cert.CertPathValidatorException: Unable to determine revocation status due to network error, java.security.cert.CertPathValidatorException: Unable to determine revocation status due to network error]'
 ----
 
-If you see this network error warning and you are running with a test CA server, you can add a custom `ocspResponderUrl` URL. If the test CA does not support revocation testing, you can disable revocation testing.
+If you see this network error warning and you are running with a test CA server, you can add a custom `ocspResponderUrl` URL. If the test CA does not support revocation testing, you can disable revocation testing by setting the enabled property on the `acmeRevocationChecker` attribute to false, as shown in the following example:
+
+----
+<acmeCA>
+   ...
+   <acmeRevocationChecker enabled="false" />
+</acmeCA>
+----
