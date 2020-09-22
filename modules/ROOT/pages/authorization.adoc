@@ -15,7 +15,7 @@
 
 For an application to be secure, it must be able to manage access to protected resources. Authorization determines which resources a user can access.
 
-In an application where only certain users or groups are entitled to access certain resources, users and groups are assigned roles that represent which resources they can access.
+In applications where only certain users are entitled to access certain resources, users and groups are assigned roles that correspond to the resources that they can access.
 For example, in a payroll application, users in the `Employee` role can view a page that lists their hourly wages and hours worked.
 However, only users in the `Manager` role can edit employee wages.
 During xref:authentication.adoc[authentication], Open Liberty identifies users and determines what access groups they belong to.
@@ -52,7 +52,7 @@ You can map the roles that are declared in the application to existing user grou
 </application-bnd>
 ----
 
-The `name` attribute of the `security-role` element corresponds to a security role specified in the application. The `group name` elements correspond to the user groups that are specified by a user registry or SSO provider.
+The `name` attribute of the `security-role` element corresponds to a security role that are specified in the application. The `group name` elements correspond to the user groups that are specified by a user registry or SSO provider.
 If the role names match the group names exactly, the server maps the group to the role with a matching name by default.
 If you use this default mapping, you do not need specify an `application-bnd` element in the `server.xml` file.
 
@@ -66,15 +66,18 @@ For more information, see the link:/guides/microprofile-jwt.html#securing-the-sy
 === Configure servlet security roles
 
 The `@RolesAllowed` annotation typically specifies role-based access to back-end application resources, such as calls to a database.
-To control authorization for front-end resources, such as HTTP calls, you can configure security roles at the servlet level.
-If you want to specify security roles in the servlet code, configure the `@ServletSecurity` annotation. You can set the `rolesAllowed` attribute within the `@HttpConstraint` or `@HttpMethodConstraint` parameters to the permissible roles, as shown in the following example:
+To control authorization for front-end resources, such as HTTP calls, you can configure security roles in the servlet code.
+If you want to specify security roles in the servlet code, configure the `@ServletSecurity` annotation. You can specify the permissible roles with `rolesAllowed` attribute on the `@HttpConstraint` or `@HttpMethodConstraint` parameters. The `@HttpMethodConstraint` parameter specifies constraints for specific HTTP methods. The `@HttpConstraint` parameter specifies the default constraints for all HTTP methods that are not otherwise specified by the `@HttpMethodConstraint` parameter. 
+
+In the following example, the `@HttpConstraint` parameter specifies that all HTTP methods are constrained either to the `user` role or the `admin` role. The `@HttpMethodConstraint` parameter specifies that the `POST` method is constrained only to users who are in the `admin` role:
 
 [source,java]
 ----
-@ServletSecurity (value = @HttpConstraint(rolesAllowed = { "user", "admin" }))
+@ServletSecurity (value = @HttpConstraint(rolesAllowed = { "user", "admin" }),
+  httpMethodConstraints = {@HttpMethodConstraint(value = "POST", rolesAllowed = {"admin"})})
 ----
 
-The `@HttpMethodConstraint` parameter specifies HTTP methods-specific constraints. The `@HttpConstraint` parameter specifies constraints for any HTTP methods that are not otherwise specified by the `@HttpMethodConstraint` parameter.
+
 
 For more information, see link:/guides/security-intro.html#adding-authentication-and-authorization[the Adding authentication and authorization section of the Securing a web application guide].
 
