@@ -1,0 +1,95 @@
+// Copyright (c) 2013, 2020 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-layout: general-reference
+:page-type: general
+= Single sign-on (SSO)
+
+Single sign-on (SSO) enables users to sign in to applications by using one account instead of creating an account specifically for each application. By configuring SSO for your applications, you can simplify the registrations and logins for your users.
+
+When SSO is enabled, the user's authentication data is transferred among applications with secure tokens. For example, when a user signs in to an SSO enabled service, the service creates a token that identifies the verified user. This token is then passed to any application that the user accesses after the application verifies the user's identity with the service, which results in a successful login.
+
+You can configure Transport Security Layer (TLS) to encrypt communication between services for any SSO method that you choose so that the authentication tokens are not intercepted during transmission. For more information, see https://draft-openlibertyio.mybluemix.net/docs/ref/general/#secure-communication-tls.html[Secure communication with Transport Layer Security (TLS)].
+
+Open Liberty supports several commonly used methods of implementing SSO in applications. The method that you choose to use depends on the needs of your organization.
+
+
+== Social media login
+
+//intro to method and when you should use it
+link:https://auth0.com/learn/social-login/[Social Media Login] is a form of SSO that enables users to sign in to applications by using their existing social media account instead of creating an account specifically for the application. When you enable Social Media Login, the user accesses an application and selects a social media platform from a form, then uses their existing account on that platform to log in. You can enable Social Media Login for any social media platform that uses the OAuth or OpenID Connect (OIDC) standard for authentication.
+
+During the OpenID Connect authentication process, a browser accesses a protected application and is redirected to the OpenID provider, an authorization server that implements OpenID Connect. The OpenID provider interacts with the user's to authenticate the user. After authentication, the user’s browser is redirected back to the application. The application or its container then contacts the OpenID provider and obtains a JSON Web Token (JWT) that contains claims about the user, and completes authorization. If successful, the user is granted access to the application. The application can access the claims that are sent in the JWT. If you use the Social Media Login feature, the entire OpenID Connect authorization process is handled by the social media platform, which makes the process simpler. To configure Social Media Login for your application, you can enable the feature:socialLogin[] feature.
+
+
+
+
+== JSON Web Tokens (JWT)
+
+//intro to method and when you should use it
+link:https://jwt.io/[JSON Web Token (JWT)] is a standard that is used to propagate the user identity that is established by SSO between different microservice applications. By configuring SSO user authentication with a JWT, you can manage the identity that is shared between applications.
+
+After the user's identity is established with an SSO method, such as Social Media Login, you can use the JWT to propagate the identity to back-end services. The JWT uses claims to transfer authentication and group membership information about a user between services. The claims can verify who the user is, when the user requests were made, and any other types of information that the user agreed to be handled by you. Each consumer of the token can verify the claims in the token, by confirming that they trust the issuer’s signature of the token. After the consumer verifies the signature, they know that the content of the token wasn't altered after it was created. This JWT format allows each of the involved parties to easily agree on a specific set of claims that facilitate the propagation of the user’s identity. This propagation of the user’s identity can be further defined by the MicroProfile JSON Web Tokens feature.
+
+MicroProfile JSON Web Tokens extend the capabilities of the standard JWT format to verify claims between two services and make accessing claim information simpler for application developers. MicroProfile JWT defines how a JWT interacts with Java EE and Jakarta EE container security so that the JWT is easily used with JAX-RS applications. For more information about using JWTs to secure JAX-RS applications, see link:/guides/microprofile-jwt.html[Guide:  Securing microservices with JSON Web Tokens].
+
+The MicroProfile JSON Web Tokens format contains required claims, which must be specified to propagate user identity. A claim is a piece of information that is asserted about a subject that is represented as a name-value pair, which consists of a claim name and a claim value. The following example shows the MicroProfile JWT format that contains the required claims that are specified in a JSON file:
+
+[source,javascript]
+----
+{
+   "typ": "JWT",
+   "alg": "RS256",
+   "kid": "abc-1234567890"
+}
+{
+      "iss": "https://server.example.com",
+      "aud": "s6BhdRkqt3",
+      "jti": "a-123",
+      "exp": 1311281970,
+      "iat": 1311280970,
+      "sub": "24400320",
+      "upn": "jdoe@server.example.com",
+      "groups": ["red-group", "green-group", "admin-group", "admin"],
+}
+----
+In the example, the format contains two parts that include the header and the payload. The header contains the `typ`, `alg`, and `kid` attributes. The payload is the second part of the token format that contains the claims.
+
+For more information, see link:https://www.eclipse.org/community/eclipse_newsletter/2017/september/article2.php#Minimum%20MP-JWT%20Required%20Claims#Minimum%20MP-JWT%20Required%20Claims[Eclipse MicroProfile - JWT RBAC Security (MP-JWT)]. To configure MicroProfile JSON Web Tokens for your JAX-RS application, you can enable the feature:mpJwt[] feature.
+
+
+
+== SPNEGO
+
+//intro to method and when you should use it
+link:https://access.redhat.com/documentation/en-us/red_hat_jboss_enterprise_application_platform/6.4/html/security_guide/about_spnego[SPNEGO] enables users to log in to applications by using their Microsoft Windows account login instead of needing to use a separate account to log in to their Windows operating system. SPNEGO can be used to provide SSO in your application if the organization uses Active Directory. SPNEGO can also be configured to work on Linux operating systems.
+
+//How to use it
+For more information, see link:https://draft-openlibertyio.mybluemix.net/docs/ref/general/#configuring-spnego-auth.html[Configuring SPNEGO authentication in Open Liberty].
+
+
+
+
+
+== SAML
+
+//intro to method and when you should use it
+
+link:https://www.cloudflare.com/learning/access-management/what-is-saml/[SAML] is a standard that offers significant flexibility for developers to choose the method of authentication for users. This flexibility is enabled by the exclusive management of the information exchange between the Identity Provider and the Service Provider. When integrated with SSO, SAML enables web applications to delegate user authentication to a centralized location for enterprises to manage and control identities.
+
+Open Liberty supports the SAML web browser SSO profile with HTTP post binding, single logout, and SAML metadata. SAML metadata is configuration data that is required to automatically negotiate agreements between the service provider and the identity provider to help ensure secure authentication.
+
+You can configure Open Liberty to enable SAML single logout. SAML single logout is a near-simultaneous logout of a user from a specific authentication session and from all active service provider sessions that are associated with the authentication session. Single logout can be initiated by both the service provider and the identity provider. To configure SAML for your application, you can enable the feature:samlWeb[] feature.
+
+
+== LTPA
+
+//intro to method and when you should use it
+link:https://www.miniorange.com/ltpa-authentication[LTPA] provides a method of SSO configuration to authenticate users to access applications. To complete authentication, a token is generated that contains details about the user identity. When authentication is successful, the LTPA token passes to other servers through cookies for web resources when SSO is enabled. LTPA cookies enable a user to authenticate their identity only once when they are connected to an application. After the connection to the application is established, the user can access resources in other applications that exist on the same server without getting prompted to authenticate. In Open Liberty, LTPA is configured by default when the Application Security feature is enabled.
+
+//How to use it
