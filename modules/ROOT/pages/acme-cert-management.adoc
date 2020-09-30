@@ -12,7 +12,7 @@
 :page-type: general
 = Automated certificate management with ACME
 
-The Automatic Certificate Management Environment (ACME) protocol automates the process of certificate verification and issuance. You can use the Open Liberty acmeCA client feature to automatically get a browser-trusted certificate for domains on your server from an ACME certificate authority (CA).
+The Automatic Certificate Management Environment (ACME) protocol automates the process of certificate verification and issuance. You can use the Open Liberty Automatic Certificate Management Environment (ACME) Support feature to automatically get a browser-trusted certificate for domains on your server from an ACME certificate authority (CA).
 
 Clients use certificates to authenticate domain names on a server. These certificates verify that the server legitimately controls a domain and protect clients from man-in-the-middle attacks. The certificate is a record that server control over a domain is tested and verified by a CA. To get a certificate, the server must generate a certificate signing request (CSR) and respond to several challenges from the CA. These challenges prove the server controls the domain that is being verified.
 
@@ -20,15 +20,15 @@ In the past, certificate issuance required significant human involvement. https:
 
 == ACME and Open Liberty
 
-To use an ACME CA with your Open Liberty server, you must enable and configure the acmeCA client feature. At a minimum, you must provide the URL of an ACME CA and the name of one or more domains that your server controls. To receive a callback from a public ACME provider, port 80 must be open to comply with the standards for https://letsencrypt.org/docs/challenge-types/[the HTTP-01 challenge type]. For many internal or test ACME providers, you can use any open port to complete the ACME challenge. For more information, see the acmeCA feature (link pending).
+To use an ACME CA with your Open Liberty server, you must enable and configure xref:reference:feature/acmeCa-2.0.adoc[the ACME Support feature] (`acmeCa-2.0`). At a minimum, you must provide the URL of an ACME CA and the name of one or more domains that your server controls. To receive a callback from a public ACME provider, port 80 must be open to comply with the standards for https://letsencrypt.org/docs/challenge-types/[the HTTP-01 challenge type]. For many internal or test ACME providers, you can use any open port to complete the ACME challenge.
 
 When an Open Liberty server starts with transport layer security (TLS) enabled, a self-signed server certificate is created for the server. This certificate can be used for testing and development purposes. However, since the certificate isn't signed by a CA, clients that connect to the server over TLS don't trust it. Browsers then require clients to confirm whether they trust the server, which can cause problems for containerized environments and microservices, even during testing and development.
 
-To avoid problems with self-signed certificates, services such as LetsEncrypt use the ACME protocol to provide free CA-signed certificates over the public web. When the acmeCA client feature is enabled, the Open Liberty server automatically requests a certificate from your configured CA provider at startup if a new certificate is needed. The feature can also respond to challenges from the CA and manage certificate renewals and revocations.
+To avoid problems with self-signed certificates, services such as LetsEncrypt use the ACME protocol to provide free CA-signed certificates over the public web. When the ACME Support feature is enabled, the Open Liberty server automatically requests a certificate from your configured CA provider at startup if a new certificate is needed. The feature can also respond to challenges from the CA and manage certificate renewals and revocations.
 
 == Acme CA Account management
 
-The acmeCA client feature requires a valid account with an ACME CA. Account details are stored in an account key file. Before a CSR is sent, the feature first checks for an existing account key file. If no account key file exists, the feature generates a new one. This file is then used to either register a new account or log in to an existing account. Like any security credential, the account key file must be backed up and protected.
+The ACME Support feature requires a valid account with an ACME CA. Account details are stored in an account key file. Before a CSR is sent, the feature first checks for an existing account key file. If no account key file exists, the feature generates a new one. This file is then used to either register a new account or log in to an existing account. Like any security credential, the account key file must be backed up and protected.
 
 You can request a new account key at any time by using the REST API. Renewing an account key might be necessary if your existing key is compromised, or as a periodic security precaution. To renew the account key, a user that is in the administrator role can send the following HTTPS request:
 
@@ -41,9 +41,9 @@ Some certificate authorities provide terms of service. If an ACME CA modifies it
 
 === Certificate renewal and revocation
 
-You can configure the acmeCA client feature to automatically renew any expiring or revoked certificates. The `renewBeforeExpiration` property specifies the amount of time before a certificate expires that the server requests a new certificate. The default value for this property is 7 days.
+You can configure the ACME Support feature to automatically renew any expiring or revoked certificates. The `renewBeforeExpiration` property specifies the amount of time before a certificate expires that the server requests a new certificate. The default value for this property is 7 days.
 
-When the server starts, it checks the expiration date on the CA-signed certificate. If the expiration date is within the specified range of time, or if the certificate is already expired or revoked, the server automatically requests a new certificate. While the server is running, it checks the certificate daily and automatically renews any expiring or revoked certificate. If a renew request fails, the background process continues to request a new certificate hourly until the request is successful. For more information, see the acmeCA client feature (link pending).
+When the server starts, it checks the expiration date on the CA-signed certificate. If the expiration date is within the specified range of time, or if the certificate is already expired or revoked, the server automatically requests a new certificate. While the server is running, it checks the certificate daily and automatically renews any expiring or revoked certificate. If a renew request fails, the background process continues to request a new certificate hourly until the request is successful. For more information, see xref:reference:feature/acmeCa-2.0.adoc[the ACME Support feature].
 
 Runtime changes to the acmeCA configuration can trigger an automatic certificate renewal request. For example, if the directory URI is changed to a different endpoint, the server requests a new certificate.
 
@@ -122,7 +122,7 @@ To add transport security trace, use the following specification:
 com.ibm.ws.security.acme.*=all
 ----
 
-The following sections describe common problems that you might encounter with ACME CA accounts and connections. For configuration examples, see the acmeCA client feature (link pending).
+The following sections describe common problems that you might encounter with ACME CA accounts and connections. For configuration examples, see xref:reference:feature/acmeCa-2.0.adoc[the ACME Support feature].
 
 === The certificate request times out
 If the certificate request times out, you can set a longer timeout value by using the  `challengePollTimeout` and `orderPollTimeout` properties.
@@ -164,7 +164,7 @@ If the server cannot fetch a certificate, an empty keystore is created. In older
 CWPKI2030E: The ACME service could not install a certificate under the default alias into the defaultKeyStore keystore. The error is 'The keystore [defaultKeyStore] is not present in the configuration'.```
 ----
 ----
-CWWKS9582E: The [defaultSSLConfig] sslRef attributes required by the orb element with the defaultOrb id have not been resolved within 10 seconds. As a result, the applications will not start. Ensure that you have included a keyStore element and that Secure Sockets Layer (SSL) is configured correctly. If the sslRef is defaultSSLConfig, then add a keyStore element with the id defaultKeyStore and a password.
+CWWKS9582E: The [defaultSSLConfig] sslRef attributes required by the orb element with the defaultOrb id have not been resolved within 10 seconds. As a result, the applications will not start. Ensure that you included a keyStore element and that Secure Sockets Layer (SSL) is configured correctly. If the sslRef is defaultSSLConfig, then add a keyStore element with the ID value of `defaultKeyStore` and a password.
 ----
 
 To work around this error after a failure to fetch the initial certificate, remove the empty keystore.
@@ -177,7 +177,7 @@ When you run containerized versions of ACME CA servers, the OCSP responder URL t
 CWPKI2058W: Certificate revocation status checking ignored soft failures. Revocation checking might be incomplete. The failures are: '[java.security.cert.CertPathValidatorException: Unable to determine revocation status due to network error, java.security.cert.CertPathValidatorException: Unable to determine revocation status due to network error]'
 ----
 
-If you see this network error warning and you are running with a test CA server, you can add a custom `ocspResponderUrl` URL. If the test CA does not support revocation testing, you can disable revocation testing by setting the enabled property on the `acmeRevocationChecker` attribute to false, as shown in the following example:
+If you see this network error warning and you are running with a test CA server, you can add a custom `ocspResponderUrl` URL. If the test CA does not support revocation testing, you can disable revocation testing by setting the `enabled` attribute on the `acmeRevocationChecker` element `false`, as shown in the following example:
 
 ----
 <acmeCA>
