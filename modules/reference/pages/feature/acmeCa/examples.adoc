@@ -2,7 +2,7 @@
 
 === Minimum configuration
 
-The minimum configuration for the ACME Support feature requires the URL of a Certificate Authority (CA) provider and the name of one or more domains, as shown in the following example:
+The minimum configuration for the ACME Support feature requires the URL of a certificate authority (CA) provider and the name of one or more domains, as shown in the following example:
 
 [source,xml]
 ----
@@ -17,42 +17,62 @@ To receive a callback from a public ACME CA provider, port 80 must be open to co
 
 === Provide an account contact
 
-You can provide an account contact as part of your ACME Support feature configuration. If a CA modifies its terms of service, it might require you to agree to the new terms of service manually. If you specify a monitored email address in your feature configuration, the ACME CA server can warn you about new terms of service so that you can agree to them and avoid service disruption. Whenever you update your contact information in the feature configuration, the ACME service updates your account on the ACME CA server.
+You can provide an account contact as part of your ACME Support feature configuration. If a CA modifies its terms of service, it might require you to agree to the new terms of service manually. If you specify a monitored email address in your feature configuration, the ACME CA server can warn you about new terms of service so that you can avoid service disruption. Whenever you update your contact information in the feature configuration, the ACME service updates your account on the ACME CA server.
 
 To provide an account contact, specify a monitored email address in the `accountContact` element, as shown in the following example:
 
-[source,xml]
 ----
-<acmeCA ...>
+<acmeCA>
+    ...
     <accountContact>mailto:my_email_addr@theDomainThatIOwn.com</accountContact>
-</acmeCA ...>
+</acmeCA >
 ----
 
-If you do not provide an email address for your account, you won't be notified about upcoming certificate expirations or terms of service changes, which might result in loss of account access.
 
 
 === Renew expiring certificates
 
-You can configure the amount of time before a certificate expires that the ACME Support feature renews the certificate by specifying a value for the `renewBeforeExpiration` property. The default value for the `renewBeforeExpiration` property is seven days. In the following example, the feature begins to request a certificate renewal 24 hours before the expiration date:
+You can configure the amount of time before a certificate expires that the ACME Support feature renews the certificate by specifying a value for the `renewBeforeExpiration` property. The default value for the `renewBeforeExpiration` property is seven days. In the following example, the feature requests a certificate renewal 24 hours before the expiration date:
 
-[source,xml]
 ----
-<acmeCA ...>
+<acmeCA>
+    ...
     <renewBeforeExpiration>24h</renewBeforeExpiration>
-</acmeCA ...>
+</acmeCA >
 ----
 
 To disable automatic certificate renewals, set this property to `0`.
 
 === Use a test server
 
-In development environments, you can test your ACME configuration with a framework like https://github.com/letsencrypt/pebble[Pebble] or https://github.com/letsencrypt/boulder[Boulder]. Some ACME CA providers require an initial public certificate if they are not included in the JRE's cacerts and you wish to use the HTTPS protocol to retrieve the certificate. For testing purposes, Open Liberty provides the `open-liberty\dev\com.ibm.ws.security.acme_fat\publish\files\cacerts.p12` certificate file. You can copy this file into a trustore that you configure for the ACME Support feature. To configure a custom truststore specifically for the Acme Support feature, use the 'acmeTransportConfig' server configuration element, as shown in the following example:
+In development environments, you can test your ACME configuration with a containerized ACME test server like https://github.com/letsencrypt/pebble[Pebble] or https://github.com/letsencrypt/boulder[Boulder]. Some ACME CA providers require an initial public certificate if they are not included in the JRE's cacerts and you want to use the HTTPS protocol to retrieve the certificate. For testing purposes, Open Liberty provides the `open-liberty\dev\com.ibm.ws.security.acme_fat\publish\files\cacerts.p12` certificate file. You can copy this file into a truststore that you configure for the ACME Support feature. To configure a custom truststore specifically for the Acme Support feature, use the 'acmeTransportConfig' server configuration element, as shown in the following example:
 
 [source,xml]
 ----
-<acmeCA ...>
+<acmeCA>
+    ...
     <acmeTransportConfig trustStore="myServer/resources/security/cacerts.p12" trustStorePassword="password"/>
 </acmeCA>
 ----
 
-The Acme Support feature still trusts all certificates in the JRE cacerts file even when you specify a custom truststore.
+The Acme Support feature still trusts all certificates in the JRE cacerts file even if you specify a custom truststore.
+
+When you run containerized versions of ACME CA servers, the OCSP responder URL that is defined in the certificate might not be reachable. You can override the OCSP responder URL in the certificate by specifying the 'ocspResponderUrl' attribute in the 'acmeRevocationChecker' element, as shown in the following example:
+
+[source,xml]
+----
+<acmeCA>
+    ...
+    <acmeRevocationChecker ocspResponderUrl="127.0.0.1:4567"/>
+</acmeCA>
+----
+
+If your test server does not support revocation checking, you can disable revocation testing by setting the `enabled` attribute on the `acmeRevocationChecker` element to `false`, as shown in the following example:
+
+[source,xml]
+----
+<acmeCA>
+   ...
+   <acmeRevocationChecker enabled="false" />
+</acmeCA>
+---
