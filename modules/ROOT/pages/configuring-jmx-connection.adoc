@@ -1,0 +1,132 @@
+// Copyright (c) 2020 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description: Open Liberty supports two JMX connectors, local connector and REST connector.
+:seo-title: Designing cloud-native microservices
+:seo-description: Open Liberty supports two JMX connectors, local connector and REST connector.
+:page-layout: general-reference
+:page-type: general
+= Configuring JMX connection
+
+Open Liberty supports two Java Management Extensions (JMX) connectors, local connector and REST connector.
+The local connector is enabled through the `localConnector-1.0` feature, and the REST connector is enabled through the `restConnector-2.0` feature.
+
+An application that is deployed on Open Liberty has unrestricted access to its MBeanServer directory.
+Do not use Java SE Development Kit (JDK) options that start with `com.sun.management.jmxremote`, which are described in https://docs.oracle.com/javase/8/docs/technotes/guides/management/agent.html[Monitoring and Management Using JMX Technology], with the Liberty JMX support.
+Those JDK options adversely affect the Liberty MBean registration framework.
+
+
+
+== Configuring local JMX connection to Open Liberty
+
+You can access the local JMX connector on Open Liberty.
+
+=== About this task
+
+The local connector is enabled through the `localConnector-1.0` feature.
+Access through the local connector is protected by the policy that is implemented by the Software Developers Kit (SDK) in use.
+Currently, the SDKs require that the client runs on the same host as Open Liberty, and under the same user ID.
+
+
+=== Procedure
+
+To configure and access the local connector on Open Liberty, enable the local connector by using the following code in the `server.xml` file, inside the `featureManager` element:
+
+[source, xml]
+----
+<feature>localConnector-1.0</feature>
+----
+
+You can access the local connector by using the JConsole tool or the JMX client that is installed on the same host by the following:
+
+.  Copy the contents of ``${server.output.dir}/logs/state/com.ibm.ws.jmx.local.address` directory to the clipboard.
+.  For the JConsole tool,
+    .. Paste the contents of the clipboard into the Remote Process field.
+    .. Click Connect to connect to the MBeanServer by using the JDK bridge for the `ws-server.jar defaultServer` instance on the connection panel.
+.  For the JMX client,
+    .. Paste the contents of the clipboard into the constructor of a `javax.management.remote.JMXServiceURL` object.
+    .. Use that JMXServiceURL to establish a connection through `javax.management.remote.JMXConnectorFactory` instance. If the JMX client is running on the same JVM as Liberty, you do not have to use the connector, instead you can access the MBeanServer directly.
+
+== Configuring secure JMX connection to Open Liberty
+
+You can access the secured JMX connectors on Open Liberty by using Secure Sockets Layer (SSL).
+
+=== About this task
+
+The REST connector is enabled through the `restConnector-2.0` feature.
+Remote access through the REST connector is protected by a single administrator role through the HTTPS port that is defined by the default `httpEndpoint` element.
+In addition, SSL is needed to keep the communication confidential.
+The REST connector features include the `ssl-1.0` feature.
+
+
+=== Procedure
+
+You can configure and access the REST connector on Open Liberty with the following steps:
+
+. Add the `restConnector-2.0` feature to the feature manager.
++
+[source, xml]
+----
+<feature>restConnector-2.0<feature/>
+----
+
+. Enable the support for Secure Sockets Layer (SSL) connections.
+  .. Add the `transportSecurity-1.0` feature.
++
+[source, xml]
+----
+<feature>transportSecurity-1.0<feature/>
+----
+
+  .. Configure a keystore. The following example shows the minimum configuration to enable a keystore:
++
+[source, xml]
+----
+<keyStore id="defaultKeyStore" password="yourPassword" />
+----
++
+For more information, see https://draft-openlibertyio.mybluemix.net/docs/20.0.0.10/reference/feature/transportSecurity-1.0.html[Transport Security]
+
+. Configure a user or group to the administrator role in the `server.xml` file. For more information, see https://draft-openlibertyio.mybluemix.net/docs/20.0.0.10/reference/feature/appSecurity-3.0.html[Application Security]
+
+. You can access an Open Liberty REST connector from a Java client or directly through an HTTPS call.
+A Java client uses the client-side of the connector, which is in `wlp/clients/restConnector.jar` file and implements the `javax.management.MBeanServerConnection` interface.
+HTTPS calls use the server-side of the connector.
+For HTTPS calls on the server-side, any programming language that can make HTTPS calls, such as C++, JavaScript, curl, Ruby, and Perl, can use the REST APIs.
+The REST APIs contain endpoints for management (JMX) and file transfer.
+
+You can Access the REST connector from a JMX client application or by using the jConsole tool that is provided in the Java SDK.
+     Use `-J` flags to pass the system properties as Java options and set the class path to include the connector class files.
+     The connector class files are packed in the clients/restConnector.jar file.
+    Use the following properties for SSL certificates:
+
+[source, xml]
+----
+-J-Djavax.net.ssl.trustStore=<location of your client trust store>
+-J-Djavax.net.ssl.trustStorePassword=<password for the trust store>
+-J-Djavax.net.ssl.trustStoreType=<type of trust store>
+----
+
+
+The following example shows the jConsole tool and SSL configurations in use together:
+
+[source, xml]
+----
+jconsole -J-Djava.class.path=%JAVA_HOME%/lib/jconsole.jar;
+                        %JAVA_HOME%/lib/tools.jar;
+                        %WLP_HOME%/clients/restConnector.jar
+    -J-Djavax.net.ssl.trustStore=key.jks
+    -J-Djavax.net.ssl.trustStorePassword=Liberty
+    -J-Djavax.net.ssl.trustStoreType=jks
+----
+
+
+After the jConsole starts, select Remote Process, and enter the JMX service URL.
+For a started Open Liberty server with the `restConnector-2.0` feature that is configured, this URL can be found in `${server.output.dir}/logs/state/com.ibm.ws.jmx.rest.address`.
+
+Besides using a JMX client application or JConsole tool, you can make direct HTTPS calls to the server.
