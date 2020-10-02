@@ -26,7 +26,9 @@ When an Open Liberty server starts with transport layer security (TLS) enabled, 
 
 To avoid problems with self-signed certificates, services such as LetsEncrypt use the ACME protocol to provide free CA-signed certificates over the public web. When the ACME Support feature is enabled, the Open Liberty server automatically requests a certificate from your configured CA provider at startup if a new certificate is needed. The feature can also respond to challenges from the CA and manage certificate renewals and revocations.
 
-== Acme CA account management
+You can view, renew, or revoke certificates and get details about the active ACME CA account by making HTTPS calls to the REST API. Depending on the action you want to take, you must be in either the administrator or reader role to use the REST API. For more information about configuring Open Liberty administrator and reader roles, see link:blog/2019/12/06/microprofile-32-health-metrics-190012.html#rrs[Liberty reader role support].
+
+== ACME CA account management
 
 The ACME Support feature requires a valid account with an ACME CA. Account details are stored in an account key file. Before a CSR is sent, the feature first checks for an existing account key file. If no account key file exists, the feature generates a new one. This file is then used to either register a new account or log in to an existing account. Like any security credential, the account key file must be backed up and protected.
 
@@ -37,7 +39,7 @@ You can request a new account key at any time by using the REST API. Renewing an
 curl -kv https://mydomain.com:443/ibm/api/acmeca/account -X post -H "content-type: application/json" -d '{"operation":"renewAccountKeyPair"}'
 ----
 
-Some certificate authorities provide terms of service. If an ACME CA modifies its terms of service, you might be required to agree to the new terms manually. If you fail to agree to the modified terms of service, the ACME CA server might refuse any future requests from your account until you confirm your agreement. To avoid service interruption, provide an account contact in your ACME configuration that specifies a monitored email address.
+Some certificate authorities provide terms of service. If an ACME CA modifies its terms of service, you might be required to agree to the new terms manually. If you fail to agree to the modified terms of service, the ACME CA server might refuse any future requests from your account until you confirm your agreement. To avoid service interruption, provide an account contact in your ACME configuration that specifies a monitored email address. For more information, see xref:reference:feature/acmeCA-2.0.adoc[the ACME Support feature].
 
 === Certificate renewal and revocation
 
@@ -63,7 +65,7 @@ You might need to revoke a certificate before you retire a server, during testin
 curl -kv https://mydomain.com:443/ibm/api/acmeca/certificate -X POST -u admin:password -H "content-type: application/json" -d '{"operation":"revokeCertificate","reason":"key_compromise"}'
 ----
 
-You can specify a revocation reason by using the reason key-value pair. The following reason values are valid:
+You can specify a revocation reason by using the `reason` key-value pair. The following reason values are valid:
 
 * `unspecified`
 * `key_compromise`
