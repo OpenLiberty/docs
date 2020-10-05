@@ -8,7 +8,7 @@ The following example shows the minimum configuration to enable TLS:
 
 [source,java]
 ----
-<keyStore id="defaultKeyStore" password="yourPassword" />
+<keyStore id="defaultKeyStore" password="yourPassword"/>
 ----
 
 When the `defaultKeyStore` value is specified, Open Liberty builds a TLS configuration around it with an ID attribute value of `defaultSSLConfig`.
@@ -48,7 +48,7 @@ You can set the `trustDefaultCert` attribute to `true` to specify that the JVM d
 <ssl id="myDefaultSSLConfig"
       keyStoreRef="defaultKeyStore"
       trustStoreRef="defaultTrustStore"
-      trustDefaultCert="true" />
+      trustDefaultCert="true"/>
 ----
 
 
@@ -60,39 +60,49 @@ In the following example, outbound TLS connections that go to any port on the `o
 
 [source,java]
 ----
-<sslDefault outboundSSLRef=”outboundSSLSettings” />
+<sslDefault outboundSSLRef=”outboundSSLSettings”/>
 
 <ssl id="defaultSSLConfig"
       keyStoreRef="defaultKeyStore"
       trustStoreRef="defaultTrustStore" >
-	<outboundConnection host=”otherhost”  />
+	<outboundConnection host=”otherhost”/>
 </ssl>
 
 <keyStore id="defaultKeyStore"
            location="key.p12"
            type="PKCS12"
-           password=”yourpassword” />
+           password=”yourpassword”/>
+
 <keyStore id="defaultTrustStore"
            location="trust.p12"
            type="PKCS12"
-           password="yourpassword" />
+           password="yourpassword"/>
 
 <ssl id="outboundSSLSettings"
       keyStoreRef="outboundKeyStore"
-      trustStoreRef="outboundTrustStore" >
-</ssl>
+      trustStoreRef="outboundTrustStore"/>
 
 <keyStore id="outboundKeyStore"
            location="server1/outboundKeyFile.p12"
-           password="yourpassword" />
+           password="yourpassword"/>
+
 <keyStore id="outboundTrustStore"
            location="server1/outboundTrustFile.p12"
-           password="yourpassword" />
+           password="yourpassword"/>
 ----
 
 === Configuration to provide certificates from an environment variable or a file
 
 At startup, Open Liberty can read certificates from an environment variable so that they can be used to establish trust. To provide a certificate, set the `cert_(name of existing truststore)` environment variable to equal the value of the certificate or a file that contains one or more certificates. Certificates must be either DER encoded or in the PEM format. Environment variables are set in the `server.env` file.
+
+Any value that does not start with the `-----BEGIN CERTIFICATE-----` tag is treated like a file.
+
+In the following example, an environment variable supplies certificates to a truststore that is called `defaultKeyStore` from a file that is called `certs.crt`:
+
+[source,java]
+----
+cert_defaultKeyStore=/var/certs.crt
+----
 
 In the following example, an environment variable supplies a certificate to a truststore that is called `defaultKeyStore`:
 
@@ -101,11 +111,4 @@ In the following example, an environment variable supplies a certificate to a tr
 cert_defaultKeyStore="-----BEGIN CERTIFICATE-----
 ....
 -----END CERTIFICATE-----"
-----
-
-Any value that does not start with the `-----BEGIN CERTIFICATE-----` tag is treated like a file. In the following example, an environment variable supplies certificates from a file that is called `certs.crt`:
-
-[source,java]
-----
-cert_defaultKeyStore=/var/certs.crt
 ----
