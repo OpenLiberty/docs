@@ -39,7 +39,7 @@ Make sure that the following resources are available:
 [#create-kerberos-spn]
 == Creating a Kerberos service principal name and keytab file
 
-. Create a user account for the Open Liberty server.
+. Create a user account, for example, `myLibertyMachine_http`, for the Open Liberty server.
 This account is used to map to the Kerberos service principal name (SPN).
 
 . Run the Microsoft `setspn` command to map the user account to a Kerberos SPN.
@@ -55,7 +55,7 @@ The default name for the keytab file is `krb5.keytab`.
 The following example shows how to run the `ktpass` command:
 +
 ----
-ktpass -out krb5.keytab -princ HTTP/myLibertyMachine.example.com@MYDOMAIN.EXAMPLE.COM -mapUser myLibertyMachine_http -mapOp set -pass security -crypto RC4-HMAC-NT -ptype KRB5_NT_PRINCIPAL
+ktpass -out krb5.keytab -princ HTTP/myLibertyMachine.example.com@MYDOMAIN.EXAMPLE.COM -mapUser myLibertyMachine_http -mapOp set -pass <myLibertyMachine_http_password> crypto RC4-HMAC-NT -ptype KRB5_NT_PRINCIPAL
 ----
 +
 To verify that the command worked correctly and there isn't a duplicated SPN in the Microsoft forest, run the Microsoft `ldif` command:
@@ -81,7 +81,7 @@ To merge the files, run the `ktpass` command with the `-in` option to include an
 The following example includes the `myOtherKrb5.keytab` file:
 +
 ----
-ktpass -in myOtherKrb5.keytab -out krb5.keytab -princ HTTP/myLibertyMachine.example.com@MYDOMAIN.EXAMPLE.COM -mapUser myLibertyMachine_http -mapOp set -pass security -crypto RC4-HMAC-NT -ptype KRB5_NT_PRINCIPAL
+ktpass -in myOtherKrb5.keytab -out krb5.keytab -princ HTTP/myLibertyMachine.example.com@MYDOMAIN.EXAMPLE.COM -mapUser myLibertyMachine_http -mapOp set -pass <myLibertyMachine_http_password> -crypto RC4-HMAC-NT -ptype KRB5_NT_PRINCIPAL
 ----
 
 [#copy-kerberos-files]
@@ -94,10 +94,28 @@ The default location of the file is the same directory as the Kerberos configura
 
 . Create a Kerberos configuration file.
 This file includes the locations of KDCs for the realms of interest, defaults for the current Kerberos realm, and mappings of hostnames onto Kerberos realms.
+The following example shows a Kerberos configuration file:
++
+----
+[libdefaults]
+    default_realm = MYDOMAIN.EXAMPLE.COM
+    default_keytab_name = FILE:c:\winnt\krb5.keytab
+    default_tkt_enctypes = rc4-hmac aes256-cts-hmac-sha1-96
+    default_tgs_enctypes = rc4-hmac aes256-cts-hmac-sha1-96
+[realms]
+    MYDOMAIN.EXAMPLE.COM= {
+        kdc = host1.example.com:88
+        default_domain = example.com
+}
+[domain_realm]
+    .example.com = MYDOMAIN.EXAMPLE.COM
+----
 +
 Ensure that you have a common encryption type for the Kerberos configuration file, Kerberos keytab file, Kerberos SPN, and Kerberos client.
 For example, if the Kerberos client uses the RC4-HMAC encryption type, the target server must support the RC4-HMAC encryption type.
-The Kerberos configuration file must also list RC4-HMAC first in the `default_tgt_enctypes` and `default_tkt_enctypes` parameters.
+The Kerberos configuration file must also list RC4-HMAC first in the `default_tkt_enctypes` and `default_tgs_enctypes` parameters.
+In a production environment, you might want to choose a stronger encryption type than RC4-HMAC.
+// For more information about encoding passwords in files, see .
 
 . Verify the Kerberos configuration and keytab files.
 To verify the Kerberos configuration and keytab files, use the `klist` and `kinit` commands.
