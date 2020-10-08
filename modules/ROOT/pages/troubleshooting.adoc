@@ -1,0 +1,90 @@
+// Copyright (c) 2020 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description:
+:seo-title:
+:page-layout: general-reference
+:page-type: general
+= Troubleshooting ACME certificates
+
+If you experience problems with ACME certificate authority (CA) certificates, you can refer to error messages from your Open Liberty server or HTTP error messages to debug the problem. The following information can help determine the cause of common problems and error messages that are associated with ACME CA certificates.
+
+
+To help troubleshoot problems with ACME CA certificates, you can enable trace by using the following trace specification:
+----
+ACMECA=all
+----
+
+To enable transport security trace, use the following specification:
+----
+com.ibm.ws.security.acme.*=all
+----
+
+The following sections describe common problems that you might encounter with ACME CA accounts and connections. For more information, see xref:acme-cert-management.adocA[utomated certificate management with ACME] and xref:reference:feature/acmeCA-2.0.adoc[the ACME Support feature].
+
+== The certificate request times out
+If the certificate request times out, you can set a longer timeout value by using the  `challengePollTimeout` and `orderPollTimeout` properties.
+
+== You received an HTTP code 429 message on a renew request
+To prevent too many immediate certificate-renew requests and a possible negative impact on the server, certificate-renew requests are blocked for a small window of time. After this window expires, new requests can be made. The 429 message indicates when new requests can be made.
+
+== You received message that indicates the rate limit was exceeded
+Some CA, such as LetsEncrypt, enforce a rate limit on requesting new certificates. If you are testing and request several certificates in a short amount of time, use an appropriate testing server. For example, https://letsencrypt.org/docs/staging-environment/[LetsEncrypt provides a staging server with higher rate limits].
+
+== The certificate is renewed at startup when it isn't expired
+The following conditions can cause an unexpired certificate to be automatically renewed at startup:
+
+* The certificate is marked as revoked
+* The certificate expiration date is within the window set by the `renewBeforeExpiration` property.
+* The directory URI, the domain, or other account information was changed and a new certificate is required.
+* The server was started with the `--clean` option and historical information on the certificate was removed.
+
+== The authorization challenge fails with a CWPKI2001E message
+
+If the server fails to fetch a certificate, you might see an error message like the following example:
+----
+CWPKI0804E: SSL certificate creation error. The error is: CWPKI2001E: The ACME certificate authority at the http://my-configured-ca.com/directory URI responded that the authorization challenge failed for the mydomainname.com domain. The challenge status is INVALID.  The error is 'Fetching http://mydomainname.com/.well-known/acme-challenge/FXCFcGCv4Ov2ofJ2i-PgMsO1kECwKB0XfTzsPjNIXBs: Connection refused'.
+----
+
+If you see this message, verify that the provided domain name is accessible by the CA. Review the logs and confirm that the expected domain name or IP address is used for the `acme-challenge` web application. Look for the following message in the logs:
+
+----
+CWWKT0016I: Web application available (default_host): http://mydomainname.com:80/.well-known/acme-challenge/
+----
+
+To configure the hostname used for web applications, add or update the `host` attribute for the `httpEndpoint` configuration in your `server.xml` file.
+
+
+== After a failure to fetch the certificate, the keystore produces errors
+
+If the server cannot fetch a certificate, an empty keystore is created. In older versions of Java, an empty keystore can cause an exception. Examples of this error include the following messages:
+----
+CWPKI2030E: The ACME service could not install a certificate under the default alias into the defaultKeyStore keystore. The error is 'The keystore [defaultKeyStore] is not present in the configuration'.```
+----
+----
+CWWKS9582E: The [defaultSSLConfig] sslRef attributes required by the orb element with the defaultOrb id have not been resolved within 10 seconds. As a result, the applications will not start. Ensure that you included a keyStore element and that Secure Sockets Layer (SSL) is configured correctly. If the sslRef is defaultSSLConfig, then add a keyStore element with the ID value of `defaultKeyStore` and a password.
+----
+
+To work around this error after a failure to fetch the initial certificate, remove the empty keystore.
+
+== You received a CWPKI2058W warning message during a revocation check
+
+When you run containerized versions of ACME CA servers, the OCSP responder URL that is defined in the certificate might not be reachable. You can override the OCSP responder URL in the certificate by specifying the 'ocspResponderUrl' attribute in the 'acmeRevocationChecker' element. If this URL is not configured, the following  warning can occur during revocation checks:
+
+----
+CWPKI2058W: Certificate revocation status checking ignored soft failures. Revocation checking might be incomplete. The failures are: '[java.security.cert.CertPathValidatorException: Unable to determine revocation status due to network error, java.security.cert.CertPathValidatorException: Unable to determine revocation status due to network error]'
+----
+
+If you see this network error warning and you are running with a test CA server, you can add a custom `ocspResponderUrl` URL. If the test CA does not support revocation testing, you can disable revocation testing by setting the `enabled` attribute on the `acmeRevocationChecker` element `false`, as shown in the following example:
+
+----
+<acmeCA>
+   ...
+   <acmeRevocationChecker enabled="false" />
+</acmeCA>
+----
