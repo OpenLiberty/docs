@@ -58,6 +58,15 @@ curl -kv https://mydomain.com:443/ibm/api/acmeca/certificate -X POST -u admin:pa
 
 The certificate that is replaced is revoked automatically after the new certificate is installed. When a certificate is renewed, new connections use the new certificate. Existing connections are not interrupted.
 
+If the certificate renew request times out, you can set a longer timeout value by using the  `challengePollTimeout` and `orderPollTimeout` properties. In some cases, you might receive an HTTP code 429 message on a certificate renew request. To prevent a possible negative impact on the server due to repeated certificate renew requests, certificate-renew requests might be blocked for a small window of time. After this window expires, new requests can be made. The 429 message indicates when new requests can be made. Furthermore, Some CA, such as LetsEncrypt, enforce a rate limit on requesting new certificates. If you are testing and need to request several certificates in a short amount of time, use an appropriate testing server. For example, https://letsencrypt.org/docs/staging-environment/[LetsEncrypt provides a staging server with higher rate limits].
+
+In some cases, a certificate might be automatically renewed when it isn't expired. The following conditions can cause an unexpired certificate to be automatically renewed at startup:
+
+* The certificate is marked as revoked.
+* The certificate expiration date is within the window set by the `renewBeforeExpiration` property.
+* The directory URI, the domain, or other account information was changed and a new certificate is required.
+* The server was started with the `--clean` option and historical information on the certificate was removed.
+
 You might need to revoke a certificate before you retire a server, during testing, or before you move from one ACME CA to another. To revoke a certificate, a user that is in the administrator role can send the following HTTPS request:
 
 [source,command]
@@ -80,9 +89,10 @@ You can specify a revocation reason by using the `reason` key-value pair. The fo
 
 If you don't specify a reason, the default value is `unspecified`.
 
+
 === ACME CA account and certificate monitoring with the REST API
 
-You can monitor the active ACME CA account and any active certificates by issuing HTTPS requests for the REST API. You can check your account details and contact information or view the current CA signed certificate details, such as the validity dates for the certificate and the issuer. If you request a certificate renewal, you can see the updated certificate information. However, the content that is returned from these HTTPS endpoints is for informational purposes only and cannot be used or depended on programmatically.
+You can monitor the active ACME CA account and any active certificates by sending HTTPS requests to the REST API. You can check your account details and contact information or view the current CA signed certificate details, such as the validity dates for the certificate and the issuer. If you request a certificate renewal, you can see the updated certificate information. However, the content that is returned from these HTTPS endpoints is for informational purposes only and cannot be used or depended on programmatically.
 
 To view both the active ACME CA account and certificate, a user that is in either the administrator or reader role can send the following HTTPS request:
 
@@ -112,6 +122,21 @@ https://mydomain.com:443/ibm/api/acmeca/account
 https://mydomain.com:443/ibm/api/acmeca/certificate
 ----
 
+== Trace enablement for ACME CA certificates
+
+To help troubleshoot problems with ACME CA certificates, you can enable trace by using the following trace specification:
+----
+ACMECA=all
+----
+
+To add transport security trace, use the following specification:
+----
+com.ibm.ws.security.acme.*=all
+----
+
+
+////
+commenting out this section until we can move content to Troubleshooting section of docs
 == Troubleshooting
 
 To help troubleshoot problems with ACME CA certificates, you can enable trace by using the following trace specification:
