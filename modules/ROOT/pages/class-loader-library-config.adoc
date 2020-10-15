@@ -21,6 +21,8 @@ Each Jakarta EE application has its own class loader, which dynamically loads Ja
 
 However, if you need to provide a non-default library implementation without bundling the library with your application, you can configure class loading to make certain third-party APIs available to the application. You can also configure class loading so that an application can access library files that are in your server configuration.
 
+If you use configuration to override the default settings, you cannot deploy the application by dropping it into the `dropins` directory, unless you configure a <<Configure global libraries, global library>>.
+
 == Access third-party APIs from an application
 
 By default, applications do not have access to the third-party APIs that are available in Open Liberty. To enable this access, you can configure class loading for the application in the `server.xml` file, or an included file.
@@ -72,7 +74,7 @@ In the following example, an application that is called `Scholar` needs access t
 In containerized environments, typically only one application runs on an Open Liberty. However, some existing configurations might run multiple applications on a single server. In such cases, Java libraries can be shared across multiple applications. All the applications can use the same classes at run time or each application can use a separate copy of those classes that is loaded from the same location. Private libraries are specified by the `privateLibraryRef` element and common libraries are specified by the `commonLibraryRef` element. Private library class paths are appended to the application classloader class path, while a common library has its own classloader that the application delegates to.
 
 In the following example, a library that is called `Alexandria` is located on a server that is called `Academy`, in the `wlp/usr/servers/Academy/mylib/Alexandria` directory.
-An application that is called `Scholar` and an application that is called `Student` are running on the `Academy`server. Both applications need access to this library. A third application on the same server, which is called `Spy`, needs its own copy of the library classes. In the `server.xml` file, the `library` element specifies an ID and location that the three applications can reference to access the library classes:
+An application that is called `Scholar` and an application that is called `Student` are running on the `Academy` server. Both applications need access to this library. A third application on the same server, which is called `Spy`, needs its own copy of the library classes. In the `server.xml` file, the `library` element specifies an ID and location that the three applications can reference to access the library classes:
 
 [source,java]
 ----
@@ -99,7 +101,9 @@ The `library`, `privateLibraryRef`, and `commonLibraryRef` elements can also spe
 
 === Configure global libraries
 
-Some existing configurations might need to access global libraries, which can be used by any Jakarta EE application. Global libraries are kept in a global library directory and can be referenced from the class loader configuration for each Jakarta EE application. However, other kinds of applications, such as OSGi applications, cannot use global libraries.
+Global libraries are available to all Jakarta EE applications in the server, including applications in the `dropins` directory that are not explicitly configured in the `server.xml` file.
+
+Global libraries are kept in a global library directory and can be referenced from the class loader configuration for each Jakarta EE application. However, other kinds of applications, such as OSGi applications, cannot use global libraries.
 
 You can put global libraries in the following locations under the user directory that is specified by the `WLP_USER_DIR` environment variable:
 
