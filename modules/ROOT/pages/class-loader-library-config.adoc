@@ -9,7 +9,7 @@
 //
 //
 :page-description:
-:seo-title:Class loader and library configuration for Open Liberty
+:seo-title: Class loader and library configuration for Open Liberty
 :seo-description:
 :page-layout: general-reference
 :page-type: general
@@ -36,7 +36,7 @@ If you want to enable access to non-default third-party APIs that are available 
 
 You can add or remove access to API types by specifying the API type with either a plus (+) or minus (-) prefix. The default API types are always enabled unless you explicitly remove them.
 
-In the following example, an application that is called `Scholar` needs access to non-default third-party APIs that are available in Open Liberty. The application needs to use  a common library called `Alexandria`, which is located in the `myserver/mylib/Alexandria` directory. If an application uses any common libraries, you must configure those libraries to use the same API type visibility setting. In the following example, third-party API type visibility is configured in the `server.xml` file or an included file for both the application and the common library:
+In the following example, an application that is called `Scholar` needs access to non-default third-party APIs that are available in Open Liberty. The application also needs to use  a common library that is called `Alexandria`, which is located in the `myserver/mylib/Alexandria` directory. If an application uses any common libraries, you must configure those libraries to use the same API type visibility setting. In the following example, third-party API type visibility is configured in the `server.xml` file or an included file for both the application and the common library:
 
 [source,xml]
 ----
@@ -45,51 +45,41 @@ In the following example, an application that is called `Scholar` needs access t
 </application>
 
 <library id="Alexandria" apiTypeVisibility="+third-party">
-  <fileset dir="myserver/mylib/Alexandria" includes="*.jar" scanInterval="5s" />
+  <fileset dir="myserver/mylib/Alexandria" includes="*.jar" />
 </library>
 ----
 
 == Configure an application to use a Java library that is on an Open Liberty server
 
-In some cases you can't bundle a Java library with your application, for example, when the application is already packaged and does not include the library.
+In some cases, you can't bundle a Java library with your application, for example, when the application is already packaged and does not include the library.
 
-In the following example, a library called Alexandria consists of two files, `alexandria-scrolls.jar` and `commons-lang.jar`.
-An application called `Scholar` that is running on a server called `Academy` needs access to this library, , which is located in the `myserver/mylib/Alexandria` directory. This application also needs access to non-default third-party APIs. You must configure any referenced libraries to use the same API type visibility setting as the application. In the following example, third-party API type visibility is configured in the `server.xml` file or an included file for both the application and the library:
+In the following example, an application that is called `Scholar` needs access to a Java library that is called `Alexandria`, which is located in the `myserver/mylib/Alexandria` directory:
 
 [source,xml]
 ----
 <application id="scholar" name="Scholar" type="ear" location="scholar.ear">
-  <classloader apiTypeVisibility="+third-party" commonLibraryRef="Alexandria" />
+  <classloader privateLibraryRef="Alexandria" />
 </application>
 
-
-
-The <privateLibrary> element can also take a filesetRef attribute with a comma-separated list of <fileset> element IDs.
-
-== Configure an application to use a shared library
-
-Libraries can be shared across multiple Java™ EE applications. All the applications can use the same classes at run time, or each application can use its own separate copy of those classes loaded from the same location.
-
-About this task
-In the following example, a library called Alexandria consists of two files:
-alexandria-scrolls.jar and
-commons-lang.jar
-An application called Scholar and an application called Student are running on a server called Academy, and both need access to this library.
-Procedure
-Create a mylib/Alexandria directory in the servers/Academy directory under the ${WLP_USER_DIR} directory.
-For example: wlp/usr/servers/Academy/mylib/Alexandria.
-
-Copy the alexandria-scrolls.jar and commons-lang.jar files into the new folder.
-Configure class loading for the application, so that the Alexandria library is loaded.
-In the server.xml file, or an included file, define the library by adding the following code:
-<library id="Alexandria">
-  <fileset dir="${server.config.dir}/mylib/Alexandria" includes="*.jar" scanInterval="5s" />
+<library id="Alexandria" apiTypeVisibility="+third-party">
+  <fileset dir="myserver/mylib/Alexandria" includes="*.jar" />
 </library>
-Copy code
-Note
-The <library> element can also take a filesetRef attribute with a comma-separated list of <fileset> element IDs.
-Reference the library from the applications, so that both these applications share a single copy of the library.
-In the server.xml file, or an included file, add the following code:
+----
+
+== Configure applications to use a shared library
+
+
+In containerized environments, typically only one application runs on an Open Liberty. However, some existing configurations might run multiple applications on a single server. In such cases, Java libraries can be shared across multiple applications. All the applications can use the same classes at run time or each application can use a separate copy of those classes that is loaded from the same location. Private libraries are specified by the `privateLibraryRef` element and common libraries are specified by the `commonLibraryRef` element. Private library class paths are appended to the application classloader class path, while a common library has its own classloader that the application delegates to.
+
+In the following example, a library that is called `Alexandria` is located in the `wlp/usr/servers/Academy/mylib/Alexandria` directory.
+An application that is called `Scholar` and an application that is called `Student` are running on a server that is called `Academy`. Both applications need access to this library. A third application, which is called `Spy` needs its own copy of the library classes. In the `server.xml` file, the `library` element specifies an ID and location that the three applications can reference to access the library classes:
+
+[source,java]
+----
+<library id="Alexandria">
+  <fileset dir="wlp/usr/servers/Academy/mylib/Alexandria" includes="*.jar" scanInterval="5s" />
+</library>
+
 <application id="scholar" name="Scholar" type="ear" location="scholar.ear">
   <classloader commonLibraryRef="Alexandria" />
 </application>
@@ -97,33 +87,47 @@ In the server.xml file, or an included file, add the following code:
 <application id="student" name="Student" type="ear" location="student.ear">
   <classloader commonLibraryRef="Alexandria" />
 </application>
-Copy code
-Note
-The <commonLibraryRef> element can take a comma-separated list of library IDs.
-Optional: Configure another application to have its own set of classes loaded from the same JAR files.
-For example, if another application called Spy needs its own copy of the classes, the same physical files on disk can be used. In the server.xml file, or an included file, add the following code:
+
 <application id="spy" name="Spy" type="war" location="spy.war">
   <classloader privateLibraryRef="Alexandria" />
 </application>
-Copy code
+----
 
-You can provide global libraries that can be used by any Java™ EE application. You do this by putting the JAR files for those libraries in a global library directory, then specifying use of global libraries in the class loader configuration for each application. However, the global libraries cannot be used by other applications, for example, by OSGi applications.
+The `commonLibraryRef` element specifies that the `Scholar` and `Student` applications can share a single copy of the library. The `privateLibraryRef` element specifies that the `Spy` application creates its own copy of the classes from the same physical files on disk.
 
-About this task
-Under the user directory specified by using the environment variable WLP_USER_DIR, there are the following locations in which you can place global libraries:
-${shared.config.dir}/lib/global
-${server.config.dir}/lib/global
-If there are files present in these locations at the time an application is started, and that application does not have a <classloader> element configured, the application uses these libraries. If a class loader configuration is present, these libraries are not used unless the global library is explicitly referenced.
-Attention
-If you use global libraries, you are advised also to configure a <classloader> element for every application. The servlet specification requires applications to share the global library class loader in their class loader parent chain. This breaks the separation of class loaders for each application that is otherwise possible. So, applications are more likely to have long-lasting effects on classes loaded in Liberty and on each other, and class space consistency issues are more likely to arise between applications, especially as features are added and removed from a running server. None of these considerations apply for applications that specify a <classloader> element in their configuration, because they maintain this separation.
-Example
-In the following example, an application called Scholar is configured to use a common library called Alexandria, and also to use the global library.
+The `library`, `privateLibraryRef`, and `commonLibraryRef` elements can also specify a `filesetRef` attribute with a comma-separated list of `fileset` element IDs.
 
-In the server.xml file, or an included file, enable the global library for an application by adding the following code:
+=== Configure global libraries
+
+Some existing configurations might need to use global libraries that can be used by any Jakarta EE application. Global libraries are kept in a global library directory and can be referenced from the class loader configuration for each application. However, the global libraries cannot be used by other applications, for example, by OSGi applications.
+
+You can put global libraries in the following locations under the user directory that is specified by using the `WLP_USER_DIR` environment variable:
+- `${shared.config.dir}/lib/global`
+- `${server.config.dir}/lib/global`
+
+If libraries are present in these locations when an application starts, and that application does not specify a `classloader` element, the application uses these libraries. If a class loader is specified in the application, these libraries are not used unless the global library is explicitly referenced.
+
+If you use global libraries, you are advised also to configure a `classloader` element for every application. The servlet specification requires applications to share the global library class loader in their class loader parent chain. Sharing a global library class loader breaks the separation of class loaders for each application. In such cases, applications are more likely to have long-lasting effects on classes that are loaded in Open Liberty and on each other. Class-space consistency issues are more likely to arise between applications, especially as features are added and removed from a running server. None of these considerations apply for applications that specify a `classloader` element in their configuration because they maintain the separation of class loaders.
+
+
+In the following example, an application that is called `Scholar` is configured in the `server.xml` file to use the global library and a common library that is called `Alexandria`:
+
+[source,xml]
+----
 <application id="" name="Scholar" type="ear" location="scholar.ear">
   <classloader commonLibraryRef="Alexandria, global" />
-</application>Copy code
-The settings for the global library can also be configured explicitly, as a library element with the special ID global. For example:
+</application>
+----
+
+You can also configure the settings for the global library explicitly by specifying library element with the special ID `global`, as shown in the following example:
+
+[source,xml]
+----
 <library id="global">
   <fileset dir="/path/to/folder" includes="*.jar" />
 </library>
+----
+
+== See also
+
+- xref:reference:config/classloader.adoc[The classloader configuration element]
