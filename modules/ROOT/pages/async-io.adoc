@@ -1,0 +1,212 @@
+// Copyright (c) 2020 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+//
+:page-description:
+:seo-title:
+:seo-description:
+:page-layout: general-reference
+:page-type: general
+= Asynchronous input and output
+
+Those are the key requirements for implementing async read and async write for servlet processing.
+There are some strict requirements but these are simple and easily adopted and the benefits are great in a busy server, particularly if large amounts of post data or response data are processed.
+
+== Asynchronous read
+Consider a scenario where a client request includes two packets of data that are sent 1 second apart by the client.
+In sync read, the application must occupy a thread for the entire time it takes to receive the data sent by the client.
+The thread starts when the first packet is received and then waits for 1 second to receive the second packet, so the thread is occupied for 1 second.
+In a server with 10 threads, you can process 10 inbound requests per second.
+
+In async read, the application relinquishes the thread after the first packet is received from the client and is redispatched when the second packet arrives.
+Assume that it takes 0.1 seconds to process each inbound packet so the inbound request occupies a thread for 0.2 seconds.
+In this case, the same server with 10 threads can process 50 inbound requests per second.
+Ideally, the throughput of your application server isn't affected by the rate at which data is received from a client.
+If throughput is affected by the rate at which data is received, it takes only a few bad clients and throughput drops.
+With async read, you remove this variable so you have better, more consistent throughput.
+You can't use async read to increase the response time of an individual request taken in isolation.
+The elapsed time that it takes to receive inbound data is the same whether you are using async read or sync read.
+
+=== Asynchronous read sample code
+To take advantage of async read, your application must provide a `ReadListener` that is called when inbound data is received.
+The `ReadListener` reads the data as it's received and starts the business logic after all data was read.
+The `ReadListener` is registered by a servlet, as shown in the following example:
+
+[source,java]
+----
+@Override
+protected void doPost(HttpServletRequest req, HttpServletResponse res) throws IOException, ServletException {
+
+    // Async I/O requires an async servlet.
+    req.startAsync();
+
+    // Register the ReadListener with the ServletInputStream.
+    req.getInputStream().setReadListener(new SampleReadListener(req, res));
+
+    // The servlet returns, which relinquishes the thread.
+}
+----
+
+This example shows a `doPost` method that includes the two steps that are required by a servlet to perform async read.
+The first step starts async processing and the second step registers a `ReadListener` with the `ServletInputStream` for the request.
+After these steps are complete, the servlet returns to relinquish the thread.
+If the servlet needs to perform additional steps, it should perform these additional steps before the `ReadListener` is set because otherwise a race is started between the processing of the servlet and the ReadListener.
+
+The `ReadListener` implements 3 methods, `onDataAvailable`, `onAllDataRead`, and `onError`.
+The `onDataAvailable` method reads and optionally stores the inbound data.
+In the following example, the inbound data is stored for processing after the inbound data is read:
+
+[source,java]
+----
+@Override
+public void onDataAvailable() throws IOException {
+
+    byte postData[] = new byte[1024];
+    int postDataLen;
+
+    ServletInputStream inStream = _req.getInputStream();
+
+    // isReady() must be checked before each read. If it returns false, all currently
+    // available data was read so the thread should be relinquished.
+    // If isFinished() returns true, all data was read.
+    while (inStream.isReady() && !inStream.isFinished()) {
+
+        // Only one read of data allowed inside the loop (after isReady has returned true)
+        postDataLen = inStream.read(postData);
+
+        // Save the input data for later processing.
+        if (postDataLen > 0)
+            outData.add(new String(postData, 0, postDataLen));
+    }
+}
+----
+
+Note that the while loop implements two key requirements:
+
+* isReady() is called before each and every read of data.
+A second read performed after a call to isReady() is effectively a synchronous read and results in an IllegalStateException being thrown.
+* The method will not return unless isReady() returns false or all data has been read.
+If the method returned when isReady() would return true and more data is available for read, the container will not call onDataAvailable again until isReady() has been called and returned false.
+
+In this example the inbound data is saved for later processing, although some applications might do some processing of data as they receive the data.
+If the method does return when the previous call to isReady() returned true and all of the data has not been read, it is down to the application to call onDataAvailable() again to restart the read.
+The onAllDataRead method is called by the container when all inbound data has been read.
+It is this method that performs the business logic based on the inbound data previously read:
+
+[source,java]
+----
+@Override
+public void onAllDataRead() throws IOException {
+
+    // Process the inbound data
+    for (String outDataString : outData) {
+        _res.getOutputStream().print(outDataString);
+    }
+
+    // Indicate that the async request is complete
+    _req.getAsyncContext().complete();
+}
+----
+
+In the simple example that data is simply written back to the client (effectively the business logic of this example).
+Once all the data has been written the async request is completed by the call AsyncContext.complete().
+
+The onError method is called if any error occurs during processing of the inbound data and, if called, it is the last method called on the ReadListener.
+In this case the application would normally return an error message to the client and then complete the async request:
+
+[source,java]
+----
+@Override
+public void onError(Throwable arg0) {
+
+    try {
+        _res.getOutputStream().println("Exception when processing inbound data : " + arg0);
+    } catch (IOException e) {
+        //  log an error
+    }
+
+    // Indicate that the request is complete
+    _asyncContext.complete();
+}
+----
+
+== Asynchronous write
+Async write is similar to async read but for sending the response to the client.
+Assume the response is sent in two packets: The first packet is sent to the client immediately but the second packet can only be sent after the client has acknowledged the receipt of the first.
+In sync write you occupy a thread whilst waiting for the acknowledgement; in async write you do not.
+As a result the potential for increasing throughput is on a similar basis to async read because the thread is not held whilst waiting for the client to acknowledge receipt of data.
+This can be less useful than async read because the servlet and HTTP implementation may effectively being doing async writing under the covers.
+The application can write as much as it likes, as quickly as it likes, and the underlying implementation buffers the response and sends it asynchronously.
+
+=== Asynchronous write sample code
+To take advantage of async write, the application must provide a writeListener which is called when response data can be sent without blocking.
+The writeListener is registered by a servlet:
+
+[source,java]
+----
+@Override
+protected void service(HttpServletRequest req, HttpServletResponse res) throws IOException, ServletException {
+
+    // Async I/O requires an async servlet
+    req.startAsync();
+
+    // register the writeListener withe the ServletOuputStream for the response
+    res.getOutputStream().setWriteListener(new SampleWriteListener(req, res, 200));
+
+    // The servlet now returns which then relinquishes the thread.
+}
+----
+
+This shows a service method of a servlet which includes the two steps required to perform async write.
+In this example, use of the the service method is okay because a write listener can be used for any inbound method (for example: doPost or doGet).
+The first step is to start async processing and the second step is to register a writeListener with the ServletOutputStream for the request.
+After completing these steps, the servlet should return to relinquish the thread.
+If the servlet needs to perform additional steps it should perform these before the writeListener is set because, otherwise, a race is started between the processing of the servlet and the writeListener.
+
+The writeListener implements two methods: onWritePossible and onError.
+The onWritePossible method is responsible for writing the outbound response:
+
+[source,java]
+----
+public void onWritePossible() throws IOException {
+
+    ServletOutputStream outStream = _res.getOutputStream();
+
+    // Write each line of data, checking isReady() before each write.
+    while (outStream.isReady() && _numWritesRemaining > 0) {
+        _numWritesDone++;
+        _numWritesRemaining--;
+        outStream.println(_asyncEvents + "." + _numWritesDone + _outData);
+    }
+
+    if (_numWritesRemaining == 0) {
+        // If all data has been written, complete the async request.
+        _req.getAsyncContext().complete();
+    } else {
+        // isReady() returned false before all data was written.
+        _asyncEvents++;
+    }
+}
+----
+
+Note that the method implements three key requirements:
+
+* isReady() is called before each and every write of data.
+A second write performed after a call to isReady() is effectively a synchronous write and will result in an IllegalStateException being thrown.
+* The method will not return unless isReady() returns false or all data has been written.
+If the method returned when isReady() would return true and more data is to be written, the container will not call onWritePossible() again until isReady() has been called and returned false.
+* AsyncContext.complete() is called to end the async request once all data has been written.
+Note for a writeListener there is no equivalent to the onAllDataRead() method of the ReadListener because only the application can know when all response data has been written.
+
+One effect of this second requirement is that all of the response data must be available before the writeListener is registered.
+If this is not the case and the data is written faster than it is generated, the method needs to return when isReady() is true despite not all of the response data having been written.
+However, one option in this case is for the application to call onWritePossible, although this must be done carefully to ensure two threads are not executing onWritePossible at the same time.
+The onError method is called if any error occurs during processing of the response data and, if called, it is the last method called on the writeListener.
+In this case, the application would normally generate an error log and then complete the async request.
+In most applications async read and async write are combined.
+In this case, for example, the ReadListener.onAllDataRead() method registers the writeListener, providing the response data to be written to the writeListener on its constructor.
