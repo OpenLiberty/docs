@@ -40,7 +40,7 @@ The author of the doc must complete the following steps:
 
 5. Request a build of the [draft openliberty.io site](https://draft-openlibertyio.mybluemix.net/docs/):
     1. Sign in to [Travis CI](https://travis-ci.com/github/OpenLiberty/openliberty.io) with your GitHub account.
-    2. Click **More Options > Trigger Build**. Make sure the `master` branch is selected, then click **Trigger custom build**. The draft site build starts running.
+    2. Click **More Options > Trigger Build**. Make sure the `draft` branch is selected, then click **Trigger custom build**. The draft site build starts running.
             
 
 6. When the build finishes, check that the doc looks right on the [draft site](https://draft-openlibertyio.mybluemix.net/docs/). Post a link to your draft in the Git issue for the doc.
@@ -63,7 +63,8 @@ The author of the doc must complete the following steps:
    
 9. If any changes are requested to the PR, make them in your branch and push them to draft first. Then, run the draft site build from Travis CI again to check that the changes look right on the draft site. Open a new PR to staging and request another review.
 
-10. After the PR to staging is approved and merged, request a build of the [staging openliberty.io site from Travis CI](https://travis-ci.com/github/OpenLiberty/openliberty.io). To trigger a staging build, use the same procedure that you used in step 5 to trigger a draft build.
+10. After the PR to staging is approved and merged, request a build of the [staging openliberty.io site from Travis CI](https://travis-ci.com/github/OpenLiberty/openliberty.io). 
+    1. Click **More Options > Trigger Build**. Make sure the `staging` branch is selected, then click **Trigger custom build**. The staging site build starts running.
 
 11. When the build finishes, check to make sure the doc renders correctly on the [staging site](https://staging-openlibertyio.mybluemix.net/docs/). If any changes are needed make sure to add them to the draft branch and review on the draft site before you make a new PR to staging.
 
@@ -80,7 +81,7 @@ All edits and updates to existing Open Liberty Docs must be documented and track
 
 4. Request a build of the [draft openliberty.io site](https://draft-openlibertyio.mybluemix.net/docs/):
     1. Sign in to [Travis CI](https://travis-ci.com/github/OpenLiberty/openliberty.io) with your GitHub account.
-    2. Click **More Options > Trigger Build**. Make sure the `master` branch is selected, then click **Trigger custom build**. The draft site build starts running.            
+    2. Click **More Options > Trigger Build**. Make sure the `draft` branch is selected, then click **Trigger custom build**. The draft site build starts running.            
 
 5. When the build finishes, check that the doc renders correctly on the [draft site](https://draft-openlibertyio.mybluemix.net/docs/). Post a link to your draft in the Git issue for the doc.
 
@@ -102,7 +103,8 @@ All edits and updates to existing Open Liberty Docs must be documented and track
    
 8. If any changes are requested to the PR, make them in your branch and push them to draft first. Then, run the draft site build from Travis CI again to check that they look right on the draft site. Open a new PR to staging and request another review.
 
-9. After the PR to staging is approved and merged, request a build of the [staging openliberty.io site from Travis CI](https://travis-ci.com/github/OpenLiberty/openliberty.io). To trigger a staging build, use the same procedure that you used in step 5 to trigger a draft build.
+9. After the PR to staging is approved and merged, request a build of the [staging openliberty.io site from Travis CI](https://travis-ci.com/github/OpenLiberty/openliberty.io). 
+    1. Click **More Options > Trigger Build**. Make sure the `staging` branch is selected, then click **Trigger custom build**. The staging site build starts running.
 
 10. When the build finishes, check to make sure the doc renders correctly on the [staging site](https://staging-openlibertyio.mybluemix.net/docs/). If any changes are needed make sure to add them to the draft branch and review on the draft site before you make a new PR to staging.
 
@@ -118,7 +120,7 @@ _If you’re unsure of how to update the Open Liberty navigation or unfamiliar w
 
 Since the Open Liberty [draft](https://draft-openlibertyio.mybluemix.net/), [staging](https://staging-openlibertyio.mybluemix.net/) and [production](https://www.openliberty.io/) sites each maintain unique navigation files, you must update them individually, otherwise, unwanted changes and merge conflicts can occur.
 
-The `draft` and `staging`branches each have a dedicated branch for editing the navigation. For the draft branch, this branch is called `draft-nav` and for the staging branch it’s called `staging-nav`. When you’re working in these branches, edit only the `nav.adoc` file and open pull requests only to the branch for which they are specified: `draft` for `draft-nav` and `staging` for `staging-nav`. The production navigation is automatically updated from `vNext` with each release. _You should never update the nav.adoc file in the `vNext` branch_. This file is updated each time the staging branch is pulled to vNext to prep for a release.
+The `draft` and `staging` branches each have a dedicated branch for editing the navigation. For the draft branch, this branch is called `draft-nav` and for the staging branch it’s called `staging-nav`. When you’re working in these branches, edit only the `nav.adoc` file and open pull requests only to the branch for which they are specified: `draft` for `draft-nav` and `staging` for `staging-nav`. The production navigation is automatically updated from `vNext` with each release. _You should never directly update the nav.adoc file in the `vNext` branch_. This file, along with everything else in `vNext` branch, is only updated through PRs from the `staging` branch.
 
 To add an item to the navigation or to edit an existing item, complete the following steps:
 
