@@ -83,8 +83,11 @@ The following example shows the basic configuration to specify JDBC vendor prope
 
 For example, consider the `currentLockTimeout` property on the Db2 JDBC driver's data source classes:
 
-- public void setCurrentLockTimeout(int lockTimeout);
-- public int getCurrentLockTimeout();
+[source,java]
+----
+public void setCurrentLockTimeout(int lockTimeout);
+public int getCurrentLockTimeout();
+----
 
 You can configure this setting with the following `server.xml` configuration:
 
@@ -154,7 +157,7 @@ The following example shows a sample data source configuration for an IBM Db2 da
 To run a Db2 Docker container locally, run the following command:
 
 [source,command]
----
+----
 docker run --ulimit memlock=-1:-1 -it --rm=true --memory-swappiness=0 \
            --name db2-liberty \
            -e AUTOCONFIG=false -e ARCHIVE_LOGS=false -e LICENSE=accept \
@@ -164,7 +167,7 @@ docker run --ulimit memlock=-1:-1 -it --rm=true --memory-swappiness=0 \
            -p 50000:50000 \
            --privileged \
            ibmcom/db2:11.5.0.0a
----
+----
 
 === Microsoft SQLServer
 
@@ -271,7 +274,7 @@ The following example shows a sample data source configuration for a generic rel
 </dataSource>
 ----
 
-Specify the type of the data source by using the `type` attribute of the `dataSource` element. The value for the `type` attribute can be one of the interface class names taht are described in the <<#types,Data source types>> section. Then, specify the mapping of interface class name to the driver implementation of that class on the `jdbcDriver` element, as shown in the previous example.
+Specify the type of the data source by using the `type` attribute of the `dataSource` element. The value for the `type` attribute can be one of the interface class names that are described in the <<#types,Data source types>> section. Then, specify the mapping of interface class name to the driver implementation of that class on the `jdbcDriver` element, as shown in the previous example.
 
 
 For more information, see the xref:reference:feature/jdbc-4.3.adoc[Java Database Connectivity feature].
@@ -296,7 +299,7 @@ If `myDB` is configured as xref:reference:feature/jdbc-4.3.adoc#_default_data_so
 DataSource myDB;
 ----
 
-When the xref:reference:feature/jndi-1.adoc[Java Naming and Directory Interface feature] is enabled in your `server.xml` file, you can obtain a reference to the data source from your application by JNDI lookup, as shown in the following example:
+When the xref:reference:feature/jndi-1.0,adoc[Java Naming and Directory Interface feature] is enabled in your `server.xml` file, you can obtain a reference to the data source from your application by JNDI lookup, as shown in the following example:
 
 [source,java]
 ----
@@ -326,14 +329,16 @@ This type of data source is both enabled for connection pooling and is able to p
 - `java.sql.Driver`
 The `java.sql.Driver` driver implementation provides a basic way to connect to a data source. This implementation requires a URL and is typically used in Java SE applications. Like `javax.sql.DataSource`, it does not provide interoperability that enhances connection pooling and cannot participate as a two-phase capable resource in transactions that involve multiple resources. To work with Open Liberty, this implementation must provide the `ServiceLoader` facility, which Open Liberty uses to discover JDBC driver implementations for a URL.
 
-If the `type` attribute is not specified in the data source configuration, Open Liberty chooses the data source type in the following order, depending on which is available.
+If the `type` attribute is not specified in the data source configuration, Open Liberty chooses the data source type in the following order, depending on which type is available.
 
 If you are using the xref:reference:feature/jdbc-4.3.adoc[jdbc-4.3 feature] or higher, or you are referencing xref:reference:feature/jdbc-4.3.adoc#_default_data_source_configuration[the default data source], Open Liberty chooses the data source type in the following order, depending on availability:
+
 - `javax.sql.XADataSource`
 - `javax.sql.ConnectionPoolDataSource`
 - `javax.sql.DataSource`
 
 If you are using the xref:reference:feature/jdbc-4.2.adoc[jdbc-4.2], xref:reference:feature/jdbc-4.1.adoc[4.1], or xref:reference:feature/jdbc-4.0.adoc[4.0] feature and you are not referencing the default data source, then Open Liberty chooses the data source type in the following order, availability:
+
 - javax.sql.ConnectionPoolDataSource
 - javax.sql.DataSource
 - javax.sql.XADataSource
