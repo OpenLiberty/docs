@@ -8,16 +8,37 @@
 //
 // This doc is hosted in the Red Hat Runtimes documentation. Any changes made to this doc also need to be made to the version that's located in the PurpleLiberty GitHub repo (https://github.com/PurpleLiberty/docs).
 //
+
+:page-description: Features are the discrete units of functionality by which you control the pieces of the runtime environment that are loaded into a particular server. By adding or removing features from your server configuration, you can control what functions the server can perform.
+:seo-title: Feature overview - OpenLiberty.io
 :projectName: Open Liberty
 :page-layout: feature
 :page-type: overview
 = Feature overview
 
-Features are the discrete units of functionality by which you control the pieces of the runtime environment that are loaded into a particular server. By adding or removing features from your server configuration, you can control what functions the server can perform. Features provide the programming models and services that applications require. You can specify any feature in the server configuration files. Some features include other features within them, and the same feature might be included in one or more other features.
-When the server is started, the JVM is launched and control is passed to the Open Liberty kernel. The configuration is loaded as described in the xref:config/server-configuration-overview.adoc[server configuration overview]. When the configuration is parsed, the feature manager gains control and processes the `featureManager` configuration to load the requested features into the server and start the required components. Finally, the applications are started. When the configuration is changed, the feature manager reevaluates the code that is required for the newly requested features by starting and stopping parts of the runtime as necessary without restarting the server. Changes to applications are processed in a similar way.
+// tag::feature-intro[]
+Features are the discrete units of functionality by which you control the pieces of the runtime environment that are loaded into a particular server.
+By adding or removing features from your server configuration, you can control what functions the server can perform.
+// end::feature-intro[]
+
+// tag::feature-intro-2[]
+Features provide the programming models and services that applications require.
+You can specify any feature in the server configuration files.
+Some features include other features within them, and the same feature might be included in one or more other features.
+// end::feature-intro-2[]
+When the server is started, the JVM is launched and control is passed to the Open Liberty kernel.
+The configuration is loaded as described in the xref:config/server-configuration-overview.adoc[server configuration overview].
+When the configuration is parsed, the feature manager gains control and processes the `featureManager` configuration to load the requested features into the server and start the required components.
+Finally, the applications are started.
+When the configuration is changed, the feature manager reevaluates the code that is required for the newly requested features by starting and stopping parts of the runtime without restarting the server.
+Changes to applications are processed in a similar way.
 
 == Using features
-Features are specified in the system configuration files that are the `server.xml` file and any other included files. The feature manager is configured by using the `featureManager` element in the `server.xml` file. Each feature that is required is configured by using the `feature` element. The following example configures the `servlet-4.0` and `jdbc-4.3` features:
+// tag::using-features-intro[]
+Features are specified in the system configuration files that are the `server.xml` file and any other included files.
+The feature manager is configured by using the `featureManager` element in the `server.xml` file.
+Each feature that is required is configured by using the `feature` element.
+The following example configures the feature:servlet-4.0[display="Java Servlets 4.0"] (`servlet-4.0`) and feature:jdbc-4.3[display="Java Database Connectivity 4.3"] (`jdbc-4.3`) features:
 
 [source,xml]
 ----
@@ -29,46 +50,63 @@ Features are specified in the system configuration files that are the `server.xm
 </server>
 ----
 
-The runtime contains default configuration settings so that the configuration you need to specify is kept to a minimum. Specify the features that you need, along with any additions or overrides to the default settings, in the `server.xml` file. For details about the server configuration, see the xref:config/server-configuration-overview.adoc[server configuration overview].
+The runtime contains default configuration settings so that the configuration you need to specify is kept to a minimum.
+Specify the features that you need, along with any additions or overrides to the default settings, in the `server.xml` file.
+// end::using-features-intro[]
+For details about the server configuration, see the xref:config/server-configuration-overview.adoc[server configuration overview].
 
-== Zero migration
-With the Open Liberty zero migration architecture, you can move to the latest version of Open Liberty with minimal impact to your current applications and configurations. Zero migration architecture means that you can use existing, unmodified configuration and application files with an updated version of the Open Liberty runtime environment without unwanted or unexpected change in behavior.
-
-With the use of pluggable features in the Open Liberty runtime environment, your existing APIs and behaviors are supported in new product versions, and new APIs and behaviors are added in new features. For example, both the Servlet 3.1 and 4.0 specifications are supported. An API behavior change is made available as a new version of a feature so that you can choose the appropriate feature version for your application. These versioned features continue to be supported across Open Liberty updates.
-
-If you continue to use the same feature version, you never need to migrate your application. For example, if your application uses Servlet 3.1, the Open Liberty server that runs the application must have the `servlet-3.1` feature. You can update Open Liberty and continue to use the `servlet-3.1` feature indefinitely, regardless of how many other Servlet specification levels are supported. You need to migrate your applications only if you choose to use the `servlet-4.0` feature instead.
+== Zero-migration architecture
+With the Open Liberty zero-migration architecture, you can move to the latest version of Open Liberty with minimal impact to your current applications and configurations.
+With the use of pluggable features in the Open Liberty runtime environment, your existing APIs and behaviors are supported in new product versions, and new APIs and behaviors are added in new features.
+An API behavior change is made available as a new version of a feature so that you can choose the appropriate feature version for your application.
+These versioned features continue to be supported across Open Liberty updates.
+If you continue to use the same feature version, you never need to migrate your application.
+For more information about zero migration with Open Liberty, see xref:ROOT:zero-migration-architecture.adoc[Zero-migration architecture].
 
 == Combining features
-If you try to configure a server to have different versions of a feature, an error is reported because Open Liberty doesn't support combining different versions of the same feature. This means that most Open Liberty features are singleton features. A singleton feature is a feature for which you can configure only one version for use in a server.
+// tag::combining-intro[]
+If you try to configure a server to have different versions of a feature, an error is reported because Open Liberty doesn't support combining different versions of the same feature.
+This means that most Open Liberty features are singleton features.
+A singleton feature is a feature for which you can configure only one version for use in a server.
+// end::combining-intro[]
 
-If you have applications that need different versions of the singleton feature, you must deploy them in different servers. If your server configuration includes multiple versions of a singleton feature, either through direct configuration in the `server.xml` file, or through feature dependencies, that configuration is in error and neither version of that feature is loaded. To resolve this problem, ensure that the configured features all specify, or tolerate, the same version of that singleton feature. If you have hard requirements on both feature versions, you must move some of your applications to a different server.
+If you have applications that need different versions of the singleton feature, you must deploy them in different servers.
+If your server configuration includes multiple versions of a singleton feature, either through direct configuration in the `server.xml` file, or through feature dependencies, that configuration is in error and neither version of that feature is loaded.
+To resolve this problem, ensure that the configured features all specify, or tolerate, the same version of that singleton feature.
+If you have hard requirements on both feature versions, you must move some of your applications to a different server.
 
-Liberty doesn't support combining features from both Java EE 7 and Java EE 8, except when the Java EE 7 and Java EE 8 specifications share a component specification version. If you combine Java EE 7 and Java EE 8 features in a server configuration, the server reports errors at startup.
+Open Liberty doesn't support combining features from both Java EE 7 and Java EE 8, except when the Java EE 7 and Java EE 8 specifications share a component specification version.
+If you combine Java EE 7 and Java EE 8 features in a server configuration, the server reports errors at startup.
 
 The following features are included in both Java EE 7 and Java EE 8:
 
-* feature:appClientSupport-1.0[]
-* feature:batch-1.0[]
-* feature:concurrent-1.0[]
-* feature:ejb-3.2[]
-* feature:j2eeManagement-1.1[]
-* feature:jacc-1.5[]
-* feature:jaxws-2.2[]
-* feature:jca-1.7[]
-* feature:jcaInboundSecurity-1.0[]
-* feature:jdbc-4.2[]
-* feature:jdbc-4.3[]
-* feature:jms-2.0[]
-* feature:wasJmsClient-2.0[]
-* feature:wasJmsSecurity-1.0[]
-* feature:wasJmsServer-1.0[]
+* feature:appClientSupport-1.0[display="Application Client Support for Server 1.0"]
+* feature:batch-1.0[display="Batch API 1.0"]
+* feature:concurrent-1.0[display="Concurrency Utilities for Java EE 1.0"]
+* feature:ejb-3.2[display="Enterprise JavaBeans 3.2"]
+* feature:j2eeManagement-1.1[display="J2EE Management 1.1"]
+* feature:jacc-1.5[display="Java Authorization Contract for Containers 1.5"]
+* feature:jca-1.7[display="Java Connector Architecture 1.7"]
+* feature:jcaInboundSecurity-1.0[display="Java Connector Architecture Security Inflow 1.0"]
+* feature:jdbc-4.2[display="Java Database Connectivity 4.2"]
+* feature:jdbc-4.3[display="Java Database Connectivity 4.3"]
+* feature:jms-2.0[display="Java Message Service 2.0"]
+* feature:jaxws-2.2[display="Java Web Services 2.2"]
+* feature:wasJmsClient-2.0[display="JMS 2.0 Client for Message Server"]
+* feature:wasJmsServer-1.0[display="Message Server 1.0"]
+* feature:wasJmsSecurity-1.0[display="Message Server Security 1.0"]
 
-For a complete list of features that support Java EE 7, see the feature:javaee-7.0[] feature. For a complete list of features that support Java EE 8, see the feature:javaee-8.0[] feature.
+For a complete list of features that support Java EE 7, see the feature:javaee-7.0[display="Java EE Full Platform 7.0"] feature.
+For a complete list of features that support Java EE 8, see the feature:javaee-8.0[display="Java EE Full Platform 8.0"] feature.
 
 == Superseded features
-If a feature is superseded, a new feature or a combination of features might provide an advantage over the superseded feature. The new feature or features might not completely replace the function of the superseded feature, so you must consider your scenario before you decide whether to change your configuration. Superseded features remain supported and valid for use in your configuration, but you might be able to improve your configuration by using the newer features.
+If a feature is superseded, a new feature or a combination of features might provide an advantage over the superseded feature.
+The new feature or features might not completely replace the function of the superseded feature, so you must consider your scenario before you decide whether to change your configuration.
+Superseded features remain supported and valid for use in your configuration, but you might be able to improve your configuration by using the newer features.
 
-Occasionally, a feature that includes other features is superseded by a new version of the feature that does not include all those features. The features that are not included in the new version are considered to be separated. If your application depends on the functions of a separated feature, you must explicitly add the separated feature to your configuration.
+Occasionally, a feature that includes other features is superseded by a new version of the feature that does not include all those features.
+The features that are not included in the new version are considered to be separated.
+If your application depends on the functions of a separated feature, you must explicitly add the separated feature to your configuration.
 
 The following table lists the Open Liberty features that are superseded:
 
@@ -79,16 +117,17 @@ The following table lists the Open Liberty features that are superseded:
 |Superseding feature
 |Dependent feature removed
 
-|`appSecurity-1.0`
-|`appSecurity-2.0`
-|The `ldapRegistry-3.0` and `servlet-3.0` features were removed from the definition of the `appSecurity-2.0` feature.
+|feature:appSecurity-1.0[display="Application Security 1.0"] (`appSecurity-1.0`)
+|feature:appSecurity-2.0[display="Application Security 2.0"] (`appSecurity-2.0`)
+|The feature:ldapRegistry-3.0[display="LDAP User Registry 3.0 feature"] (`ldapRegistry-3.0`) was removed from the definition of the Application Security 2.0 feature.
 
-|`jmsMdb-3.2`
-|`jms-2.0` and `mdb-3.2`
-|Together, the `jms-2.0` and `mdb-3.2` features provide the same function as the `jmsMdb-3.2` feature.
+|feature:jmsMdb-3.2[display="JMS Message-Driven Beans 3.2"] (`jmsMdb-3.2`)
+|feature:jms-2.0[display="Java Message Service 2.0"] (`jms-2.0`) and feature:mdb-3.2[display="Message-Driven Beans 3.2"] (`mdb-3.2`)
+|Together, the Java Message Service 2.0 and Message-Driven Beans 3.2 features provide the same function as the JMS Message-Driven Beans 3.2 feature.
 
-|`ssl-1.0`
-|`transportSecurity-1.0`
-|The `ssl-1.0` and `transportSecurity-1.0` features are functionally equivalent. However, `ssl-1.0` implies that an insecure network protocol is used, so `transportSecurity-1.0` supersedes it.
+|feature:ssl-1.0[display="Secure Socket Layer 1.0"] (`ssl-1.0`)
+|feature:transportSecurity-1.0[display="Transport Security 1.0"] (`transportSecurity-1.0`)
+|The Secure Socket Layer 1.0 and Transport Security 1.0 features are functionally equivalent.
+However, the Secure Socket Layer 1.0 feature implies that an insecure network protocol is used, so the Transport Security 1.0 feature supersedes it.
 
 |===
