@@ -24,7 +24,7 @@ To write and publish content in Open Liberty Docs, you work with the following b
  
     `vNext` is source of each upcoming release. At release time, a cut is taken from this branch to make the release branch, which is then named `vX.0.0.x` according to the release version.
 
- Each branch is protected and all pull requests require review from a either a [doc member](https://github.com/orgs/OpenLiberty/teams/docs-members) or [doc maintainer](https://github.com/orgs/OpenLiberty/teams/docs-maintainers/members).
+ Each branch is protected and all pull requests require review from a either a [doc member](https://github.com/orgs/OpenLiberty/teams/docs-members) or [doc maintainer](https://github.com/orgs/OpenLiberty/teams/docs-maintainers/members). The Open Liberty docs are typically published every 4 weeks. If you want to publish doc updates with the next Open Liberty docs release, your doc updates must be merged to the `vNext` branch by the Monday before the Open Liberty docs release. For example, if the Open Liberty docs release is Friday, 23 October 2020, then you must complete your doc updates and merge them to the `vNext` branch by Monday, 19 October 2020. Only [doc maintainers](https://github.com/orgs/OpenLiberty/teams/docs-maintainers/members) can merge pull requests to the `vNext` branch. The following sections provide further information about making doc updates and merging to the `vNext` branch. 
 
 ## Publishing a new topic
 The author of the doc must complete the following steps:
@@ -142,7 +142,6 @@ To add an item to the navigation or to edit an existing item, complete the follo
 
 7. After you verify your changes on the [staging site](https://staging-openlibertyio.mybluemix.net/docs/), ask a docs maintainer to open a PR from `staging` to `vNext`. Your updates can publish with the next scheduled release.
     
-
 
 
 
