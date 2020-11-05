@@ -1,0 +1,43 @@
+== Examples
+
+=== Configuring the Servlet Filter
+
+In Open Liberty, the BELLS feature can provide a `ServletContainerInitializer` interface that is used to create the `ServletContext` object when an application starts. In the following example, a `ServletContainerInitializer` interface is used to configure a Servlet Filter implementation in a Java source file for the Open Liberty server. The interface passes the `ServletContext.addFilter(String, Filter)` object to the `ServletContainerInitializer.onStartup(Set<Class<?>>, ServletContext)` method to configure the Servlet Filter:
+
+[source,java]
+----
+public class SCI implements ServletContainerInitializer {
+  @Override
+  public void onStartup(Set<Class<?>> arg0, ServletContext arg1)
+    throws ServletException {
+    arg1.addFilter("myFilter", MyFilter.class).addMappingForUrlPatterns(null, false, "/*");
+  }
+}
+----
+
+To register the `ServletContainerInitializer` interface that adds the Servlet Filter for an application, a class name is specified in the library JAR file as shown in the following example:
+
+[source,xml]
+----
+<library id="init">
+  <file name="path/to/jar"/>
+</library>
+
+<bell libraryRef="init"/>
+----
+
+The library JAR file contains a `META-INF/services/javax.servlet.ServletContainerInitializer` file that specifies the fully qualified `ServletContainerInitializer` implementation class name that is contained in the library.
+
+=== Adding the shared library for a custom user registry
+
+In Open Liberty, the BELLS feature can load a custom user registry with a custom user registry JAR file that is stored in a shared library on the server. The following example adds the `resources/sharedLib` shared library that contains the `bellsCur.jar` JAR file that the BELLs feature uses to load the custom user registry:
+
+[source,xml]
+----
+<library id="bellsCurLib" name="bellsCurLib">
+         <file name="${server.config.dir}/resources/sharedLib/bellsCur.jar"></file>
+ </library>
+ <bell libraryRef="bellsCurLib"></bell>
+----
+
+For more information, see xref:configuring-user-registry.adoc[Configuring a Custom User Registry with the BELLS feature].
