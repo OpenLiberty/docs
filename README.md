@@ -142,7 +142,3 @@ To add an item to the navigation or to edit an existing item, complete the follo
 
 7. After you verify your changes on the [staging site](https://staging-openlibertyio.mybluemix.net/docs/), ask a docs maintainer to open a PR from `staging` to `vNext`. Your updates can publish with the next scheduled release.
     
-
-
-
-
