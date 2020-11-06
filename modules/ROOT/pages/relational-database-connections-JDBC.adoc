@@ -122,8 +122,17 @@ If you enable any Java EE or Jakarta EE features in Open Liberty, you can config
 
 == Common data source configuration examples
 
-The following examples show sample configurations for commonly used vendor databases. For applicable vendors, examples are provided for how to configure the database locally in a Docker container for testing and development purposes.
+The following examples show sample configurations for commonly used vendor databases. For applicable vendors, examples are provided for how to configure the database locally in a Docker container for testing and development purposes:
 
+- <<#PostgreSQL,PostgreSQL>>
+- <<#Db2,IBM Db2>>
+- <<#Microsoft,Microsoft SQL Server>>
+- <<#MySQL,MySQL>>
+- <<#Oracle,Oracle>>
+- <<#Embedded,Embedded Derby>>
+-
+
+[#PostgreSQL]
 === PostgreSQL configuration
 
 Get the https://mvnrepository.com/artifact/org.postgresql/postgresql[PostgreSQL JDBC Driver from the Maven Central].
@@ -154,6 +163,7 @@ docker run -it --rm=true --memory-swappiness=0 --ulimit memlock=-1:-1 \
            postgres:10.5
 ----
 
+[#Db2]
 === IBM Db2
 
 Get the https://mvnrepository.com/artifact/com.ibm.db2/jcc[IBM Data Server Driver For JDBC and SQLJ from Maven Central].
@@ -186,6 +196,7 @@ docker run --ulimit memlock=-1:-1 -it --rm=true --memory-swappiness=0 \
            ibmcom/db2:11.5.0.0a
 ----
 
+[#Microsoft]
 === Microsoft SQL Server
 
 Get the  https://mvnrepository.com/artifact/com.microsoft.sqlserver/mssql-jdbc[Microsoft JDBC Driver For SQL Server from Maven Central].
@@ -216,6 +227,7 @@ docker run --ulimit memlock=-1:-1 -it --rm=true --memory-swappiness=0 \
            mcr.microsoft.com/mssql/server:2019-GA-ubuntu-16.04
 ----
 
+[#MySQL]
 === MySQL
 
 Get the https://mvnrepository.com/artifact/mysql/mysql-connector-java[MySQL Connector/J JDBC driver from Maven Central].
@@ -245,6 +257,7 @@ docker run --ulimit memlock=-1:-1 -it --rm=true --memory-swappiness=0 \
            mysql:8
 ----
 
+[#Oracle]
 === Oracle
 
 Get the  https://mvnrepository.com/artifact/com.oracle.database.jdbc/ojdbc8[Oracle JDBC driver from Maven Central].
@@ -261,6 +274,7 @@ The following example shows a sample data source configuration for an Oracle dat
 </dataSource>
 ----
 
+[#Embedded]
 === Embedded Derby
 
 Get the  https://mvnrepository.com/artifact/org.apache.derby/derby/10.14.2.0[Apache Derby Database Engine and Embedded JDBC Driver from Maven Central].
@@ -275,9 +289,9 @@ The following example shows a sample data source configuration for a Derby datab
 </dataSource>
 ----
 
-=== Generic database that is unknown to Open Liberty
+== Configuring databases that are unknown to Open Liberty
 
-The following example shows a sample data source configuration for a generic database that Open Liberty does not recognize by default. Specify the type of the data source by using the `type` attribute of the `dataSource` element. The value for the `type` attribute can be one of the interface class names that are described in the <<#types,Data source types>> section. Then, specify the mapping of interface class name to the driver implementation of that class on the `jdbcDriver` element, as shown in the following example:
+The following example shows a sample data source configuration for a relational database that Open Liberty does not recognize by default. Specify the type of the data source by using the `type` attribute of the `dataSource` element. The value for the `type` attribute can be one of the interface class names that are described in the <<#types,Data source types>> section. Then, specify the mapping of interface class name to the driver implementation of that class on the `jdbcDriver` element, as shown in the following example:
 
 [source,xml]
 ----
@@ -312,15 +326,15 @@ This type of data source is both enabled for connection pooling and is able to p
 - `java.sql.Driver`
 The `java.sql.Driver` driver implementation provides a basic way to connect to a database. This implementation requires a URL and is typically used in Java SE applications. Like `javax.sql.DataSource`, it does not provide interoperability that enhances connection pooling and cannot participate as a two-phase capable resource in transactions that involve multiple resources. To work with Open Liberty, this implementation must provide the `ServiceLoader` facility, which Open Liberty uses to discover JDBC driver implementations for a URL.
 
-If the `type` attribute is not specified in the data source configuration, Open Liberty chooses the data source type according to a defined order, depending on which type is available.
+If the `type` attribute is not specified, Open Liberty looks for the data source type in a conditional order and chooses the first type that is available.
 
-If you are using the xref:reference:feature/jdbc-4.3.adoc[jdbc-4.3 feature] or higher, or if you are referencing <<#default,the default data source>>, Open Liberty chooses the data source type in the following order, depending on availability:
+If you are using the xref:reference:feature/jdbc-4.3.adoc[jdbc-4.3 feature] or higher, or if you are referencing <<#default,the default data source>>, Open Liberty looks for the data source type in the following order:
 
 . `javax.sql.XADataSource`
 . `javax.sql.ConnectionPoolDataSource`
 . `javax.sql.DataSource`
 
-If you are using the xref:reference:feature/jdbc-4.2.adoc[jdbc-4.2], xref:reference:feature/jdbc-4.1.adoc[4.1], or xref:reference:feature/jdbc-4.0.adoc[4.0] feature and you are not referencing the default data source, then Open Liberty chooses the data source type in the following order, depending on availability:
+If you are using the xref:reference:feature/jdbc-4.2.adoc[jdbc-4.2], xref:reference:feature/jdbc-4.1.adoc[4.1], or xref:reference:feature/jdbc-4.0.adoc[4.0] feature and you are not referencing the default data source, then Open Liberty looks for the data source type in the following order:
 
 . `javax.sql.ConnectionPoolDataSource`
 . `javax.sql.DataSource`
