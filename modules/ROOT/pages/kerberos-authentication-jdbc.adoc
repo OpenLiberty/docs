@@ -1,0 +1,107 @@
+// Copyright (c) 2020 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description:
+:seo-title:
+:seo-description:
+:page-layout: general-reference
+:page-type: general
+= Kerberos Authentication for JDBC data sources
+
+Kerberos is a network authentication protocol through which a client and server can identify one another by communicating with a trusted third-party Key Distribution Center (KDC). You can configure your Open Liberty server to use Kerberos credentials to authenticate to a database that is backed by a Java Database Connectivity (JDBC) data source.
+
+Applications that run on an Open Liberty server might need to access protected resources in a data base, such as user account information or sales transaction records. In cases where such a database is protected by Kerberos authentication, your Open liberty server can  supply the necessary credentials to access protected resources and confirm the authenticity of the database.
+
+== Kerberos and Open Liberty
+
+Kerberos authentication in Liberty builds on top of the [Kerberos Login Module and JGSS API provided by the JDK](https://docs.oracle.com/en/java/javase/11/docs/api/jdk.security.auth/com/sun/security/auth/module/Krb5LoginModule.html), which in turn builds on top of the Kerberos OS libraries for the specific system being used.
+
+Kerberos authentication may be used for JDBC DataSources that are backed by one of the following databases:
+- IBM DB2
+- Oracle Database
+- Microsoft SQLServer
+
+The `<kerberos>` configuration element in server.xml provides system-wide configuration options for the Liberty server. For example:
+
+[source,xml]
+----
+  <featureManager>
+    <!-- several different feature enable the 'kerberos' config element. Consult the config documentation to determine which ones -->
+  </featureManager>
+
+  <kerberos keytab="${server.config.dir}/security/krb5.keytab" configFile="${server.config.dir}/security/krb5.conf"/>
+</server>
+----
+
+The `keytab` and `configFile` attributes are both optional. Resolution for these values follows the following priority:
+1. Value specified in `<kerberos>` element in server.xml
+2. Default location(s) defined by the JDK (e.g. `{user.home}/krb5.keytab`, or JDK-defined system properties)
+3. Default location(s) defined by the Operating System (e.g. `/etc/krb5.keytab` or OS-defined environment variables)
+
+On Windows the default Kerberos config file name is `krb5.ini`. On other operating systems it is `krb5.conf`.
+
+== Kerberos configuration for JDBC DataSources
+
+Once the Kerberos global configuration has been defined, a Kerberos principal may be configured on an `<authData>` element in server.xml. For example:
+
+[source,xml]
+----
+  <featureManager>
+    <feature>jdbc-4.2</feature>
+  </featureManager>
+
+  <authData id="myKerberosAuth" krb5Principal="krbUser" krb5TicketCache="${server.config.dir}/security/krb5cc_krbUser"/>
+
+  <library id="db2DriverLib">
+    <fileset dir="${server.config.dir}/db2"/>
+  </library>
+
+  <dataSource jndiName="jdbc/krb/basic" containerAuthDataRef="myKerberosAuth">
+    <jdbcDriver libraryRef="db2DriverLib"/>
+    <properties.db2.jcc databaseName="${DB2_DBNAME}" serverName="${DB2_HOSTNAME}" portNumber="${DB2_PORT}"/>
+  </dataSource>
+----
+
+- The `krb5TicketCache` attribute is optional. If unspecified, the default Kerberos credential cache of the JDK or OS locations will be checked.
+- The `containerAuthDataRef` references the `<authData>` element to be used for authentication when establishing a connection to the database.
+- A `recoveryAuthDataRef` may optionally be specified on the `<dataSource>` element if a different `krb5Principal`/`krb5TicketCache` must be used for authentication during XA recovery. If unspecified, the `<authData>` element referenced by `containerAuthDataRef` will be used for authentication during XA recovery.
+
+== Compatibility with SPNEGO authentication
+
+Liberty also supports [SPNEGO authentication](https://www.ibm.com/support/knowledgecenter/SSEQTP_liberty/com.ibm.websphere.wlp.doc/ae/cwlp_spnego.html) for web authentication and JDBC data source authentication. The specific configuration details of SPNEGO authentication are outside of the scope of this article. In order to use SPNEGO authentication with a JDBC datasource, it is not required to configure a `containerAuthDataRef` or `recoveryAuthDataRef` on your `<datasource>` element.
+
+For example, the following configuration would allow a JDBC datasource to use SPNEGO authentication:
+
+[source,xml]
+----
+  <featureManager>
+    <feature>jdbc-4.2</feature>
+    <feature>spnego-1.0</feature>
+    <feature>appSecurity-2.0</feature>
+  </featureManager>
+
+  <spnego servicePrincipalNames="HTTP/my.spnego.server.com" authFilterRef="myAuthFilter"/>
+  <authFilter id="myAuthFilter">
+    <requestUrl urlPattern="/MySpnegoServlet" matchType="contains"/>
+  </authFilter>
+
+  <!-- The kerberos element is optional, but may be used to customize keytab and configFile locations used for SPNEGO -->
+  <kerberos keytab="${server.config.dir}/security/krb5.keytab" configFile="${server.config.dir}/security/krb5.conf"/>
+
+  <library id="db2DriverLib">
+    <fileset dir="${server.config.dir}/db2"/>
+  </library>
+
+  <dataSource jndiName="jdbc/spnegoAuth">
+    <jdbcDriver libraryRef="db2DriverLib"/>
+    <properties.db2.jcc databaseName="${DB2_DBNAME}" serverName="${DB2_HOSTNAME}" portNumber="${DB2_PORT}"/>
+  </dataSource>
+----
+
+== See also
+- https://web.mit.edu/kerberos/[Kerberos]
