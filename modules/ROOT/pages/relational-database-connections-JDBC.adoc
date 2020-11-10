@@ -128,9 +128,9 @@ The following examples show sample configurations for commonly used vendor datab
 - <<#Db2,IBM Db2>>
 - <<#Microsoft,Microsoft SQL Server>>
 - <<#MySQL,MySQL>>
-- <<#Oracle,Oracle>>
 - <<#Embedded,Embedded Derby>>
-
+- <<#Oracle,Oracle>>
+- <<[#Oracleucp,Oracle UCP>>
 
 [#PostgreSQL]
 === PostgreSQL configuration
@@ -253,6 +253,20 @@ docker run --ulimit memlock=-1:-1 -it --rm=true --memory-swappiness=0 \
            mysql:8
 ----
 
+[#Embedded]
+=== Embedded Derby
+
+Get the  https://mvnrepository.com/artifact/org.apache.derby/derby/10.14.2.0[Apache Derby Database Engine and Embedded JDBC Driver from Maven Central].
+The following example shows a sample data source configuration for a Derby database in an embedded environment:
+
+[source,xml]
+----
+<dataSource jndiName="jdbc/myDB">
+    <jdbcDriver libraryRef="jdbcLib"/>
+    <properties.derby.embedded databaseName="memory:myDB" createDatabase="create"/>
+</dataSource>
+----
+
 [#Oracle]
 === Oracle
 
@@ -269,20 +283,26 @@ The following example shows a sample data source configuration for an Oracle dat
 </dataSource>
 ----
 
-[#Embedded]
-=== Embedded Derby
+[#Oracleucp]
+=== Oracle UCP
 
-Get the  https://mvnrepository.com/artifact/org.apache.derby/derby/10.14.2.0[Apache Derby Database Engine and Embedded JDBC Driver from Maven Central].
-The following example shows a sample data source configuration for a Derby database in an embedded environment:
+Oracle Universal Connection Pool (UCP) is a standalone JDBC connection pool. When you use Oracle UCP with Open Liberty you are using the Oracle UCP connection pool instead of the Open Liberty built-in connection pooling functionality. Some of the https://www.oracle.com/database/technologies/high-availability.html[Oracle high availability database] functionality requires the use of Oracle UCP. Support for Oracle UCP was added in Open Liberty version 19.0.0.4.
+
+Oracle UCP might require some properties, such as the user name and password, to be set in the `properties.oracle.ucp` element.
+Since the Liberty connection pool is disabled, some of the Open Liberty data source and connection manager configuration values are ignored and overridden. For most of those data source and connection manager properties, Oracle UCP provides equivalent functionality. For more information, see the xref:reference:config/dataSource.adoc#dataSource/properties.oracle.ucp[properties.oracle.ucp element documentation].
+
+Get the  https://mvnrepository.com/artifact/com.oracle.database.jdbc/ucp[Oracle UCP JDBC driver from Maven Central].
+The following example shows a sample data source configuration for an Oracle database:
 
 [source,xml]
 ----
 <dataSource jndiName="jdbc/myDB">
     <jdbcDriver libraryRef="jdbcLib"/>
-    <properties.derby.embedded databaseName="memory:myDB" createDatabase="create"/>
+    <properties.oracle URL="jdbc:oracle:thin:@//localhost:1521/myDB"
+                user="exampleUser"
+                password="examplePassword"/>
 </dataSource>
 ----
-
 == Configuring databases that are unknown to Open Liberty
 
 The following example shows a sample data source configuration for a relational database that Open Liberty does not recognize by default. Specify the type of the data source by using the `type` attribute of the `dataSource` element. The value for the `type` attribute can be one of the interface class names that are described in the <<#types,Data source types>> section. Then, specify the mapping of interface class name to the driver implementation of that class on the `jdbcDriver` element, as shown in the following example:
