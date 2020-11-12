@@ -82,7 +82,7 @@ The following example shows the basic configuration to specify JDBC vendor prope
 <properties someProperty="someValue" anotherProperty="5" />
 ----
 
-For example, the following code shows the `currentLockTimeout` property on the Db2 JDBC driver's data source classes:
+For example, the following code shows the `currentLockTimeout` property on the IBM Db2 JDBC driver's data source classes:
 
 [source,java]
 ----
@@ -102,7 +102,7 @@ You can configure this setting with the following configuration in your `server.
 </dataSource>
 ----
 
-After you configure a data source, you can quickly test the configuration to see if your Open Liberty server can access your database. For more information, see xref:testing-database-connections.adoc[Testing database connections].
+After you configure a data source, you can quickly test the configuration to see whether your Open Liberty server can access your database. For more information, see xref:testing-database-connections.adoc[Validating server connections].
 
 [#default]
 === Configuration of the default data source
@@ -135,7 +135,7 @@ The following examples show sample configurations for commonly used vendor datab
 [#PostgreSQL]
 === PostgreSQL configuration
 
-Get the https://mvnrepository.com/artifact/org.postgresql/postgresql[PostgreSQL JDBC Driver from the Maven Central].
+Get the https://mvnrepository.com/artifact/org.postgresql/postgresql[PostgreSQL JDBC Driver from Maven Central].
 The following example shows a sample data source configuration for a PostgreSQL database:
 
 [source,xml]
@@ -179,7 +179,7 @@ The following example shows a sample data source configuration for an IBM Db2 da
 </dataSource>
 ----
 
-To run a Db2 Docker container locally, run the following command:
+To run an IBM Db2 Docker container locally, run the following command:
 
 [source,command]
 ----
@@ -286,10 +286,10 @@ The following example shows a sample data source configuration for an Oracle dat
 [#Oracleucp]
 === Oracle UCP
 
-https://docs.oracle.com/cd/E11882_01/java.112/e12265/intro.htm#BABHFGCA[Oracle Universal Connection Pool] (UCP) is a stand-alone JDBC connection pool. When you use Oracle UCP with Open Liberty you are using the Oracle UCP connection pool instead of the Open Liberty built-in connection pooling functionality. Some of the https://www.oracle.com/database/technologies/high-availability.html[Oracle high availability database] functionality requires the use of Oracle UCP. Support for Oracle UCP was added in Open Liberty version 19.0.0.4.
+https://docs.oracle.com/cd/E11882_01/java.112/e12265/intro.htm#BABHFGCA[Oracle Universal Connection Pool] (UCP) is a stand-alone JDBC connection pool. When you use Oracle UCP with Open Liberty, you are using the Oracle UCP connection pool instead of the Open Liberty built-in connection pooling functions. Some of the https://www.oracle.com/database/technologies/high-availability.html[Oracle high availability database] functions require the use of Oracle UCP. Support for Oracle UCP was added in Open Liberty version 19.0.0.4.
 
-Oracle UCP might require some properties, such as the user name and password, to be set in the `properties.oracle.ucp` element.
-Since the Liberty connection pool is disabled, some of the Open Liberty data source and connection manager configuration values are ignored. For most of those data source and connection manager properties, Oracle UCP provides equivalent functionality. For more information, see the xref:reference:config/dataSource.adoc#dataSource/properties.oracle.ucp[properties.oracle.ucp element documentation].
+Oracle UCP might require some properties, such as `user` and `password`, to be set in the `properties.oracle.ucp` element.
+Because the Open Liberty connection pool is unavailable, some of the Open Liberty data source and connection manager configuration values are ignored. For most of those data source and connection manager properties, Oracle UCP provides equivalent functions. For more information, see the xref:reference:config/dataSource.adoc#dataSource/properties.oracle.ucp[properties.oracle.ucp element documentation].
 
 Get the  https://mvnrepository.com/artifact/com.oracle.database.jdbc/ucp[Oracle UCP JDBC driver from Maven Central].
 The following example shows a sample data source configuration for Oracle UCP:
@@ -338,20 +338,20 @@ This type of data source is the basic form. It does not provide the interoperabi
 This type of data source is enabled for xref:reference:feature/jdbc-4.2.adoc#_connection_pool_configuration[connection pooling]. It cannot participate as a two-phase capable resource in transactions that involve multiple resources.
 
 - `javax.sql.XADataSource`
-This type of data source is both enabled for connection pooling and is able to participate as a two-phase capable resource in transactions that involve multiple resources. The `javax.sql.XADataSource` data source type is essentially a superset of the capabilities that are provided by the `javax.sql.DataSource` and `javax.sql.ConnectionPoolDataSource` data source types. However, some JDBC vendors might have subtle differences in behavior or limitations that are not spelled out in the JDBC specification.
+This type of data source is enabled for connection pooling and is able to participate as a two-phase capable resource in transactions that involve multiple resources. The `javax.sql.XADataSource` data source type is essentially a superset of the capabilities that are provided by the `javax.sql.DataSource` and `javax.sql.ConnectionPoolDataSource` data source types. However, some JDBC vendors might have subtle differences in behavior or limitations that are not spelled out in the JDBC specification.
 
 - `java.sql.Driver`
 The `java.sql.Driver` driver implementation provides a basic way to connect to a database. This implementation requires a URL and is typically used in Java SE applications. Like `javax.sql.DataSource`, it does not provide interoperability that enhances connection pooling and cannot participate as a two-phase capable resource in transactions that involve multiple resources. To work with Open Liberty, this implementation must provide the `ServiceLoader` facility, which Open Liberty uses to discover JDBC driver implementations for a URL.
 
 If the `type` attribute is not specified, Open Liberty looks for the data source type in a conditional order and chooses the first type that is available.
 
-If you are using the xref:reference:feature/jdbc-4.3.adoc[jdbc-4.3 feature] or higher, or if you are referencing <<#default,the default data source>>, Open Liberty looks for the data source type in the following order:
+If you use the JDBC feature version xref:reference:feature/jdbc-4.3.adoc[4.3] or higher, or you are referencing <<#default,the default data source>>, Open Liberty looks for the data source type in the following order:
 
 . `javax.sql.XADataSource`
 . `javax.sql.ConnectionPoolDataSource`
 . `javax.sql.DataSource`
 
-If you are using the xref:reference:feature/jdbc-4.2.adoc[jdbc-4.2], xref:reference:feature/jdbc-4.1.adoc[4.1], or xref:reference:feature/jdbc-4.0.adoc[4.0] feature and you are not referencing the default data source, then Open Liberty looks for the data source type in the following order:
+If you use the JDBC feature version xref:reference:feature/jdbc-4.2.adoc[4.2], xref:reference:feature/jdbc-4.1.adoc[4.1], or xref:reference:feature/jdbc-4.0.adoc[4.0] and you are not referencing the default data source, Open Liberty looks for the data source type in the following order:
 
 . `javax.sql.ConnectionPoolDataSource`
 . `javax.sql.DataSource`
@@ -359,7 +359,7 @@ If you are using the xref:reference:feature/jdbc-4.2.adoc[jdbc-4.2], xref:refere
 
 == Application configuration for relational database connections
 
-To use a data source that is  configured in your `server.xml` file, you can either inject or look it up by referencing the value of the `jndiName` attribute in your application code. The following examples assume a `jndiName` value of `jdbc/myDB` is specified in the `dataSource` element in the `server.xml` file.
+To use a data source that is configured in your `server.xml` file, you can either inject the data source or specify a lookup in your application code. The following examples assume that a `jndiName` value of `jdbc/myDB` is specified in the `dataSource` element in the `server.xml` file.
 
 In a web component or enterprise bean component, you can inject the data source with application code similar to the following example:
 
@@ -369,7 +369,7 @@ In a web component or enterprise bean component, you can inject the data source 
 DataSource myDB;
 ----
 
-If `myDB` is configured as the <<#default,default data source>>, you can omit the `lookup` object, as shown in the following example:
+If the `myDB` value is configured as the <<#default,default data source>>, you can omit the `lookup` object, as shown in the following example:
 
 [source,java]
 ----
@@ -377,14 +377,14 @@ If `myDB` is configured as the <<#default,default data source>>, you can omit th
 DataSource myDB;
 ----
 
-When the xref:reference:feature/jndi-1.0.adoc[Java Naming and Directory Interface feature] is enabled in your `server.xml` file, you can obtain a reference to the data source from your application by JNDI lookup, as shown in the following example:
+When the xref:reference:feature/jndi-1.0.adoc[Java Naming and Directory Interface feature] is enabled, you can reference the data source from your application by Java Naming and Directory Interface (JNDI) lookup. The following example shows a JNDI lookup for the `myDB` data source value:
 
 [source,java]
 ----
 DataSource myDB = InitialContext.doLookup("jdbc/myDB");
 ----
 
-If `myDB` is configured as the default data source, the JNDI lookup can specify a `java:comp/DefaultDataSource` value instead of the JNDI name for the data source, as shown in the following example:
+If the `myDB` value is configured as the default data source, the JNDI lookup can specify a `java:comp/DefaultDataSource` value instead of the JNDI name, as shown in the following example:
 
 [source,java]
 ----
@@ -394,4 +394,5 @@ DataSource myDB = InitialContext.doLookup("java:comp/DefaultDataSource");
 
 
 == See also
-xref:data-persistence-jpa.adoc[Data persistence with the Java Persistence API]
+- xref:data-persistence-jpa.adoc[Data persistence with the Java Persistence API]
+- xref:kerberos-authentication-jdbc.adoc[Kerberos authentication for JDBC data sources]
