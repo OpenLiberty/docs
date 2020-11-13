@@ -11,44 +11,30 @@
 :seo-description: Open Liberty supports two JMX connectors, local connector and REST connector.
 :page-layout: general-reference
 :page-type: general
-= Configuring JMX connection
+= Configuring JMX connections
 
-Open Liberty supports two JMX connectors: local connector and REST connector.
-Each connector is enabled through a different feature.
+You can configure a Java Management Extensions (JMX) connector for your application to access an MBean server on Open Liberty.
+The JMX connector can be configured locally or remotely, to manage  registered JMX resources in the server.
+
+With the `localConnector-1.0` feature, you can access a local JMX connector that is built into the JVM and get the JMX connector address.
+ The local connector can only be used on the same host machine by a client that has the same user ID and the same JDK as the server process.
+Therefore, the `localConnector-1.0` feature can be used only for local connections.
+`restConnector-1.0` provides a direct and reliable method to access the JVM’s MBeanServer, either locally or remotely.
 
 == Configuring local JMX connection to Open Liberty
 
-You can access the local Java Management Extensions (JMX) connector on Open Liberty.
+The local connector feature helps you to access the local JMX connector on Open Liberty to manage JMX resources.
+To enable the `localConnector-1.0` feature see the feature documentation.
+Use JConsole tool or the JMX client that is installed on the same host to access the local connector.
 
-=== About this task
+For the JConsole tool , copy the contents of  the `${server.output.dir}/logs/state/com.ibm.ws.jmx.local.address` directory into the Remote Process field.
+Then click Connect, to use the JDK bridge to connect to the MBeanServer.
 
-The local connector is enabled through the `localConnector-1.0` feature.
-Access through the local connector is protected by the policy that is implemented by the SDK in use.
-Currently, the SDKs require that the client runs on the same host as Open Liberty, and under the same user ID.
-
-
-=== Procedure
-
-The following steps describe how to configure and access the local connector on Liberty:
+For the JMX client, copy the contents of the `${server.output.dir}/logs/state/com.ibm.ws.jmx.local.address` directory into the constructor of a `javax.management.remote.JMXServiceURL` object.
+Then, use the `JMXServiceURL` to establish a connection through `javax.management.remote.JMXConnectorFactory` instance.
 
 
-1. Enable the local connector by using the following code in the `server.xml` file, inside the `featureManager` element:
-
-[source, xml]
-----
-<feature>localConnector-1.0</feature>
-----
-
-2. Access the local connector by using the JConsole tool or the JMX client that is installed on the same host.
-   - Copy the contents of ``${server.output.dir}/logs/state/com.ibm.ws.jmx.local.address` directory to the clipboard.
-   - For the JConsole tool, paste the contents of the clipboard into the Remote Process field.
-     If you select the local process `ws-server.jar defaultServer` instance on the connection panel, then click Connect to connect to the MBeanServer by using the JDK bridge.
-     The Liberty bridge is more reliable.
-   - For the JMX client, paste the contents of the clipboard into the constructor of a `javax.management.remote.JMXServiceURL` object.
-    Use that JMXServiceURL to establish a connection through `javax.management.remote.JMXConnectorFactory` instance.
-    If the JMX client is running on the same JVM as Liberty, you do not have to use the connector, instead you can access the MBeanServer directly.
-
-== Configuring secure JMX connection to Liberty
+== Configuring secure remote JMX connection to Liberty
 
 You can access the secured Java Management Extensions (JMX) connectors on Liberty by using SSL.
 
@@ -65,7 +51,7 @@ The REST connector features already include the `ssl-1.0` feature.
 
 The following section describes how to configure and access the REST connector on Open Liberty:
 
-1. Enable the REST connector by using the following code in the `server.xml` file, inside the featureManager element.
+1. Enable the REST connector by using the following code in the `server.xml` file, inside the `featureManager` element.
 
 [source, xml]
 ----
