@@ -24,7 +24,7 @@ To write and publish content in Open Liberty Docs, you work with the following b
  
     `vNext` is source of each upcoming release. At release time, a cut is taken from this branch to make the release branch, which is then named `vX.0.0.x` according to the release version.
 
- Each branch is protected and all pull requests require review from a either a [doc member](https://github.com/orgs/OpenLiberty/teams/docs-members) or [doc maintainer](https://github.com/orgs/OpenLiberty/teams/docs-maintainers/members).
+ Each branch is protected and all pull requests require review from a either a [doc member](https://github.com/orgs/OpenLiberty/teams/docs-members) or [doc maintainer](https://github.com/orgs/OpenLiberty/teams/docs-maintainers/members). The Open Liberty docs are typically published every 4 weeks. If you want to publish doc updates with the next Open Liberty docs release, your doc updates must be merged to the `vNext` branch by the Monday before the Open Liberty docs release. For example, if the Open Liberty docs release is Friday, 23 October 2020, then you must complete your doc updates and merge them to the `vNext` branch by Monday, 19 October 2020. Only [doc maintainers](https://github.com/orgs/OpenLiberty/teams/docs-maintainers/members) can merge pull requests to the `vNext` branch. The following sections provide further information about making doc updates and merging to the `vNext` branch. 
 
 ## Publishing a new topic
 The author of the doc must complete the following steps:
@@ -40,7 +40,7 @@ The author of the doc must complete the following steps:
 
 5. Request a build of the [draft openliberty.io site](https://draft-openlibertyio.mybluemix.net/docs/):
     1. Sign in to [Travis CI](https://travis-ci.com/github/OpenLiberty/openliberty.io) with your GitHub account.
-    2. Click **More Options > Trigger Build**. Make sure the `master` branch is selected, then click **Trigger custom build**. The draft site build starts running.
+    2. Click **More Options > Trigger Build**. Make sure the `draft` branch is selected, then click **Trigger custom build**. The draft site build starts running.
             
 
 6. When the build finishes, check that the doc looks right on the [draft site](https://draft-openlibertyio.mybluemix.net/docs/). Post a link to your draft in the Git issue for the doc.
@@ -63,7 +63,8 @@ The author of the doc must complete the following steps:
    
 9. If any changes are requested to the PR, make them in your branch and push them to draft first. Then, run the draft site build from Travis CI again to check that the changes look right on the draft site. Open a new PR to staging and request another review.
 
-10. After the PR to staging is approved and merged, request a build of the [staging openliberty.io site from Travis CI](https://travis-ci.com/github/OpenLiberty/openliberty.io). To trigger a staging build, use the same procedure that you used in step 5 to trigger a draft build.
+10. After the PR to staging is approved and merged, request a build of the [staging openliberty.io site from Travis CI](https://travis-ci.com/github/OpenLiberty/openliberty.io). 
+    1. Click **More Options > Trigger Build**. Make sure the `staging` branch is selected, then click **Trigger custom build**. The staging site build starts running.
 
 11. When the build finishes, check to make sure the doc renders correctly on the [staging site](https://staging-openlibertyio.mybluemix.net/docs/). If any changes are needed make sure to add them to the draft branch and review on the draft site before you make a new PR to staging.
 
@@ -80,7 +81,7 @@ All edits and updates to existing Open Liberty Docs must be documented and track
 
 4. Request a build of the [draft openliberty.io site](https://draft-openlibertyio.mybluemix.net/docs/):
     1. Sign in to [Travis CI](https://travis-ci.com/github/OpenLiberty/openliberty.io) with your GitHub account.
-    2. Click **More Options > Trigger Build**. Make sure the `master` branch is selected, then click **Trigger custom build**. The draft site build starts running.            
+    2. Click **More Options > Trigger Build**. Make sure the `draft` branch is selected, then click **Trigger custom build**. The draft site build starts running.            
 
 5. When the build finishes, check that the doc renders correctly on the [draft site](https://draft-openlibertyio.mybluemix.net/docs/). Post a link to your draft in the Git issue for the doc.
 
@@ -102,7 +103,8 @@ All edits and updates to existing Open Liberty Docs must be documented and track
    
 8. If any changes are requested to the PR, make them in your branch and push them to draft first. Then, run the draft site build from Travis CI again to check that they look right on the draft site. Open a new PR to staging and request another review.
 
-9. After the PR to staging is approved and merged, request a build of the [staging openliberty.io site from Travis CI](https://travis-ci.com/github/OpenLiberty/openliberty.io). To trigger a staging build, use the same procedure that you used in step 5 to trigger a draft build.
+9. After the PR to staging is approved and merged, request a build of the [staging openliberty.io site from Travis CI](https://travis-ci.com/github/OpenLiberty/openliberty.io). 
+    1. Click **More Options > Trigger Build**. Make sure the `staging` branch is selected, then click **Trigger custom build**. The staging site build starts running.
 
 10. When the build finishes, check to make sure the doc renders correctly on the [staging site](https://staging-openlibertyio.mybluemix.net/docs/). If any changes are needed make sure to add them to the draft branch and review on the draft site before you make a new PR to staging.
 
@@ -140,8 +142,3 @@ To add an item to the navigation or to edit an existing item, complete the follo
 
 7. After you verify your changes on the [staging site](https://staging-openlibertyio.mybluemix.net/docs/), ask a docs maintainer to open a PR from `staging` to `vNext`. Your updates can publish with the next scheduled release.
     
-
-
-
-
-

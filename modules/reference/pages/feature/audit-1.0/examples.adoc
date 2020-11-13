@@ -1,0 +1,50 @@
+== Examples
+
+=== Managing audit log files
+
+The following example shows how to increase the individual file size to 100 MB, reduce the maximum number of archived audit log files to 50, and specify the `compact` attribute:
+
+[source,xml]
+----
+<auditFileHandler maxFiles="50" maxFileSize="100" compact=”true”>
+</auditFileHandler>
+----
+
+=== Configuring the audit events to log
+
+To specify only the audit events and outcomes that might be relevant in an environment, the `events` element can be defined with the audit event name and outcome. The following example specifies audit events and outcomes in the `auditFileHandler` element:
+
+[source,xml]
+----
+<auditFileHandler maxFiles="5" maxFileSize="20" compact="true">
+    <events name="AuditEvent_1" eventName="SECURITY_AUTHN" outcome="SUCCESS"/>
+    <events name="AuditEvent_2" eventName="SECURITY_AUTHN" outcome="REDIRECT"/>
+    <events name="AuditEvent_3" eventName="SECURITY_AUTHN" outcome="FAILURE"/>
+    <events name="AuditEvent_4" eventName="SECURITY_AUTHZ"/>
+</auditFileHandler>
+----
+
+
+=== Encrypting and signing audit data
+
+The following example shows the audit file handler with encryption and signing enabled. The `encrypt` and `sign` attributes must be specified in the `auditFileHandler` element along with the alias names of the certificates and the keystores that contain the certificates. The `keystore` element contains the private or public key that is used to encrypt and sign the data:
+
+[source,xml]
+----
+<keyStore id="auditEncKeyStore” password="Liberty" location="server1/resources/security/AuditEncryptionKeyStore.jks" type="JKS" />
+
+<keyStore id="auditSignKeyStore" password="{aes}EzY9Oi0rJg==" location="server1/resources/security/AuditSigningKeyStore2.jks" type="JKS" />
+
+<auditFileHandler encrypt="true" encryptAlias="#auditencryption#" encryptKeyStoreRef="auditEncKeyStore" sign="true" signingAlias="auditsigning2" signingKeyStoreRef="auditSignKeyStore"
+</auditFileHandler>
+----
+
+=== Configuring the audit log format
+
+The JSON logging format makes it easier to manage log data by providing more structure to generated data. The following example shows how to configure the Audit feature to generate audit logs in the JSON logging format:
+
+[source,xml]
+----
+<logging messageFormat="json" messageSource="audit,message"/>
+----
+
