@@ -1,0 +1,31 @@
+
+== Example
+
+If you have an external mail server, you can use the JavaMail API to send and receive email on applications that are running on Open Liberty.
+After you add the JavaMail feature, you can call the JavaMail libraries in any application that runs on the server.
+If you want to create a `javax.mail.Session` object, add and configure a `mailSession` element.
+To enable the following configuration, in addition to enabling the JavaMail feature, you must also enable the xref:feature/jndi-1.0.adoc[Java Naming and Directory Interface feature] in your `server.xml` file:
+
+[source,xml]
+----
+<mailSession>
+    <mailSessionID>gmailSMTPSession</mailSessionID>
+    <jndiName>ExampleMail/SMTPSender/gmailSMTPSession</jndiName>
+    <description>My Gmail SMTP Session</description>
+    <storeProtocol>imaps</storeProtocol>
+    <transportProtocol>smtp</transportProtocol>
+    <host>smtp.gmail.com</host>
+    <user>youruseraccount@gmail.com</user>
+    <password>yourpassword</password>
+    <from>youruseraccount@gmail.com</from>
+    <property name="mail.imap.host" value="imap.gmail.com" />
+    <property name="mail.smtp.port" value="587" />
+    <property name="mail.smtp.auth" value="true" />
+    <property name="mail.smtp.starttls.enable" value="true" />
+</mailSession>
+----
+
+This example mail session is configured so that it can be used for both SMTP and IMAP on Gmail.
+After the mail session is configured, the session is created and injected by using the Java Naming and Directory Interface (JNDI).
+In this example, the `jndiName` attribute is specified as `ExampleMail/SMTPSender/gmailSMTPSession`, where `ExampleMail` is the name of the WAR file, `SMTPSender` is the class name, and `gmailSMTPSession` is the name of the actual session object.
+If you use the standard JNDI context, `java:comp/env/mail/gmailSMTPSession`, specify the `jndiName` attribute as `jndiName="mail/gmailSMTPSession"`.
