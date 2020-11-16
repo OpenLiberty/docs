@@ -1,0 +1,232 @@
+// Copyright (c) 2020 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+//
+:page-description:
+:seo-title:
+:seo-description:
+:page-layout: general-reference
+:page-type: general
+= Asynchronous input and output
+
+With asynchronous read and asynchronous write, inbound data can be processed more quickly and outbound responses can be written more quickly than with synchronous read and synchronous write.
+By following the requirements for implementing asynchronous read and asynchronous write, you can benefit your Open Liberty server, particularly if large amounts of post data or response data must be processed.
+
+== Asynchronous read
+Consider a scenario where a client request includes two packets of data that are sent 1 second apart by the client.
+In synchronous read, the application must occupy a thread for the entire time it takes to receive the data sent by the client.
+The thread starts when the first packet is received and then waits for 1 second to receive the second packet, so the thread is occupied for 1 second.
+In a server with 10 threads, you can process 10 inbound requests per second.
+
+In asynchronous read, the application relinquishes the thread after the first packet is received from the client and is redispatched when the second packet arrives.
+Assume that it takes 0.1 seconds to process each inbound packet, so the inbound request occupies a thread for 0.2 seconds.
+In this case, the same server with 10 threads can process 50 inbound requests per second.
+Ideally, the throughput of your application server isn't affected by the rate at which data is received from a client.
+If throughput is affected by the rate at which data is received, it takes only a few bad clients and throughput drops.
+With asynchronous read, you remove this variable so you have better, more consistent throughput.
+
+== Asynchronous read sample code
+The following examples demonstrate the key requirements for implementing asynchronous read in your code.
+
+
+=== Register a ReadListener interface
+To take advantage of asynchronous read, your application must provide a `ReadListener` interface that is called when inbound data is received.
+The `ReadListener` interface reads the data as it's received and starts the business logic after all data is read.
+The `ReadListener` interface is registered by a servlet, as shown in the following example:
+
+[source,java]
+----
+@Override
+protected void doPost(HttpServletRequest req, HttpServletResponse res) throws IOException, ServletException {
+
+    // Asynchronous I/O requires an asynchronous servlet.
+    req.startAsync();
+
+    // Register the ReadListener interface with the ServletInputStream object.
+    req.getInputStream().setReadListener(new SampleReadListener(req, res));
+
+    // The servlet returns, which relinquishes the thread.
+}
+----
+
+This example shows a `doPost` method that includes the two steps that are required by a servlet to perform asynchronous read.
+The first step starts asynchronous processing, and the second step registers a `ReadListener` interface with the `ServletInputStream` object for the request.
+After these steps are complete, the servlet returns to relinquish the thread.
+If you need the servlet to perform extra steps, the servlet must perform these extra steps before the `ReadListener` interface is set.
+Otherwise, the servlet and the `ReadListener` interface compete to process.
+
+=== Read and store inbound data
+The `ReadListener` interface implements three methods, `onDataAvailable`, `onAllDataRead`, and `onError`.
+The `onDataAvailable` method reads and optionally stores the inbound data.
+In the following example, after the inbound data is read, the inbound data is stored for processing:
+
+[source,java]
+----
+@Override
+public void onDataAvailable() throws IOException {
+
+    byte postData[] = new byte[1024];
+    int postDataLen;
+
+    ServletInputStream inStream = _req.getInputStream();
+
+    // The isReady method must be checked before each read. If it returns false, all
+    // currently available data was read, so the thread should be relinquished.
+    // If the isFinished method returns true, all data was read.
+    while (inStream.isReady() && !inStream.isFinished()) {
+
+        // Only one read of data is allowed inside the loop.
+        postDataLen = inStream.read(postData);
+
+        // Save the input data for processing later.
+        if (postDataLen > 0)
+            outData.add(new String(postData, 0, postDataLen));
+    }
+}
+----
+
+The while loop in this example implements two key requirements:
+
+* The `isReady` method is called before every read of data.
+A second read of data occurs after the `isReady` method is called.
+This second read of data is effectively a synchronous read and results in an `IllegalStateException` exception.
+* The `onDataAvailable` method doesn't return unless the `isReady` method returns false or all data is read.
+If the `onDataAvailable` method returns when the `isReady` method returns true and more data must be read, the container doesn't call the `onDataAvailable` method again until the `isReady` method is called and returns false.
+If the `onDataAvailable` method returned when the call to the `isReady` method returned true and all of the data wasn't read, your application must call the `onDataAvailable` method again to restart the read.
+
+=== Process inbound data
+In the next example, the inbound data is saved for later processing.
+The `onAllDataRead` method is called by the container after all inbound data is read.
+The `onAllDataRead` method performs the business logic based on the inbound data:
+
+[#readlistener-onalldataread]
+[source,java]
+----
+@Override
+public void onAllDataRead() throws IOException {
+
+    // Process the inbound data.
+    for (String outDataString : outData) {
+        _res.getOutputStream().print(outDataString);
+    }
+
+    // Indicate that the asynchronous request is complete.
+    _req.getAsyncContext().complete();
+}
+----
+
+In this simple example, the data is written back to the client.
+After all the data is written, the asynchronous request is completed by the `AsyncContext.complete` method.
+
+=== Log any errors
+The `onError` method is called if any error occurs when the inbound data is being processed.
+If this method is called, it's the last method called on the `ReadListener` interface.
+In this example, the application returns an error message to the client and then completes the asynchronous request:
+
+[source,java]
+----
+@Override
+public void onError(Throwable arg0) {
+
+    try {
+        _res.getOutputStream().println("Exception when processing inbound data : " + arg0);
+    } catch (IOException e) {
+        // Log an error.
+    }
+
+    // Indicate that the request is complete.
+    _asyncContext.complete();
+}
+----
+
+== Asynchronous write
+Asynchronous write is similar to asynchronous read, but asynchronous write is used for sending responses to the client.
+Assume that a response is sent in two packets.
+The first packet is sent to the client immediately, but the second packet can be sent only after the client acknowledges that the first packet was received.
+In synchronous write, a thread is occupied while it waits for the acknowledgment of the client.
+But in asynchronous write, a thread isn't occupied while it waits for the acknowledgment of the client.
+As a result, throughput can be increased because a thread isn't held to wait for the client to acknowledge receipt of data.
+Asynchronous write can be less useful than asynchronous read because your servlet and HTTP implementation might effectively perform the work of asynchronous writing.
+Your application can write as much as it needs, and the underlying implementation might buffer the response and send it asynchronously.
+
+== Asynchronous write sample code
+The following examples demonstrate the key requirements for implementing asynchronous write in your code.
+In most applications, asynchronous read and asynchronous write are combined.
+In the previous asynchronous example code, <<readlistener-onalldataread,the ReadListener.onAllDataRead method>> registers the `WriteListener` interface and provides the response data to the `WriteListener` interface on its constructor.
+
+=== Register a WriteListener interface
+To use asynchronous write, your application must provide a `WriteListener` interface, which is called when response data can be sent without blocking.
+The `WriteListener` interface is registered by a servlet, as shown in the following example:
+
+[source,java]
+----
+@Override
+protected void service(HttpServletRequest req, HttpServletResponse res) throws IOException, ServletException {
+
+    // Asynchronous I/O requires an asynchronous servlet.
+    req.startAsync();
+
+    // Register the WriteListener interface with the ServletOuputStream object.
+    res.getOutputStream().setWriteListener(new SampleWriteListener(req, res, 200));
+
+    // The servlet returns, which relinquishes the thread.
+}
+----
+
+This example shows a `service` method that includes the two steps that are required to perform asynchronous write.
+In this example, the `service` method is acceptable because a `WriteListener` interface can be used for any inbound method, for example, the `doPost` method.
+The first step starts asynchronous processing, and the second step registers a `WriteListener` interface with the `ServletOutputStream` object for the request.
+After these steps are complete, the servlet returns to relinquish the thread.
+If you need the servlet to perform extra steps, the servlet must perform these extra steps before the `WriteListener` interface is set.
+Otherwise, the servlet and the `WriteListener` interface compete to process.
+
+=== Write an outbound response
+The `WriteListener` interface implements two methods, `onWritePossible` and `onError`.
+The `onWritePossible` method is responsible for writing outbound responses:
+
+[source,java]
+----
+public void onWritePossible() throws IOException {
+
+    ServletOutputStream outStream = _res.getOutputStream();
+
+    // Write each line of data, checking the isReady method before each write.
+    while (outStream.isReady() && _numWritesRemaining > 0) {
+        _numWritesDone++;
+        _numWritesRemaining--;
+        outStream.println(_asyncEvents + "." + _numWritesDone + _outData);
+    }
+
+    if (_numWritesRemaining == 0) {
+        // If all data was written, complete the asynchronous request.
+        _req.getAsyncContext().complete();
+    } else {
+        // The isReady method returned false before all data was written.
+        _asyncEvents++;
+    }
+}
+----
+
+The `onWritePossible` method implements three key requirements:
+
+* The `isReady` method is called before every write of data.
+A second write of data occurs after the `isReady` method is called.
+This second write of data is effectively a synchronous write and results in an `IllegalStateException` exception.
+* The `onWritePossible` method doesn't return unless the `isReady` method returns false or all data is written.
+If the `onWritePossible` method returns when the `isReady` method returns true and more data must be written, the container doesn't call the `onWritePossible` method again until the `isReady` method is called and returns false.
+One effect of this requirement is that all of the response data must be available before the `WriteListener` interface is registered.
+If all of the response data isn't available, the `onWritePossible` method must return when the `isReady` method is true even though some response data wasn't written.
+* The `AsyncContext.complete` method is called to end the asynchronous request after all data is written.
+An equivalent to the `onAllDataRead` method of the `ReadListener` interface doesn't exist for the `WriteListener` interface because only your application knows when all response data is written.
+
+The `onError` method is called if any error occurs when the response data is being processed.
+If this method is called, it's the last method called on the `WriteListener` interface.
+In this case, the application generates an error log and then completes the asynchronous request.
+
+== See also
+xref:sync-async-rest-clients.adoc[Synchronous and asynchronous REST clients]
