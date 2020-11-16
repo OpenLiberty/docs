@@ -13,31 +13,24 @@
 :page-type: general
 = Health checks for microservices
 
-Monitoring the health of the microservices that make up your application is crucial to providing your users with reliable performance. A _health check_ is a special REST API implementation that you can use to validate the status of a microservice and its dependencies. https://github.com/eclipse/microprofile-health[MicroProfile Health] enables services in an application to self-check their health and then publishes the overall health status to a defined endpoint.
+Monitoring the health of the microservices that make up your application is crucial to providing your users with reliable performance. A health check is a special REST API implementation that you can use to validate the status of a microservice and its dependencies. MicroProfile Health enables services in an application to self-check their health and then publishes the overall health status to a defined endpoint.
 
-A self-check can assess anything that the service needs:
+A health check can assess anything that the service needs, including dependencies, system properties, database connections, endpoint connections, and resource availability.
+Services report as their availability by implementing the API provided by https://github.com/eclipse/microprofile-health[MicroProfile Health]. When a service is available, it reports an `UP` status. If a service is unavailable, it reports a `DOWN` status. A service orchestrator can then use these status reports to decide how to manage and scale the services within an application. Health checks can also interact with https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/[Kubernetes liveness and readiness probes].
 
-- Dependencies
-- System properties
-- Database connections
-- Endpoint connections
-- Resource availability
+For example, in a microservices-based banking application, you might implement health checks on the login service, the balance transfer service, and the bill pay service. If a health check on the balance transfer service detects a bug or deadlock, it returns a `DOWN` status. In this case, if the `/health/live` endpoint is configured in a Kubernetes liveness probe, the probe restarts the service automatically. Restarting the service saves the user from encountering downtime or an error and preserves the functions of the other services in the application.
 
-Services report as either `UP` (available) or `DOWN` (unavailable) by implementing the API provided by MicroProfile Health. A service orchestrator can then use these status reports to decide how to manage and scale the services within an application. Health checks can also interact directly with https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/[Kubernetes liveness and readiness probes].
+== MicroProfile Health endpoints and annotations
 
-For example, in a microservices-based banking application, you might implement health checks on the login service, the balance transfer service, and the bill pay service. If a health check on the balance transfer service detects a bug or deadlock, it reports as DOWN. In this case, if the `/health/live` endpoint is configured in a Kubernetes liveness probe, the probe restarts the service automatically. Restarting the service saves the user from encountering downtime or an error and preserves the functions of the other services in the application.
-
-== MicroProfile Health provided endpoints and annotations
-
-MicroProfile Health provides three endpoints:
+MicroProfile Health provides the following three endpoints:
 
 - `/health/ready`: returns the readiness of a service, or whether it is ready to process requests. This endpoint corresponds to the Kubernetes readiness probe.
 - `/health/live`: returns the liveness of a service, or whether it encountered a bug or deadlock. If this check fails, the service is not running and can be stopped. This endpoint corresponds to the Kubernetes liveness probe, which automatically restarts the pod if the check fails.
-- `/health`: aggregates the responses from `/health/live` and `/health/ready`. This endpoint corresponds to the deprecated `@Health` annotation and is only available to provide compatibility with MicroProfile 1.0. If you are are using MicroProfile 2.0 or higher, use the `/health/ready` or `/health/live` endpoints instead.
+- `/health`: aggregates the responses from `/health/live` and `/health/ready`. This endpoint corresponds to the deprecated `@Health` annotation and is only available to provide compatibility with MicroProfile 1.0. If you are using MicroProfile 2.0 or higher, use the `/health/ready` or `/health/live` endpoints instead.
 
-To implement readiness or liveness health checks, add the appropriate annotation for your needs, `@Liveness` or `@Readiness`. These annotations link the provided endpoints to Kubernetes liveness and readiness probes.
+To implement readiness or liveness health checks, add either the `@Liveness` or `@Readiness` annotation to your code. These annotations link the provided endpoints to Kubernetes liveness and readiness probes.
 
-The following example demonstrates the `@Liveness` annotation, which checks the heap memory usage. If memory consumption is less than 90%, it returns an `UP` status. If memory usage exceeds 90%, it returns a `DOWN` status.
+The following example demonstrates the `@Liveness` annotation, which checks the heap memory usage. If memory consumption is less than 90%, it returns an `UP` status. If memory usage exceeds 90%, it returns a `DOWN` status:
 
 [source,java]
 ----
@@ -61,7 +54,7 @@ public class MemoryCheck implements HealthCheck {
 }
 ----
 
-The following example shows the JSON response from the `/health/live` endpoint if heap memory usage is less than 90%. The first `status` indicates the overall status of all health checks returned from the endpoint. The second `status` indicates the status of the particular check specified by the preceding `name` (in this example, `heap-memory`). In order for the overall status to be `UP`, all checks that are run on the endpoint must pass.
+The following example shows the JSON response from the `/health/live` endpoint if heap memory usage is less than 90%. The first status indicates the overall status of all health checks that are returned from the endpoint. The second status indicates the status of the particular check that is specified by the preceding `name` value, which in this example is `heap-memory`. In order for the overall status to be `UP`, all checks that are run on the endpoint must pass:
 
 [source,java]
 ----
@@ -80,7 +73,7 @@ The following example shows the JSON response from the `/health/live` endpoint i
 }
 ----
 
-The next example shows the `@Readiness` annotation, which is checking for an available database connection. If the connection is successful, it returns an `UP` status. If the connection is unavailable, it returns a `DOWN` status.
+The next example shows the `@Readiness` annotation, which checks for an available database connection. If the connection is successful, it returns an `UP` status. If the connection is unavailable, it returns a `DOWN` status:
 
 [source,java]
 ----
@@ -101,7 +94,7 @@ public class DatabaseReadyCheck implements HealthCheck {
 }
 ----
 
-The following example shows the JSON response from the `/health/ready` endpoint if the database connection is unavailable. The first `status` indicates the overall status of all health checks returned from the endpoint. The second `status` indicates the status of the particular check specified by the preceding `name` (in this example, `databaseReady`). If any check run on the endpoint fails, the overall status will be `DOWN`.
+The following example shows the JSON response from the `/health/ready` endpoint if the database connection is unavailable. The first status indicates the overall status of all health checks returned from the endpoint. The second status indicates the status of the particular check that is specified by the preceding `name` value, which in this example is `databaseReady`. If any check that runs on the endpoint fails, the overall status is `DOWN`.
 
 [source,java]
 ----
