@@ -1,0 +1,86 @@
+// Copyright (c) 2020 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description:
+:seo-title: JAX-RS integration with CDI
+:seo-description:
+:page-layout: general-reference
+:page-type: general
+= JAX-RS integration with CDI
+
+In Open Liberty, Jakarta RESTful Web Services (JAX-RS) can integrate with the Contexts and Dependency Injection (CDI) specification. By integrating JAX-RS with CDI, you can annotate CDI beans or managed beans as REST endpoints and use CDI injection for web services.
+
+In Open Liberty, JAX-RS support is enabled by the xref:reference:feature/jaxrs-2.1.adoc[Java RESTful Services feature]. This feature helps applications build and consume RESTful services. It also supports CDI-style beans as root resource classes, providers, and application subclasses. Providers and application subclasses must be singleton classes or use the application scope. The CDI specification helps integrate various kinds of Jakarta EE components in a loosely coupled but type-safe way. It provides a common mechanism to inject components such as enterprise beans or managed beans into other components such as JavServer Pages (JSP) files or other enterprise beans. CDI support in Open Liberty is enabled by the xref:reference:feature/cdi-2.0.adoc[Contexts and Dependency Injection feature].
+
+
+One way to implement CDI with JAX-RS resources is to use the `@ApplicationScoped` and `@Inject` annotations with application-scoped beans in your application code, as shown in the following example:
+
+
+[source,java]
+----
+@ApplicationScoped
+@Path("/ApplicationScopedResource")
+public class ApplicationScopedResource {
+
+    private @Inject
+    SimpleBean injected;
+
+...
+
+}
+----
+The `@ApplicationScoped` annotation specifies that only one instance of this bean is used for the lifecycle of the application. Normally, JAX-RS resources are per-request, the JAX-RS engine creates a new instance of the class for each HTTP request. Per-request classes are beneficial in some cases but they  are generally less efficient than a per-application resource, where the same instance is used for every HTTP request.
+
+The `@Inject` annotation injects an instance of the `SimpleBean` class into the instance of the `ApplicationScopedResource` bean. For more information about CDI, see xref:cdi-beans.adoc[Context and dependency injection beans].
+
+== Restrictions on JAX-RS 2.0 with CDI
+
+CDI with JAX-RS in Open Liberty is subject to the following restrictions:
+
+- If the Contexts and Dependency Injection feature is not enabled in your `server.xml` file, the runtime has no CDI support. Therefore, if you specify a  CDI annotation in a Java class, the JAX-RS engine uses the Java class as a plain old Java object (POJO) class.
+- If a resource class with the `@Path` annotation implements a JAX-RS provider interface or declares with the `@Provider` annotation, then this class works as both a resource and a provider. In this case, the JAX-RS engine uses only one instance of this class that is shared by the resource class and the provider. The lifecycle of the instance is singleton.
+- If a RESTful resource is also a CDI-managed bean and its scope is `javax.enterprise.context.Dependent`, the `PreDestroy` method cannot be called because of the CDI restriction.
+- If a class is registered in both the `getClasses` and `getSingletons` methods of the application class, the JAX-RS engine uses the instance from the `getSingletons` method and ignores the `getClasses` instance. However, objects that are returned in the `getSingletons` method are not managed by CDI. In general, avoid use of the `getSingletons` method as it is targeted for deprecation and eventual removal from future versions of the JAX-RS specification.
+
+== JAX-RS and CDI scopes
+
+The scope of a bean defines the lifecycle of its instances. A bean lifecycle can be singleton, so that the same instance is used for every HTTP request, or per request, so that a new instance is created for each HTTP request. Bean lifecycles can also be scoped to a particular session, or by conversation, which is defined by explicit developer-controlled boundaries for JSF applications.
+
+JAX-RS and CDI specify slightly different scopes. If the lifecycle scopes that are specified by JAX-RS and CDI are in conflict, the resulting lifecycle depends on the component type of the JAX-RS resource. JAX-RS provider component types are always singletons, regardless of the CDI annotation. JAX-RS resource component types adopt whatever lifecycle is specified by the CDI annotation.
+
+For example, the `ApplicationScoped` CDI scope annotation defines a singleton lifecycle, because only one instance of a class with this annotation is used for the lifecycle of the application. If you configure a JAX-RS resource scope as per-request, but then specify the `@ApplicationScoped` CDI scope on it, the resource lifecycle is singleton. Similarly, if you configure a JAX-RS resource scope as singleton, but then specify the `@RequestScoped` CDI scope on it, the resource lifecycle is per request, as specified the CDI annotation.
+However, if the JAX-RS component is a provider, the lifecycle is singleton, regardless of the CDI annotation.
+
+////
+The following table gives examples of the resulting lifecycle for different combinations of JAX-RS and CDI scopes:
+
+
+.Lifecycle results for JAX-RS scope and CDI scope conflicts
+[%header,cols="6,9,9,9"]
+|===
+|Component type|Configured JAX-RS scope|Configured CDI Scope annotation|Resulting lifecycle
+|Resource|perRequest|@ApplicationScoped|singleton
+|Resource|perRequest|@RequestScoped    |perRequest
+|Resource|perRequest|@Dependent        |perRequest
+|Resource|perRequest|@SessionScoped    |session
+|Resource|singleton |@ApplicationScoped|singleton
+|Resource|singleton |@RequestScoped    |perRequest
+|Resource|singleton |@Dependent        |singleton
+|Resource|singleton |@SessionScoped    |session
+|Provider|any       |any               |singleton
+|===
+
+////
+For more information, see xref:cdi-beans.adoc#_cdi_scopes[CDI scopes].
+
+
+
+== See also
+- Guide: link:/guides//cdi-intro.html[Injecting dependencies into microservices]
+- xref:sync-async-rest-clients.adoc[Synchronous and asynchronous REST clients]
+- xref:reference:feature/jaxrsClient-2.1.adoc[Java RESTful Services Client feature]
