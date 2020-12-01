@@ -55,10 +55,11 @@ The following example shows what the HTTP session caching might look like:
 @WebServlet("/ExampleServlet")
 public class ExampleServlet extends HttpServlet {
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp)
+      throws ServletException, IOException {
         HttpSession session = req.getSession();
         Object dbThing = session.getAttribute("dbThing");
-
+        // If object is not found in session, obtain it and cache it for future use
         if (dbThing == null) {
             dbThing = getFromDB(); // Some expensive operation
             session.setAttribute("dbThing", dbThing);
@@ -80,17 +81,16 @@ There are two different ways an Open Liberty server can behave in a cluster.
 
 The following code shows a simple example of how two Liberty servers might share information that has been cached in an HttpSession:
 
-[source, xml]
+[source, java]
 ----
 @WebServlet("/ServiceA")
 public class ServiceA extends HttpServlet {
-
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp)
+      throws ServletException, IOException {
         HttpSession session = req.getSession();
         session.setAttribute("foo", "bar");
     }
-
 }
 ----
 
@@ -102,7 +102,7 @@ public class ServiceB extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         HttpSession session = req.getSession();
-        String result = session.getAttribute("foo"); // will be "bar"
+        String result = session.getAttribute("foo");
         System.out.println("Session attribute foo=" + result);
     }
 
@@ -127,17 +127,19 @@ For Hazelcast, a simple configuration file might look like the following example
 
 Next, reference the Hazelcast XML configuration file in your `server.xml` file:
 
-[source, java]
+[source, xml]
 ----
+<server>
   <featureManager>
     <feature>sessionCache-1.0</feature>
     <feature>servlet-4.0</feature>
   </featureManager>
 
-
-  <httpSessionCache libraryRef="JCacheLib" uri="file:${server.config.dir}/hazelcast-config.xml"/>
+  <httpSessionCache libraryRef="JCacheLib"
+                    uri="file:${server.config.dir}/hazelcast-config.xml"/>
 
   <library id="JCacheLib">
     <file name="/usr/lib/hazelcast.jar"/>
   </library>
+</server>
 ----
