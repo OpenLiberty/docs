@@ -34,10 +34,10 @@ With asynchronous read, you remove this variable so you have better, more consis
 The following examples demonstrate the key requirements for implementing asynchronous read in your code.
 
 
-=== Register a ReadListener interface
-To take advantage of asynchronous read, your application must provide a `ReadListener` interface that is called when inbound data is received.
-The `ReadListener` interface reads the data as it's received and starts the business logic after all data is read.
-The `ReadListener` interface is registered by a servlet, as shown in the following example:
+=== Register a ReadListener
+To take advantage of asynchronous read, your application must provide a `ReadListener` implementation that is called when inbound data is received.
+The `ReadListener` implementation reads the data as it's received and starts the business logic after all data is read.
+The `ReadListener` implementation is registered by a servlet, as shown in the following example:
 
 [source,java]
 ----
@@ -47,7 +47,7 @@ protected void doPost(HttpServletRequest req, HttpServletResponse res) throws IO
     // Asynchronous I/O requires an asynchronous servlet.
     req.startAsync();
 
-    // Register the ReadListener interface with the ServletInputStream object.
+    // Register the ReadListener object with the ServletInputStream object.
     req.getInputStream().setReadListener(new SampleReadListener(req, res));
 
     // The servlet returns, which relinquishes the thread.
@@ -55,13 +55,14 @@ protected void doPost(HttpServletRequest req, HttpServletResponse res) throws IO
 ----
 
 This example shows a `doPost` method that includes the two steps that are required by a servlet to perform asynchronous read.
-The first step starts asynchronous processing, and the second step registers a `ReadListener` interface with the `ServletInputStream` object for the request.
+The implementation in the example is for the `doPost` method because a `ReadListener` implementation is useful only when a request includes post data.
+The first step starts asynchronous processing, and the second step registers a `ReadListener` object with the `ServletInputStream` object for the request.
 After these steps are complete, the servlet returns to relinquish the thread.
-If you need the servlet to perform extra steps, the servlet must perform these extra steps before the `ReadListener` interface is set.
-Otherwise, the servlet and the `ReadListener` interface compete to process.
+If you need the servlet to perform extra steps, the servlet must perform these extra steps before the `ReadListener` object is set.
+Otherwise, the servlet and the `ReadListener` object compete to process.
 
 === Read and store inbound data
-The `ReadListener` interface implements three methods, `onDataAvailable`, `onAllDataRead`, and `onError`.
+The `ReadListener` object implements three methods, `onDataAvailable`, `onAllDataRead`, and `onError`.
 The `onDataAvailable` method reads and optionally stores the inbound data.
 In the following example, after the inbound data is read, the inbound data is stored for processing:
 
@@ -125,7 +126,7 @@ After all the data is written, the asynchronous request is completed by the `Asy
 
 === Log any errors
 The `onError` method is called if any error occurs when the inbound data is being processed.
-If this method is called, it's the last method called on the `ReadListener` interface.
+If this method is called, it's the last method called on the `ReadListener` object.
 In this example, the application returns an error message to the client and then completes the asynchronous request:
 
 [source,java]
@@ -157,11 +158,11 @@ Your application can write as much as it needs, and the underlying implementatio
 == Asynchronous write sample code
 The following examples demonstrate the key requirements for implementing asynchronous write in your code.
 In most applications, asynchronous read and asynchronous write are combined.
-In the previous asynchronous example code, <<readlistener-onalldataread,the ReadListener.onAllDataRead method>> registers the `WriteListener` interface and provides the response data to the `WriteListener` interface on its constructor.
+In the previous asynchronous example code, <<readlistener-onalldataread,the ReadListener.onAllDataRead method>> registers the `WriteListener` object and provides the response data to the `WriteListener` object on its constructor.
 
-=== Register a WriteListener interface
-To use asynchronous write, your application must provide a `WriteListener` interface, which is called when response data can be sent without blocking.
-The `WriteListener` interface is registered by a servlet, as shown in the following example:
+=== Register a WriteListener
+To use asynchronous write, your application must provide a `WriteListener` implementation, which is called when response data can be sent without blocking.
+The `WriteListener` implementation is registered by a servlet, as shown in the following example:
 
 [source,java]
 ----
@@ -171,7 +172,7 @@ protected void service(HttpServletRequest req, HttpServletResponse res) throws I
     // Asynchronous I/O requires an asynchronous servlet.
     req.startAsync();
 
-    // Register the WriteListener interface with the ServletOuputStream object.
+    // Register the WriteListener object with the ServletOuputStream object.
     res.getOutputStream().setWriteListener(new SampleWriteListener(req, res, 200));
 
     // The servlet returns, which relinquishes the thread.
@@ -179,14 +180,14 @@ protected void service(HttpServletRequest req, HttpServletResponse res) throws I
 ----
 
 This example shows a `service` method that includes the two steps that are required to perform asynchronous write.
-In this example, the `service` method is acceptable because a `WriteListener` interface can be used for any inbound method, for example, the `doPost` method.
-The first step starts asynchronous processing, and the second step registers a `WriteListener` interface with the `ServletOutputStream` object for the request.
+In this example, the `service` method is acceptable because a `WriteListener` object can be used for any inbound method, for example, the `doPost` method.
+The first step starts asynchronous processing, and the second step registers a `WriteListener` object with the `ServletOutputStream` object for the request.
 After these steps are complete, the servlet returns to relinquish the thread.
-If you need the servlet to perform extra steps, the servlet must perform these extra steps before the `WriteListener` interface is set.
-Otherwise, the servlet and the `WriteListener` interface compete to process.
+If you need the servlet to perform extra steps, the servlet must perform these extra steps before the `WriteListener` object is set.
+Otherwise, the servlet and the `WriteListener` object compete to process.
 
 === Write an outbound response
-The `WriteListener` interface implements two methods, `onWritePossible` and `onError`.
+The `WriteListener` object implements two methods, `onWritePossible` and `onError`.
 The `onWritePossible` method is responsible for writing outbound responses:
 
 [source,java]
@@ -219,13 +220,13 @@ A second write of data occurs after the `isReady` method is called.
 This second write of data is effectively a synchronous write and results in an `IllegalStateException` exception.
 * The `onWritePossible` method doesn't return unless the `isReady` method returns false or all data is written.
 If the `onWritePossible` method returns when the `isReady` method returns true and more data must be written, the container doesn't call the `onWritePossible` method again until the `isReady` method is called and returns false.
-One effect of this requirement is that all of the response data must be available before the `WriteListener` interface is registered.
+One effect of this requirement is that all of the response data must be available before the `WriteListener` object is registered.
 If all of the response data isn't available, the `onWritePossible` method must return when the `isReady` method is true even though some response data wasn't written.
 * The `AsyncContext.complete` method is called to end the asynchronous request after all data is written.
-An equivalent to the `onAllDataRead` method of the `ReadListener` interface doesn't exist for the `WriteListener` interface because only your application knows when all response data is written.
+An equivalent to the `onAllDataRead` method of the `ReadListener` object doesn't exist for the `WriteListener` object because only your application knows when all response data is written.
 
 The `onError` method is called if any error occurs when the response data is being processed.
-If this method is called, it's the last method called on the `WriteListener` interface.
+If this method is called, it's the last method called on the `WriteListener` object.
 In this case, the application generates an error log and then completes the asynchronous request.
 
 == See also

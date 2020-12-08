@@ -1,0 +1,34 @@
+== Examples
+
+=== Basic configuration to implement MicroProfile JWT
+
+The following example shows authentication with a JSON Web Token (JWT).
+The `mpJwt` element defines the configuration to process the inbound JSON Web Tokens.
+The `jwksUri` attribute points the `mpjwt` element towards the public key `https://localhost:19443/jwt/ibm/api/myBuilder/jwk`, to validate the JSON Web Token.
+The `keyStore` element defines the key and trust store where the public key is stored.
+The `keyStore` element validates the JSON Web Token when the JSON Web Key Set (JWKS) is not used:
+
+[source,xml]
+----
+    <mpJwt id="mympjwt" issuer="https://example.com"
+        jwksUri="https://localhost:19443/jwt/ibm/api/myBuilder/jwk"/>
+
+    <keyStore id="defaultKeyStore" password="keyspass"/>
+----
+
+=== Configure authentication filter to login with MicroProfile JWT
+
+You can use an authentication filter to protect a subset of applications, URLs, or IP addresses,.
+The security configuration works when the conditions in the filter are met.
+In the following example, any requests to the `myApp` application are authenticated with the `mpJwt` feature.
+The `authFilterRef` attribute  that is named `myAuthFilter` filters the login requests to the `myApp` application:
+
+[source,xml]
+----
+<mp-jwt authFilterRef="authFilter1" />
+<authFilter id="myAuthFilter">
+         <webApp id="myWebApp"
+         name="myApp"
+         matchType="contains"/>
+</authFilter>
+----

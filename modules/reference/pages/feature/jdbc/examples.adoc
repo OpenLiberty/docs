@@ -1,0 +1,106 @@
+== Examples
+
+=== Simple Data source configuration
+To configure a data source, the following two configuration elements are typically required:
+
+- A `library` element that specifies the location of the JDBC driver file or files
+- One or more `dataSource` elements that reference the `library` element
+
+
+The following example creates a data source that can be injected by using the `jdbc/myDataSource` name. If the feature:jndi-1.0[] feature is enabled, `jdbc/myDataSource` can be used as a JNDI name:
+
+[source,xml]
+----
+<library id="JdbcLib">
+    <fileset dir="server1/jdbc"/>
+</library>
+
+<dataSource jndiName="jdbc/myDataSource">
+   <jdbcDriver libraryRef="JdbcLib"/>
+   <properties databaseName="myDB" serverName="mydb.mycompany.com" portNumber="50000"/>
+</dataSource>
+----
+
+A servlet or enterprise bean can then get the data source injected with code that is similar to the following example:
+
+[source,java]
+----
+@Resource(name="jdbc/myDataSource")
+private DataSource myDb;
+
+public void insertRochester() throws SQLException {
+    try (Connection con = myDataSource.getConnection()) {
+       con.createStatement().executeUpdate("INSERT INTO CITIES VALUES('Rochester', 'MN', 'US')");
+    }
+}
+----
+
+=== DataSource with authentication
+
+To connect to remote databases, you typically must provide credentials.
+These credentials can be configured by specifying an `authData` element. The password can be in
+plain text, xor, or aes encrypted. You can use xref:reference:command/securityUtility-encode.adoc[the securityUtility encode command] to create an encoded password. The following example encodes `password` as the
+password value:
+
+[source,xml]
+----
+<authData id="dbCreds" user="dbUser" password="{aes}AEJrzAGfDEmtxI18U/qEcv54kXmUIgUUV7b5pybw/BzH" />
+
+<dataSource jndiName="jdbc/myDataSource" containerAuthDataRef="dbCreds">
+   <jdbcDriver libraryRef="JdbcLib"/>
+   <properties databaseName="myDB" serverName="mydb.mycompany.com" portNumber="50000"/>
+</dataSource>
+----
+
+=== Configuration of the default data source
+
+If you enable any Java EE or Jakarta EE features in Open Liberty, you can configure a default data source. To configure a default data source, set the ID of the `dataSource` element to `DefaultDataSource`, as shown in the following example:
+
+[source,xml]
+----
+<dataSource id="DefaultDataSource">
+<jdbcDriver libraryRef="jdbcLib"/>
+<properties serverName="localhost" portNumber="5432"
+            databaseName="myDB"
+            user="exampleUser" password="examplePassword"/>
+</dataSource>
+----
+
+=== Using JDBC driver classes from an application
+
+Some applications make use of JDBC driver classes using `Connection.unwrap`. This
+means the application needs to be able to view the JDBC driver classes. This is
+done by configuring the application classloader to see the JDBC driver classes:
+
+[source,xml]
+----
+<library id="JdbcLib">
+    <fileset dir="server1/jdbc"/>
+</library>
+
+<webApplication location="myweb.war" >
+    <classloader commonLibraryRef="JdbcLib" />
+</webApplication>
+
+<dataSource jndiName="jdbc/myDataSource">
+   <jdbcDriver libraryRef="JdbcLib"/>
+   <properties databaseName="myDB" serverName="mydb.mycompany.com" portNumber="50000"/>
+</dataSource>
+----
+
+=== Connection pool configuration
+
+Connection pooling improves the efficiency of data source connections and operations. Connection pooling for JDBC data sources in Open Liberty is controlled by a connection manager. The connection manager for each data source has sensible default values, but these values can be customized if needed. Any `dataSource` element can specify xref:reference:config/dataSource.adoc#connectionManager[an optional connectionManager element] to customize the connection pool settings, as shown in the following example:
+
+
+[source,xml]
+----
+<dataSource jndiName="jdbc/myDB">
+  <jdbcDriver libraryRef="jdbcLib"/>
+  <connectionManager maxPoolSize="10" minPoolSize="2"/>
+  <properties ... />
+</dataSource>
+----
+
+
+For more information, see xref:ROOT:relational-database-connections-JDBC.adoc[Relational database connections with JDBC].
