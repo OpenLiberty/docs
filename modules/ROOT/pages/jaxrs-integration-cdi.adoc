@@ -38,14 +38,6 @@ The `@ApplicationScoped` annotation specifies that only one instance of this bea
 
 The `@Inject` annotation injects an instance of the `SimpleBean` class into the instance of the `ApplicationScopedResource` bean. For more information about CDI, see xref:cdi-beans.adoc[Context and dependency injection beans].
 
-== Restrictions on JAX-RS with CDI
-
-CDI with JAX-RS in Open Liberty is subject to the following restrictions:
-
-- If the Contexts and Dependency Injection feature is not enabled in your `server.xml` file, the runtime has no CDI support. Therefore, if you specify a  CDI annotation in a Java class, the JAX-RS engine uses the Java class as a plain old Java object (POJO) class.
-- If a resource class with the `@Path` annotation implements a JAX-RS provider interface or declares with the `@Provider` annotation, then this class works as both a resource and a provider. In this case, the JAX-RS engine uses only one instance of this class that is shared by the resource class and the provider. The lifecycle of the instance is singleton.
-- If a RESTful resource is also a CDI-managed bean and its scope is `javax.enterprise.context.Dependent`, the `PreDestroy` method cannot be called because of the CDI restriction.
-- If a class is registered in both the `getClasses` and `getSingletons` methods of the application class, the JAX-RS engine uses the instance from the `getSingletons` method and ignores the `getClasses` instance. However, objects that are returned in the `getSingletons` method are not managed by CDI. In general, avoid use of the `getSingletons` method as it is targeted for deprecation and eventual removal from future versions of the JAX-RS specification.
 
 == JAX-RS and CDI scopes
 
@@ -56,29 +48,16 @@ JAX-RS and CDI specify slightly different scopes. If the lifecycle scopes that a
 For example, the `ApplicationScoped` CDI scope annotation defines a singleton lifecycle, because only one instance of a class with this annotation is used for the lifecycle of the application. If you configure a JAX-RS resource scope as per-request, but then specify the `@ApplicationScoped` CDI scope on it, the resource lifecycle is singleton. Similarly, if you configure a JAX-RS resource scope as singleton, but then specify the `@RequestScoped` CDI scope on it, the resource lifecycle is per request, as specified the CDI annotation.
 However, if the JAX-RS component is a provider, the lifecycle is singleton, regardless of the CDI annotation.
 
-////
-The following table gives examples of the resulting lifecycle for different combinations of JAX-RS and CDI scopes:
-
-
-.Lifecycle results for JAX-RS scope and CDI scope conflicts
-[%header,cols="6,9,9,9"]
-|===
-|Component type|Configured JAX-RS scope|Configured CDI Scope annotation|Resulting lifecycle
-|Resource|perRequest|@ApplicationScoped|singleton
-|Resource|perRequest|@RequestScoped    |perRequest
-|Resource|perRequest|@Dependent        |perRequest
-|Resource|perRequest|@SessionScoped    |session
-|Resource|singleton |@ApplicationScoped|singleton
-|Resource|singleton |@RequestScoped    |perRequest
-|Resource|singleton |@Dependent        |singleton
-|Resource|singleton |@SessionScoped    |session
-|Provider|any       |any               |singleton
-|===
-
-////
 For more information, see xref:cdi-beans.adoc#_cdi_scopes[CDI scopes].
 
+== Restrictions on JAX-RS with CDI
 
+CDI with JAX-RS in Open Liberty is subject to the following restrictions:
+
+- If the Contexts and Dependency Injection feature is not enabled in your `server.xml` file, the runtime has no CDI support. Therefore, if you specify a  CDI annotation in a Java class, the JAX-RS engine uses the Java class as a plain old Java object (POJO) class.
+- If a resource class with the `@Path` annotation implements a JAX-RS provider interface or declares with the `@Provider` annotation, then this class works as both a resource and a provider. In this case, the JAX-RS engine uses only one instance of this class that is shared by the resource class and the provider. The lifecycle of the instance is singleton.
+- If a RESTful resource is also a CDI-managed bean and its scope is `javax.enterprise.context.Dependent`, the `PreDestroy` method cannot be called because of the CDI restriction.
+- If a class is registered in both the `getClasses` and `getSingletons` methods of the application class, the JAX-RS engine uses the instance from the `getSingletons` method and ignores the `getClasses` instance. However, objects that are returned in the `getSingletons` method are not managed by CDI. In general, avoid use of the `getSingletons` method as it is targeted for deprecation and eventual removal from future versions of the JAX-RS specification.
 
 == See also
 - Guide: link:/guides//cdi-intro.html[Injecting dependencies into microservices]
