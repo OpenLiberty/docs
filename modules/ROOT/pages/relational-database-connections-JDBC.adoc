@@ -16,11 +16,11 @@
 
 Java applications connect to and interact with relational databases through the Java Database Connectivity (JDBC) API. You can configure a data source and a JDBC driver so an application that is running on your Open Liberty server can connect with a relational database.
 
-Applications communicate with relational databases to retrieve many different kinds of information, such as flight schedules, product inventories, and customer purchase histories. https://docs.oracle.com/javase/tutorial/jdbc/overview/index.html[The JDBC API] provides an adapter layer between applications and relational databases by providing details about a database to an application in a standardized way. In Open Liberty, interactions with the JDBC API are configured by the xref:reference:feature/jdbc-4.2.adoc[Java Database Connectivity feature].
+Applications communicate with relational databases to retrieve many different kinds of information, such as flight schedules, product inventories, and customer purchase histories. The https://docs.oracle.com/javase/tutorial/jdbc/overview/index.html[JDBC API] provides an adapter layer between applications and relational databases by providing details about a database to an application in a standardized way. In Open Liberty, interactions with the JDBC API are configured by the xref:reference:feature/jdbc-4.2.adoc[Java Database Connectivity feature].
 
 == JDBC driver library configuration
 
-To connect with a relational database, you need a JDBC driver, which is typically provided by the database vendor. You can configure JDBC drivers to define data sources, from which you obtain connections to the database. To configure a JDBC data source in your Open Liberty server configuration, you must enable the xref:reference:feature/jdbc-4.2.adoc[Java Database Connectivity feature] and specify a library that contains your JDBC driver. In the following example, the `library` element specifies the location of the directory that contains a JDBC driver JAR file:
+To connect with a relational database, you need a JDBC driver, which is typically provided by the database vendor. You can configure JDBC drivers to define data sources, from which you obtain connections to the database. To configure a JDBC data source in your Open Liberty server configuration, you must enable the Java Database Connectivity feature and specify a library that contains your JDBC driver. In the following example, the `library` element specifies the location of the directory that contains a JDBC driver JAR file:
 
 
 [source,xml]
@@ -34,30 +34,30 @@ To connect with a relational database, you need a JDBC driver, which is typicall
 </library>
 ----
 
-Open Liberty recognizes the implementation class names of various data source types for commonly used JDBC drivers. In most cases, you specify only the location of the JDBC driver.
+Open Liberty recognizes the implementation class names of various data source types for commonly used JDBC drivers. In most cases, you can specify only the location of the JDBC driver.
 
-If you use Maven to build your application, you can download and deploy the JDBC driver by adding code that is similar to the following example to your `pom.xml` file. In this example, the `com.ibm.db2:jcc:11.5.4.0' dependency is copied to the `${server.config.dir}/jdbc` directory at build time to deploy the IBM Db2 JDBC driver:
+If you use Maven to build your application, you can download and deploy the JDBC driver by adding code that is similar to the following example to your `pom.xml` file. In this example, the `com.ibm.db2:jcc:11.5.4.0` dependency is copied to the `${server.config.dir}/jdbc` directory at build time to deploy the IBM Db2 JDBC driver:
 
 [source,xml]
 ----
 <plugin>
- <groupId>io.openliberty.tools</groupId>
- <artifactId>liberty-maven-plugin</artifactId>
- <version>3.3-M2</version>
- <configuration>
-  <copyDependencies>
-   <dependency>
-    <filter>com.ibm.db2:jcc:11.5.4.0</filter>
-    <location>jdbc</location>
-   </dependency>
-  </copyDependencies>
- </configuration>
+<groupId>io.openliberty.tools</groupId>
+<artifactId>liberty-maven-plugin</artifactId>
+<version>3.3-M2</version>
+  <configuration>
+    <copyDependencies>
+      <dependency>
+        <filter>com.ibm.db2:jcc:11.5.4.0</filter>
+        <location>jdbc</location>
+      </dependency>
+    </copyDependencies>
+  </configuration>
 </plugin>
 ----
 
 == Data source configuration
 
-You can configure any JDBC driver with Open Liberty, which has built-in configuration for many common vendor databases. The following example shows the basic pattern to configure a data source in your `server.xml` file or an included file:
+You can configure any JDBC driver with Open Liberty, which has built-in configuration for many common vendor databases. The following example shows the basic pattern to configure a data source in your `server.xml` file:
 
 [source,xml]
 ----
@@ -82,7 +82,7 @@ The following example shows the basic configuration to specify JDBC vendor prope
 <properties someProperty="someValue" anotherProperty="5" />
 ----
 
-For example, the following sample shows `currentLockTimeout` property on the Db2 JDBC driver's data source classes:
+For example, the following code shows the `currentLockTimeout` property on the IBM Db2 JDBC driver data source classes:
 
 [source,java]
 ----
@@ -102,10 +102,12 @@ You can configure this setting with the following configuration in your `server.
 </dataSource>
 ----
 
-After you configure a data source, you can quickly test the configuration to see if your Open Liberty server can access your database. For more information, see xref:testing-database-connections.adoc[Testing database connections].
+
+// commenting this section out until the topic publishes After you configure a data source, you can quickly test the configuration to see whether your Open Liberty server can access your database. For more information, see xref:testing-database-connections.adoc[Validating server connections].
+//
 
 [#default]
-=== Default data source configuration
+=== Configuration of the default data source
 
 If you enable any Java EE or Jakarta EE features in Open Liberty, you can configure a default data source. To configure a default data source, set the ID of the `dataSource` element to `DefaultDataSource`, as shown in the following example:
 
@@ -122,12 +124,20 @@ If you enable any Java EE or Jakarta EE features in Open Liberty, you can config
 
 == Common data source configuration examples
 
-The following examples show sample configurations for commonly used vendor databases. For applicable vendors, examples are provided for how to configure the database locally in a Docker container for testing and development purposes.
+The following examples show sample configurations for commonly used vendor databases. For applicable vendors, examples are provided for how to configure the database locally in a Docker container for testing and development purposes:
 
+- <<#PostgreSQL,PostgreSQL>>
+- <<#Db2,IBM Db2>>
+- <<#Microsoft,Microsoft SQL Server>>
+- <<#MySQL,MySQL>>
+- <<#Embedded,Embedded Derby>>
+- <<#Oracle,Oracle>>
+- <<#Oracleucp,Oracle UCP>>
+
+[#PostgreSQL]
 === PostgreSQL configuration
 
-Get the https://mvnrepository.com/artifact/org.postgresql/postgresql[PostgreSQL JDBC Driver from the Maven Central].
-
+Get the https://mvnrepository.com/artifact/org.postgresql/postgresql[PostgreSQL JDBC Driver from Maven Central].
 The following example shows a sample data source configuration for a PostgreSQL database:
 
 [source,xml]
@@ -154,10 +164,10 @@ docker run -it --rm=true --memory-swappiness=0 --ulimit memlock=-1:-1 \
            postgres:10.5
 ----
 
+[#Db2]
 === IBM Db2
 
 Get the https://mvnrepository.com/artifact/com.ibm.db2/jcc[IBM Data Server Driver For JDBC and SQLJ from Maven Central].
-
 The following example shows a sample data source configuration for an IBM Db2 database:
 
 [source,xml]
@@ -171,7 +181,7 @@ The following example shows a sample data source configuration for an IBM Db2 da
 </dataSource>
 ----
 
-To run a Db2 Docker container locally, run the following command:
+To run an IBM Db2 Docker container locally, run the following command:
 
 [source,command]
 ----
@@ -186,11 +196,11 @@ docker run --ulimit memlock=-1:-1 -it --rm=true --memory-swappiness=0 \
            ibmcom/db2:11.5.0.0a
 ----
 
-=== Microsoft SQLServer
+[#Microsoft]
+=== Microsoft SQL Server
 
 Get the  https://mvnrepository.com/artifact/com.microsoft.sqlserver/mssql-jdbc[Microsoft JDBC Driver For SQL Server from Maven Central].
-
-The following example shows a sample data source configuration for a Microsoft SQLServer database:
+The following example shows a sample data source configuration for a Microsoft SQL Server database:
 
 [source,xml]
 ----
@@ -204,7 +214,7 @@ The following example shows a sample data source configuration for a Microsoft S
 </dataSource>
 ----
 
-To run a SQL Server Docker container locally, run the following command:
+To run a Microsoft SQL Server Docker container locally, run the following command:
 
 [source,command]
 ----
@@ -216,10 +226,10 @@ docker run --ulimit memlock=-1:-1 -it --rm=true --memory-swappiness=0 \
            mcr.microsoft.com/mssql/server:2019-GA-ubuntu-16.04
 ----
 
+[#MySQL]
 === MySQL
 
 Get the https://mvnrepository.com/artifact/mysql/mysql-connector-java[MySQL Connector/J JDBC driver from Maven Central].
-
 The following example shows a sample data source configuration for a MySQL database:
 
 [source,xml]
@@ -245,10 +255,24 @@ docker run --ulimit memlock=-1:-1 -it --rm=true --memory-swappiness=0 \
            mysql:8
 ----
 
+[#Embedded]
+=== Embedded Derby
+
+Get the  https://mvnrepository.com/artifact/org.apache.derby/derby/10.14.2.0[Apache Derby Database Engine and Embedded JDBC Driver from Maven Central].
+The following example shows a sample data source configuration for a Derby database in an embedded environment:
+
+[source,xml]
+----
+<dataSource jndiName="jdbc/myDB">
+    <jdbcDriver libraryRef="jdbcLib"/>
+    <properties.derby.embedded databaseName="memory:myDB" createDatabase="create"/>
+</dataSource>
+----
+
+[#Oracle]
 === Oracle
 
 Get the  https://mvnrepository.com/artifact/com.oracle.database.jdbc/ojdbc8[Oracle JDBC driver from Maven Central].
-
 The following example shows a sample data source configuration for an Oracle database:
 
 [source,xml]
@@ -261,23 +285,32 @@ The following example shows a sample data source configuration for an Oracle dat
 </dataSource>
 ----
 
-=== Embedded Derby
+[#Oracleucp]
+=== Oracle UCP
 
-Get the  https://mvnrepository.com/artifact/org.apache.derby/derby/10.14.2.0[Apache Derby Database Engine and Embedded JDBC Driver from Maven Central].
+https://docs.oracle.com/cd/E11882_01/java.112/e12265/intro.htm#BABHFGCA[Oracle Universal Connection Pool] (UCP) is a stand-alone JDBC connection pool. When you use Oracle UCP with Open Liberty, you are using the Oracle UCP connection pool instead of the Open Liberty built-in connection pooling functions. Some of the https://www.oracle.com/database/technologies/high-availability.html[Oracle high availability database] functions require the use of Oracle UCP. Support for Oracle UCP was added in Open Liberty version 19.0.0.4.
 
-The following example shows a sample data source configuration for a Derby database in an embedded environment:
+Oracle UCP might require some properties, such as `user` and `password`, to be set in the `properties.oracle.ucp` element.
+Because the Open Liberty connection pool is unavailable, some of the Open Liberty data source and connection manager configuration values are ignored. For most of those data source and connection manager properties, Oracle UCP provides equivalent functions. For more information, see the xref:reference:config/dataSource.adoc#dataSource/properties.oracle.ucp[properties.oracle.ucp element documentation].
+
+Get the  https://mvnrepository.com/artifact/com.oracle.database.jdbc/ucp[Oracle UCP JDBC driver from Maven Central].
+The following example shows a sample data source configuration for Oracle UCP:
 
 [source,xml]
 ----
-<dataSource jndiName="jdbc/myDB">
-    <jdbcDriver libraryRef="jdbcLib"/>
-    <properties.derby.embedded databaseName="memory:myDB" createDatabase="create"/>
+<dataSource jndiName="jdbc/oracleUCPDS" >
+    <jdbcDriver libraryRef="OracleUCPLib" />
+    <properties.oracle.ucp URL="jdbc:oracle:thin:@//localhost:1521/SAMPLEDB" />
 </dataSource>
+
+<library id="OracleUCPLib">
+    <fileset dir="Oracle/Drivers" includes="ojdbcx.jar ucp.jar"/>
+</library>
 ----
 
-=== Generic database that is unknown to Open Liberty
+== Configuring databases that are unknown to Open Liberty
 
-The following example shows a sample data source configuration for a generic database that Open Liberty does not recognize by default. Specify the type of the data source by using the `type` attribute of the `dataSource` element. The value for the `type` attribute can be one of the interface class names that are described in the <<#types,Data source types>> section. Then, specify the mapping of interface class name to the driver implementation of that class on the `jdbcDriver` element, as shown in the following example:
+The following example shows a sample data source configuration for a relational database that Open Liberty does not recognize by default. Specify the type of the data source by using the `type` attribute of the `dataSource` element. The value for the `type` attribute can be one of the interface class names that are described in the <<#types,Data source types>> section. Then, specify the mapping of interface class name to the driver implementation of that class on the `jdbcDriver` element, as shown in the following example:
 
 [source,xml]
 ----
@@ -296,9 +329,9 @@ The following example shows a sample data source configuration for a generic dat
 For more information, see the xref:reference:feature/jdbc-4.2.adoc[Java Database Connectivity feature].
 
 [#types]
-=== Data source types
+== Data source types
 
-To access a database from your Open Liberty application, your application code must implement the `javax.sql.DataSource` interface. Open liberty provides a managed implementation of this interface, which is backed by the data source or driver implementation that your JDBC driver provides. For Open Liberty, your JDBC driver must provide at least one of the following types of data sources or a `java.sql.Driver` driver implementation with the `ServiceLoader` facility:
+To access a database from your Open Liberty application, your application code must implement the `javax.sql.DataSource` interface. Open Liberty provides a managed implementation of this interface, which is backed by the data source or driver implementation that your JDBC driver provides. For Open Liberty, your JDBC driver must provide at least one of the following types of data sources or a `java.sql.Driver` driver implementation with the `ServiceLoader` facility:
 
 - `javax.sql.DataSource`
 This type of data source is the basic form. It does not provide the interoperability that enhances connection pooling and cannot participate as a two-phase capable resource in transactions that involve multiple resources.
@@ -307,20 +340,20 @@ This type of data source is the basic form. It does not provide the interoperabi
 This type of data source is enabled for xref:reference:feature/jdbc-4.2.adoc#_connection_pool_configuration[connection pooling]. It cannot participate as a two-phase capable resource in transactions that involve multiple resources.
 
 - `javax.sql.XADataSource`
-This type of data source is both enabled for connection pooling and is able to participate as a two-phase capable resource in transactions that involve multiple resources. The `javax.sql.XADataSource` data source type is essentially a superset of the capabilities that are provided by the `javax.sql.DataSource` and `javax.sql.ConnectionPoolDataSource` data source types. However, some JDBC vendors might have subtle differences in behavior or limitations that are not spelled out in the JDBC specification.
+This type of data source is enabled for connection pooling and is able to participate as a two-phase capable resource in transactions that involve multiple resources. The `javax.sql.XADataSource` data source type is essentially a superset of the capabilities that are provided by the `javax.sql.DataSource` and `javax.sql.ConnectionPoolDataSource` data source types. However, some JDBC vendors might have subtle differences in behavior or limitations that are not spelled out in the JDBC specification.
 
 - `java.sql.Driver`
 The `java.sql.Driver` driver implementation provides a basic way to connect to a database. This implementation requires a URL and is typically used in Java SE applications. Like `javax.sql.DataSource`, it does not provide interoperability that enhances connection pooling and cannot participate as a two-phase capable resource in transactions that involve multiple resources. To work with Open Liberty, this implementation must provide the `ServiceLoader` facility, which Open Liberty uses to discover JDBC driver implementations for a URL.
 
-If the `type` attribute is not specified in the data source configuration, Open Liberty chooses the data source type in the following order, depending on which type is available.
+If the `type` attribute is not specified, Open Liberty looks for the data source type in a conditional order and chooses the first type that is available.
 
-If you are using the xref:reference:feature/jdbc-4.3.adoc[jdbc-4.3 feature] or higher, or if you are referencing <<#default,the default data source>>, Open Liberty chooses the data source type in the following order, depending on availability:
+If you use the Java Database Connectivity feature xref:reference:feature/jdbc-4.3.adoc[4.3] or higher, or you are referencing <<#default,the default data source>>, Open Liberty looks for the data source type in the following order:
 
 . `javax.sql.XADataSource`
 . `javax.sql.ConnectionPoolDataSource`
 . `javax.sql.DataSource`
 
-If you are using the xref:reference:feature/jdbc-4.2.adoc[jdbc-4.2], xref:reference:feature/jdbc-4.1.adoc[4.1], or xref:reference:feature/jdbc-4.0.adoc[4.0] feature and you are not referencing the default data source, then Open Liberty chooses the data source type in the following order, availability:
+If you use the Java Database Connectivity feature xref:reference:feature/jdbc-4.2.adoc[4.2], xref:reference:feature/jdbc-4.1.adoc[4.1], or xref:reference:feature/jdbc-4.0.adoc[4.0] and you are not referencing the default data source, Open Liberty looks for the data source type in the following order:
 
 . `javax.sql.ConnectionPoolDataSource`
 . `javax.sql.DataSource`
@@ -328,7 +361,7 @@ If you are using the xref:reference:feature/jdbc-4.2.adoc[jdbc-4.2], xref:refere
 
 == Application configuration for relational database connections
 
-To use a data source that is  configured in your `server.xml` file, you can either inject or look it up by referencing the value of the `jndiName` attribute in your application code. The following examples assume a `jndiName` value of `jdbc/myDB` is specified in the `dataSource` element in the `server.xml` file.
+To use a data source that is configured in your `server.xml` file, you can either inject the data source or specify a lookup in your application code. The following examples assume that a `jndiName` value of `jdbc/myDB` is specified in the `dataSource` element in the `server.xml` file.
 
 In a web component or enterprise bean component, you can inject the data source with application code similar to the following example:
 
@@ -338,7 +371,7 @@ In a web component or enterprise bean component, you can inject the data source 
 DataSource myDB;
 ----
 
-If `myDB` is configured as the <<#default,default data source>>, you can omit the `lookup` object, as shown in the following example:
+If the `myDB` value is configured as the <<#default,default data source>>, you can omit the `lookup` object, as shown in the following example:
 
 [source,java]
 ----
@@ -346,14 +379,14 @@ If `myDB` is configured as the <<#default,default data source>>, you can omit th
 DataSource myDB;
 ----
 
-When the xref:reference:feature/jndi-1.0.adoc[Java Naming and Directory Interface feature] is enabled in your `server.xml` file, you can obtain a reference to the data source from your application by JNDI lookup, as shown in the following example:
+When the xref:reference:feature/jndi-1.0.adoc[Java Naming and Directory Interface feature] is enabled, you can reference the data source from your application by Java Naming and Directory Interface (JNDI) lookup. The following example shows a JNDI lookup for the `myDB` data source value:
 
 [source,java]
 ----
 DataSource myDB = InitialContext.doLookup("jdbc/myDB");
 ----
 
-If `myDB` is configured as the default data source, the JNDI lookup can specify a `java:comp/DefaultDataSource` value instead of the JNDI name for the data source, as shown in the following example:
+If the `myDB` value is configured as the default data source, the JNDI lookup can specify a `java:comp/DefaultDataSource` value instead of the JNDI name, as shown in the following example:
 
 [source,java]
 ----
@@ -363,4 +396,5 @@ DataSource myDB = InitialContext.doLookup("java:comp/DefaultDataSource");
 
 
 == See also
-xref:data-persistence-jpa.adoc[Data persistence with the Java Persistence API]
+// comment out until JPA topic publishes - xref:data-persistence-jpa.adoc[Data persistence with the Java Persistence API]
+xref:kerberos-authentication-jdbc.adoc[Kerberos authentication for JDBC data sources]

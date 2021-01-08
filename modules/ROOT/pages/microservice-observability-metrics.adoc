@@ -7,41 +7,67 @@
 //     IBM Corporation
 //
 :page-description: By implementing metrics, developers can build observability into microservices and externalize the internal status of a system to enable operations teams to monitor microservice systems more effectively.
-:seo-title: Monitoring microservices with metrics
+:seo-title: Microservice observability with metrics - OpenLiberty.io
 :seo-description: By implementing metrics, developers can build observability into microservices and externalize the internal status of a system to enable operations teams to monitor microservice systems more effectively.
 :page-layout: general-reference
 :page-type: general
 = Microservice observability with metrics
 
 Building observability into microservices externalizes the internal status of a system to enable operations teams to monitor microservice systems more effectively.
-It is important that microservices are written to produce metrics that can be used by operations teams when the microservices are running in production.
-https://github.com/eclipse/microprofile-metrics/[MicroProfile Metrics] provides a `/metrics` endpoint from which you can access all metrics emitted by the Open Liberty server and deployed applications.
+MicroProfile Metrics provides a `/metrics` endpoint from which you can access all metrics that are emitted by an Open Liberty server and deployed applications.
 
-When the application is running, you can view your metrics from any browser by visiting, for example, `https://localhost:9443/metrics`.
-You can further narrow down the scope of the metric data by accessing the `/metrics/base`, `/metrics/application`, and `/metrics/vendor` endpoints.
+An application can be written to produce metrics to be used by operations teams when the application is running in production.
+When an application is running, you can view your metric data from any browser by accessing a `/metrics` endpoint, for example, `https://localhost:9443/metrics`.
+You can narrow down the scope of the metric data by accessing the `/metrics/base`, `/metrics/application`, and `/metrics/vendor` endpoints.
+
 By default, metric data is emitted in https://prometheus.io/docs/instrumenting/exposition_formats/[Prometheus format].
 Metric data can be retrieved in JSON format by configuring the `Accept` header of your request to the `application/json` value.
 A `GET` request returns a list of metrics, and an `OPTIONS` request returns a list of metrics with their metadata.
-
 Operations teams can gather the metrics and store them in a database by using tools like Prometheus.
-They can then visualize the metrics in dashboards, such as Grafana, to analyze the data.
+They can then visualize the metric data in dashboards, such as Grafana, for analysis.
+For a list of metrics that are available in Open Liberty, see the xref:metrics-list.adoc[metrics reference list].
 
 == Adding metrics to your applications
 
-To add metrics to your applications, you must create and register metrics with the application registry so that they are known to the system and can be reported on from the `/metrics` endpoint.
-The easiest way to add metrics to your application is by using metrics annotations.
-MicroProfile Metrics defines annotations that enable you to quickly build metrics into your code.
+To add metrics to your applications, you must create and register metrics with the application registry so that they're known to the system and can be reported on from the `/metrics` endpoint.
+The simplest way to add metrics to your application is by using annotations.
+link:/docs/ref/microprofile/3.3/#package=org/eclipse/microprofile/metrics/annotation/package-frame.html&class=org/eclipse/microprofile/metrics/annotation/package-summary.html[MicroProfile Metrics defines annotations] that you can use to quickly build metrics into your code.
 These metrics ultimately provide transparency for operations teams into how services are running.
 
 == Metrics and annotations
-The following examples describe several types of metrics and how their corresponding annotations are used.
+The following sections describe metric types that are available with MicroProfile Metrics and how their corresponding annotations are used:
 
-=== Counters
-A counter metric is used to keep an incremental count.
-The initial value of the counter is set to 0, and the metric increments each time that an annotated element is hit.
+* <<concurrentgauge,Concurrent gauge>>
+* <<counter,Counter>>
+* <<gauge,Gauge>>
+* <<meter,Meter>>
+* <<simpletimer,Simple timer>>
+* <<timer,Timer>>
 
-==== @Counted
-This annotation is used for marking a method, constructor, or type as a counter.
+[#concurrentgauge]
+=== Concurrent gauge
+A concurrent gauge metric counts the concurrent invocations of an annotated element.
+This metric also tracks the high and low watermarks of each invocation.
+
+Use the `@ConcurrentGauge` annotation to mark a method as a concurrent gauge.
+The concurrent gauge increments when the annotated method is called and decrements when the annotated method returns, counting current invocations of the annotated method:
+
+[source,java]
+----
+@GET
+@Path("/livestream");
+@ConcurrentGauge(name = "liveStreamViewers", displayName="Donation live stream viewers", description="Number of active viewers for the donation live stream")
+public void donationLiveStream() {
+    launchLiveStreamConnection();
+}
+----
+
+[#counter]
+=== Counter
+A counter metric keeps an incremental count.
+The initial value of the counter is set to zero, and the metric increments each time that an annotated element is hit.
+
+Use the `@Counted` annotation to mark a method, constructor, or type as a counter.
 The counter increments monotonically, counting total invocations of the annotated method:
 
 [source,java]
@@ -54,13 +80,72 @@ public String noDonation() {
 }
 ----
 
-'''
+[#gauge]
+=== Gauge
+You implement a gauge metric so that the gauge can be sampled to obtain a particular value.
+For example, you might use a gauge to measure CPU temperature or disk usage.
 
-=== Timers
-A timer metric is used to aggregate timing durations, in nanoseconds, and provide duration and throughput statistics.
+Use the `@Gauge` annotation to mark a method as a gauge:
 
-==== @Timed
-This annotation is used for marking a constructor or method as a timer.
+[source,java]
+----
+@Gauge(
+    name="donations",
+    displayName="Total Donations",
+    description="Total amount of money raised for charity!",
+    unit = "dollars",
+    absolute=true)
+public Long getTotalDonations(){
+    return totalDonations;
+}
+----
+
+[#meter]
+=== Meter
+A meter metric tracks throughput.
+This metric provides the following information:
+
+* The mean throughput
+* The exponentially weighted moving average throughput at 1-minute, 5-minute, and 15-minute marks
+* A count of the number of measurements
+
+Use the `@Metered` annotation to mark a constructor or method as a meter.
+The meter counts the invocations of the annotated constructor or method and tracks how frequently they are called:
+
+[source,java]
+----
+@Metered(displayName="Rate of donations", description="Rate of incoming donations (the instances not the amount)")
+public void addDonation(Long amount) {
+    totalDonations += amount;
+    donations.add(amount);
+    donationDistribution.update(amount);
+}
+----
+
+[#simpletimer]
+=== Simple timer
+A simple timer metric tracks the elapsed timing duration and invocation counts.
+This type of metric is available link:/blog/2020/04/09/microprofile-3-3-open-liberty-20004.html#mra[beginning in MicroProfile Metrics 2.3].
+The simple timer is a lightweight alternative to the performance-heavy timer metric.
+
+Use the `@SimplyTimed` annotation to mark a method, constructor, or type as a simple timer.
+The simple timer tracks how frequently the annotated object is started and how long the invocations take to complete:
+
+[source,java]
+----
+@GET
+@Path("/weather");
+@SimplyTimed(name = "weatherSimplyTimed", displayName="Weather data", description="Provides weather data in JSON")
+public JSON getWeatherData() {
+    retrieveWeatherData();
+}
+----
+
+[#timer]
+=== Timer
+A timer metric aggregates timing durations in nanoseconds, and provides duration and throughput statistics.
+
+Use the `@Timed` annotation to mark a constructor or method as a timer.
 The timer tracks how frequently the annotated object is started and how long the invocations take to complete:
 
 [source,java]
@@ -82,100 +167,10 @@ public String donateAmountViaCreditCard(@FormParam("amount") Long amount, @FormP
 
 '''
 
-=== Simple timers
-A simple timer metric tracks the elapsed timing duration and invocation counts.
-
-This type of metric is available link:/blog/2020/04/09/microprofile-3-3-open-liberty-20004.html#mra[beginning in MicroProfile Metrics 2.3].
-The simple timer is a lightweight alternative to the performance-heavy timer metric.
-
-==== @SimplyTimed
-This annotation is used for marking a method, constructor, or type as a simple timer.
-The simple timer tracks how frequently the annotated object is started and how long the invocations take to complete:
-
-[source,java]
-----
-@GET
-@Path("/weather");
-@SimplyTimed(name = "weatherSimplyTimed", displayName="Weather data", description="Provides weather data in JSON")
-public JSON getWeatherData() {
-    retrieveWeatherData();
-}
-----
-
-'''
-
-=== Meters
-A meter metric is used to track throughput.
-This metric provides the following information:
-
-* Mean throughput
-* One/five/fifteen minute exponentially weighted moving average throughput
-* A count of the number of measurements
-
-==== @Metered
-This annotation is used for marking a constructor or method as a meter.
-The meter counts the invocations of the annotated constructor or method and tracks how frequently they are called:
-
-[source,java]
-----
-@Metered(displayName="Rate of donations", description="Rate of incoming donations (the instances not the amount)")
-public void addDonation(Long amount) {
-    totalDonations += amount;
-    donations.add(amount);
-    donationDistribution.update(amount);
-}
-----
-
-'''
-
-=== Gauges
-A gauge metric is implemented by the developer in a way that allows them to be sampled to obtain a particular value.
-For example, you might use a gauge to measure CPU temperature or disk usage.
-
-==== @Gauge
-This annotation is used for marking a method as a gauge:
-
-[source,java]
-----
-@Gauge(
-    name="donations",
-    displayName="Total Donations",
-    description="Total amount of money raised for charity!",
-    unit = "dollars",
-    absolute=true)
-public Long getTotalDonations(){
-    return totalDonations;
-}
-----
-
-'''
-
-=== Concurrent gauges
-A concurrent gauge metric is used to keep a count of concurrent invocations of an annotated element.
-This metric also track the high and low watermarks of each invocation.
-For each invocation of an annotated element, the count increments upon entry and decrements upon exit.
-
-==== @ConcurrentGauge
-This annotation is used for marking a method as a concurrent gauge.
-The concurrent gauge increments when the annotated method is called and decrements when the annotated method returns, counting current invocations of the annotated method:
-
-[source,java]
-----
-@GET
-@Path("/livestream");
-@ConcurrentGauge(name = "liveStreamViewers", displayName="Donation live stream viewers", description="Number of active viewers for the donation live stream")
-public void donationLiveStream() {
-    launchLiveStreamConnection();
-}
-----
-
-'''
-
 These types of metrics are available to add to your applications to make them observable.
 In production, operations teams can use these metrics to monitor the application, along with metrics that are automatically emitted from the JVM and the Open Liberty server runtime.
 If you're interested in learning more about using MicroProfile Metrics to build observability into your microservices, see the Open Liberty guide for link:/guides/microprofile-metrics.html[Providing metrics from a microservice].
 
 == See also
-* xref:metrics-list.adoc[Metrics reference list]
-* link:/docs/ref/microprofile/3.3/#package=org/eclipse/microprofile/metrics/annotation/package-frame.html&class=org/eclipse/microprofile/metrics/annotation/package-summary.html[MicroProfile Metrics Annotation Javadoc]
+* xref:introduction-monitoring-metrics.adoc[Monitoring with metrics]
 * link:/blog/2019/07/24/microprofile-metrics-migration.html[Migrating applications from MicroProfile Metrics 1.x to MicroProfile Metrics 2.0]
