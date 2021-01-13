@@ -27,7 +27,9 @@ To write and publish content in Open Liberty Docs, you work with the following b
  Each branch is protected and all pull requests require review from a either a [doc member](https://github.com/orgs/OpenLiberty/teams/docs-members) or [doc maintainer](https://github.com/orgs/OpenLiberty/teams/docs-maintainers/members). The Open Liberty docs are typically published every 4 weeks. If you want to publish doc updates with the next Open Liberty docs release, your doc updates must be merged to the `vNext` branch by the Monday before the Open Liberty docs release. For example, if the Open Liberty docs release is Friday, 23 October 2020, then you must complete your doc updates and merge them to the `vNext` branch by Monday, 19 October 2020. Only [doc maintainers](https://github.com/orgs/OpenLiberty/teams/docs-maintainers/members) can merge pull requests to the `vNext` branch. The following sections provide further information about making doc updates and merging to the `vNext` branch.  
   
  \
-You'll also work with the following sites:
+Prior to publishing on the production site, Open Liberty content is reviewed on our draft and staging sites. We provide docs-only versions of both of these sites, which build faster than the full draft and staging sites, so that content updates are available for review sooner.  
+
+The following sites are available to review and publish docs content:
 * [full draft site](https://draft-openlibertyio.mybluemix.net/docs/)  
      Contains all draft content (`draft` branches) of the site  
      
@@ -61,7 +63,7 @@ The author of the doc must complete the following steps:
     1. ~~Sign in to [Travis CI](https://travis-ci.com/github/OpenLiberty/openliberty.io/branches) with your GitHub account.~~
     2. ~~Click **More Options > Trigger Build**. Type `draft` in the **Branch** field, then click **Trigger custom build**.~~
 
-6. When the build is finished, check that the doc look correct on either the [docs-draft site](https://docs-draft-openlibertyio.mybluemix.net/docs/) or the [full draft site](https://draft-openlibertyio.mybluemix.net/docs/).  
+6. When the build is finished, check that the doc looks correct on either the [docs-draft site](https://docs-draft-openlibertyio.mybluemix.net/docs/) or the [full draft site](https://draft-openlibertyio.mybluemix.net/docs/).  
 
    In addition to the existing [full draft site](https://draft-openlibertyio.mybluemix.net/docs/) we now have a [docs-draft site](https://docs-draft-openlibertyio.mybluemix.net/docs/), which contains only the docs content, allowing it to build and deploy much quicker. However, since this site contains only the doc content, any links to other parts of openliberty.io will not resolve. In general, use the doc-draft site to review content because it updates much quicker than the full site. However, if you need to review content that links to pages on openliberty.io that are not in the docs, use the full draft site.
 
@@ -83,9 +85,9 @@ The author of the doc must complete the following steps:
    
 9. If any changes are requested to the PR, make them in your branch and push them to `draft` branch first. Once the site rebuilds, check that everything is correct on the [docs-draft site](https://docs-draft-openlibertyio.mybluemix.net/docs/) or [full draft site](https://draft-openlibertyio.mybluemix.net/docs/).
 
-10. After the PR to `staging` is approved and merged, IBM Cloud will automatically rebuild the [docs-staging site](https://docs-staging-openlibertyio.mybluemix.net/docs/) and [full staging site](https://staging-openlibertyio.mybluemix.net/docs/). If you have access, you can track the progress in the [Slack channel](https://app.slack.com/client/T15GKHBT4/C01GDRYT4UC).  
+10. After the PR to `staging` is approved and merged, IBM Cloud automatically rebuilds the [docs-staging site](https://docs-staging-openlibertyio.mybluemix.net/docs/) and [full staging site](https://staging-openlibertyio.mybluemix.net/docs/). If you have access, you can track the progress in the [Slack channel](https://app.slack.com/client/T15GKHBT4/C01GDRYT4UC).  
 
-11. When the build finishes, check to make sure the doc renders correctly on the [docs-staging site](https://docs-staging-openlibertyio.mybluemix.net/docs/) or [full staging site](https://staging-openlibertyio.mybluemix.net/docs/). If any changes are needed make sure to add them to the `draft` branch and review on the [full draft site](https://draft-openlibertyio.mybluemix.net/docs/) or [docs-draft site](https://docs-draft-openlibertyio.mybluemix.net/docs/) before you make a new PR to `staging`.
+11. When the build finishes, check to make sure the doc renders correctly on the [docs-staging site](https://docs-staging-openlibertyio.mybluemix.net/docs/) or [full staging site](https://staging-openlibertyio.mybluemix.net/docs/). If any changes are needed, make sure to add them to the `draft` branch and review on the [full draft site](https://draft-openlibertyio.mybluemix.net/docs/) or [docs-draft site](https://docs-draft-openlibertyio.mybluemix.net/docs/) before you make a new PR to `staging`.
 
 12. After you verify the doc, post a link to it on one of the staging sites in the Git issue and change the issue status to `Ready to publish`.  Open a PR from `staging` to `vNext` and request a review of the PR from David Mueller (`dmuelle`), Charlotte Holt (`Charlotte-Holt`) or one of [the doc maintainers](https://github.com/orgs/OpenLiberty/teams/docs-maintainers/members). After the PR is approved and merged to `vNext`, the doc will publish with the next scheduled release.
 
@@ -120,7 +122,7 @@ All edits and updates to existing Open Liberty Docs must be documented and track
 
 9. After the PR to `staging` is approved and merged, IBM Cloud will automatically rebuild the [docs-staging site](https://docs-staging-openlibertyio.mybluemix.net/docs/) and [full staging site](https://staging-openlibertyio.mybluemix.net/docs/). If you have access, you can track the progress in the [Slack channel](https://app.slack.com/client/T15GKHBT4/C01GDRYT4UC).  
 
-10. When the build finishes, check to make sure the doc renders correctly on the [docs-staging site](https://docs-staging-openlibertyio.mybluemix.net/docs/) or [full staging site](https://staging-openlibertyio.mybluemix.net/docs/). If any changes are needed make sure to add them to the `draft` branch and review on the [full draft site](https://draft-openlibertyio.mybluemix.net/docs/) or [docs-draft site](https://docs-draft-openlibertyio.mybluemix.net/docs/) before you make a new PR to `staging`.
+10. When the build finishes, check to make sure the doc renders correctly on the [docs-staging site](https://docs-staging-openlibertyio.mybluemix.net/docs/) or [full staging site](https://staging-openlibertyio.mybluemix.net/docs/). If any changes are needed, make sure to add them to the `draft` branch and review on the [full draft site](https://draft-openlibertyio.mybluemix.net/docs/) or [docs-draft site](https://docs-draft-openlibertyio.mybluemix.net/docs/) before you make a new PR to `staging`.
 
 11. After you verify the doc, post a link to it on one of the staging sites in the Git issue and change the issue status to `Ready to publish`.  Open a PR from `staging` to `vNext` and Request a review of the PR from David Mueller (`dmuelle`), Charlotte Holt (`Charlotte-Holt`) or one of [the doc maintainers](https://github.com/orgs/OpenLiberty/teams/docs-maintainers/members). After the PR is approved and merged to `vNext`, the changes publish with the next scheduled release.
 
