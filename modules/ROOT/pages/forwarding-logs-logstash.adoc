@@ -1,4 +1,4 @@
-// Copyright (c) 2020 IBM Corporation and others.
+// Copyright (c) 2020,2021 IBM Corporation and others.
 // Licensed under Creative Commons Attribution-NoDerivatives
 // 4.0 International (CC BY-ND 4.0)
 //   https://creativecommons.org/licenses/by-nd/4.0/
@@ -62,18 +62,35 @@ openssl req -x509 -newkey rsa:2048 -keyout logstash.key -out logstash.crt -days 
 
 . Complete the following steps for each Open Liberty server that you want to collect events from:
 
-.. Acquire or create a keystore for the Open Liberty server. To create a self-signed certificate, use the following command. Customize the server name, password, and subject as needed:
+.. Acquire or create a keystore for the Open Liberty server. To create a self-signed certificate, run the `securityUtility` command from the `wlp_install_dir/bin` folder, as shown in the following example. Customize the server name, password, and subject as needed:
 +
 [role,command]
 ----
-d:\wlp\bin\securityUtility createSSLCertificate --server=myServerName --password="Liberty" --subject=CN=myHostname,OU=defaultServer,O=ibm,C=us
+d:\wlp\bin\securityUtility createSSLCertificate --server=server1 --password="Liberty" --subject=CN=myHostname,OU=server1,O=ibm,C=us
 ----
+The `key.p12` default keystore file is created under the `wlp_install_dir/usr/servers/server1/resources/security` directory. The output from this command is similar to the following example:
++
+[role,command]
+----
+Creating keystore wlp_install_dir/usr/servers/server1/resources/security/key.p12
 
-.. Import the `logstash.crt` file that you created in step 1 into the `trust.jks` file in your server. In the following example, customize the `wlp_install_dir` directory and server name as needed. When prompted for a password, use the certificate password that you specified in step 3a:
+Created SSL certificate for server server1. The certificate is created with CN=myHostname,OU=server1,O=ibm,C=us as the SubjectDN.
+
+Add the following lines to the server.xml to enable SSL:
+
+    <featureManager>
+        <feature>ssl-1.0</feature>
+    </featureManager>
+    <keyStore id="defaultKeyStore" password="{xor}EzY9Oi0rJg==" />
+----
++
+Add the server configuration snippet from the command output to your `server.xml` file.
+
+.. Import the `logstash.crt` file that you created in step 1 into the `key.p12` file in your server by running the Java developer kit `keytool` command. In the following example, customize the `wlp_install_dir` directory and server name as needed. When prompted for a password, use the certificate password that you specified in step 3a:
 +
 [role,command]
 ----
-d:\java\bin\keytool -import -noprompt -alias logstash -file logstash.crt -keystore wlp_install_dir\usr\servers\myServerName\resources\security\trust.jks -storepass Liberty
+keytool -importcert -noprompt -alias logstash -file logstash.crt -keystore wlp_install_dir/usr/servers/server1/resources/security/key.p12 -storepass Liberty
 ----
 
 .. Use the following command to install the Logstash Collector feature if it is not already installed on your server:
