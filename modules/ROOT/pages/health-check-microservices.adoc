@@ -22,11 +22,11 @@ For example, in a microservices-based banking application, you might implement h
 
 == MicroProfile Health endpoints and annotations
 
-MicroProfile Health provides the following three endpoints:
+xref:reference:feature/mpHealth-3.0.adoc[MicroProfile Health] provides the following three endpoints:
 
 - `/health/ready`: returns the readiness of a microservice, or whether it is ready to process requests. This endpoint corresponds to the Kubernetes readiness probe.
 - `/health/live`: returns the liveness of a microservice, or whether it encountered a bug or deadlock. If this check fails, the microservice is not running and can be stopped. This endpoint corresponds to the Kubernetes liveness probe, which automatically restarts the pod if the check fails.
-- `/health`: aggregates the responses from the `/health/live` and `/health/ready` endpoints. This endpoint corresponds to the deprecated `@Health` annotation and is only available to provide compatibility with MicroProfile 1.0. If you are using MicroProfile 2.0 or higher, use the `/health/ready` or `/health/live` endpoints instead.
+- `/health`: aggregates the responses from the `/health/live` and `/health/ready` endpoints. This endpoint corresponds to the deprecated `@Health` annotation and is only available to provide compatibility with MicroProfile 1.0. If you are using MicroProfile 2.0 or higher, use the `/health/ready` or `/health/live` endpoints instead. The `@Health` annotation is not available in MicroProfile 4.0 or later or MicroProfile Health 3.0 or later.
 
 To implement readiness or liveness health checks, add either the `@Liveness` or `@Readiness` annotation to your code. These annotations link the provided endpoints to Kubernetes liveness and readiness probes.
 
@@ -47,12 +47,13 @@ public class MemoryCheck implements HealthCheck {
         HealthCheckResponse response = HealthCheckResponse.named("heap-memory")
                 .withData("used", memUsed)
                 .withData("max", memMax)
-                .state(memUsed < memMax * 0.9)
+                .status(memUsed < memMax * 0.9)
                 .build();
         return response;
     }
 }
 ----
+For MicroProfile Health versions 2.x and earlier, the `.status` response is replaced by the `.state` response in the `HealthCheckResponse` class.
 
 The following example shows the JSON response from the `/health/live` endpoint if heap memory usage is less than 90%. The first status indicates the overall status of all health checks that are returned from the endpoint. The second status indicates the status of the particular check that is specified by the preceding `name` value, which in this example is `heap-memory`. In order for the overall status to be `UP`, all checks that are run on the endpoint must pass:
 
@@ -109,11 +110,11 @@ The following example shows the JSON response from the `/health/ready` endpoint 
 }
 ----
 
-
+By default, in MicroProfile Health versions 2.0 and later, the overall Readiness status is DOWN, with an empty response, until all the deployed applications in Open Liberty are started. In MicroProfile Health versions 3.0 and later, a new xref:external-configuration.adoc[MicroProfile Config] property, `mp.health.default.readiness.empty.response=UP`, is available. You can specify this property to change the overall default Readiness status to `UP` during application startup, for applications that do not specify any user-defined health checks.
 
 == See also:
 
 - Guide: link:/guides/microprofile-health.html[Adding health reports to microservices]
 - Guide: link:/guides/kubernetes-microprofile-health.html[Checking the health of microservices on Kubernetes].
-- xref:reference:feature/mpHealth-2.2.adoc[MicroProfile Health feature]
+- xref:reference:feature/mpHealth-3.0.adoc[MicroProfile Health feature]
 - https://github.com/eclipse/microprofile-health[MicroProfile Health on GitHub]
