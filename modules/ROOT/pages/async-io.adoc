@@ -44,13 +44,8 @@ The `ReadListener` implementation is registered by a servlet, as shown in the fo
 @Override
 protected void doPost(HttpServletRequest req, HttpServletResponse res) throws IOException, ServletException {
 
-    // Asynchronous I/O requires an asynchronous servlet.
     req.startAsync();
-
-    // Register the ReadListener object with the ServletInputStream object.
     req.getInputStream().setReadListener(new SampleReadListener(req, res));
-
-    // The servlet returns, which relinquishes the thread.
 }
 ----
 
@@ -76,15 +71,8 @@ public void onDataAvailable() throws IOException {
 
     ServletInputStream inStream = _req.getInputStream();
 
-    // The isReady method must be checked before each read. If it returns false, all
-    // currently available data was read, so the thread should be relinquished.
-    // If the isFinished method returns true, all data was read.
     while (inStream.isReady() && !inStream.isFinished()) {
-
-        // Only one read of data is allowed inside the loop.
         postDataLen = inStream.read(postData);
-
-        // Save the input data for processing later.
         if (postDataLen > 0)
             outData.add(new String(postData, 0, postDataLen));
     }
@@ -94,6 +82,8 @@ public void onDataAvailable() throws IOException {
 The while loop in this example implements two key requirements:
 
 * The `isReady()` method is called before every read of data.
+If it returns false, all currently available data was read, so the thread should be relinquished.
+If the `isFinished()` method returns true, all data was read.
 A second read of data that's performed after a call to the `isReady()` method is effectively a synchronous read and results in an `IllegalStateException`.
 * The `onDataAvailable` method doesn't return unless the `isReady` method returns false or all data is read.
 If the `onDataAvailable` method returns when the `isReady` method returns true and more data is available to be read, the container doesn't call the `onDataAvailable` method again until the `isReady` method is called and returns false.
@@ -111,12 +101,10 @@ The `onAllDataRead` method performs the business logic based on the inbound data
 @Override
 public void onAllDataRead() throws IOException {
 
-    // Process the inbound data.
     for (String outDataString : outData) {
         _res.getOutputStream().print(outDataString);
     }
 
-    // Indicate that the asynchronous request is complete.
     _req.getAsyncContext().complete();
 }
 ----
@@ -140,7 +128,6 @@ public void onError(Throwable arg0) {
         // Log an error.
     }
 
-    // Indicate that the request is complete.
     _asyncContext.complete();
 }
 ----
@@ -169,13 +156,8 @@ The `WriteListener` implementation is registered by a servlet, as shown in the f
 @Override
 protected void service(HttpServletRequest req, HttpServletResponse res) throws IOException, ServletException {
 
-    // Asynchronous I/O requires an asynchronous servlet.
     req.startAsync();
-
-    // Register the WriteListener object with the ServletOuputStream object.
     res.getOutputStream().setWriteListener(new SampleWriteListener(req, res, 200));
-
-    // The servlet returns, which relinquishes the thread.
 }
 ----
 
@@ -196,7 +178,6 @@ public void onWritePossible() throws IOException {
 
     ServletOutputStream outStream = _res.getOutputStream();
 
-    // Write each line of data, checking the isReady method before each write.
     while (outStream.isReady() && _numWritesRemaining > 0) {
         _numWritesDone++;
         _numWritesRemaining--;
@@ -204,10 +185,8 @@ public void onWritePossible() throws IOException {
     }
 
     if (_numWritesRemaining == 0) {
-        // If all data was written, complete the asynchronous request.
         _req.getAsyncContext().complete();
     } else {
-        // The isReady method returned false before all data was written.
         _asyncEvents++;
     }
 }
