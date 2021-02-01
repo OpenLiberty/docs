@@ -12,7 +12,7 @@
 :page-type: general
 = Troubleshooting ACME certificates
 
-If you experience problems with ACME certificate authority (CA) certificates, you can refer to error messages from your Open Liberty server or HTTP error messages to debug the problem. The following information can help determine the cause of common problems and error messages that are associated with ACME CA certificates.
+If you experience a problem with Automatic Certificate Management Environment (ACME) certificate authority (CA) certificates, you can refer to error messages from your Open Liberty server or to HTTP error messages to debug the problem. The following information can help determine the cause of common problems and error messages that are associated with ACME CA certificates.
 
 
 To help troubleshoot problems with ACME CA certificates, you can enable trace by using the following trace specification:
@@ -20,7 +20,7 @@ To help troubleshoot problems with ACME CA certificates, you can enable trace by
 ACMECA=all
 ----
 
-The following sections describe common problems that you might encounter with ACME CA accounts and connections. For more information, see xref:acme-cert-management.adoc[Automated certificate management with ACME] and xref:reference:feature/acmeCA-2.0.adoc[the ACME Support feature].
+The following sections describe common problems that you might encounter with ACME CA accounts and connections. For more information, see xref:acme-cert-management.adoc[Automated certificate management with ACME] and the feature:acmeCA[display=ACME Support] feature.
 
 == The certificate request times out
 If the certificate request times out, you can set a longer timeout value by using the  `challengePollTimeout` and `orderPollTimeout` properties.
@@ -28,13 +28,13 @@ If the certificate request times out, you can set a longer timeout value by usin
 == You received an HTTP code 429 message on a renew request
 To prevent too many immediate certificate-renew requests and a possible negative impact on the server, certificate-renew requests are blocked for a small window of time. After this window expires, new requests can be made. The 429 message indicates when new requests can be made.
 
-== You received message that indicates the rate limit was exceeded
+== You received a message that indicates the rate limit was exceeded
 Some CA, such as LetsEncrypt, enforce a rate limit on requesting new certificates. If you are testing and request several certificates in a short amount of time, use an appropriate testing server. For example, https://letsencrypt.org/docs/staging-environment/[LetsEncrypt provides a staging server with higher rate limits].
 
 == The certificate is renewed at startup when it isn't expired
 The following conditions can cause an unexpired certificate to be automatically renewed at startup:
 
-* The certificate is marked as revoked
+* The certificate is marked as revoked.
 * The certificate expiration date is within the window set by the `renewBeforeExpiration` property.
 * The directory URI, the domain, or other account information was changed and a new certificate is required.
 * The server was started with the `--clean` option and historical information on the certificate was removed.
@@ -69,13 +69,13 @@ To work around this error after a failure to fetch the initial certificate, remo
 
 == You received a CWPKI2058W warning message during a revocation check
 
-When you run containerized versions of ACME CA servers, the OCSP responder URL that is defined in the certificate might not be reachable. You can override the OCSP responder URL in the certificate by specifying the 'ocspResponderUrl' attribute in the 'acmeRevocationChecker' element. If this URL is not configured, the following  warning can occur during revocation checks:
+When you run containerized versions of ACME CA servers, the Online Certificate Status Protocol (OCSP) responder URL that is defined in the certificate might not be reachable. You can override the OCSP responder URL in the certificate by specifying the `ocspResponderUrl` attribute in the `acmeRevocationChecker` element. If this URL is not configured, the following  warning can occur during revocation checks:
 
 ----
 CWPKI2058W: Certificate revocation status checking ignored soft failures. Revocation checking might be incomplete. The failures are: '[java.security.cert.CertPathValidatorException: Unable to determine revocation status due to network error, java.security.cert.CertPathValidatorException: Unable to determine revocation status due to network error]'
 ----
 
-If you see this network error warning and you are running with a test CA server, you can add a custom `ocspResponderUrl` URL. If the test CA does not support revocation testing, you can disable revocation testing by setting the `enabled` attribute on the `acmeRevocationChecker` element `false`, as shown in the following example:
+If you see this network error warning and you are running with a test CA server, you can add a custom `ocspResponderUrl` URL. If the test CA does not support revocation testing, you can disable revocation testing by setting the `enabled` attribute on the `acmeRevocationChecker` element to `false`, as shown in the following example:
 
 ----
 <acmeCA>
