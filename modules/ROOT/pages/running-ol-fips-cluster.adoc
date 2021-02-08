@@ -1,0 +1,132 @@
+
+
+= Running Open Liberty in a FIPS-enabled cluster
+
+Below instructions are to config, depoy and run any Liberty application with FIPS enabled.
+
+== Before you begin
+
+* OCP cluster is deployed. For this testing FIPS was enabled on the OCP cluster.
+These instructions should work on OCP cluster which does not have FIPS enabled.
+* CP4Apps 4.3 is installed.
+Below instruction is only using OpenLibertyOperator which was installed using CP4Apps.
+So CP4Apps is not required as OpenLibertyOperator can be installed independently of CP4Apps.
+
+Note: OpenLiberty application with OpenJDK deploys fine on FIPS enabled OCP but it does not have FIPS enabled for Liberty
+
+----
+product = Open Liberty 20.0.0.12 (wlp-1.0.47.cl201220201111-0736)
+wlp.install.dir = /opt/ol/wlp/
+server.output.dir = /opt/ol/wlp/output/defaultServer/
+java.home = /opt/java/openjdk/jre
+java.version = 1.8.0_272
+----
+
+== Procedure
+
+. Create Liberty Image with FIPS enabled
+Here is the general doc link on creating Liberty images.
+
+* Make sure to use the open liberty image which use IBM JDK to enable FIPS for Liberty. Replace liberty image in Dockerfile FROM openliberty/open-liberty:20.0.0.12-full-java8-ibmjava-ubi
+* Make sure SSL is enabled for liberty server.
+Add <feature>transportSecurity-1.0</feature> to server.xml
+* Set the com.ibm.jsse2.usefipsprovider system property to enable FIPS mode in the IBMJSSE2 provider.
+Create or update jvm.options file in server config directory to set this property.
+Check this link for more details:
+
+----
+#cat jvm.options
+-Dcom.ibm.jsse2.usefipsprovider=true
+#The com.ibm.jsse2.JSSEFIPS=true system property is deprecated because it does not support TLS 1.1, TLS 1.2, elliptic curve, AES-GCM or other new cipher suites.
+----
+
+* Ensure that the JCE FIPS provider com.ibm.crypto.fips.provider.IBMJCEFIPS that you want to use is in the provider list in the JAVA_HOME/jre/lib/security/java.security file.
+* Copied the java.security file from the existing liberty container with IBM JDK and updated to add FIPS provider.
+----
+$oc rsync :/opt/ibm/java/jre/lib/security/java.security .
+$ vi java.security
+----
+
+----
+#Added the security.provider.1=com.ibm.crypto.fips.provider.IBMJCEFIPS on top
+security.provider.1=com.ibm.crypto.fips.provider.IBMJCEFIPS
+----
+
+* Make sure Dockerfile copies updated server.xml, jvm.options and java.security to appropriate locations
+
+----
+FROM openliberty/open-liberty:20.0.0.12-full-java8-ibmjava-ubi
+
+COPY --chown=1001:0 src/main/liberty/config /config/
+COPY --chown=1001:0 <app> /config/apps
+COPY --chown=1001:0 java.security /opt/ibm/java/jre/lib/security
+RUN configure.sh
+----
+
+* Login to ocp cluster using oc login command
+* Create a project for your liberty application
+$ oc new-project ol-app
+* Build updated Liberty image
+$docker build -t <image_name> -f Dockerfile.ibmjdk .
+* Login to your image registry and push the image. In this example, using OCP internal registry:
+$ docker tag default-route-openshift-image-registry.apps.mst45fips.cp.fyre.ibm.com/ol-app/<image_name>
+$ docker push default-route-openshift-image-registry.apps.mst45fips.cp.fyre.ibm.com/ol-app/<image_name>
+
+. Deploy Liberty Image to OpenShift Cluster
+
+* There are various ways to deploy this Liberty image to OCP cluster. will OpenLibertyOperator is used here. It is important that route for application is enabled for SSL to use FIPS. Here is the guide for OpenLibertyOperator for more details.
+
+----
+$ cat app-deploy_ssl.yaml
+apiVersion: openliberty.io/v1beta1
+kind: OpenLibertyApplication
+metadata:
+  name: inventory-ibmjdk
+spec:
+  replicas: 1
+  applicationImage: default-route-openshift-image-registry.apps.mst45fips.cp.fyre.ibm.com/ol-app/inventory_ibmjdk
+  expose: true
+  route:
+    termination: reencrypt
+  service:
+    annotations:
+      service.beta.openshift.io/serving-cert-secret-name: inventory-ibmjdk-svc-tls
+    certificateSecretRef: inventory-ibmjdk-svc-tls
+    port: 9443
+----
+
+* Deploy the application to OCP
+$ oc deploy -f app-deploy_ssl.yaml
+* Check application pod and route
+
+----
+$ oc get pods
+inventory-ibmjdk-687487479-4rxk7   1/1     Running   0          36h
+$ oc get routes|grep jdk
+inventory-ibmjdk   inventory-ibmjdk-ol-app.apps.mst45fips.cp.fyre.ibm.com          inventory-ibmjdk   9443-tcp   reencrypt     None
+----
+
+Open a browser and access the above route on https.
+For example, https://inventory-ibmjdk-ol-app.apps.mst45fips.cp.fyre.ibm.com
+
+. Verify FIPS is enabled on Liberty server
+
+* Enable the trace by updating jvm.options to add this property and rebuild liberty image and redeploy the new image to OCP.
+* Access the liberty application on https again.
+* Check logs on liberty container:
+
+----
+$oc rsh inventory-ibmjdk-687487479-4rxk7 bash
+bash-4.4$ more /logs/messages.log
+...
+[12/10/20 1:39:30:329 UTC] 0000002a SystemOut                                                    O IBMJSSE2 will use default FIPS provider IBMJCEFIP
+S
+[12/10/20 1:39:30:330 UTC] 0000002a SystemOut                                                    O Installed Providers =
+[12/10/20 1:39:30:331 UTC] 0000002a SystemOut                                                    O      IBMJCEFIPS
+[12/10/20 1:39:30:331 UTC] 0000002a SystemOut                                                    O      IBMJSSE2
+[12/10/20 1:39:30:331 UTC] 0000002a Syste mOut                                                    O      IBMJCE
+[12/10/20 1:39:30:332 UTC] 0000002a SystemOut
+...
+$  grep ClientHello /logs/messages.log
+[12/10/20 1:41:05:885 UTC] 00000042 SystemOut                                                    O *** ClientHello, TLSv1.2
+----
