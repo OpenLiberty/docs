@@ -91,9 +91,9 @@ For more information, see link:/guides/security-intro.html#adding-authentication
 
 === Configure RunAs authentication
 
-When a user is authenticated to a servlet, the servlet can make subsequent calls, for example to other servlets. These subsequent calls are normally made under the same security identity that was originally to log in to the servlet. Alternatively, you can delegate to a different identity by using the RunAs specification so that any subsequent calls that the servlet makes run under the specified identity. 
+When a user is authenticated to a servlet, the servlet can make subsequent calls to downstream resources, such as other servlets. These subsequent calls are normally made under the same security roll and caller identity that was originally used to log in to the servlet. Alternatively, you can delegate any subsequent calls to a different security roll or caller identity by using the RunAs specification.
 
-To use the RunAs specification, you must either specify the `@RunAs` annotation on a class in your application code or add the `run-as` element to your deployment descriptor file. In either case, you must set the annotation or element to the security role that you want to delegate to.
+To use the RunAs specification, you must either specify the `@RunAs` annotation on a class in your application code or add the `run-as` element to your `web.xml` deployment descriptor file. In either case, you must set the annotation or element to the security role that you want to delegate to. You can also implement the RunAs specification in your server configuration to map a security role to a particular user.
 
 For example, consider a servlet that requires either the `admin` or `user` role to authenticate. You can specify that subsequent calls from that servlet are run with the `admin` role by using the `@RunAs` annotation, as shown in the following example:
 
@@ -103,9 +103,23 @@ For example, consider a servlet that requires either the `admin` or `user` role 
 ----
 For more information, see the xref:reference:javadoc/liberty-javaee8-javadoc.adoc#package=javax/annotation/security/package-frame.html&class=javax/annotation/security/RunAs.html[@RunAs annotation].
 
-You can also implement the RunAs specification in your server configuration to map a security role to a particular user. In this case, a specific set of user credentials is invoked whenever calls run under the specified role. For example, a servlet that requires an authenticated user to be in the `admin` role, needs to call to downstream resources that require credentials from a particular user, Wanda. You can set the `run-as` element on the `admin` security role to specify that calls made in that role invoke Wanda's credentials.
+In the following `web.xml` file example, the `run-as` element specifies that the servlet makes calls under the `admin` role that is defined in the server configuration:
 
-In the following `server.xml` file example, Wanda and Trevor are both in the `admin` security role. The `run-as` element specifies that calls from that role run as Wanda:
+----
+<servlet id="Servlet_1">
+     <servlet-name>RunAsServlet</servlet-name>
+     <display-name>RunAsServlet</display-name>
+     <description>RunAsServlet</description>
+     <servlet-class>web.RunAsServlet</servlet-class>
+     <run-as>
+          <role-name>admin</role-name>
+     </run-as>
+ </servlet>
+----
+
+To delegate calls that are made from a security roll to a particular caller identity, you can specify the `run-as` element in the security role configuration in your `server.xml' file. In this case, a specific set of user credentials is invoked whenever calls run under the specified role. For example, a servlet that requires an authenticated user to be in the `admin` role, needs to call to downstream resources that require credentials from a particular user, Wanda. You can set the `run-as` element on the `admin` security role to specify that calls made in that role invoke Wanda's credentials.
+
+In the following `server.xml` file example, Wanda and Trevor are both in the `admin` security role. The `run-as` element specifies that calls from that role are run as Wanda:
 
 ----
 <application-bnd>
@@ -117,8 +131,13 @@ In the following `server.xml` file example, Wanda and Trevor are both in the `ad
  </application-bnd>
 ----
 
-With this configuration, you can delegate calls from a servlet to run as a particular user by specifying the `@RunAs` annotation in the servlet code to a particular security role and then specifying the `run-as` element in the `server.xml` file to delegate that role to a particular user.
+If you configure the `run-as` element on a security role in your `server.xml` file, providing a password is optional. However, if this configuration is specified in an `ibm-application-bnd.xml` file, the password is required.
 
+If you specify the `application-bnd` element in your server.xml file, your application must not be in the dropins folder. If you leave your application in the dropins folder, then you must disable application monitoring by adding the following code in your `server.xml` file:
+
+----
+<applicationMonitor dropinsEnabled="false" />
+----
 
 == See also
 
