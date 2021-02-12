@@ -1,8 +1,19 @@
-
-
+// Copyright (c) 2021 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description: This task demonstrates run an Open Liberty application with Federal Information Processing Standards (FIPS) enabled.
+:seo-title: Running Open Liberty in a FIPS-enabled cluster - OpenLiberty.io
+:seo-description: This task demonstrates run an Open Liberty application with Federal Information Processing Standards (FIPS) enabled.
+:page-layout: general-reference
+:page-type: general
 = Running Open Liberty in a FIPS-enabled cluster
 
-This task demonstrates run an Open Liberty application with Federal Information Processing Standards (FIPS) enabled by doing the following things:
+This task demonstrates how to run an Open Liberty application with Federal Information Processing Standards (FIPS) enabled by doing the following things:
 
 . <<create-image-fips,Creating an Open Liberty Docker image that has FIPS enabled>>
 . <<deploy-image-cluster,Deploying the Open Liberty image to your OpenShift Cluster>>
@@ -11,6 +22,7 @@ This task demonstrates run an Open Liberty application with Federal Information 
 == Before you begin
 
 * Deploy an OpenShift Container Platform (OCP) cluster.
+If you want to run Open Liberty on a FIPS-enabled OCP cluster, see the https://docs.openshift.com/container-platform/4.6/installing/installing-fips.html[OpenShift documentation].
 * Install the xref:open-liberty-operator.adoc[Open Liberty Operator].
 
 [#create-image-fips]
@@ -18,7 +30,7 @@ This task demonstrates run an Open Liberty application with Federal Information 
 
 . https://github.com/OpenLiberty/ci.docker#container-images[Create an Open Liberty Docker image]. To enable FIPS for Open Liberty, use the Open Liberty image that uses the IBM JDK.
 
-. Ensure that SSL is enabled for your Open Liberty server by adding the xref:reference/feature/transportSecurity-1.0.adoc[Transport Security feature] to your `server.xml` file.
+. Ensure that SSL is enabled for your Open Liberty server by adding the feature:transportSecurity[display=Transport Security feature] (`transportSecurity-1.0`) to your `server.xml` file.
 
 . Set the `com.ibm.jsse2.usefipsprovider` system property to enable FIPS mode in the `IBMJSSE2` provider.
 To set this property, create or update the `jvm.options` file in the server configuration directory, as shown in the following example:
@@ -30,10 +42,10 @@ To set this property, create or update the `jvm.options` file in the server conf
 
 . Ensure that the `com.ibm.crypto.fips.provider.IBMJCEFIPS` Java Cryptography Extension (JCE) FIPS provider is included in the provider list in the `java.security` file, which is located in the `JAVA_HOME/jre/lib/security` directory.
 
-. Run the following commands to copy the `java.security` file from the existing Open Liberty container with the IBM JDK and update it to add the FIPS provider:
+. Run the https://www.openshift.com/blog/transferring-files-in-and-out-of-containers-in-openshift-part-1-manually-copying-files[oc rsync command] and the `vi` command to copy the `java.security` file from the existing Open Liberty container with the IBM JDK and update it to add the FIPS provider:
 +
 ----
-$ oc rsync :/opt/ibm/java/jre/lib/security/java.security .
+$ oc rsync <pod-name>:/opt/ibm/java/jre/lib/security/java.security .
 $ vi java.security
 ----
 +
@@ -73,15 +85,14 @@ $ docker build -t <image_name> -f Dockerfile.ibmjdk .
 In this example, we use the OCP internal registry:
 +
 ----
-$ docker tag default-route-openshift-image-registry.apps.mst45fips.cp.fyre.ibm.com/ol-app/<image_name>
-$ docker push default-route-openshift-image-registry.apps.mst45fips.cp.fyre.ibm.com/ol-app/<image_name>
+$ docker tag default-route-openshift-image-registry.apps.example.ibm.com/ol-app/<image_name>
+$ docker push default-route-openshift-image-registry.apps.example.ibm.com/ol-app/<image_name>
 ----
 
 [#deploy-image-cluster]
 == Deploying the Open Liberty image to your OpenShift Cluster
-There are different ways to deploy the Open Liberty image to an OCP cluster.
-In this example, the Open Liberty Operator is used to deploy the image.
-It's important that route for application is enabled so that SSL can use FIPS.
+In this example, we use the Open Liberty Operator to deploy the Open Liberty image.
+It's important that route for the application is enabled so that SSL can use FIPS.
 The following example file shows how you might configure the Open Liberty Operator for deployment to an OCP cluster:
 
 ----
@@ -92,7 +103,7 @@ metadata:
   name: inventory-ibmjdk
 spec:
   replicas: 1
-  applicationImage: default-route-openshift-image-registry.apps.mst45fips.cp.fyre.ibm.com/ol-app/inventory_ibmjdk
+  applicationImage: default-route-openshift-image-registry.apps.example.ibm.com/ol-app/inventory_ibmjdk
   expose: true
   route:
     termination: reencrypt
@@ -115,16 +126,22 @@ $ oc deploy -f app-deploy_ssl.yaml
 $ oc get pods
 inventory-ibmjdk-687487479-4rxk7   1/1     Running   0          36h
 $ oc get routes|grep jdk
-inventory-ibmjdk   inventory-ibmjdk-ol-app.apps.mst45fips.cp.fyre.ibm.com          inventory-ibmjdk   9443-tcp   reencrypt     None
+inventory-ibmjdk   inventory-ibmjdk-ol-app.apps.example.ibm.com          inventory-ibmjdk   9443-tcp   reencrypt     None
 ----
 
-. Open a browser and access the route that was returned in the previous step, for example, https://inventory-ibmjdk-ol-app.apps.mst45fips.cp.fyre.ibm.com.
+. Open a browser and access the route that was returned in the previous step, for example, https://inventory-ibmjdk-ol-app.apps.example.ibm.com.
 
 [#verify-fips]
 == Verifying that FIPS is enabled on the Open Liberty server
 
-. Enable trace by updating the `jvm.options` file to add this property and rebuild the Open Liberty image and redeploy the new image to OCP.
-. Access the Open Liberty application at the same route that you accessed in the previous section, for example, https://inventory-ibmjdk-ol-app.apps.mst45fips.cp.fyre.ibm.com.
+. Enable trace by updating the `jvm.options` file to add the following property and rebuild the Open Liberty image and redeploy the new image to OCP:
++
+----
+-Djavax.net.debug=all
+----
+
+. Access the Open Liberty application at the same route that you accessed in the previous section, for example, https://inventory-ibmjdk-ol-app.apps.example.ibm.com.
+
 . Check the logs on the Open Liberty container, as shown in the following example:
 +
 ----
