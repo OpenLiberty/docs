@@ -19,12 +19,12 @@ Asynchronous read and asynchronous write can improve the throughput of your Open
 
 == Asynchronous read
 Consider a scenario where a client request includes two packets of data that are sent one second apart by the client.
-In synchronous read, the application must occupy a thread for the entire time it takes to receive the data sent by the client.
+In synchronous read, the application must occupy a thread for the entire time that it takes to receive the data that the client sends.
 The thread starts when the first packet is received and then waits for one second to receive the second packet, so the thread is occupied for one second.
 In a server with 10 threads, you can process 10 inbound requests per second.
 
 In asynchronous read, the application relinquishes the thread after the first packet is received from the client, and the application is redispatched when the second packet arrives.
-Assume that it takes 0.1 seconds to process each inbound packet, so the inbound request occupies a thread for 0.2 seconds.
+Assume that each inbound request takes 0.1 seconds to process, so the inbound request occupies a thread for 0.2 seconds.
 In this case, the same server with 10 threads can process 50 inbound requests per second.
 Ideally, the throughput of your application server isn't affected by the rate at which data is received from a client.
 If throughput is affected by the rate at which data is received, a few bad clients can significantly reduce throughput.
@@ -52,9 +52,9 @@ protected void doPost(HttpServletRequest req, HttpServletResponse res) throws IO
 This example shows a `doPost` method that includes the two steps that are required by a servlet to read asynchronously.
 The implementation in the example is for the `doPost` method because a `ReadListener` object is useful only when a request includes post data.
 The first step starts asynchronous processing, and the second step registers a `ReadListener` object with the `ServletInputStream` object for the request.
-After these steps are complete, the servlet returns to relinquish the thread.
+After these steps complete, the servlet returns to relinquish the thread.
 If you need the servlet to perform extra steps, the servlet must perform these extra steps before the `ReadListener` object is set.
-Otherwise, the servlet and the `ReadListener` object compete to process.
+Otherwise, the servlet processing and the `ReadListener` object processing compete with each other.
 
 === Read and store inbound data
 The `ReadListener` object implements three methods, `onDataAvailable`, `onAllDataRead`, and `onError`.
@@ -82,12 +82,12 @@ public void onDataAvailable() throws IOException {
 The while loop in this example implements two key requirements:
 
 * The `isReady()` method is called before every read of data.
-If it returns false, all of the currently available data was read, so the thread is relinquished.
-If the `isFinished()` method returns true, all data was read.
-A second read of data that's performed after a call to the `isReady()` method is effectively a synchronous read and results in an `IllegalStateException`.
-* The `onDataAvailable` method doesn't return unless the `isReady` method returns false or all data is read.
-If the `onDataAvailable` method returns when the `isReady` method returns true and more data is available to be read, the container doesn't call the `onDataAvailable` method again until the `isReady` method is called and returns false.
-If the `onDataAvailable` method returns when the `isReady` method returns true and all of the data wasn't read, your application must call the `onDataAvailable` method again to restart the read.
+If it returns a `false` value, all of the currently available data was read, so the thread is relinquished.
+If the `isFinished()` method returns a `true` value, all data was read.
+A second read of data that's performed after a call to the `isReady()` method is effectively a synchronous read and results in an illegal state exception for the method.
+* The `onDataAvailable` method isn't called unless the `isReady` method returns a `false` value and all data is read.
+If the `onDataAvailable` method returns when the `isReady` method returns a `true` value and more data is available to be read, the container doesn't call the `onDataAvailable` method again until the `isReady` method is called and returns a `false` value.
+If the `onDataAvailable` method returns when the `isReady` method returns a `true` value and all of the data wasn't read, your application must call the `onDataAvailable` method again to restart the read.
 
 In this example, the inbound data is saved for later processing, although some applications might process data as they receive it.
 
@@ -109,11 +109,11 @@ public void onAllDataRead() throws IOException {
 }
 ----
 
-In this simple example, the data is written back to the client.
+The data is written back to the client.
 After all the data is written, the asynchronous request is completed by the `AsyncContext.complete` method.
 
 === Log any errors
-The `onError` method is called if any error occurs when the inbound data is being processed.
+The `onError` method is called if any error occurs when the inbound data is processed.
 If this method is called, it's the last method called on the `ReadListener` object.
 In this example, the application returns an error message to the client and then completes the asynchronous request:
 
@@ -144,10 +144,10 @@ Your application can write as much as it needs, and the underlying implementatio
 == Asynchronous write sample code
 The following examples show the key requirements to implement asynchronous write in your code.
 In most applications, asynchronous read and asynchronous write are combined.
-In the previous asynchronous example code, the <<readlistener-onalldataread,ReadListener.onAllDataRead>> method registers the `WriteListener` object and provides the response data to the `WriteListener` object on its constructor.
+In this situation, the <<readlistener-onalldataread,ReadListener.onAllDataRead>> method registers the `WriteListener` object and provides the response data to the `WriteListener` object on its constructor.
 
 === Register a WriteListener
-To use asynchronous write, your application must provide a `WriteListener` object, which is called when response data can be sent without blocking.
+To use asynchronous write, your application must provide a `WriteListener` object, which is called when response data can be sent without blocking other processes.
 The `WriteListener` object is registered by a servlet, as shown in the following example:
 
 [source,java]
@@ -161,11 +161,12 @@ protected void service(HttpServletRequest req, HttpServletResponse res) throws I
 ----
 
 This example shows a `service` method that includes the two steps that are required to write asynchronously.
-In this example, the `service` method is acceptable because a `WriteListener` object can be used for any inbound method, for example, the `doPost` method.
+The `service` method is acceptable because a `WriteListener` object can be used for any inbound method, for example, the `doPost` method.
 The first step starts asynchronous processing, and the second step registers a `WriteListener` object with the `ServletOutputStream` object for the request.
-After these steps are complete, the servlet returns to relinquish the thread.
+After these steps complete, the servlet returns to relinquish the thread.
 If you need the servlet to perform extra steps, the servlet must perform these extra steps before the `WriteListener` object is set.
 Otherwise, the servlet and the `WriteListener` object compete to process.
+Otherwise, the servlet processing and the `WriteListener` object processing compete with each other.
 
 === Write an outbound response
 The `WriteListener` object implements two methods, `onWritePossible` and `onError`.
@@ -194,21 +195,20 @@ public void onWritePossible() throws IOException {
 The `onWritePossible` method implements three key requirements:
 
 * The `isReady` method is called before data is written.
-Data that is written a second time after a call to the `isReady` method is effectively a synchronous write and results in an `IllegalStateException`.
-* The `onWritePossible` method doesn't return unless the `isReady` method returns false or all data is written.
-The `onWritePossible` method might return when the `isReady` method returns true and more data must be written.
-In this case, the container doesn't call the `onWritePossible` method again until the `isReady` method is called and returns false.
+Data that is written a second time after a call to the `isReady` method is effectively a synchronous write and results in an illegal state exception for the method.
+* The `onWritePossible` method doesn't return unless the `isReady` method returns a `false` value or all data is written.
+The `onWritePossible` method might return when the `isReady` method returns a `true` value and more data must be written.
+In this case, the container doesn't call the `onWritePossible` method again until the `isReady` method returns a `false` value.
 One effect of this requirement is that all of the response data must be available before the `WriteListener` object is registered.
-If all of the response data isn't available, the `onWritePossible` method must return when the `isReady` method is true even though some response data wasn't written.
 * The `AsyncContext.complete` method is called to end the asynchronous request after all data is written.
 An equivalent to the `onAllDataRead` method of the `ReadListener` object doesn't exist for the `WriteListener` object because only your application knows when all response data is written.
 
 One effect of this second requirement is that all of the response data must be available before the `WriteListener` object is registered.
-If the response data isn't available before the `WriteListener` object is registered, the method must return when the `isReady` method is true.
+If the response data isn't available before the `WriteListener` object is registered, the method must return when the `isReady` method is a value of `true`.
 In this case, some of the response data wasn't yet written.
 To handle this scenario, the application can call the `onWritePossible` method, although you must ensure that two threads aren't running the `onWritePossible` method at the same time.
 
-The `onError` method is called if any error occurs when the response data is being processed.
+The `onError` method is called if any error occurs when the response data is processed.
 If this method is called, it's the last method called on the `WriteListener` object.
 In this case, the application generates an error log and then completes the asynchronous request.
 
