@@ -45,7 +45,7 @@ You can map the roles that are declared in the application to existing groups fr
 </application-bnd>
 ----
 
-The `name` attribute of the `security-role` element corresponds to a role that is specified in the application. The `name` attribute of the `group` elements correspond to the groups that are specified by a user registry or SSO identity provider.
+The `name` attribute of the `security-role` element corresponds to a role that is specified in the application. The `name` attributes of the `group` elements correspond to the groups that are specified by a user registry or SSO identity provider.
 If the role names match the group names exactly, the server maps the group to the role with a matching name by default.
 If you use this default mapping, you do not need to specify an `application-bnd` element in the `server.xml` file.
 
@@ -89,11 +89,11 @@ Some applications rely on a combination of declarative annotations and a deploym
 Therefore, you can specify roles in a deployment descriptor file if you want to override security settings or defaults from elsewhere in the application code.
 For more information, see link:/guides/security-intro.html#adding-authentication-and-authorization[the Adding authentication and authorization section of the Securing a web application guide].
 
-=== Configure RunAs authentication
+=== Configure calls to run under a specific caller identity
 
-When a user is authenticated to a servlet, the servlet can make subsequent calls to downstream resources, such as other servlets. These subsequent calls are normally made under the same security roll and caller identity that was originally used to log in to the servlet. Alternatively, you can delegate any subsequent calls to a different security roll or caller identity by using the RunAs specification.
+When a user is authenticated to a servlet, the servlet can make subsequent calls to downstream resources, such as other servlets. These subsequent calls are normally made under the same security identity that was used to log in to the servlet. This identity is known as the caller identity. Alternatively, you can delegate any subsequent calls to a different caller identity.
 
-To use the RunAs specification, you must either specify the `@RunAs` annotation on a class in your application code or add the `run-as` element to your `web.xml` deployment descriptor file. In either case, you must set the annotation or element to the security role that you want to delegate to. You can also implement the RunAs specification in your server configuration to map a security role to a particular user.
+To delegate calls to a specific caller identity, you must either specify the `@RunAs` annotation on a class in your application code or add the `run-as` element to your deployment descriptor file. In either case, you must set the annotation or element to the security role that you want to delegate to. You must also specify the `run-as` element on that security role in your server configuration to map it to a particular user ID.
 
 For example, consider a servlet that requires either the `admin` or `user` role to authenticate. You can specify that subsequent calls from that servlet are run with the `admin` role by using the `@RunAs` annotation, as shown in the following example:
 
@@ -117,23 +117,23 @@ In the following `web.xml` file example, the `run-as` element specifies that the
  </servlet>
 ----
 
-To delegate calls that are made from a security roll to a particular caller identity, specify the `run-as` element in the security role configuration in your `server.xml` file. In this case, a specific set of user credentials is used whenever calls run under the specified role. For example, a servlet that requires an authenticated user to be in the `admin` role, needs to call to downstream resources that require credentials from a particular user, Wanda. You can set the `run-as` element on the `admin` security role to specify that calls that are made in that role must use Wanda's credentials.
+To delegate calls that are made from a security role to a particular caller identity, specify the `run-as` element in the security role configuration in your `server.xml` file. In this case, calls that run under the specified role run as a specific user ID. For example, a servlet that requires an authenticated user to be in the `admin` role, needs to call to downstream resources that require credentials from a particular user, Wanda. You can set the `run-as` element on the `admin` security role to specify that calls that are made in that role must use Wanda's credentials.
 
-In the following `server.xml` file example, Wanda and Trevor are both in the `admin` security role. The `run-as` element specifies that calls from that role are run as Wanda:
+In the following `server.xml` file example, Wanda and Trevor are both in the `admin` security role. The `run-as` element specifies that calls under that security role are run as Wanda:
 
 ----
 <application-bnd>
       <security-role name="admin">
            <user name="Wanda" />
            <user name="Trevor" />
-           <run-as userid="Wanda" password="{xor}Lz4sLCgwLTs="/>
+           <run-as userid="Wanda" />
        </security-role>
  </application-bnd>
 ----
 
 If you configure the `run-as` element on a security role in your `server.xml` file, providing a password is optional. However, if this configuration is specified in an `ibm-application-bnd.xml` file, the password is required.
 
-If you specify the `application-bnd` element in your server.xml file, your application must not be in the dropins folder. If you leave your application in the dropins folder, then you must disable application monitoring by adding the following code in your `server.xml` file:
+If you specify the `application-bnd` element in your server.xml file, your application must not be in the `dropins` folder. If you leave your application in the `dropins` folder, then you must disable application monitoring by adding the following code in your `server.xml` file:
 
 ----
 <applicationMonitor dropinsEnabled="false" />
