@@ -1,0 +1,216 @@
+// Copyright (c) 2020 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description:
+:seo-title: Asynchronous programming with MicroProfile Fault Tolerance - OpenLiberty.io
+:seo-description:
+:page-layout: general-reference
+:page-type: general
+= Asynchronous programming with MicroProfile Fault Tolerance
+
+MicroProfile Fault Tolerance provides annotations that can help you deal with failure.
+You can combine the `@Asynchronous` fault tolerance annotation with the `CompletionStage` interface to write asynchronous code that is resilient to faults.
+
+== The @Asynchronous annotation
+A method that is annotated with the `@Asynchronous` annotation runs asynchronously, which means that the method doesn't run immediately on the main thread when it's called.
+Instead, the method runs sometime later, usually on another thread.
+To use the `@Asynchronous` annotation, add the annotation to a method, and ensure that the annotated method returns either a https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletionStage.html[CompletionStage] object or a https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Future.html[Future] object.
+The following example uses the `CompletableFuture.completedFuture()` method to make the result compatible with the `CompletionStage` return type:
+
+[source,java]
+----
+@Asynchronous
+public CompletionStage<String> serviceA() {
+    ...
+    return CompletableFuture.completedFuture("serviceA");
+}
+----
+
+Usually when a method is called, it returns a result.
+However, when a method is annotated with the `@Asynchronous` annotation, fault tolerance intervenes.
+When the annotated method is called, fault tolerance schedules the method to run later on a different thread and returns a `CompletionStage` or `Future` object.
+This object isn't the `CompletionStage` or `Future` object that's returned from the method because the method hasn't run yet.
+It's an object that fault tolerance creates.
+Sometime later, the method runs and returns a `CompletionStage` or `Future` object.
+
+If the method returns a `Future` object, fault tolerance updates the `Future` object that it previously returned to the user.
+The object is updated so that it delegates to the `Future` object that was returned from the method, which allows the user to see the result from the method.
+If the method returns a `CompletionStage` object, fault tolerance waits for the `CompletionStage` object to complete before it completes the `CompletionStage` object that it previously returned to the user.
+
+== @Asynchronous annotation use cases
+The following two use cases demonstrate how you can use the `@Asynchronous` annotation to make your asynchronous programs resilient:
+
+* <<apply-to-asynch-api, Fault tolerance applied to an asynchronous API call>>
+* <<run-methods-in-parallel, Multiple actions performed in parallel with resilience>>
+
+[#apply-to-asynch-api]
+=== Fault tolerance applied to an asynchronous API call
+You can use the `@Asynchronous` annotation to apply fault tolerance policies to an asynchronous API call that returns a `CompletionStage` object.
+Without the `@Asynchronous` annotation, the other fault tolerance annotations don't behave as you might expect.
+In the following use case, the `.rx()` method from the JAX-RS Client API calls remote REST services asynchronously:
+
+[source,java]
+----
+private Client client = ClientBuilder.newClient();
+
+public CompletionStage<String> clientDemo() {
+    CompletionStage<String> response = client.target("http://example.com/resource")
+        .request(MediaType.TEXT_PLAIN)
+        .rx()
+        .get(String.class);
+    return response;
+}
+----
+
+After the `clientDemo()` method is called, you receive a `CompletionStage<String>` return type, which is named `response` in this example.
+Then, you can add an action to take after the `CompletionStage` object completes:
+
+[source,java]
+----
+response.thenAccept(System.out::println);
+--> responseText
+----
+
+If the request fails, you might want to retry the request with the `@Retry` annotation.
+In this example, using the `@Retry` annotation doesn't work because the method doesn't throw an exception even if the request fails.
+The method always returns a `CompletionStage` object through which the success or failure of the request is reported.
+However, if you add the `@Asynchronous` annotation, then the `@Retry` annotation is applied after the `CompletionStage` object completes, rather than when the method returns:
+
+[source,java]
+----
+@Asynchronous
+@Retry
+public CompletionStage<String> clientDemo() {
+    ...
+}
+----
+
+For more information about using the JAX-RS `.rx()` method, see the guide on link:/guides/reactive-rest-client.html[Consuming RESTful services using the reactive JAX-RS client].
+
+[#run-methods-in-parallel]
+=== Multiple actions performed in parallel with resilience
+To run multiple methods in parallel, you can write methods that call other services, annotate them with the `@Asynchronous` annotation, and call them, as shown in the following example:
+
+[source,java]
+----
+@Inject
+private RequestScopedClass1 requestScopedBean1;
+
+@Inject
+private RequestScopedClass2 requestScopedBean2;
+
+public CompletionStage<String> callServicesAsynchronously()  {
+    CompletionStage<String> result1 = requestScopedBean1.serviceA(); // Where serviceA is annotated with @Asynchronous
+    CompletionStage<String> result2 = requestScopedBean2.serviceB(); // Where serviceB is annotated with @Asynchronous
+    ...
+}
+----
+
+In this example, the `serviceA()` method is called, and then the `serviceB()` method is called.
+However, because both services are annotated with the `@Asynchronous` annotation, they run simultaneously on different threads, rather than sequentially.
+
+Other fault tolerance annotations can also be implemented with the `@Asynchronous` annotation.
+For example, you can add the `@Retry` annotation to the `serviceA()` method and the `@Timeout` annotation to the `serviceB()` method:
+
+[source,java]
+----
+@RequestScoped
+public class RequestScopedClass1 {
+
+    @Retry
+    @Asynchronous
+    public CompletionStage<String> serviceA() {
+        doSomethingWhichMightFail()
+        return CompletableFuture.completedFuture("serviceA");
+    }
+}
+
+@RequestScoped
+public class RequestScopedClass2 {
+
+    @Timeout
+    @Asynchronous
+    public CompletionStage<String> serviceB() {
+        doSomethingWhichMightFail()
+        return CompletableFuture.completedFuture("serviceB");
+    }
+}
+----
+
+In this case, if the `serviceA()` method needs several retries, then a call to retrieve the result, such as the `CompletionStage.thenAccept()` method, doesn't return until all the retries are complete.
+
+== Differences in execution flow with the @Asynchronous annotation
+When a method is annotated with the `@Asynchronous` annotation, things change in the flow of execution.
+The following diagram shows how the fault tolerance annotations work together without the `@Asynchronous` annotation:
+
+.Execution flow without the @Asynchronous annotation
+image::/img/blog/FT-synchronous-execution-flow.png[a diagram of execution flow without the @Asynchronous annotation]
+
+The next diagram shows how the fault tolerance annotations work together with the `@Asynchronous` annotation. Differences in execution flow are noted in dark green in the diagram:
+
+.Execution flow with the @Asynchronous annotation
+image::/img/blog/FT-asynchronous-execution-flow.png[a diagram of execution flow with the @Asynchronous annotation]
+
+The following changes in execution flow occur when you use the `@Asynchronous` annotation:
+
+* A `CompletionStage` or `Future` object is returned before the method runs.
+After the method runs, the result from the method is propagated to the `CompletionStage` or `Future` object so that the caller can access it.
+* In addition to either accepting or rejecting the execution, the bulkhead can also queue the execution to run later.
+If the method is accepted by the bulkhead, it's then scheduled to run on another thread, rather than immediately.
+* When a timeout is used, then the method is interrupted if the timeout expires.
+If the timeout expires, the execution skips forward to the point noted in the *Timeout Expires* block in the diagram.
+The result is then processed as if the method finished with a `TimeoutException`.
+* If there's a fallback, the fallback also runs asynchronously so that it's scheduled to run on another thread.
+
+== Interactions with other fault tolerance annotations
+Annotating a method with the `@Asynchronous` annotation impacts the following fault tolerance annotations:
+
+* <<interaction-w-bulkhead,@Bulkhead>>
+* <<interaction-w-timeout,@Timeout>>
+
+[#interaction-w-bulkhead]
+=== Interaction with the @Bulkhead annotation
+When you use the `@Asynchronous` and `@Bulkhead` annotations together, fault tolerance provides the option to queue up executions if the maximum number of executions are already running.
+If less than the maximum concurrent executions are running when you call the method, then your method is scheduled to run immediately.
+Otherwise, the method is added to a queue.
+
+If any requests are in the queue when one execution of the method finishes, then the first execution from the queue starts.
+When the queue is full, then the method fails with a `BulkheadException`.
+The size of the queue can be configured with the `waitingTaskQueue` parameter on the `@Bulkhead` annotation.
+
+[#interaction-w-timeout]
+=== Interaction with the @Timeout annotation
+When you use the `@Asynchronous` and `@Timeout` annotations together, the `CompletionStage` or `Future` object that's returned to the caller can be completed as soon as the timeout expires.
+Even if the method is still running, it's running on another thread so you can signal to a different thread that the result is ready.
+The thread that's running the method is interrupted so that it can stop working and save resources.
+
+If you need to apply a timeout to a long-running operation that doesn't respond to being interrupted, you can use the `@Asynchronous` annotation.
+The operation might still run to completion, even though the timeout expired and you received a `TimeoutException`.
+
+== Limitations of returning a Future object
+
+While the `@Asynchronous` annotation can make methods that return a `Future` object run asynchronously, https://download.eclipse.org/microprofile/microprofile-fault-tolerance-2.1/microprofile-fault-tolerance-spec.html#_interactions_when_returning_a_code_future_code[fault tolerance policies can be applied only to asynchronous methods that return a CompletionStage object].
+A `Future` object has two ways of getting the result of its method.
+It either blocks and waits with the `get()` method, or it polls with the `isDone()` method.
+To implement fault tolerance around an asynchronous result, a callback is required so that you don't need a second thread that waits or polls for the result.
+A `CompletionStage` object facilitates this necessary callback.
+
+Without a callback, fault tolerance is applied around the method call, not around the method result.
+Because a `Future` object doesn't have a callback, the following issues arise when you implement fault tolerance:
+
+* The method call is considered successful as soon as the `Future` object is returned, even if the result of the `Future` object is an exception.
+* The bulkhead is released when the method returns, even if the `Future` object isn't complete.
+* The timeout ends when the method returns, even if the `Future` object isn't complete.
+
+Because of these concerns, returning a `Future` object is only suitable for running operations in parallel.
+In these situations, methods often end with the `return CompletableFuture.completedFuture(result);` statement, meaning that a `Future` object that completes exceptionally can't be returned.
+Either the method throws an exception, or it returns a successful `Future` object.
+
+== See also
+* xref:fault-tolerance.adoc[Fault tolerance]
+* xref:sync-async-rest-clients.adoc[Synchronous and asynchronous REST clients]

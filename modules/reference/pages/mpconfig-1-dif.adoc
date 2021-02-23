@@ -1,0 +1,59 @@
+// Copyright (c) 2021 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description: Open Liberty supports two JMX connectors, local connector and REST connector.
+:seo-title: Designing cloud-native microservices
+:seo-description: Open Liberty supports two JMX connectors, local connector and REST connector.
+:page-layout: general-reference
+:page-type: general
+= Differences between MicroProfile Config versions
+
+There are 2 key sets of changes which may impact any existing configuration when upgrading from mpConfig 1.x->2.0:
+
+== SmallRye's implementation of the specification
+
+OpenLiberty implements the MicroProfile Config specification to allow application configuration from different locations (ConfigSources).
+In the previous versions, OpenLiberty implemented the specification in its own codebase.
+However, for MicroProfile Config 2.0 it consumes SmallRye's implementation of the specification.
+This means that any mpConfig functionality that OL implemented beyond the scope of the specification will be lost from 1.x->2.0.
+
+
+* Converters for the AtomicInteger and AtomicLong properties are no longer provided, because these properties are not widely used.
+Converting an injected value to one of these types of properties it may throw the following exception: `SRCFG02006: The property <yourProperty> cannot be converted to class java.util.concurrent.atomic.AtomicInteger/AtomicLong`.
+If you need to convert a string to AtomicInteger to AntomicLong, you can convert to Integer or Long and then create an AtomicIneger or AtomicLong.
+Alternatively, you can create your own converter for AtomicInteger or AtomicLong.
+
+*In mpConfig 2.0, caching is discontinued.
+  Values looked up from Config are no longer cached.
+
+** In mpConfig 1.x, requests made for the same config key for a duration up to five seconds returned the same object without calling the config sources.
+
+
+* When conversion to a type is needed and a converter for that type is not available, converters for subtypes of that type will no longer be used.
+For example, in mpConfig-1.x if a converter was registered for type Dog (which extends Animal), then a type Animal variable was injected which used the Dog converter, e.g.
+
+@Inject
+@ConfigProperty(name = "DOG_KEY")
+Animal myAnimal;
+
+The recommended approach is to use the above converter to convert to Dog, which is efficiently an Animal.
+
+== Incompatible changes
+
+Changes in the mpConfig specification from 1.4->2.0 introduced some incompatibility changes.
+Some of these changes are by-products of new features, and others are intentional specification clarifications and changes.
+
+- ConfigSource.getPropertyNames() is no longer a default method provided by the specification.
+Any custom Config Sources which use this method will need to implement the method, otherwise a java.lang.AbstractMethodError will be thrown.
+
+- Property Expression is a new feature which may impact existing configurations.
+From mpConfig 2.0 Config Properties can include references to other Config Properties by using the following syntax: ${anotherConfigPropertyName​}.
+As such, any Config Properties which contain values with Property Expression syntax may behave differently.
+
+- Config Property value conversion rules have been updated such that the empty value and other special characters are no longer valid values for particular return types.
+Attempting to call getValue() on an injected empty value ("") for type String for example will throw a java.util.NoSuchElementException
