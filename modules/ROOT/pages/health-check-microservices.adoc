@@ -13,7 +13,7 @@
 :page-type: general
 = Health checks for microservices
 
-A health check is a special REST API implementation that you can use to validate the status of a microservice and its dependencies. MicroProfile Health enables microservices in an application to self-check their health and then publishes the overall health status to a defined endpoint.
+A health check is a special REST API implementation that you can use to validate the status of a microservice and its dependencies. With MicroProfile Health, microservices can self-check their health and publish their overall status to a defined endpoint.
 
 A health check can assess anything that a microservice needs, including dependencies, system properties, database connections, endpoint connections, and resource availability. The overall status of the microservice depends on whether all the configured health checks pass.
 A microservice is considered available  and reports an `UP` status if all the configured health checks are successful. If one or more health checks fail, the microservice is considered unavailable and reports a `DOWN` status. Services can report their availability to a defined endpoint by implementing the API that is provided by https://github.com/eclipse/microprofile-health[MicroProfile Health]. A service orchestrator can use these status reports to decide how to manage and scale the microservices within an application. Health checks can also interact with https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/[Kubernetes liveness and readiness probes].
@@ -27,11 +27,11 @@ You can use MicroProfile Health with Open Liberty by enabling the feature:mpHeal
 MicroProfile Health provides the following three endpoints:
 
 - `/health/ready` +
-This endpoint returns the readiness of a microservice, or whether it is ready to process requests. This endpoint corresponds to the Kubernetes readiness probe.
+This endpoint returns the readiness of a microservice, or whether it is ready to process requests. It corresponds to the Kubernetes readiness probe.
 - `/health/live` +
 This endpoint returns the liveness of a microservice, or whether it encountered a bug or deadlock. If this check fails, the microservice is not running and can be stopped. This endpoint corresponds to the Kubernetes liveness probe, which automatically restarts the pod if the check fails.
 - `/health` +
-This endpoint aggregates the responses from the `/health/live` and `/health/ready` endpoints. This endpoint corresponds to the deprecated `@Health` annotation and is only available to provide compatibility with MicroProfile 1.0. If you are using MicroProfile 2.0 or higher, use the `/health/ready` or `/health/live` endpoints instead. The `@Health` annotation is not available in MicroProfile 4.0 or later or MicroProfile Health 3.0 or later.
+This endpoint aggregates the responses from the `/health/live` and `/health/ready` endpoints. It corresponds to the deprecated `@Health` annotation and is only available to provide compatibility with MicroProfile 1.0. If you are using MicroProfile 2.0 or higher, use the `/health/ready` or `/health/live` endpoints instead. The `@Health` annotation is not available in MicroProfile 4.0 or later or MicroProfile Health 3.0 or later.
 
 To add readiness or liveness health checks to your microservice, create a class in your application code that implements xref:reference:javadoc/microprofile-3.3-javadoc.adoc#class=org/eclipse/microprofile/health/HealthCheck.html&package=allclasses-frame.html[the HealthCheck interface] and add either the `@Liveness` or `@Readiness` annotation to it. These annotations specify the conditions that determine whether the health check passes or fails.
 You can view the results of the health checks by pointing your browser to one of the endpoint URLs, for example `http://localhost:9443/health/live` or `http://localhost:9443/health/ready`, where `9443` is the port number for your application. For more information, see link:/guides/microprofile-health.html[Adding health reports to microservices].
@@ -79,7 +79,7 @@ The following example shows the JSON response from the `/health/live` endpoint i
 }
 ----
 
-The next example shows the `@Readiness` annotation on a class that implements the `HealthCheck` interface. In this case, the readiness annotation checks for an available database connection. If the connection is successful, it returns an `UP` status. If the connection is unsuccessful, it returns a `DOWN` status:
+The next example shows the `@Readiness` annotation on a class that implements the `HealthCheck` interface. In this example, the `@Readiness` annotation checks for a database connection. If the connection is successful, it returns an `UP` status. If the connection is unsuccessful, it returns a `DOWN` status:
 
 [source,java]
 ----
