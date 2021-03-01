@@ -21,15 +21,6 @@ However, only users in the `Manager` role can edit employee wages.
 During xref:authentication.adoc[authentication], Open Liberty identifies users and determines what access groups they belong to.
 When a user attempts to access a protected resource on the server, this information determines whether the user is authorized to access the resource.
 
-////
-During authentication, the user's identity is confirmed.
-During authorization, Open Liberty checks the roles that are specified for the user against the roles that are defined for the application resources. In the following diagram, a user requests access to protected resources in an application from a browser. During authentication, the user’s request is routed to a single sign-on (SSO) identity provider, which confirms the user's identity. The SSO identity provider sends authentication data back to the application, where it is used to authorize user access to protected resources.
-The user is granted access to any resources that match their role.
-
-.Authentication and authorization
-image::authn-ol-diagram-2.png[diagram that shows the flow of an authentication request,align="center"]
-////
-
 == Define roles in your application code
 
 You can specify which roles can access an application resource by setting the `@RolesAllowed` annotation in the source code to contain the permissible roles, as shown in the following example:
@@ -54,7 +45,7 @@ You can map the roles that are declared in the application to existing groups fr
 </application-bnd>
 ----
 
-The `name` attribute of the `security-role` element corresponds to a role that is specified in the application. The `name` attribute of the `group` elements correspond to the groups that are specified by a user registry or SSO identity provider.
+The `name` attribute of the `security-role` element corresponds to a role that is specified in the application. The `name` attributes of the `group` elements correspond to the groups that are specified by a user registry or SSO identity provider.
 If the role names match the group names exactly, the server maps the group to the role with a matching name by default.
 If you use this default mapping, you do not need to specify an `application-bnd` element in the `server.xml` file.
 
@@ -97,6 +88,56 @@ This configuration might be necessary in situations where you want to keep the s
 Some applications rely on a combination of declarative annotations and a deployment descriptor file. In these cases, deployment descriptor values supersede annotations.
 Therefore, you can specify roles in a deployment descriptor file if you want to override security settings or defaults from elsewhere in the application code.
 For more information, see link:/guides/security-intro.html#adding-authentication-and-authorization[the Adding authentication and authorization section of the Securing a web application guide].
+
+=== Configure calls to run under a specific caller identity
+
+When a user is authenticated to a servlet, the servlet can make subsequent calls to downstream resources, such as other servlets. These subsequent calls are normally made under the same security identity that was used to log in to the servlet. This identity is known as the caller identity. Alternatively, you can delegate any subsequent calls to a different caller identity.
+
+To delegate calls to a specific caller identity, you must either specify the `@RunAs` annotation on a class in your application code or add the `run-as` element to your deployment descriptor file. In either case, you must set the annotation or element to the security role that you want to delegate to. You must also specify the `run-as` element on that security role in your server configuration to map it to a particular user ID.
+
+For example, consider a servlet that requires either the `admin` or `user` role to authenticate. You can delegate subsequent calls from that servlet to the `admin` role by specifying the `@RunAs` annotation in your application code, as shown in the following example:
+
+----
+@RunAs("admin")
+@RolesAllowed({ "admin", "user" })
+----
+For more information, see the xref:reference:javadoc/liberty-javaee8-javadoc.adoc#package=javax/annotation/security/package-frame.html&class=javax/annotation/security/RunAs.html[@RunAs annotation].
+
+Alternatively, in the following `web.xml` deployment descriptor file example, the `run-as` element specifies that the servlet makes calls under the `admin` role that is defined in the server configuration:
+
+----
+<servlet id="Servlet_1">
+     <servlet-name>RunAsServlet</servlet-name>
+     <display-name>RunAsServlet</display-name>
+     <description>RunAsServlet</description>
+     <servlet-class>web.RunAsServlet</servlet-class>
+     <run-as>
+          <role-name>admin</role-name>
+     </run-as>
+ </servlet>
+----
+
+To delegate calls that are made from a security role to a particular caller identity, specify the `run-as` element in the security role configuration in your `server.xml` file.  For example, the servlet from the previous example needs to call to downstream resources that require a particular caller identity, Wanda. You can set the `run-as` element on the `admin` security role to specify that calls that are made in that role must use Wanda's caller identity.
+
+In the following `server.xml` file example, Wanda and Trevor are both in the `admin` security role. The `run-as` element specifies that calls under that security role are run as Wanda:
+
+----
+<application-bnd>
+      <security-role name="admin">
+           <user name="Wanda" />
+           <user name="Trevor" />
+           <run-as userid="Wanda" />
+       </security-role>
+ </application-bnd>
+----
+
+If you configure the `run-as` element on a security role in your `server.xml` file, providing a password is optional. However, if this configuration is specified in an `ibm-application-bnd.xml` file, the password is required.
+
+If you specify the `application-bnd` element in your server.xml file, your application must not be in the `dropins` folder. If you leave your application in the `dropins` folder, then you must disable application monitoring by adding the following code in your `server.xml` file:
+
+----
+<applicationMonitor dropinsEnabled="false" />
+----
 
 == See also
 
