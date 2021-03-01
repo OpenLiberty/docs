@@ -1,5 +1,7 @@
 == Examples
 
+The following examples demonstrate functions that are available when the Java Database Connectivity feature is enabled. For more information, see xref:ROOT:relational-database-connections-JDBC.adoc[Relational database connections with JDBC].
+
 === Configure a data source
 To configure a data source, the following two configuration elements are typically required:
 
@@ -69,9 +71,7 @@ If you enable any Java EE or Jakarta EE features in Open Liberty, you can config
 
 === Use JDBC driver classes from an application
 
-Some applications make use of JDBC driver classes using `Connection.unwrap`. This
-means the application needs to be able to view the JDBC driver classes. This is
-done by configuring the application classloader to see the JDBC driver classes:
+Some applications access JDBC driver classes by using the `Connection.unwrap` method. In these cases, you must configure the `classloader` element to allow the application to see the JDBC driver classes:
 
 [source,xml]
 ----
@@ -103,4 +103,16 @@ Connection pooling improves the efficiency of data source connections and operat
 </dataSource>
 ----
 
-For more information, see xref:ROOT:relational-database-connections-JDBC.adoc[Relational database connections with JDBC].
+
+Occasionally, application code might not close an unsharable connection that it obtains. Failing to close a connection prevents that connection from being returned to the connection pool for use by other requests. Because such connections are no longer available to the connection pool, they are called leaked connections. Over time, these leaked connections can degrade performance and eventually exhaust the connection pool. In version 21.0.0.3 and later, you can configure the connection manager to detect and automatically close leaked connections by specifying the `autoCloseConnections` attribute.
+
+In the following example, the `autoCloseConnections` attribute is set to a `true` value so that connections that are detected as leaked are automatically closed:
+
+[source,xml]
+----
+<dataSource id="DefaultDataSource">
+  <connectionManager maxPoolSize="10" autoCloseConnections="true"/>
+    <jdbcDriver libraryRef="PostgreSQL"/>
+    <properties.postgresql databaseName="TESTDB" serverName="localhost" portNumber="5432"/>
+</dataSource>
+----
