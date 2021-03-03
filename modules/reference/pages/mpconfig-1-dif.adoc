@@ -13,12 +13,12 @@
 :page-type: general
 = Differences between MicroProfile Config versions
 
-Two key sets of changes might impact existing configuration when you upgrade from MP Config 1.x->2.0:
+Two key sets of changes might impact the existing configuration when you upgrade from MP Config 1.x->2.0:
 
 == SmallRye implementation of the specification
 
 Open Liberty implements the MicroProfile Config specification for application configuration from different ConfigSources.
-In previous versions, OpenLiberty implemented the specification in its own codebase.
+In previous versions, Open Liberty implemented the specification in its own codebase.
 However, for MicroProfile Config 2.0, Open Liberty consumes SmallRye implementation of the specification.
 This means that any MicroProfile Config functionality that Open Liberty implemented beyond the scope of the specification will be lost from 1.x->2.0.
 
@@ -27,9 +27,9 @@ This means that any MicroProfile Config functionality that Open Liberty implemen
 Converting an injected value to one of these types of properties may throw the following exception:
 SRCFG02006: The property `yourProperty` cannot be converted to class `java.util.concurrent.atomic.AtomicInteger/AtomicLong`.
 If you need to convert a string from `AtomicInteger` to `AtomicLong`, you can convert to `Integer` or `Long` and then create an `AtomicIneger` or `AtomicLong` string.
-Alternatively, you can create your own converter for `AtomicInteger` or `AtomicLong`.
+Alternatively, you can create your own converter for the `AtomicInteger` and `AtomicLong` properties.
 
-** In MP Config 1.x, converters were provided for `AtomicInteger` and `AtomicLong`.
+** In MP Config 1.x, converters were provided for `AtomicInteger` and `AtomicLong`properties.
 
 * In MP Config 2.0, caching is discontinued.
   Values looked up from Config are no longer cached.
@@ -37,8 +37,10 @@ Alternatively, you can create your own converter for `AtomicInteger` or `AtomicL
 ** In MP Config 1.x, requests made for the same config key returned the same object up to five seconds duration, without calling the config sources.
 
 
-* When a converter for a specific type is not available, converters its subtypes are cannot be used.
-For example, in MP Config-1.x if a converter was registered for the type `Dog` variable which extends a type `Animal` variable, then a type `Animal` variable was injected, which used the Dog converter, e.g.
+* When a converter for a specific type is not available, converters of its subtypes are cannot be used.
+
+** Converters for subtypes were available for MP Config 1x.
+For example, in MP Config-1.x if a converter was registered for the type `Dog` variable which extends a type `Animal` variable, then a type `Animal` variable was injected, which used the `Dog` converter, e.g.
 
 [source,java]
 ----
@@ -46,16 +48,7 @@ For example, in MP Config-1.x if a converter was registered for the type `Dog` v
 @ConfigProperty(name = "DOG_KEY")
 Animal myAnimal;
 ----
-The recommended approach is to use the above converter to convert to Dog, which is essentially an Animal.
-
-** Converters for subtypes were available for MP Config 1x
-
-
-* The number of recursion lookups is limited for composed expressions.
-Implementations are generally limited to 5, but can be higher.
-When the number of allowed lookups exceeds the limit, an `IllegalArgumentException` is thrown.
-Variable replacement in config values is supported through Property Expressions.
-This allows config values to reference other config property values using the `${}` syntax with a maximum recursive depth of 32.
+The recommended approach is to use the above converter to convert to `Dog`, which is essentially an `Animal`.
 
 == Incompatible changes
 
@@ -63,11 +56,16 @@ Changes in the MP Config specification from 1.4->2.0 introduced some incompatibi
 Some of these changes are by-products of new features, and others are intentional specification clarifications and changes.
 
 - `ConfigSource.getPropertyNames()` is no longer a default method provided by the specification.
-Any custom Config Sources which use this method will need to implement the method, otherwise a `java.lang.AbstractMethodError` will be thrown.
+Any custom Config Sources that use this method will need to implement the method, otherwise a `java.lang.AbstractMethodError` will be thrown.
 
 - Property Expression is a new feature which may impact existing configurations.
 From MP Config 2.0 Config Properties can include references to other Config Properties by using the following syntax: `${anotherConfigPropertyName}`.
 As such, any Config Properties which contain values with Property Expression syntax might behave differently.
+The number of recursion lookups is limited for composed expressions.
+Implementations are generally limited to 5, but can be higher.
+When the number of allowed lookups exceeds the limit, an `IllegalArgumentException` is thrown.
+Variable replacement in config values is supported through property expressions.
+This allows config values to reference other config property values using the `${}` syntax with a maximum recursive depth of 32.
 
 - Config Property value conversion rules have been updated.
 The empty value and other special characters are no longer valid for particular return types.
