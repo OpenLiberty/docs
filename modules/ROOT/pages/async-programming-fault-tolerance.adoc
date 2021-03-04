@@ -151,6 +151,28 @@ The following diagram shows how the fault tolerance annotations work together wi
 .Execution flow without the @Asynchronous annotation
 image::/img/blog/FT-synchronous-execution-flow.png[a diagram of execution flow without the @Asynchronous annotation]
 
+In this diagram, a call to a fault tolerance-annotated method consists of at least one attempt.
+If retry is enabled, several attempts might be made.
+Each attempt takes the following steps:
+
+* The circuit breaker is checked.
+If the circuit breaker is open, then the result of the attempt is a `CircuitBreakerException` exception, and the rest of the steps for the attempt are skipped.
+* If the circuit breaker isn’t open, then the timeout timer starts and the method attempts to reserve space on the bulkhead.
+* If the bulkhead isn’t full, a reservation is acquired, and the method runs.
+The result of the attempt is the value that’s returned or the exception that’s thrown by the method.
+If the timeout expires while the method is running, then the thread that’s running the method is interrupted.
+After the method returns or throws an exception, the bulkhead reservation is released, which frees up the space on the bulkhead.
+* However, if the bulkhead is full, the method isn’t run, and the result of the attempt is a `BulkheadException` exception.
+* Next, the timeout stops.
+If the timeout expired before it stopped, then the result of the attempt is replaced with a `TimeoutException` exception.
+* The result of the attempt is recorded by the circuit breaker.
+
+The attempt is now complete and has a result.
+If a retry is needed, then the result is discarded and a new attempt is started, meaning that the previous steps are repeated.
+After an attempt completes and no retry is needed, a fallback might be needed.
+If a fallback is needed, the fallback runs and the result of the fallback replaces the previous result.
+Finally, the result is returned to the user.
+
 The next diagram shows how the fault tolerance annotations work together with the `@Asynchronous` annotation.
 The **Return Future or CompletionStage** box, which is green, is in addition to the boxes in the previous diagram:
 
@@ -164,7 +186,7 @@ After the method runs, the result from the method is propagated to the `Completi
 * In addition to either accepting or rejecting the execution, the bulkhead can also queue the execution to run later.
 If the method is accepted by the bulkhead, it's then scheduled to run on another thread, rather than immediately.
 * When a timeout is used, then the method is interrupted if the timeout expires.
-If the timeout expires, the execution skips forward to the point noted in the *Timeout Expires* block in the diagram.
+If the timeout expires, the execution skips forward to the point noted in the *Timeout Expires* box in the diagram.
 The result is then processed as if the method finished with a `TimeoutException` exception.
 * If a fallback occurs, the fallback also runs asynchronously so that it's scheduled to run on another thread.
 
