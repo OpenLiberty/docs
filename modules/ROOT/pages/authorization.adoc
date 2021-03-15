@@ -52,9 +52,15 @@ If you use this default mapping, you do not need to specify an `application-bnd`
 In some cases, an application needs to know only the user’s authentication status.
 In such cases, you can specify `**` as the role name in the `@RolesAllowed` annotation.
 This value denotes that any authenticated user can access a resource.
-Alternatively, you can authorize all users by setting the `@PermitAll` annotation, which specifies that anyone can access a resource, even users who are not authenticated.
+You can also authorize all users by setting the `@PermitAll` annotation, which specifies that anyone can access a resource, even users who are not authenticated.
 
 For more information, see the link:/guides/microprofile-jwt.html#securing-the-system-service[Securing the inventory service section of the guide to Securing microservices with JSON Web Tokens].
+
+Open Liberty provides a `dropins` directory, which is automatically monitored by the server. If you drop an application into this directory, the application is automatically deployed on the server. Similarly, if the application is deleted from the directory, the application is automatically removed from the server. The `dropins` directory can be used for applications that do not require extra configuration, such as security role mapping. However, if you specify the `application-bnd` element in your server.xml file to configure security role mapping, your application must not be in the `dropins` directory. If you leave your application in the `dropins` directory, then you must disable application monitoring by adding the following code in your `server.xml` file:
+
+----
+<applicationMonitor dropinsEnabled="false" />
+----
 
 === Configure servlet security roles
 
@@ -77,7 +83,7 @@ For more information, see link:/guides/security-intro.html#adding-authentication
 === Authorize requests between web services
 
 Authorization occurs not only between users and applications, but also between microservices within an application. When one service requests data from another, the requesting service often must demonstrate that it is authorized to access the data.
-xref:single-sign-on.adoc#_json_web_token_jwt[Token-based authorization], such as with JSON Web Tokens (JWT), provides a lightweight way for security controls and security tokens to propagate user identities and roles across different services.
+xref:single-sign-on.adoc#_json_web_token_jwt[Token-based authorization], such as with a JSON Web Token (JWT), provides a lightweight way for security controls and security tokens to propagate user identities and roles across different services.
 Open Liberty supports token-based authorization through the xref:reference:feature/jwt-1.0.adoc[MicroProfile JWT feature].
 
 === Configure authorization with a deployment descriptor file
@@ -132,12 +138,6 @@ In the following `server.xml` file example, Wanda and Trevor are both in the `ad
 ----
 
 If you configure the `run-as` element on a security role in your `server.xml` file, providing a password is optional. However, if this configuration is specified in an `ibm-application-bnd.xml` file, the password is required.
-
-If you specify the `application-bnd` element in your server.xml file, your application must not be in the `dropins` folder. If you leave your application in the `dropins` folder, then you must disable application monitoring by adding the following code in your `server.xml` file:
-
-----
-<applicationMonitor dropinsEnabled="false" />
-----
 
 == See also
 
