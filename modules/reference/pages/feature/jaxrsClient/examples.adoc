@@ -1,10 +1,9 @@
 == Examples
+With the JAX-RS Client APIs, you can specify properties on the client that configure settings like timeouts, proxy hosts, and SSL properties. You can set these properties in the Java code or in the server configuration. The following examples show how you can set `webTarget` values in the `server.xml` so that you can change them without having to edit and recompile the Java code.
 
-The JAX-RS Client APIs allow you to specify properties on the client that configure settings like timeouts, proxy
-hosts, SSL properties, and so on. You can set these properties in the Java code or in the server configuration. The following examples show how you can set `webTarget` values in the `server.xml` so that you can change them without having to edit and recompile the Java code.
+=== Change values when an application moves from development to production environments
 
-=== Changing values when moving from development to production environments
-If the application is deployed in a different environment, these settings might need to change. For example, an application might initially be written to run in a development environment, where all remote RESTful services are available without a proxy server and can connect very quickly:
+If the application is deployed in a different environment, certain settings might need to change. For example, an application might initially be written to run in a development environment, where all remote RESTful services are available without a proxy server and can connect very quickly:
 
 [source,java]
 ----
@@ -16,7 +15,7 @@ public Widget getRemoteWidget(String id) {
 }
 ----
 
-When this application is deployed in a production environment, however, it might be necessary to add new settings. This can be accomplished by adding the following configuration to the server config (`server.xml`):
+However, when this application is deployed in a production environment it might be necessary to add new settings. You can specify new settings by adding the following configuration to your `server.xml` file:
 
 [source,xml]
 ----
@@ -26,22 +25,35 @@ When this application is deployed in a production environment, however, it might
 
 This configuration alters the `WebTarget` in the Java code to use the specified HTTP proxy server (`myProxyHost:55555`) and use connection and receive timeouts of 60 seconds (60,000 milliseconds) instead of the default timeouts.
 
-=== Simplifying SSL configuration in development
+=== Simplify SSL configuration in development
 
-During development, an SSL certificate might not match the server hostname on which the application is being tested because it matches the server hostname on which the application will ultimately be deployed in production. The configuration can be changed during development to use a different SSL configuration or to disable hostname verification of SSL certificates (this is not recommended in production environments):
+During development, an SSL certificate might not match the server hostname on which the application is being tested because it matches the server hostname on which the application is ultimately be deployed in production. The configuration can be changed during development to use a different SSL configuration or to disable hostname verification of SSL certificates:
 
 [source,xml]
 ----
 <webTarget uri="https://somehost:9443/WidgetStore*" sslConfig="mySSLRef" disableCNCheck="true" />
 ----
 
-=== Setting custom properties
+To maintain application security, do not disable SSL verification in production environments.
 
-If your application uses providers such as a `ClientRequestFilter` or `ClientResponseFilter`, they can read and react to custom properties specified on the JAX-RS Client or WebTarget.  It is also possible to change Open Liberty's client implementation behavior by specifying custom properties.  These are normally specified programmatically using `webTarget.property("myCustomProperty", "someValue")` but you can also specify custom properties for the `WebTarget` in the configuration:
+=== Set custom properties
+
+If your application uses providers such as the `ClientRequestFilter` or `ClientResponseFilter` interfaces, they can read and react to custom properties specified on the JAX-RS Client or the `WebTarget` interface. You can also change the Open Liberty client implementation behavior by specifying custom properties. These properties are normally specified programmatically by using the `webTarget.property("myCustomProperty", "someValue")` configuration but you can also specify custom properties by specifying the `WebTarget` element in your `server.xml` file:
 
 [source,xml]
 ----
 <webTarget uri="https://somehost:9443/WidgetStore*" myCustomProperty="prod" />
 ----
 
-The complete list of pre-defined properties is available here: config:webTarget[].
+For a complete list of pre-defined properties, see config:webTarget[].
+
+=== Enable MicroProfile JWT authentication for JAX-RS services
+
+If you add the JAX-RS Client feature to your server configuration along with the feature:mpJwt[display=MicroProfile JSON Web Token] feature, you can use MicroProfile JWT to authenticate JAX-RS services. With the Open Liberty JAX-RS client, you can send MicroProfile JWT as an authentication method for JAX-RS services, as shown in the following example:
+[source,xml]
+----
+<webTarget uri="http://localhost:56789/protectedResourceWithMPJWT*" authnToken="mpjwt" />
+----
+
+The `authnToken=“mpjwt”` attribute in the `webTarget` element adds MicroProfile JWT as an authorization header when the JAX-RS service that is specified by the `http://localhost:56789/protectedResourceWithMPJWT*` endpoint URL in the `uri` attribute is called.
+
