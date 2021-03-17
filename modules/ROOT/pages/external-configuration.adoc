@@ -21,8 +21,6 @@
 Microservices are deployed in multiple environments.
 Externalizing the configuration with MicroProfile Config helps microservices to run in different environments without a change in code.
 
-== Separating the configuration and code with MicroProfile Config
-
 During their lifecycle, microservices are deployed repeatedly across development, test, and production environments.
 Each environment requires different configuration data.
 For example, backing services might require changes in connection details for databases, messaging services, and API accessible consumer services.
@@ -33,6 +31,8 @@ Therefore, port binding, or knowing which port to connect to, is important.
 As instances of microservices are created and destroyed to scale the application up and down in Kubernetes, port numbers can change.
 You need to assign new port numbers to the microservices and inject information during startup without changing the code.
 For more information, see link:/guides/kubernetes-microprofile-config.html[Configuring microservices running in Kubernetes].
+
+== Separating configuration and code with MicroProfile Config
 
 MicroProfile Config is an API that helps separate configuration from code.
 With MicroProfile Config, you can inject the external configuration into a service that is running in a container without having to repackage it.
@@ -52,7 +52,7 @@ MicroProfile Config can configure other MicroProfile capabilities.
 It externalizes the configuration of keystores when microservices are secured.
 For example, in feature:mpJwt[display=MicroProfile JSON Web Token], the public key location and verification can be set in properties files.
 If the location of the key repository changes, you can easily update the information.
-MicroProfile Config is also used in the configuration of channel attributes.In feature:mpReactiveMessaging[display=MicroProfile Reactive Messaging], it can set the connection details of messaging channels, connectors, and the topic names that the application uses to produce messages.
+MicroProfile Config is also used in the configuration of channel attributes. In feature:mpReactiveMessaging[display=MicroProfile Reactive Messaging], it can set the connection details of messaging channels, connectors, and the topic names that the application uses to produce messages.
 MicroProfile Config helps override values in fault tolerance.
 In feature:mpFaultTolerance[display=MicroProfile Fault Tolerance], it can set the value of an annotation so that you can change the value if the tolerance is too low or too high.
 
@@ -62,37 +62,48 @@ MicroProfile Config has five default configuration sources.
 Each configuration source has a specified priority, which is defined by its ordinal value.
 A higher ordinal means that the values taken from this configuration source override configuration sources with a lower ordinal value.
 
-The following table shows the default configuration sources in MicroProfile Config, their default ordinal values, and an example for each of the configuration sources.
+The following table shows the MicroProfile Config configuration sources in Open Liberty, their default ordinal values, and an example for each of the configuration sources.
 
-.Configuration sources in MicroProfile Config
-[cols="1,1,2"]
+
+.Default MicroProfile Config configuration sources in Open Liberty
+[cols="2,2,2,2"]
 |===
-|Configuration Source |Default ordinal values |Example
+|Configuration Source |Default ordinal values |Example Configuration File|Example Values
 
-|All `META-INF/microprofile-config.properties` that are found on the class path
-|100
-|port=9080
+|Values that are defined as a `<property>` element in the `<appProperties>` element in either an https://openliberty.io/docs/21.0.0.2/reference/config/application.html#application.html#appProperties/property&expand=true[<application>] or https://openliberty.io/docs/21.0.0.2/reference/config/webApplication.html#webApplication.html#appProperties/property&expand=true[<webApplication>] element in the Open Liberty `server.xml` file.
+|600
+|`server.xml`
+|`<appProperties><property name="server.port" value="9080"/></appProperties>`
 
-|Environment variables
-|300
-|port=9080
+|Values that are defined in a https://openliberty.io/docs/21.0.0.2/reference/config/variable.html[<variable>] element in the Open Liberty `server.xml` file.
+|500
+|`server.xml`
+|`<variable name="server.port" value="9080"/>`
 
 |System properties
 |400
-|port=9080
+|`jvm.options`
+|-Dserver.port=9080
 
-|Values that are defined as a variable element in the Open Liberty `server.xml` file
-|500
-| `<variable name="port" value="9080"/>`
+|Environment variables
+|300
+| `server.env`
+|server_port=9080
 
-|Values that are defined as an `appProperties` property element in the Open Liberty `server.xml` file
-|600
-| `<appProperties><property name="port" value="9080"/></appProperties>`
+|Values that are defined as an `appProperties` property element in the Open Liberty `server.xml` file.
+|100
+| `microprofile-config.properties`
+|server.port=9080
+
+|Values that are defined as a `defaultValue` in a https://openliberty.io/docs/21.0.0.2/reference/config/variable.html[<variable>] element in the Open Liberty `server.xml` file.
+|1
+|`server.xml`
+|`<variable name="server.port" defaultValue="9080"/>`
 
 |===
 
-You can specify an optional default value using link:/docs/21.0.0.1/reference/javadoc/microprofile-3.3-javadoc.html[Java annotations].
-The optional default value applies if the application does not find  the configuration values in any of the configuration sources.
+You can specify an optional default value by using link:/docs/21.0.0.1/reference/javadoc/microprofile-3.3-javadoc.html[Java annotations].
+The optional default value applies if the application does not find the configuration values in any of the configuration sources.
 You can prioritize which configuration source to use for a property value by setting the ordinal value for that configuration source.
 For more information, see https://openliberty.io/guides/microprofile-config-intro.html#changing-the-ordinal-of-a-configsource[Separating configuration from code in microservices].
 
