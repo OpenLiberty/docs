@@ -16,7 +16,7 @@
 
 Java applications connect to and interact with relational databases through the Java Database Connectivity (JDBC) API. You can configure a data source and a JDBC driver so an application that is running on your Open Liberty server can connect with a relational database.
 
-Applications communicate with relational databases to retrieve many different kinds of information, such as flight schedules, product inventories, and customer purchase histories. The https://docs.oracle.com/javase/tutorial/jdbc/overview/index.html[JDBC API] provides an adapter layer between applications and relational databases by providing details about a database to an application in a standardized way. In Open Liberty, interactions with the JDBC API are configured by the xref:reference:feature/jdbc-4.2.adoc[Java Database Connectivity feature].
+Applications communicate with relational databases to retrieve different kinds of information, such as flight schedules, product inventories, and customer purchase histories. The https://docs.oracle.com/javase/tutorial/jdbc/overview/index.html[JDBC API] provides an adapter layer between applications and relational databases by providing details about a database to an application in a standardized way. In Open Liberty, interactions with the JDBC API are configured by the xref:reference:feature/jdbc-4.2.adoc[Java Database Connectivity feature].
 
 == JDBC driver library configuration
 
@@ -34,7 +34,7 @@ To connect with a relational database, you need a JDBC driver, which is typicall
 </library>
 ----
 
-Open Liberty recognizes the implementation class names of various data source types for commonly used JDBC drivers. In most cases, you can specify only the location of the JDBC driver.
+Open Liberty recognizes the implementation class names of various data source types for commonly used JDBC drivers. In most cases, you need to specify only the location of the JDBC driver.
 
 If you use Maven to build your application, you can download and deploy the JDBC driver by adding code that is similar to the following example to your `pom.xml` file. In this example, the `com.ibm.db2:jcc:11.5.4.0` dependency is copied to the `${server.config.dir}/jdbc` directory at build time to deploy the IBM Db2 JDBC driver:
 
@@ -57,7 +57,7 @@ If you use Maven to build your application, you can download and deploy the JDBC
 
 == Data source configuration
 
-You can configure any JDBC driver with Open Liberty, which has built-in configuration for many common vendor databases. The following example shows the basic pattern to configure a data source in your `server.xml` file:
+You can configure any JDBC driver with Open Liberty, which includes built-in configuration for many common vendor databases. The following example shows the basic pattern to configure a data source in your `server.xml` file:
 
 [source,xml]
 ----
@@ -133,6 +133,7 @@ The following examples show sample configurations for commonly used vendor datab
 - <<#Embedded,Embedded Derby>>
 - <<#Oracle,Oracle>>
 - <<#Oracleucp,Oracle UCP>>
+- <<#Oraclerac,Oracle RAC>>
 
 [#PostgreSQL]
 === PostgreSQL configuration
@@ -308,6 +309,30 @@ The following example shows a sample data source configuration for Oracle UCP:
 </library>
 ----
 
+[#Oraclerac]
+=== Oracle RAC
+
+https://www.oracle.com/database/real-application-clusters/[Oracle Real Application Clusters] (RAC) is an Oracle database option that brings together two or more nodes to form a clustered database that behaves as a single system. Using the Oracle JDBC driver, you can configure failover support, load balancing, or both, in an Oracle RAC environment. Oracle RAC provides both high availability and flexible scalability and is typically used along with Oracle UCP.
+
+The following example shows a sample data source configuration for Oracle RAC:
+
+[source,xml]
+----
+<dataSource jndiName="jdbc/oracleUCPDS">
+  <jdbcDriver libraryRef="OracleUCPLib" />
+  <properties.oracle
+  URL="jdbc:oracle:thin:@(DESCRIPTION=(FAILOVER=ON)(LOAD_BALANCE=OFF)(ADDRESS=(PROTOCOL=TCP)(HOST=host1)(PORT=port1))
+  (ADDRESS=(PROTOCOL=TCP)(HOST=host2)(PORT=port2))(CONNECT_DATA=(SERVER=DEDICATED)(SERVICE_NAME=name)))"
+  user="username" password="password" />
+</dataSource>
+
+<library id="OracleUCPLib">
+    <fileset dir="Oracle/Drivers" includes="ojdbcx.jar ucp.jar"/>
+</library>
+----
+
+In this example, the `host1` and `port1` values are for the first Oracle RAC node, and `host2` and `port2` values are for the second Oracle RAC node. If you are not using Oracle services, then the value for `SERVICE_NAME` is your database name. If you are using Oracle services, then the value for `SERVICE_NAME` is the name of the service. You are not required to specify the Oracle login credentials as Oracle properties, xref:reference:feature/jdbc-4.3.adoc#_provide_security_credentials_for_data_source_authentication[other methods of database authentication] also work. Some Oracle RAC functions require the use of Oracle UCP, which is available only in Open Liberty version 19.0.0.4 and later.
+
 == Configuring databases that are unknown to Open Liberty
 
 The following example shows a sample data source configuration for a relational database that Open Liberty does not recognize by default. Specify the type of the data source by using the `type` attribute of the `dataSource` element. The value for the `type` attribute can be one of the interface class names that are described in the <<#types,Data source types>> section. Then, specify the mapping of interface class name to the driver implementation of that class on the `jdbcDriver` element, as shown in the following example:
@@ -347,13 +372,13 @@ The `java.sql.Driver` driver implementation provides a basic way to connect to a
 
 If the `type` attribute is not specified, Open Liberty looks for the data source type in a conditional order and chooses the first type that is available.
 
-If you use the Java Database Connectivity feature xref:reference:feature/jdbc-4.3.adoc[4.3] or higher, or you are referencing <<#default,the default data source>>, Open Liberty looks for the data source type in the following order:
+If you use the Java Database Connectivity feature xref:reference:feature/jdbc-4.3.adoc[4.3] or later, or if you are referencing <<#default,the default data source>>, Open Liberty looks for the data source type in the following order:
 
 . `javax.sql.XADataSource`
 . `javax.sql.ConnectionPoolDataSource`
 . `javax.sql.DataSource`
 
-If you use the Java Database Connectivity feature xref:reference:feature/jdbc-4.2.adoc[4.2], xref:reference:feature/jdbc-4.1.adoc[4.1], or xref:reference:feature/jdbc-4.0.adoc[4.0] and you are not referencing the default data source, Open Liberty looks for the data source type in the following order:
+If you use the Java Database Connectivity feature xref:reference:feature/jdbc-4.2.adoc[4.2] or earlier and you are not referencing the default data source, Open Liberty looks for the data source type in the following order:
 
 . `javax.sql.ConnectionPoolDataSource`
 . `javax.sql.DataSource`
@@ -398,3 +423,4 @@ DataSource myDB = InitialContext.doLookup("java:comp/DefaultDataSource");
 == See also
 // comment out until JPA topic publishes - xref:data-persistence-jpa.adoc[Data persistence with the Java Persistence API]
 xref:kerberos-authentication-jdbc.adoc[Kerberos authentication for JDBC data sources]
+testet
