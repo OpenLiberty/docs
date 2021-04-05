@@ -6,14 +6,16 @@
 // Contributors:
 //     IBM Corporation
 //
-:page-description: When you run Open Liberty in development mode, you can rapidly code, deploy, test, and debug applications directly in your IDE or text editor.
-:seo-title: Development mode
-:seo-description: When you run Open Liberty in development mode, you can rapidly code, deploy, test, and debug applications directly in your IDE or text editor.
+// This doc is hosted in the Red Hat Runtimes documentation. Any changes made to this doc also need to be made to the version that's located in the PurpleLiberty GitHub repo (https://github.com/PurpleLiberty/docs).
+//
+:page-description: When you run Open Liberty in dev mode, you can rapidly code, deploy, test, and debug applications directly in your IDE or text editor.
+:seo-title: Dev mode
+:seo-description: When you run Open Liberty in dev mode, you can rapidly code, deploy, test, and debug applications directly in your IDE or text editor.
 :page-layout: general-reference
 :page-type: general
-= Development mode
+= Dev mode
 
-When you run Open Liberty in development mode, you can rapidly code, deploy, test, and debug applications directly from your integrated development environment (IDE) or text editor. You can enable development mode, known as dev mode, to work with either Maven or Gradle build automation tools.
+When you run Open Liberty in dev mode, you can rapidly code, deploy, test, and debug applications directly from your integrated development environment (IDE) or text editor. You can enable dev mode to work with either Maven or Gradle build automation tools.
 
 With dev mode, you can quickly iterate on changes to your code and get immediate feedback from on-demand or automatic unit and integration tests. You can also attach a debugger to step through your code at any time.
 Dev mode is available as a goal of https://github.com/OpenLiberty/ci.maven[the Open Liberty Maven plug-in] or as a task of https://github.com/OpenLiberty/ci.gradle[the Liberty Gradle plug-in].
@@ -77,14 +79,63 @@ You can specify breakpoints in your source code to locally debug different parts
 The default port for debugging is `7777`.
 If the default port is not available, dev mode selects a random port to use as the port for debugging.
 
-=== VS Code extension for dev mode
 
-With the https://marketplace.visualstudio.com/items?itemName=Open-Liberty.liberty-dev-vscode-ext[Open Liberty Tools VS Code extension], you can start dev mode, make dynamic code changes, run tests, and debug your application, all without leaving the VS Code editor.
-After you install the extension and enable either the Maven or Gradle plug-in, you can select your project under the Liberty Dev Dashboard in the VS Code side bar.
-You can access dev mode functions by right-clicking your project name and selecting a command from the menu.
+== Open Liberty Tools for VS Code and IntelliJ
+
+The Open Liberty Tools extensions for VS Code and IntelliJ integrate dev mode functions directly into your chosen IDE. After you install either of these extensions and enable either the Maven or Gradle plug-in, you can find your project name in the Liberty Dev Dashboard window in VS Code or IntelliJ IDEA. You can access dev mode functions by right-clicking your project name and selecting a command from the drop-down menu.
+
+You can https://marketplace.visualstudio.com/items?itemName=Open-Liberty.liberty-dev-vscode-ext[download Open Liberty Tools for VS Code from the Visual Studio Marketplace]. For more information, see https://github.com/OpenLiberty/open-liberty-tools-vscode[Open Liberty Tools for VS Code on GitHub].
+
+You can https://plugins.jetbrains.com/plugin/14856-open-liberty-tools[download Open Liberty Tools for IntelliJ from the JetBrains Marketplace]. For more information, see https://github.com/OpenLiberty/open-liberty-tools-intellij[Open Liberty Tools for IntelliJ on GitHub].
+
+
+== Container support for dev mode
+
+If you are developing an application locally in a container, you can minimize differences between your development and production environments by running your containerized server in dev mode. With container support for dev mode, you can use the same Dockerfile for both development and production. You use the same base image and customizations, and specify the same configuration files in your Dockerfile that you use for your application in production.
+
+=== Start dev mode with container support
+
+For Maven projects, specify the Liberty Maven plug-in with version `3.3` in your project `pom.xml` file, as shown in the following example:
+
+[source,xml]
+----
+<plugin>
+    <groupId>io.openliberty.tools</groupId>
+    <artifactId>liberty-maven-plugin</artifactId>
+    <version>3.3</version>
+</plugin>
+----
+
+For Gradle projects, specify the Liberty Gradle plug-in with version `3.1` in your project `build.gradle` file, as shown in the following example:
+
+[source,java]
+----
+apply plugin: 'liberty'
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'io.openliberty.tools:liberty-gradle-plugin:3.1'
+    }
+}
+----
+
+Create a Dockerfile in your project root directory that includes `COPY` commands for your application and configuration files. For more information, see https://github.com/OpenLiberty/ci.docker#building-an-application-image[the Open Liberty Docker image documentation].
+
+To start dev mode with container support, run one of following commands in your project:
+
+Maven: `mvn liberty:devc`
+
+Gradle: `gradle libertyDevc`
+
+These commands compile your application, build the development image, and run the server in the container. You can edit your source code or configuration files while dev mode is running. For a comprehensive demo of dev mode with container support, see https://github.com/OpenLiberty/demo-devmode/tree/devc[the devc branch of the demo-devmode project].
+
+For more information, see the documentation for the https://github.com/OpenLiberty/ci.maven/blob/master/docs/dev.md#devc-container-mode[devc goal of the Liberty Maven plug-in] or the https://github.com/OpenLiberty/ci.gradle/blob/master/docs/libertyDev.md#libertydevc-task-container-mode[libertyDevc task of the Liberty Gradle plug-in].
 
 
 == See also
 
 - https://github.com/OpenLiberty/demo-devmode[The demo-devmode sample project] (Maven and Gradle users)
-- Guide: link:/guides/getting-started.html[Getting started with Open Liberty] (Gradle users)
+- Guide: link:/guides/getting-started.html[Getting started with Open Liberty] (Maven users)

@@ -1,12 +1,21 @@
 
 == Examples
 
-=== Simple LDAP registry configuration
+- <<#simple,Configure an LDAP user registry>>
+- <<#filters,Customize search filters>>
+- <<#ldaps,Configure a secure connection with LDAPS>>
+- <<#object,Specify custom LDAP object classes>>
+- <<#federate,Federate LDAP user registries>>
+- <<#krb5,Configure Kereberos authentication for LDAP servers>>
 
-To configure an LDAP registry, you must specify the base distinguished name, host, LDAP type, port number, and realm attributes.
+[#simple]
+=== Configure an LDAP user registry
+
+To configure an LDAP user registry, you must specify the base distinguished name, host, LDAP type, port number, and realm attributes.
 Most LDAP servers require bind credentials to authenticate a client to the server.
-Bind distinguished name and password are specified in the `ladpRegistry` element.
-The following example shows a simple configuration that uses the IBM Tivoli Directory Server as an LDAP registry:
+
+To bind with simple authentication, the bind distinguished name and password are specified in the `ldapRegistry` element.
+The following example shows a simple configuration that uses the IBM Tivoli Directory Server as an LDAP user registry:
 
 [source,java]
 ----
@@ -17,12 +26,13 @@ The following example shows a simple configuration that uses the IBM Tivoli Dire
 
 ----
 
-=== Search filters
+[#filters]
+=== Customize search filters
 
-If you need to configure search behavior to include custom classes or attributes, you can customize the group and user filters, which are used for searches.
-The configuration for specifying filters varies depending on the LDAP type you specify. Each available LDAP type has a different set of filter properties.
-For more information, see the configuration element for the LDAP type that you want to specify.
-Use the `%v` variable for attribute value assertions that are to be replaced by a particular login name or group name at run time.
+You can customize the group and user filters to include custom classes or attributes in searches of an LDAP user registry.
+The configuration for specifying filters varies depending on the LDAP type you specify. Each LDAP type has a different set of filter properties.
+For more information about the LDAP type, see xref:reference:feature/ldapRegistry-3.0.adoc#_feature_configuration_elements[Feature configuration elements].
+Use the `%v` variable for attribute value assertions that you want to replace at run time with a particular login name or group name.
 The following example shows custom and group filters that are specified for the IBM Tivoli Directory Server LDAP type:
 
 [source,java]
@@ -36,15 +46,16 @@ The following example shows custom and group filters that are specified for the 
 </ldapRegistry>
 ----
 
-=== LDAPS
+[#ldaps]
+=== Configure a secure connection with LDAPS
 
-To enable a secure connection to the LDAP server for encrypted communication via TLS or SSL protocols, configure the `ldapRegistry` element to enable Lightweight Directory Access Protocol Over Secure Socket Links (LDAPS).
+To enable a secure connection to an LDAP server for encrypted communication via TLS or SSL protocols, configure the `ldapRegistry` element to enable Lightweight Directory Access Protocol Over Secure Socket Links (LDAPS).
 Set the `sslEnabled` attribute to `true` and the `sslRef` attribute to your `ssl id` value. To enable a secure TLS or SSL connection, you must configure these connections in the `ssl` element.
 
 The following example shows both the `ldapRegistry` element and the `ssl` element that the LDAP connection references.
 In the `ssl` element, the `id` parameter identifies the configuration so that it can be referenced by the `sslRef` parameter of the `ldapRegistry` element.
 The `keyStoreRef` and `trustStoreRef` parameters establish the data sources that are used in the TLS or SSL handshake, which enables a secure connection.
-For more information about TLS and SSL connections, see link:/docs/ref/config/#ssl.html[SSL Repertoire].
+For more information about TLS and SSL configurations, see xref:reference:config/ssl.adoc[SSL Repertoire].
 
 [source,java]
 ----
@@ -60,13 +71,15 @@ For more information about TLS and SSL connections, see link:/docs/ref/config/#s
 <keyStore id="LDAPTrustStore" location="server1/resources/security/trust.jks" type="JKS" password="password" />
 ----
 
-=== Custom LDAP schema classes
+[#object]
+=== Specify custom LDAP object classes
 
-If you need to configure support for custom or non-default object classes, you can specify an LDAP entity type.
+To configure support for custom or non-default object classes, you can specify an LDAP entity type.
 An entity type groups different object classes as a single entity so that the server recognizes them under the same entity name.
 You can also customize the search base for any entity type to improve search times for the classes it contains.
-If you create custom object classes for users or groups, make sure to update your group and user filters to include the new classes.
-The following example shows entity types for users and groups, with custom search bases. The user and group filters include the custom object classes. Although this example shows configuration for the IBM Tivoli Directory Server LDAP type, all LDAP types support the `userFilter` and `groupFilter` attributes.
+If you create custom object classes for users or groups, update your group and user filters to include the new classes.
+
+The following example shows entity types for users and groups, with custom search bases:
 
 [source,java]
 ----
@@ -91,13 +104,16 @@ The following example shows entity types for users and groups, with custom searc
 
 ----
 
-=== Federation of LDAP registries
+The user and group filters include the custom object classes. Although this example shows the configuration for the IBM Tivoli Directory Server LDAP type, all LDAP types support the `userFilter` and `groupFilter` attributes.
 
-LDAP registries are federated by default.
-If you configure more than one LDAP registry in your `server.xml` file, then the registries are automatically federated into a common registry.
-You can adjust the configuration by enabling the link:/docs/ref/feature/#federatedRegistry-1.0.html[Federated User Registry] feature and configuring the `federatedRepository` element. If you configure the LDAP User Registry feature version 3.0 or later, the Federated User Registry feature is enabled by default.
+[#federate]
+=== Federate LDAP user registries
 
-You can also federate LDAP registries with basic or custom user registries. The following example shows a basic registry that is federated with an LDAP registry, with configuration specified in the `federatedRepository` element. The participating base entry for a custom or basic registry is the `o` organization attribute set to equal the realm name of that registry, for example `"o=RealmName"`. The realm name for a user registry is the value that is returned from the `getRealm()` method of that registry. For an LDAP registry, the realm name is the base distinguished name (`baseDN`) from the registry configuration. For more information, see link:/docs/ref/config/#federatedRepository.html[User Registry Federation].
+LDAP user registries are federated by default.
+If you configure more than one LDAP user registry in your `server.xml` file, then the user registries are automatically federated into a common user registry.
+You can adjust the configuration when the the xref:reference:feature/federatedRegistry-1.0.adoc[Federated User Registry] feature is enabled and the `federatedRepository` element is configured. If you enable the LDAP User Registry feature version 3.0 or later, the Federated User Registry feature is enabled by default. Otherwise, you must manually enable the Federated User Registry feature and configure the `federatedRepository` element.
+
+You can also federate LDAP user registries with basic or custom user registries. The following example shows a basic user registry that is federated with an LDAP user registry, with the configuration specified in the `federatedRepository` element:
 
 [source,java]
 ----
@@ -133,3 +149,25 @@ You can also federate LDAP registries with basic or custom user registries. The 
    </federatedRepository>
 </server>
 ----
+
+The participating base entry for a user registry is defined by the `participatingBaseEntry` element. The participating base entry value for a custom or basic user registry is the `o` organization attribute set to equal the realm name of that user registry. For an LDAP user registry, the realm name is the base distinguished name from the LDAP user registry configuration. For more information, see xref:reference:config/federatedRepository.adoc[User Registry Federation].
+
+[#krb5]
+=== Configure Kereberos authentication for LDAP servers
+
+You can specify a global Kerberos configuration in your `server.xml` file that provides values to any Open Liberty features that use Kerberos credentials. This global configuration is optional. For more information, see xref:ROOT:kerberos-authentication.adoc[Kerberos authentication for Open Liberty].
+
+To configure Kerberos bind authentication for LDAP servers, you must configure the bind authentication mechanism and the Kerberos principal on the `ldapRegistry` element, as shown in the following example:
+
+[source,xml]
+----
+<ldapRegistry id="LDAP" realm="SampleLdapADRealm" host="ldap_hostname" port="389" ignoreCase="true"  baseDN="DC=example,DC=com" bindAuthMechanism="GSSAPI" krb5Principal="user1@EXAMPLE.COM" krb5TicketCache="${server.config.dir}/security/krb5-user1.cc" ldapType="Custom" />
+----
+
+The Kerberos principal is specified by the required `krb5PrincipalName` attribute.
+You must set the `bindAuthMechanism` attribute to the `GSSAPI` value. This bind authentication mechanism is an alternative to the <<#simple,simple bind authentication mechanism>>, which uses a bind distinguished name and a bind password.
+
+The `krb5TicketCache` attribute is optional. If this attribute is not specified, Open Liberty resolves credential values from the globally configured the `keytab` file that is configured in the global `kerberos` element. If no `keytab` file is configured, Open Liberty resolves credential values from the default Kerberos credential cache location for the Java SDK or the operating system. For more information, see xref:ROOT:kerberos-authentication.adoc[Kerberos authentication for Open Liberty].
+
+
+The `krb5TicketCache` attribute specifies the location of a `ccache` file. The `keytab` attribute from the global `kerberos` element specifies the location of a `keytab` file. If both these attributes are configured, Open Liberty searches for credentials first in the `ccache` file and then in the `keytab` file.
