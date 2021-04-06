@@ -16,7 +16,7 @@
 Caching HTTP sessions in your applications helps to improve performance and availability for the users.
 The `sessionCache` feature in Open Liberty provides failover of non-persistent user session data with the distributed in-memory HttpSession caching.
 
-You can store sessions locally on a server, on a relational database, or in-memory of your application.
+You can store sessions locally on a server, on a relational database, or in the in-memory storage of your application.
 However, a cached session on the server can be lost if the application instance fails.
 Also, a relational database might not be part of your application architecture.
 With distributed caching, the server or database doesn't need to store a cached session, as compared to non-distributed caching, which needs dedicated resources.
@@ -25,16 +25,13 @@ The `sessionCache` feature in Open Liberty provides distributed in-memory HttpSe
 The `sessionCache` feature builds on top of an existing technology called link:https://hazelcast.com/glossary/jcache-java-cache/[JCache] that offers a standardized distributed in-memory caching API.
 Though the feature builds on top of JCache, no direct usage of JCache API is necessary in your application, since Open Liberty handles the session caching in the web container layer.
 
-If your application is already using `HttpSessions`, it can benefit from the `sessionCache` feature.
-From an application perspective, using distributed session caching with `sessionCache` works the same way as non-distributed session caching.
-So if you have applications that are already caching data in HTTP sessions, no code changes are needed to benefit from the `sessionCache` feature.
-
 
 == Session caching in your application
 
 Distributed session caching with the `sessionCache` feature works the same way as non-distributed session caching in an application.
 If your application caches data, no code changes are needed to include the `sessionCache` feature.
-The following example shows what the HTTP session caching might look like:
+The following example shows what the HTTP session caching might look like.
+If the `dbThing` object is not found in session, it is obtained from the database and cached for future use.
 
 [source, java]
 ----
@@ -45,9 +42,8 @@ public class ExampleServlet extends HttpServlet {
       throws ServletException, IOException {
         HttpSession session = req.getSession();
         Object dbThing = session.getAttribute("dbThing");
-        // If object is not found in session, obtain it and cache it for future use
         if (dbThing == null) {
-            dbThing = getFromDB(); // Some expensive operation
+            dbThing = getFromDB();
             session.setAttribute("dbThing", dbThing);
         }
     }
@@ -107,7 +103,7 @@ public class ServiceB extends HttpServlet {
 Each JCache implementation configures the cluster instances independently.
 
 For Hazelcast, a simple configuration file might look like the following example.
-However, you don’t need to specify a Hazelcast configuration file if the default Hazelcast configuration works for you:
+However, you don’t need to specify a Hazelcast configuration file if the default Hazelcast configuration works for you.
  You can optionally create a Hazelcast configuration file, as shown in the following example, and xref:reference:feature/sessionCache-1.0.adoc[add a reference to the Hazelcast configuration file] in your `server.xml` file:
 
 [source, java]
