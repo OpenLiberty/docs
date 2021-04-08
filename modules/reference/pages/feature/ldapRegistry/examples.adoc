@@ -111,6 +111,7 @@ The user and group filters include the custom object classes. Although this exam
 
 LDAP user registries are federated by default.
 If you configure more than one LDAP user registry in your `server.xml` file, then the user registries are automatically federated into a common user registry.
+
 You can adjust the configuration when the the xref:reference:feature/federatedRegistry-1.0.adoc[Federated User Registry] feature is enabled and the `federatedRepository` element is configured. If you enable the LDAP User Registry feature version 3.0 or later, the Federated User Registry feature is enabled by default. Otherwise, you must manually enable the Federated User Registry feature and configure the `federatedRepository` element.
 
 You can also federate LDAP user registries with basic or custom user registries. The following example shows a basic user registry that is federated with an LDAP user registry, with the configuration specified in the `federatedRepository` element:
@@ -150,7 +151,11 @@ You can also federate LDAP user registries with basic or custom user registries.
 </server>
 ----
 
-The participating base entry for a user registry is defined by the `participatingBaseEntry` element. The participating base entry value for a custom or basic user registry is the `o` organization attribute set to equal the realm name of that user registry. For an LDAP user registry, the realm name is the base distinguished name from the LDAP user registry configuration. For more information, see xref:reference:config/federatedRepository.adoc[User Registry Federation].
+The participating base entry for a user registry is defined by the `participatingBaseEntry` element. The participating base entry value for a custom or basic user registry is the `o` organization attribute set to equal the realm name of that user registry. For an LDAP user registry, the realm name is the base distinguished name from the LDAP user registry configuration.
+
+To verify that a user is unique in the common user registry, every search request searches all federated user registries. By default, all federated user registries must return successfully or the request fails. To avoid failures if any registry is unavailable, set the `allowOpIfRepoDown` attribute on the `primaryRealm` element to `true`, as shown in the previous example. 
+
+For more information, see xref:reference:config/federatedRepository.adoc[User Registry Federation].
 
 [#krb5]
 === Configure Kereberos authentication for LDAP servers
@@ -165,7 +170,7 @@ To configure Kerberos bind authentication for LDAP servers, you must configure t
 The Kerberos principal is specified by the required `krb5PrincipalName` attribute.
 You must set the `bindAuthMechanism` attribute to the `GSSAPI` value. This bind authentication mechanism is an alternative to the <<#simple,simple bind authentication mechanism>>, which uses a bind distinguished name and a bind password.
 
-The `krb5TicketCache` attribute is optional and specifies the location of a ticket or credential cache (`ccache`) file. When this attribute is specified and the principal is authenticated, the Kerberos service automatically attempts to renew the Kerberos ticket before it expires.
+The `krb5TicketCache` attribute is optional and specifies the location of a credential cache (`ccache`) file. The credentials in a `ccache` file are subject to expiration. When the `krb5TicketCache` attribute is specified and the principal is authenticated, the Kerberos service automatically attempts to renew the credentials before they expire.
 
 You can specify a global Kerberos configuration in your `server.xml` file that provides values to any Open Liberty features that use Kerberos credentials. This global configuration is optional. For more information, see xref:ROOT:kerberos-authentication.adoc[Kerberos authentication for Open Liberty].
 
