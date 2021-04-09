@@ -12,99 +12,138 @@
 :page-type: general
 = API documentation with OpenAPI
 
-The MicroProfile OpenAPI specification is a MicroProfile community programming model for the OpenAPI specification.
-With MicroProfile OpenAPI specification, Java developers can generate structured documentation from their JAX-RS applications.
+MicroProfile OpenAPI is a MicroProfile community programming model for the OpenAPI specification.
+MicroProfile OpenAPI helps you to generate structured documentation from your JAX-RS applications.
 
-Structured documentation helps other developers and microservices understand and communicate with your microservice.
-Developers can write a web service to communicate with the REST API of another web service only if they have the relevant information to do so.
-MicroProfile OpenAPI specification facilitates this communication by generating human and machine-readable documentation on a simple interface without the need to access the source code.
+Structured documentation helps other microservices and developers to understand and communicate with your application.
+Other developers need relevant information to build an application that communicates with the REST API of your application.
+MicroProfile OpenAPI facilitates this communication by generating human and machine-readable documentation on a simple interface that doesn’t require access to the source code.
+You can implement MicroProfile OpenAPI for Open Liberty by enabling the feature:mpOpenAPI[display=MicroProfile OpenAPI] feature.
 
-There are two main approaches to generate an OpenAPI document, the code-first approach and the design-first approach.
-In the code-first approach, the developer can generate documentation of the REST API from the source code.
-Thus, developers don’t need to rewrite the portions of the OpenAPI document that are already covered by the JAX-RS framework.
-The reference document that is produced, lists all the API endpoints and descriptions of how to use them.
-Alternately, in the design-first approach, you can include a pre-generated OpenAPI document that was written separately from the code.
-You can also use a set of predefined models to manually create all elements of the OpenAPI tree.
-You can even generate the stubs for the source code, including client libraries for the API, from this manually created documentation.
+The two main approaches to generate an OpenAPI document are the code-first approach and the design-first approach.
+In the code-first approach, a developer can generate documentation of the REST API from the source code.
+The reference document that is produced lists all the API endpoints with descriptions of how to use them.
+Alternatively, in the design-first approach, you can include a pre-generated OpenAPI document that was written separately from the code.
+The JAX-RS framework handles basic API generation for JAX-RS annotations and generates a skeleton OpenAPI treemap.
+You can use this treemap as a starting point and augment it with annotations and code to produce a complete OpenAPI document.
+Additionally, you can use this manually created documentation to generate stubs, or testable versions of code modules, such as client libraries for the API.
 
 == The code-first approach
 
-In the code-first approach, you can generate basic API documentation from your JAX-RS application; the JAX-RS annotations are processed by default.
-Then, you can augment the existing JAX-RS annotations with OpenAPI annotations, which are processed to generate the documentation.
-Adding annotations takes less work and gives useful explanation of the different parts of the API.
+In the code-first approach, you can initially generate basic API documentation of the REST API from annotations that are specified in the source code.
+Then, you can augment the existing annotations with OpenAPI annotations, which are processed to generate the documentation.
+Adding annotations takes less work than manually defining the OpenAPI document, and gives a useful explanation of the different parts of the API.
 
-In the following example, the OpenAPI annotations `@APIResponses`, `@Operation`, and `@Parameter` are added to the two JAX-RS methods, `getPropertiesForHost()` and `listContents()`.
+In the following example, the OpenAPI annotations `@APIResponses`, `@Operation`, and `@Parameter` are added to the `purchaseCar()` JAX-RS method.
 
 [source,java]
 ----
 
-/inventory/systems/{hostname}:
-  get:
-    summary: Get JVM system properties for particular host
-    description: Retrieves and returns the JVM system properties from the system
-      service running on the particular host.
-    operationId: getPropertiesForHost
-    parameters:
-    - name: hostname
-      in: path
-      description: The host for whom to retrieve the JVM system properties for.
-      required: true
-      schema:
-        type: string
-      example: foo
-    responses:
-      404:
-        description: Missing description
-        content:
-          text/plain: {}
-      200:
-        description: JVM system properties of a particular host.
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Properties'
+@PUT
+ @Path("/buy/{registration}")
+ @Produces(MediaType.APPLICATION_JSON)
+ @Consumes(MediaType.TEXT_PLAIN)
+ @APIResponses(
+         value = {
+             @APIResponse(
+                 responseCode = "404",
+                 description = "The requested car could not be found at the dealership, and could not be purchased.",
+                 content = @Content(mediaType = "text/plain")),
+             @APIResponse(
+                 responseCode = "200",
+                 description = "The requested car was successfully purchased.",
+                 content = @Content(mediaType = "application/json"))})
+     @Operation(
+         summary = "Purchases the specified car from the dealership, and adds the car to your garage.",
+         description = "Retrieves the car with the specified registration from the dealership if it exists, and
+                        adds this to the caller's garage. The boolean response represents the state of the internal operation.")
+ public Response purchaseCar(
+    @Parameter(
+              description = "The registration of the car to be added to the inventory.",
+              required = true,
+              example = "NX15 9012",
+              schema = @Schema(type = SchemaType.STRING))
+    @PathParam("registration") String registration) {
+  boolean success = manager.purchaseCar(registration);
+     if (!success) {
+         return Response.status(Response.Status.NOT_FOUND)
+                        .entity("{ \"error\" : "
+                                + "\"The car with registration " + registration
+                                + " could not be added to the inventory\" }")
+                        .build();
+     }
+     return Response.ok(success).build();
+ }
+----
 
-/inventory/systems:
-  get:
-    summary: List inventory contents.
-    description: Returns the currently stored host:properties pairs in the inventory.
-    operationId: listContents
-    responses:
-      200:
-        description: host:properties pairs stored in the inventory.
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/InventoryList'
+The default format of the generated document is yaml, but documents can also be provided in JSON format.
+The following OpenAPI document is generated after the OpenAPI annotations are added from the example in a yaml format:
+
+[source,java]
+----
+/my-garage/buy/{registration}:
+   put:
+     summary: "Purchases the specified car from the dealership, and adds the car\
+       \ to your garage."
+     description: "Retrieves the car with the specified registration from the dealership\
+       \ if it exists, and adds this to the caller's garage. The boolean response\
+       \ represents the state of the internal operation."
+     parameters:
+     - name: registration
+       in: path
+       description: The registration of the car to be added to the inventory.
+       required: true
+       schema:
+         type: string
+       example: NX15 9012
+     responses:
+       "404":
+         description: "The requested car could not be found at the dealership, and\
+           \ could not be purchased."
+         content:
+           text/plain: {}
+       "200":
+         description: The requested car was successfully purchased.
+         content:
+           application/json: {}
 ----
 
 The information that is provided through the OpenAPI annotations augments the basic API documentation that is generated by the JAX-RS framework.
 
-See the xref:reference:javadoc/microprofile-3.3-javadoc.adoc#package=org/eclipse/microprofile/openapi/annotations/package-frame.html&class=org/eclipse/microprofile/openapi/annotations/package-summary.html[MicroProfile OpenAPI Javadoc] for the annotations that are available.
+For more information, see the xref:reference:javadoc/microprofile-3.3-javadoc.adoc#package=org/eclipse/microprofile/openapi/annotations/package-frame.html&class=org/eclipse/microprofile/openapi/annotations/package-summary.html[MicroProfile OpenAPI Javadoc] for the annotations that are available.
 
 == The design-first approach
 
-An alternative approach is to design the REST API in an editor, such as the link:https://editor.swagger.io/[Swagger editor], before you write any code.
-With this approach, you can spot any problems in the design before implementation.
-In large companies, it is important to have consistent, usable APIs that are reviewed by subject matter experts to verify the quality of the API design.
+An alternative approach is to design the REST API in an editor, such as the link:https://editor.swagger.io/[Swagger] editor, before you write any code.
+With this approach, you can spot and rectify any issues in the design before it is implemented.
+In large companies, subject matter experts review the API to ensure it's consistent and usable.
 This API design then forms a contract and must be implemented as agreed.
 
-You can write this API design in YAML or JSON, which can then be used to generate the documentation and, optionally, even stubs for the API code itself.
-You can then also augment the documentation with annotations in the code as described.
+You can write this API design in yaml or JSON format and place it in the `META-INF` directory of your application.
+Optionally, you can create stubs for the API code.
+The code first and design-first approaches are not mutually exclusive.
+You can augment manually created API documents by adding annotations to the code as you would in a code-first approach.
 
 For more information, see https://openliberty.io/guides/microprofile-openapi.html#using-pregenerated-openapi-documents[Using pregenerated OpenAPI documents].
 
 == Filter components in and out of API documentation
 
-Filters give the users the flexibility to modify the document after it is generated.
-With link:https://download.eclipse.org/microprofile/microprofile-open-api-1.1.2/microprofile-openapi-spec.html#_filter[filters], you can implement an interface in your application.
-So when a component of the documentation is processed, it calls your implementation and you can either add or remove content.
+If you want to update or remove certain elements and fields of the OpenAPI document you can use a filter, which is called one time after all other documentation mechanisms are finished.
+Filters give the users the flexibility to modify the document.
+With filters, you can implement an interface in your application.
+When a component of the documentation is processed, it calls your implementation and you can either add or remove content.
+For more information, see https://openliberty.io/guides/microprofile-openapi.html#filtering-the-openapi-tree-elements[Filtering the OpenAPI tree elements].
 
-== Viewing and formatting API documentation
+== View API documentation
 
-The documentation that is generated for the REST API is available at the `/openapi` endpoint of your web service.
-The documentation is formatted by using the standard OpenAPI user interface (UI) and a default stylesheet.
+The raw OpenAPI document can be retrieved by using the `/openapi` endpoint.
+This UI is built from the https://swagger.io/tools/swagger-ui/[Open Source Swagger UI] and renders the generated `/openapi` document in a user-friendly browser interface.
+
+Some deprecated annotations were removed between Microprofile OpenAPI versions 1.1 and 2.0, which might result in breaking changes between those versions.
+For more information, see the https://download.eclipse.org/microprofile/microprofile-open-api-2.0/microprofile-openapi-spec-2.0.html#release_notes_20[Release Notes for Microprofile OpenAPI 2.0].
+
 
 == See also
 
-Ready to try out documenting APIs with Open Liberty for yourself? Check out the guide for link:https://openliberty.io/guides/microprofile-openapi.html[Documenting RESTful APIs].
+- link:/guides/microprofile-openapi.html[Guide: Documenting RESTful APIs]
+- link:https://download.eclipse.org/microprofile/microprofile-open-api-2.0/microprofile-openapi-spec-2.0.html#release_notes_20[Release Notes for Microprofile OpenAPI 2.0]

@@ -1,4 +1,4 @@
-// Copyright (c) 2020 IBM Corporation and others.
+// Copyright (c) 2020,2021 IBM Corporation and others.
 // Licensed under Creative Commons Attribution-NoDerivatives
 // 4.0 International (CC BY-ND 4.0)
 //   https://creativecommons.org/licenses/by-nd/4.0/
@@ -23,7 +23,7 @@ If your Open Liberty server is deployed in a managed environment, such as a Kube
 
 In cases where your server logs are not managed by an external agent, you might be able to configure https://www.elastic.co/beats/filebeat[Filebeat] to forward your logs to Logstash. If you can install Filebeat on the same host as your Open Liberty server, you can configure Open Liberty to write logs in JSON format and Filebeat can forward the logs. For more information, see xref:analyzing-logs-elk.adoc[Analyzing JSON logs with the Elastic stack].
 
-If you can't install Filebeat on the same host as your Open Liberty server, you can use the Open Liberty xref:reference:feature/logstashCollector-1.0.adoc[Logstash Collector feature] to forward your logs to Logstash. This feature collects log data at run time and sends it to a Logstash server.
+If you can't install Filebeat on the same host as your Open Liberty server, you can use the Open Liberty feature:logstashCollector[display=Logstash collector] feature to forward your logs to Logstash. This feature collects log data at run time and sends it to a Logstash server.
 
 Although this feature can send log data for analysis by any of https://www.elastic.co/guide/en/logstash/current/output-plugins.html[the available output plug-ins from Logstash], many users choose to use Logstash with Elasticsearch and Kibana. These three tools are widely used together to collect, manage, and visualize log data. For more information, see https://www.elastic.co/downloads/[the Elastic website].
 
@@ -62,18 +62,35 @@ openssl req -x509 -newkey rsa:2048 -keyout logstash.key -out logstash.crt -days 
 
 . Complete the following steps for each Open Liberty server that you want to collect events from:
 
-.. Acquire or create a keystore for the Open Liberty server. To create a self-signed certificate, use the following command. Customize the server name, password, and subject as needed:
+.. Acquire or create a keystore for the Open Liberty server. To create a self-signed certificate, run the `securityUtility` command from the `wlp_install_dir/bin` folder, as shown in the following example. Customize the server name, password, and subject as needed:
 +
 [role,command]
 ----
-d:\wlp\bin\securityUtility createSSLCertificate --server=myServerName --password="Liberty" --subject=CN=myHostname,OU=defaultServer,O=ibm,C=us
+d:\wlp\bin\securityUtility createSSLCertificate --server=server1 --password="Liberty" --subject=CN=myHostname,OU=server1,O=ibm,C=us
 ----
+The `key.p12` default keystore file is created under the `wlp_install_dir/usr/servers/server1/resources/security` directory. The output from this command is similar to the following example:
++
+[role,command]
+----
+Creating keystore wlp_install_dir/usr/servers/server1/resources/security/key.p12
 
-.. Import the `logstash.crt` file that you created in step 1 into the `trust.jks` file in your server. In the following example, customize the `wlp_install_dir` directory and server name as needed. When prompted for a password, use the certificate password that you specified in step 3a:
+Created SSL certificate for server server1. The certificate is created with CN=myHostname,OU=server1,O=ibm,C=us as the SubjectDN.
+
+Add the following lines to the server.xml to enable SSL:
+
+    <featureManager>
+        <feature>ssl-1.0</feature>
+    </featureManager>
+    <keyStore id="defaultKeyStore" password="{xor}EzY9Oi0rJg==" />
+----
++
+Add the server configuration snippet from the command output to your `server.xml` file.
+
+.. Import the `logstash.crt` file that you created in step 1 into the `key.p12` file in your server by running the Java developer kit `keytool` command. In the following example, customize the `wlp_install_dir` directory and server name as needed. When prompted for a password, use the certificate password that you specified in step 3a:
 +
 [role,command]
 ----
-d:\java\bin\keytool -import -noprompt -alias logstash -file logstash.crt -keystore wlp_install_dir\usr\servers\myServerName\resources\security\trust.jks -storepass Liberty
+keytool -importcert -noprompt -alias logstash -file logstash.crt -keystore wlp_install_dir/usr/servers/server1/resources/security/key.p12 -storepass Liberty
 ----
 
 .. Use the following command to install the Logstash Collector feature if it is not already installed on your server:
@@ -83,7 +100,7 @@ d:\java\bin\keytool -import -noprompt -alias logstash -file logstash.crt -keysto
 d:\wlp\bin\featureUtility installFeature logstashCollector-1.0
 ----
 
-.. xref:reference:feature/logstashCollector-1.0.adoc[Configure the Logstash Collector feature] in your `server.xml` file.
+.. feature:logstashCollector[display=Configure the Logstash Collector feature] in your `server.xml` file.
 
 .. Enable xref:access-logging.adoc[HTTP access logging].
 
