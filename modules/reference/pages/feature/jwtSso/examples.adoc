@@ -1,3 +1,4 @@
+
 == Examples
 
 With the `jwtSso` feature you can use a JSON Web Token (JWT) as a Single-Sign-On (SSO).
@@ -15,16 +16,68 @@ The following example shows how you can configure the JWT SSO to change the toke
 ----
 
 The `jwtBuilderRef` attribute refers to the `jwtBuilder` element `myBuilder`.
-The `id` attribute for the `jwtBuilder` element  named `myBuilder` identifies the JWT builder.
+The `id` attribute for the `jwtBuilder` element that is named `myBuilder` identifies the JWT builder.
 The `expiresInSeconds` attribute indicates the token expiration time that is set to 1800 seconds for a newly generated token.
 
-== Disabling JWT cookies
+== Disable JWT cookies
 
-You can enable JWT SSO to accept authentication with an existing JWT cookie without generating the JWT cookie.
-The following example shows how to disable the creating of JWT cookies:
-
+By default, when a client is authenticated with Open Liberty through the JWT SSO feature, a JWT cookie is created and sent to the HTTP servlet.
+In the following example, the JWT cookies are disabled by specifying the `disableJwtCookie` attribute with a value of `true` in the `server.xml` file.
+You can use a mechanism other than JWT cookies for authentication, as the JWT cookies are disabled in this example:
 
 [source, xml]
 ----
 <jwtSso id="sample" disableJwtCookie="true" />
+----
+
+==  Configure authentication filter
+
+You can configure an authentication filter to secure requests to access protected resources that are used with JWT SSO for authentication.
+The `jwtSso` feature supports authentication filters.
+For more information on configuring the authentication filter, see xref:ROOT:authentication-filters.adoc[Authentication filters].
+
+[source, xml]
+----
+<jwtSso cookieName="myjwt" jwtBuilderRef="myBuilder" authFilterRef="myAuthFilter"/>
+
+<authFilter id="myAuthFilter">
+         <requestUrl id="myRequestUrl" urlPattern="/SimpleServlet" matchType="contains"/>
+</authFilter>
+----
+
+In the example, request URLs that contain the `/SimpleServlet` pattern are authenticated by using JWT SSO authentication.
+If the `jwtSso` feature is enabled but `jwtSso` element does not include the `authFilterRef` attribute, all requests to access the protected resources that have a JWT cookie are used for the JWT SSO authentication.
+
+=== Change JWT validation criteria
+
+The `jwtSso` feature automatically uses the `mpJwt` element.
+Only one `mpJwt` element can exist in the `server.xml` file.
+The following example uses a `jwtBuilder` element reference to customize the creation of the tokens and an `mpJwt` element to customize validation and consumption of the tokens.
+
+[source, xml]
+----
+<jwtSso includeLtpaCookie="true" jwtBuilderRef="myBuilder">
+<jwtBuilder id="myBuilder" issuer="http://server.example.com" />
+<mpJwt id="myMpJwt" issuer="http://server.example.com"
+keyName="myJwtSigner"/>
+----
+
+=== Use the JSON Web Key (JWK) endpoint to validate JWTs
+
+The JWTs created by Open Liberty are signed by the issuer and verified by the consumer.
+If you use multiple servers, you can store the issuer public key in the `truststore` file of the consumer.
+Alternatively, you can also retrieve the key from the JWK endpoint of the issuer.
+
+The default JWK endpoint is `http(s)://<host>:<port>/jwt/ibm/api/defaultJWT/jwk`.
+
+[source, xml]
+----
+<jwtSso jwtBuilderRef="myBuilder"/> <jwtBuilder id="myBuilder" />
+----
+
+In the example, the JWK endpoint specifies the JWT builder with the ID `myBuilder`.
+To use the JWK endpoint for consuming JWTs, add the `jwksUri` attribute to the `mpJwt` configuration element.
+
+----
+<mpJwt id="myMpJwt" jwksUri="https://localhost:19443/jwt/ibm/api/myBuilder/jwk" />
 ----

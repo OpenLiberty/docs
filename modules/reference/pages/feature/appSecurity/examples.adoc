@@ -33,6 +33,7 @@ To configure a basic user registry with multiple users, you can create groups fo
 ----
 
 === Configure a basic user registry with QuickStart security
+
 When you want to configure a basic user registry, you can use the `quickStartSecurity` element to automatically configure a registry that grants the administrator role to a user. The administrator role gives the user the authority to manage applications. To configure a basic user registry with the `quickStartSecurity` element, the Application Security feature must be enabled in the `server.xml` file. The following example shows the `server.xml` file configuration to define the username and password for a user that is granted the administrator role with the `quickStartSecurity` element:
 [source,xml]
 ----
@@ -49,6 +50,24 @@ When the Application Security feature is enabled, Lightweight Third Party Authen
 
 LTPA configuration can provide Single Sign-on (SSO) to secure applications. For more information, see link:/docs/ref/general/#single-sign-on.html[Single sign-on (SSO)].
 
+=== Configure authentication filter
+
+You can configure an authentication filter to secure requests for accessing protected resources that are used with LTPA for authentication.
+The LTPA supports authentication filters.
+For more information on configuring authentication filters, see xref:ROOT:authentication-filters.adoc[Authentication filters].
+
+[source,xml]
+----
+<ltpa keysFileName="yourLTPAKeysFileName.keys" keysPassword="keysPassword" expiration="120" authFilterRef="myAuthFilter"/>
+
+<authFilter id="myAuthFilter">
+         <requestUrl id="myRequestUrl" urlPattern="/SimpleServlet" matchType="contains"/>
+</authFilter>
+----
+
+In the example, request URLs that contain the `/SimpleServlet` pattern are authenticated by using LTPA SSO authentication.
+If the `ltpa` element does not specify the `authFilterRef` attribute, all requests to access the protected resources that have an LTPA cookie are used for the LTPA SSO authentication.
+
 === Disable LTPA cookies for TAI
 
 LTPA cookies contain secure tokens that are used to verify user credentials and enable SSO. When you don't want to rely on LTPA tokens for SSO, you can use other methods, such as a Trust Association Interceptor (TAI), for authentication. A TAI is used to validate HTTP requests between a third-party security server and an Open Liberty server to complete authentication.  The following example shows how to disable LTPA cookies for TAI by specifying `disableLtpaCookie` with a value of `true` in the `server.xml` file:
@@ -57,7 +76,6 @@ LTPA cookies contain secure tokens that are used to verify user credentials and 
 ----
 <trustAssociation id="sample" disableLtpaCookie="true" />
 ----
-
 
 
 === Configure REST API access roles
