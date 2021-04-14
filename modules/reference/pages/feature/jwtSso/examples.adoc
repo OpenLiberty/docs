@@ -1,11 +1,14 @@
 == Examples
 
-With the `jwtSso` feature you can use a JSON Web Token (JWT) as a Single-Sign-On (SSO).
+With the JSON Web Token Single Sign-On feature, you can configure JSON Web Tokens (JWT) as an authentication mechanism for single-sign-on (SSO) authentication.
+
+The JWT SSO cookie is configured by enabling the JSON Web Token Single Sign-On feature.
+When a user is authenticated, Open Liberty creates a signed JWT as an SSO cookie and returns it to the browser.
+The browser can then include the JWT cookie in subsequent requests to the Open Liberty server.
 
 === Change the token expiration time
 
-You can customize how the JWT is built with the `jwtSso` feature.
-The following example shows how you can configure the `jwtSso` feature to change the token expiration time:
+To customize the expiration time of a JWT, configure the `jwtBuilder` element, as shown in the following example:
 
 [source, xml]
 ----
@@ -14,7 +17,7 @@ The following example shows how you can configure the `jwtSso` feature to change
  <jwtBuilder id="myBuilder" expiresInSeconds="1800"/>
 ----
 
-The `jwtBuilderRef` attribute refers to the `jwtBuilder` element `myBuilder`.
+The `jwtBuilderRef` attribute refers to the `jwtBuilder` element with the myBuilder ID.
 The `id` attribute for the `jwtBuilder` element that is named `myBuilder` identifies the JWT builder.
 The `expiresInSeconds` attribute indicates the token expiration time that is set to 1800 seconds for a newly generated token.
 
@@ -29,7 +32,7 @@ You can use a mechanism other than JWT cookies for authentication, as the JWT co
 <jwtSso id="sample" disableJwtCookie="true" />
 ----
 
-===  Configure an authentication filter for JWT SSO authentication
+=== Configure JWT SSO authentication for a subset of requests
 
 You can configure an authentication filter to specify whether certain requests for protected resources are authenticated with JWT SSO.
 If the request meets the criteria that are specified in the authentication filter, then the request can authenticate with JWT to access the protected resource.
@@ -50,9 +53,10 @@ If the `jwtSso` feature is enabled but `jwtSso` element does not include the `au
 
 === Change JWT validation criteria
 
-The `jwtSso` feature automatically uses the `mpJwt` element.
+You can specify the `mpJwt` element to configure how incoming JWTs are validated and consumed by the server.
 Only one `mpJwt` element can exist in the `server.xml` file.
-The following example uses a `jwtBuilder` element reference to customize the creation of the tokens and an `mpJwt` element to customize validation and consumption of the tokens.
+In the following example, the `jwtBuilder` element specifies the issuer claim for JWTs that the server creates.
+The `mpJwt` element specifies the issuer claim and key alias for incoming JWTs that the server receives:
 
 [source, xml]
 ----
@@ -65,19 +69,30 @@ keyName="myJwtSigner"/>
 === Use the JSON Web Key (JWK) endpoint to validate JWTs
 
 The JWTs created by Open Liberty are signed by the issuer and verified by the consumer.
-If you use multiple servers, you can store the issuer public key in the `truststore` file of the consumer.
+The consumer that uses the public key of the issuer later verifies the signature.
+If you use multiple servers, you must store the public key of the issuer in the `truststore` file of the consumer.
 Alternatively, you can also retrieve the key from the JWK endpoint of the issuer.
 
 The default JWK endpoint is `http(s)://<host>:<port>/jwt/ibm/api/defaultJWT/jwk`.
 
+To use a JWK endpoint for consuming JWTs, add the jwksUri attribute to the mpJwt configuration element:
+
+[source, xml]
+----
+<mpJwt id="myMpJwt" jwksUri="https://localhost:19443/jwt/ibm/api/defaultJWT/jwk" />
+----
+
+To use the JWK endpoint for consuming JWTs, add the `jwksUri` attribute to the `mpJwt` configuration element.
+
+[source, xml]
+----
+<mpJwt id="myMpJwt" jwksUri="https://localhost:19443/jwt/ibm/api/defaultJWT/jwk" />
+----
+
+If you specified a different builder, its JWK endpoint is `http(s)://<host>:<port>/jwt/ibm/api/(builderId)/jwk`.
+In the example, the JWK endpoint specifies the JWT builder with the ID `myBuilder`.
+
 [source, xml]
 ----
 <jwtSso jwtBuilderRef="myBuilder"/> <jwtBuilder id="myBuilder" />
-----
-
-In the example, the JWK endpoint specifies the JWT builder with the ID `myBuilder`.
-To use the JWK endpoint for consuming JWTs, add the `jwksUri` attribute to the `mpJwt` configuration element.
-
-----
-<mpJwt id="myMpJwt" jwksUri="https://localhost:19443/jwt/ibm/api/myBuilder/jwk" />
 ----
