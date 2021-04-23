@@ -1,0 +1,32 @@
+// Copyright (c) 2021 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description:
+:seo-title:Troubleshooting Kerberos authentication to LDAP servers on Open Liberty
+:page-layout: general-reference
+:page-type: general
+= Troubleshooting Kerberos authentication to LDAP servers
+
+If you experience problems with authenticating to an LDAP server by using Kerberos credentials, you can refer to error messages from your Open Liberty server or HTTP error messages to debug the problem. The following information can help determine the cause of common problems and error messages that are associated with Kerberos authentication to LDAP servers.
+
+== Users cannot log in, even if non-Kerberos enabled registries are available
+If multiple user registries are configured for an Open Liberty server, all basic, custom and LDAP user registries are federated into a single common federated user registry. If the `allowOpIfRepoDown` attribute is not enabled, the server must be able to successfully search for the user in all participating user registries to verify the user is unique within the federated user registry. If a Kerberos-enabled LDAP server in a federated registry uses a Kerberos ticket cache to hold user credentials and the credentials expire, a search of the LDAP registry fails. To resolve the problem, refresh the credential.
+
+To avoid failures if any user registry is unavailable, set the `allowOpIfRepoDown` attribute to `true` on the `primaryRealm` subelement of the `federatedRepository` element, as shown in the following example:
+
+[source,xml]
+----
+<federatedRepository>
+        <primaryRealm name="FederatedRealm" allowOpIfRepoDown="true">
+            <participatingBaseEntry name="o=SampleBasicRealm"/>
+            <participatingBaseEntry name="o=ibm,c=us"/>
+        </primaryRealm>
+</federatedRepository>
+----
+
+== Slow performance with Kerberos
