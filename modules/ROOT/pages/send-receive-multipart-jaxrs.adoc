@@ -7,15 +7,31 @@
 
 = Send and receive multipart/form-data parts in JAX-RS
 
-Multipart/form-data is a popular encoding type for HTTP requests that is used to send different types file data in a single request. You can configure Jakarta RESTful Web Services (JAX-RS) resources that run on Open Liberty to send and receive multipart/form-data payloads to and from clients.
+Multipart/form-data is a popular content type for HTTP requests that can send different types file data in a single request. You can configure Jakarta RESTful Web Services (JAX-RS) resources that run on Open Liberty to send and receive multipart/form-data payloads to and from clients.
 
- The multipart/form-data encoding type is often used for form data in web applications. For example, a form that you use to upload a resume PDF file, a photo, and text for your name and address might send this content as a multipart/form-data payload. JAX-RS resources can implement the multipart/form-data  encoding type to receive form data such as this from a client. They can also use this encoding type to send multipart payloads back to a client in response to an HTTP GET request.
+The `multipart/form-data` content type is often used for form data in web applications. For example, a form that you use to upload a resume PDF file, a photo, and text for your name and address might send this content as a `multipart/form-data` payload. JAX-RS resources can implement the `multipart/form-data` content type to receive form data such as this from a client. They can also use this content type to send multipart payloads back to a client in response to an HTTP request.
 
-You can send and receive multipart/form-data parts with JAX-RS resources in Open Liberty by enabling the feature:jaxrs[display=Java RESTful Services] feature and implementing the necessary methods in the JAX-RS resource code.
+You can send and receive `multipart/form-data` parts with JAX-RS resources in Open Liberty by enabling the feature:jaxrs[display=Java RESTful Services] feature and implementing the necessary methods in the JAX-RS resource code.
 
 == Send multipart/form-data parts from JAX-RS resources
 
-To send a multipart payload, you must send an array of objects as an instance of the `List<IAttachment>` method. Each object in that array represents a single attachment part. The following JAX-RS method example creates and sends a multipart request from a JAX-RS client:
+One way to send multipart form data in an HTTP request is to use an HTML form. You might create an HTML form for a human user to send file data to a web application. The following example shows an HTML form that sends an HTTP request in three parts, each of which specifies a particular content type:
+
+[source,HTML]
+----
+<form action="http://www.example.com/" method="POST" enctype="multipart/form-data">
+    <input type="text" name="fileid" />
+    <br />
+    <input type="text" name="description" />
+    <br />
+    <input type="file" name="thefile" />
+    <br />
+    <input type="submit" name="submit" value="submit"/>
+</form>
+----
+
+However, if you want to automate the transfer of form data, you can write a JAX-RS client that sends a multipart payload. For example, you might create a microservice that automatically submits a purchase order when it receives a certain low inventory event.
+To send a multipart payload, you must send a list of `IAttachment` objects. Each object in that list represents a single attachment part. In the following example, a JAX-RS client sends a `POST` request to a remote service with three parts: an XML file, an ID for the file, and description of the file:
 
 [source,java]
 ----
@@ -46,28 +62,11 @@ if(r.getStatus()==200 && "test".equals(r.readEntity(String.class)) {
 }
 ----
 
-In this example, the JAX-RS resource implements a method to send an XML file, along with an ID and description for the file, to a client in the same `POST` request.
-
-If you are sending multipart payloads, do not close the `InputStream` class. Open Liberty closes it for you after the data is sent.  The server throws an `IOException` exception if the stream is closed beforehand.
+If you are sending multipart payloads, do not close the `InputStream` object. Open Liberty closes it for you after the data is sent. The server throws an `IOException` exception if the stream is closed beforehand.
 
 == Receive multipart/form-data parts with JAX-RS resources
 
-To receive a multipart payload from an HTML form, a JAX-RS resource must implement a method to receive the multipart/form-data parts of an HTTP POST request. The following example shows an HTML form:
-
-[source,HTML]
-----
-<form action="http://www.example.com/" method="POST" enctype="multipart/form-data">
-    <input type="text" name="fileid" />
-    <br />
-    <input type="text" name="description" />
-    <br />
-    <input type="file" name="thefile" />
-    <br />
-    <input type="submit" name="submit" value="submit"/>
-</form>
-----
-
-To receive data from a form such as this, you can declare a JAX-RS resource method to receive multipart/form-data encoded content from an HTTP POST request, as shown in the following example:
+To receive a multipart payload, a JAX-RS resource must implement a method to receive the `multipart/form-data` parts of an HTTP `POST` request, as shown in the following example:
 
 [source,java]
 ----
@@ -118,9 +117,11 @@ public Response postFormData(List <IAttachment> attachments) throws IOException{
 }
 ----
 
-You can implement your JAX-RS resource method to receive the data in parts, so you can process these parts yourself, if needed. The originator of the HTML form POST submission can generate a `Content-Transfer-Encoding` header for one or more parts of the multipart payload. In these cases, if the header is of `base64` or `quoted-printable` encoding type, the JAX-RS resource attempts to auto-decode the payload of each part according to the header.
+With this configuration, Open Liberty can pass a `List<IAttachment>` instance to your resource method so that you can process each part of the multipart payload.
 
-When your application receives a multipart payload, Open Liberty does not close the `InputStream` class because the server does not know when the application is done processing it. You must explicitly close the class in your application code.
+In some cases, clients send HTTP headers that are specific to each part of a multipart payload. If a part contains a `Content-Transfer-Encoding` header, Open Liberty attempts to auto-decode the payload of that part as specified by the header. However, the `Content-Transfer-Encoding` header must be set to either the `base64` or a `quoted-printable` encoding type. 
+
+When your application receives a multipart payload, Open Liberty does not close the `InputStream` object because the server does not know when the application is done processing it. You must explicitly close the object in your application code.
 
 == See also
-https://tools.ietf.org/html/rfc7578#page-4[RFC 5758 Returning Values from Forms: multipart/form-data]
+https://tools.ietf.org/html/rfc7578[RFC 5758 Returning Values from Forms: multipart/form-data]
