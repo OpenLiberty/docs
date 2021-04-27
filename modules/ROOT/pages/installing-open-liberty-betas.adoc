@@ -1,0 +1,107 @@
+:page-layout: general-reference
+:page-type: general
+:page-description:
+:page-categories:
+:seo-title: Installing Open Liberty beta releases
+:seo-description:
+= Installing Open Liberty beta releases
+
+You can try out new Open Liberty features before they are officially released by installing one of the Open Liberty beta releases. The beta releases include all the features and capabilities from the most recent Open Liberty release, plus new and updated features that are currently in development.
+
+== Try out new features with Open Liberty beta releases
+
+Open Liberty beta releases provide an opportunity to try out new features and capabilities before they are included in an official release. For example, features that are Jakarta EE 9 compliant are previewed in the Open Liberty beta releases. These features give developers an opportunity to try out Jakarta EE 9 and understand what might be required to move their workloads to a Jakarta EE 9 compatible runtime.
+
+These releases also help the Open Liberty development team gather feedback from the user community about proposed updates. Beta releases are not intended for in-production use and some updates from the beta are never included in a production release. Feedback from the user community can help the development team understand when and whether to integrate an update from a beta into a production release.
+
+New beta releases are introduced as part of the regular Open Liberty four-week release cycle. Generally, the beta release becomes available on the same day as the current Open Liberty release. For example, the 21.0.0.3-beta release was introduced on the same day as the regular 21.0.0.2 release. This beta release contained some updates that were then added to the regular 21.0.0.3 release four weeks later.
+
+For more information about the latest beta release, see the link:https://www.openliberty.io/blog/?search=beta[Open Liberty blog].
+
+== Install a beta features package
+
+Open Liberty offers two beta release packages, All Beta Features and Jakarta EE 9 Beta Features, both of which include everything from the most recent Open Liberty release. The All Beta Features package also includes all available beta features, while the Jakarta EE 9 Beta Features package adds only the beta features that are included as part of Jakarta EE 9. You can install either beta features package by using Maven or Gradle build tools. Alternatively, `.zip` file downloads for each beta package are available on link:https://www.openliberty.io/downloads/#runtime_betas[the Get started page].
+
+=== Install a beta features package package with Maven
+
+To install the All Beta Features package by using Maven, add the following `runtimeArtifact` element to the `configuration` element for the Liberty Maven plug-in in your `pom.xml` file:
+
+[source,xml]
+----
+<plugin>
+    <groupId>io.openliberty.tools</groupId>
+    <artifactId>liberty-maven-plugin</artifactId>
+    <version>3.3.4</version>
+    <configuration>
+        <runtimeArtifact>
+          <groupId>io.openliberty.beta</groupId>
+          <artifactId>openliberty-runtime</artifactId>
+          <version>LATEST</version>
+          <type>zip</type>
+        </runtimeArtifact>
+    </configuration>
+</plugin>
+----
+
+This example installs the latest beta release that is available.
+
+If you want to install the Jakarta EE 9 Beta Features package instead of the All Beta features package, set the `artifactId` element value under the `runtimeArtifact` element to `openliberty-jakartaee9`.
+
+You must also add dependencies to your `pom.xml` file for the beta version of the APIs that are associated with the beta features that you want to try. For any beta features for APIs that are included in either the MicroProfile or Jakarta EE platforms, you can specify aggregate dependencies, as shown in the following example:
+
+[source,xml]
+----
+<dependency>
+    <groupId>org.eclipse.microprofile</groupId>
+    <artifactId>microprofile</artifactId>
+    <version>4.0.1</version>
+    <type>pom</type>
+    <scope>provided</scope>
+</dependency>
+<dependency>
+    <groupId>jakarta.platform</groupId>
+    <artifactId>jakarta.jakartaee-api</artifactId>
+    <version>9.0.0</version>
+    <scope>provided</scope>
+</dependency>
+----
+
+These dependencies cover any feature that is backed by a MicroProfile or Jakarta EE platform API.
+For more information about what API packages are provided by an individual feature, see the documentation for the feature.
+
+For more information about using Maven with Open Liberty, see the link:/guides/maven-intro.html[Building a web application with Maven] guide.
+
+=== Install a beta features package with Gradle
+
+To install the All Beta Features package by using Gradle, add the following dependency to your `build.gradle` file:
+
+----
+dependencies {
+    libertyRuntime 'io.openliberty.beta:openliberty-runtime:+'
+}
+----
+
+This example installs the latest beta release that is available.
+
+Alternatively, to install the Jakarta EE 9 Beta Features package instead of the All Beta features package, add the following dependency to your `build.gradle` file:
+
+----
+dependencies {
+    libertyRuntime 'io.openliberty.beta:openliberty-jakartaee9:+'
+}
+----
+
+To specify aggregate dependencies for Jakarta EE 9 or MicroProfile platform APIs, add the following dependencies to your `build.gradle` file:
+
+----
+dependencies {
+    providedCompile 'jakarta.platform:jakarta.jakartaee-api:9.0.0'
+    providedCompile 'org.eclipse.microprofile:microprofile:4.0.1'
+}
+----
+
+For more information about using Gradle with Open Liberty, see the link:/guides/gradle-intro.html[Building a web application with Gradle] guide.
+
+=== Enable beta features
+
+After you install a beta features package and any necessary API dependencies, you can enable any beta feature by adding it to the `featureManager` element in your `server.xml` file. For more information about enabling and using Open Liberty features, see xref:reference:feature/feature-overview.adoc[Feature overview].
