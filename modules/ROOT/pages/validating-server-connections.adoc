@@ -12,39 +12,42 @@
 :seo-title: Validating server connections - OpenLiberty.io
 = Validating server connections
 
-Validating your server connections with REST endpoints provides a simple way to test that your application can access databases and other sources of data.
+REST endpoints can facilitate communication between applications by identifying resources that are accessed by REST APIs to fulfill requests. Validating your server connections with REST endpoints provides a simple way to test that your application can access resources that enable interactions with REST APIs.
 
-When you enable the xref:reference:feature/restConnector-2.0.adoc[Rest Connector (`restConnector`) feature], a set of REST endpoints are automatically enabled in your application. You can use these REST endpoints to validate the application's server connections. The REST endpoints run the same code as your application to help ensure that you validate your actual server configuration.
+Endpoints help to specify the location of resources that are accessed by APIs to provide important functions that can test the performance of applications. With Open Liberty, you can automatically enable REST endpoints when you enable features in your server configuration. When you enable the xref:reference:feature/restConnector-2.0.adoc[Admin REST Connector feature], you can use REST endpoints to view the server configuration and validate server connections to resources, such as databases.
 
-By itself, the Rest Connector feature enables you to view the current configuration of a server by using the `config` endpoint. If you also enable the JDBC, JCA, Cloudant, or JMS features, you can use the `validation` endpoint to validate the configuration.
-
-The URLs for the `validation` and `config` endpoints for any configuration element are generated from a combination of the configuration element name and its unique ID, as shown in the following example as `{configElementname}` and `{uid}`:
-----
-/ibm/api/config/{configElementName}/{uid}
-/ibm/api/validation/{configElementName}/{uid}
-----
-
-To list all instances of a specific configuration element name, omit the unique ID from the URL. The output from the URLs without the unique ID contains all instances that are defined in the `server.xml` file and any default instances that are defined by the features of the server. This output also includes the unique ID for each of those instances.
+By enabling the Admin REST Connector feature, you can use the `config` endpoint to view the server configuration. If you also enable the xref:reference:feature/jdbc-4.3.adoc[JDBC], xref:reference:feature/jca-1.7.adoc[JCA], xref:reference:feature/cloudant-1.0[Cloudant Integration], or xref:reference:feature/jms-2.0.adoc[JMS] features with the Admin REST Connector feature, you can use the `validation` endpoint to validate connections to certain types of resources.
 
 == Before you begin
 
-To access the REST endpoints, you must complete authentication with the Open Liberty server. Ensure that you have a minimum of `reader-role` access to the `config` endpoint and `administrator-role` access to the `validation` endpoint. You can use any Open Liberty supported user registry to set up secure access. However, the following sections assume that you are using either QuickStart security or a basic registry with the xref:reference:feature/appSecurity-3.0.adoc[application security (`appSecurity`) feature]:
+To access the REST endpoints, you must complete authentication with the Open Liberty server. Ensure that you have a minimum of `reader-role` access to the `config` endpoint and `administrator-role` access to the `validation` endpoint. You can use any Open Liberty supported user registry to set up secure access. However, the following tasks include either QuickStart security or a basic registry with the xref:reference:feature/appSecurity-3.0.adoc[Application Security feature] enabled:
 
 * <<Validating a connection to a database, Validating a connection to a database>>
 * <<Validating JMS and JCA connection factories, Validating JMS and JCA connection factories>>
 
-If any of the MicroProfile OpenAPI features are enabled, view the API documentation for the `config` and `validation` REST endpoints as dynamically generated OpenAPI documents by using the following URLs:
+If any of the MicroProfile OpenAPI features are enabled, you can use the following `config` and `validation` REST endpoint paths to view dynamically generated OpenAPI documents:
 
 ----
 /openapi/platform/config
 /openapi/platform/validation
 ----
 
+== Viewing server configuration
 
+To view your server configuration, you need to specify the proper URL to use the `config` endpoint. The `config` endpoint URL for any server configuration element is specified with the base URL, the endpoint, the server configuration element name, and its unique ID (uid). In the following example, the `{configElementName}` variable specifies the server configuration element and the `{uid}` variable specifies the uid:
+
+----
+https://localhost:9443/ibm/api/config/{configElementName}/{uid}
+----
+
+The `https://localhost:9443/ibm/api` base URL is set by default. To list all instances of a specific configuration element name in the output of the `config` endpoint, omit the uid from the endpoint URL. If you want to list every instance of all the configuration elements in the output of the `config` endpoint, you must also omit the configuration element name from the endpoint URL.
+
+The output from an endpoint URL that doesn't specify a uid contains all instances of the specified configuration element name that is defined in the `server.xml` file and any configuration files that are included. If the output from a URL does not specify a uid or a configuration element name, it contains all instances of all server configuration element names that are defined in the `server.xml` file and any included configuration files.
 
 == Validating a connection to a database
 
-You can use a REST API to validate database connections in your server configuration. The following example shows a `server.xml` file with the REST Connector and JDBC features enabled and a `derby` database configured as the default data source:
+When you use the `config` endpoint URL to view your server configuration, you can use the generated output to help specify the `validation` endpoint URL. This `validation` endpoint URL validates connections to resources that are configured with the `dataSource` element. The following example shows a `server.xml` file with the REST Connector and JDBC features enabled and a `derby` database that is configured as the default data source:
+
 [source,xml]
 ----
 <server>
@@ -69,7 +72,10 @@ You can use a REST API to validate database connections in your server configura
 </server>
 ----
 
-To validate the connection to this database, you must first obtain its unique ID by viewing the data source configuration. You can view this configuration at the `https://localhost:9443/ibm/api/config/dataSource/` endpoint, where `9443` is the port number of your application. In the following example output, the `DefaultDataSource` unique ID is specified by the `"uid": "DefaultDataSource"` field:
+For more information, see the xref:reference:feature/restConnector-2.0[Admin REST Connector] feature.
+
+To validate the connection to this database, find the `validation` endpoint path by using the `https://localhost:9443/ibm/api/config/dataSource/DefaultDataSource` endpoint URL to view the `datasource` element configuration output. In the output, the `api` field specifies the `/validation/dataSource/DefaultDataSource` endpoint path, as shown in the following example:
+[source,json]
 
 ----
 {
@@ -93,8 +99,8 @@ To validate the connection to this database, you must first obtain its unique ID
                "fileRef": [
                   {
                      "configElementName": "file",
-                     "uid": "library[derby]/file[default-0]"
-                     "name":/opt/ol/wlp/usr/custom.repository
+                     "uid": "library[derby]/file[default-0]",
+                     "name": "/opt/ol/wlp/usr/custom.repository"
 
                   }
                ]
@@ -103,8 +109,8 @@ To validate the connection to this database, you must first obtain its unique ID
       }
    ],
    "statementCacheSize": 10,
-   "syncQueryTimeoutWithTransactionTimeout": false,
-   "transactional": true,
+   "syncQueryTimeoutWithTransactionTimeout": "false",
+   "transactional": "true",
    "properties.derby.embedded": [
       {
          "createDatabase": "create",
@@ -119,9 +125,10 @@ To validate the connection to this database, you must first obtain its unique ID
 }
 ----
 
-Use the datasource UID to validate the data source with a REST endpoint by adding the UID to the `https://localhost:9443/ibm/api/config/dataSource/` endpoint URL and viewing the output. The REST endpoint that is found in the `https://localhost:9443/ibm/api/validation/dataSource/{uid}` endpoint, such as the `https://localhost:9443/ibm/api/validation/dataSource/DefaultDataSource` endpoint, validates the data source connection.
+Append the `/validation/dataSource/DefaultDataSource` endpoint path to the base URL of the server to specify the `https://localhost:9443/ibm/api/validation/dataSource/DefaultDataSource` endpoint URL. This URL generates the `validation` endpoint output for the `DefaultDataSource` that is specified in the endpoint URL.
 
-Examine the output of the validation for success or failure. When the data source works properly, a success message appears, as shown in the following example:
+Examine the output of the `validation` endpoint for success or failure. When the connection to the data source works properly, a success message appears, as shown in the following example:
+[source,json]
 
 ----
 {
@@ -139,38 +146,49 @@ Examine the output of the validation for success or failure. When the data sourc
 }
 ----
 
-If the data source has a problem, a failure message displays, and details about the failure are displayed. In the following example, the `<jdbcDriver>` element references a `<library>` element that does not contain a valid `Datasource` implementation, which results in a failure:
+If the connection to the data source has a problem, a failure message displays, and details about the failure are displayed. In the following example, a data source is configured in a `server.xml` file that uses container authentication and an authentication alias:
+[source,xml]
+----
+<dataSource containerAuthDataRef="db2authAlias" id="myDS" jndiName="jdbc/db2DS">
+  <jdbcDriver libraryRef="db2Lib"/>
+    <properties.db2.jcc databaseName="testdb2" portNumber="50000" serverName="localhost" />
+</dataSource>
+<authData id="db2authAlias" password="db2pass" user="db2inst1"/>
+----
 
+If you attempt to validate the connection to this data source with the `https://localhost:9443/ibm/api/validation/dataSource/myDS` endpoint URL, without providing credentials, the generated output indicates a failure and an exception stack is displayed, as shown in the following example:
+[source,json]
 ----
 {
-  "uid": "DefaultDataSource",
-  "id": "DefaultDataSource",
-  "failure": {
-    "class": "java.sql.SQLNonTransientException",
-    "stack": [
-      "com.ibm.ws.sage.xyz.service.classNotFound",
-      "com.ibm.ws.sage.xyz.service.create",
-      "com.ibm.ws.sage.xyz.service.createDefaultDataSource",
-      // stack trace cut short
-      "java.lang.Thread.run(Thread.java:785)"
-    ],
-    "cause": {
-      "class": "java.lang.ClassNotFoundException",
-      "message": "org.apache.derby.jdbc.EmbeddedXADataSource40",
+   "uid": "myDS",
+   "id": "myDS",
+   "jndiName": "jdbc/db2DS",
+   "successful": false,
+   "failure": {
+      "sqlState": "42815",
+      "errorCode": "-4461",
+      "class": "java.sql.SQLNonTransientException",
+      "message": "[jcc][t4][10205][11234][4.22.29] Null userid is not supported. ERRORCODE=-4461, SQLSTATE=42815 DSRA0010E: SQL State = 42815, Error Code = -4,461",
       "stack": [
-        "com.ibm.ws.classloading.internal.AppClassLoader.findClassCommonLibraryClassLoaders(AppClassLoader.java:499)",
-        // stack trace cut short
-        "java.lang.Thread.run(Thread.java:785)"
+         "com.ibm.db2.jcc.am.ld.a(ld.java:810)",
+
       ]
-    }
-  }
+   }
 }
 ----
 
-Cloudant databases can also be viewed and validated. For more information, see the xref:reference:feature/cloudant-1.0.adoc[Cloudant Integration] feature.
+To correct this failure, you need to provide credentials for validation when the data source is configured to use authentication. Validation of a data source supports container and application authentication by including the authentication parameter in the endpoint URL. If container authentication and an authentication alias are configured for your server, append the two parameters to the `validation` endpoint URL by specifying `container auth` and `authAlias` with the HTTP parameter syntax, as shown in the following example:
+----
+https://localhost:9443/ibm/api/validation/dataSource/myDS?auth=container&authAlias=db2authAlias
+----
+
+If the data source that is validated uses application authentication, you must set the value of the authentication parameter to `application`. A username and password can be specified by including the X-Validation-User and X-Validation-Password HTTP headers. These headers specify credentials when you are not using container authentication to validate the connection to the database.
+
+In addition to relational databases, Cloudant database connections can also be validated. For more information, see the xref:reference:feature/cloudant-1.0.adoc[Cloudant Integration] feature.
 
 == Validating JMS and JCA connection factories
-You can use a REST API to validate xref:reference:feature/jms-2.0.adoc[Java Message Service (JMS)] and xref:reference:feature/jca-1.7.adoc[Java Connector Architecture (JCA)] connection factories. The following example shows a JCA connection factory configuration with the REST Connector and JCA features enabled in the `server.xml` file:
+When you enable the JMS or JCA feature with the Admin REST Connector feature, you can use a `validation` REST endpoint to validate connection factories. The following example shows a JCA connection factory configuration with the REST Connector and JCA features enabled in the `server.xml` file:
+
 [source,xml]
 ----
 <server>
@@ -204,42 +222,38 @@ You can use a REST API to validate xref:reference:feature/jms-2.0.adoc[Java Mess
 </server>
 ----
 
-To validate the connection to this connection factory, you must first determine the the unique id (UID) of the connection factory by viewing the connection factory configuration. You can view the configuration at the `https://localhost:9443/ibm/api/config/connectionFactory` endpoint, where `9443` is the port number of your application. In the following example output, the UID of the JCA connection factory is specified by the `"uid": "cf1"` field in the endpoint output:
+The `id` attribute is specified with a unique `cf1` value. You can use the unique value as the uid parameter of the `config` endpoint URL to view the output of the `connectionFactory` element configuration. For more information, see the xref:reference:feature/restConnector-2.0[Admin REST Connector] feature.
 
+By examining the output from the `https://localhost:9443/ibm/api/config/connectionFactory/cf1` endpoint URL, you can find the `validation` endpoint path in the `api` field, as shown in the following example:
+[source,json]
 ----
-[
-   {
-      "configElementName": "connectionFactory",
-      "uid": "cf1",
-      "id": "cf1",
-      "jndiName": "eis/cf1",
-      "containerAuthDataRef": [
-         {
-            "configElementName": "containerAuthData",
-            "uid": "connectionFactory[cf1]/containerAuthData[default-0]",
-            "password": "******",
-            "user": "containerAuthUser1"
-         }
-      ],
-      "properties.TestValidationAdapter.ConnectionFactory": [
-         {
-            "hostName": "myhost.openliberty.io",
-            "password": "******",
-            "portNumber": 9876,
-            "userName": "DefaultUserName"
-         }
-      ]
-   }
-]
+{
+   "configElementName": "connectionFactory",
+   "uid": "cf1",
+   "id": "cf1",
+   "jndiName": "eis/cf1",
+   "containerAuthDataRef": {
+      "configElementName": "containerAuthData",
+      "uid": "connectionFactory[cf1]/containerAuthData[default-0]",
+      "password": "******",
+      "user": "containerAuthUser1"
+   },
+   "properties.TestValidationAdapter.ConnectionFactory": {
+      "hostName": "myhost.openliberty.io",
+      "password": "******",
+      "portNumber": 9876,
+      "userName": "DefaultUserName"
+   },
+   "api": [
+      "/ibm/api/validation/connectionFactory/cf1"
+   ]
+}
 ----
 
-Use the connection factory UID to validate the connection factory with a REST endpoint by adding the UID to the `https://localhost:9443/ibm/api/config/connectionFactory` endpoint URL and viewing the output. The REST endpoints that validate a connection factory can be found at the `https://localhost:9443/ibm/api/validation/connectionFactory/{uid}` endpoint.
+Append the `/validation/connectionFactory/cf1` endpoint path to the base server URL to specify the `https://localhost:9443/ibm/api/validation/connectionFactory/cf1` endpoint URL. The `auth` and `authAlias` parameters are not specified in the `validation` endpoint URL. The parameters are not specified because the `containerAuthData` element in the server configuration specifies the credentials that are used for authentication if container authentication is used without providing credentials.
 
-
-Validation of a connection factory supports both container and application authentication by including the `auth` parameter in the endpoint URL. Additionally, when you use the `?auth=application` parameter, a user can be specified by including the `X-Validation-User` and `X-Validation-Password` headers. The `X-Validation-User` and `X-Validation-Password` headers provide a username and password when you are not using container authentication to validate the connection. The authentication alias can be specified by using the `authAlias` parameter in an endpoint URL, such as `https://localhost:9443/ibm/api/validation/connectionFactory/cf1?auth=container&authAlias=auth2`.
-
-You can use the `https://localhost:9443/ibm/api/validation/connectionFactory/cf1?auth=container` endpoint URL to test the `cf1` UID with container authentication. Examine the output of the validation for success or failure. When the connection factory works properly, a success message appears as shown in the following example:
-
+Examine the output of the `https://localhost:9443/ibm/api/validation/connectionFactory/cf1` endpoint URL to determine the success or failure of the connection to the connection factory. If the connection to the connection factory is successful, a success message appears, as shown in the following example:
+[source,json]
 ----
 {
    "uid": "cf1",
