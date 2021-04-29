@@ -33,3 +33,74 @@ The following example shows the configuration of session persistence with Hazelc
 
 The `library` element specifies that  Hazelcast must be used as the JCache provider, which is located in the `hazelcast.jar` library.
 Additional Hazelcast configuration is provided in the `hazelcast.xml` file.
+
+=== Configuring Infinispan in client/server mode with OpenShift
+You can configure Infinispan in `client/server` mode with OpenShift to connect to a remote Infinispan server with Open Liberty to access cached HTTP session data from applications.
+To configure Infinispan in `client/server` mode, you can configure the `httpSessionCache` element, as shown in the following example:
+
+[source,xml]
+----
+  <httpSessionCache libraryRef="InfinispanLib">
+    <properties infinispan.client.hotrod.server_list="infinispan-server:11222"/>
+    <properties infinispan.client.hotrod.auth_username="sampleUser"/>
+    <properties infinispan.client.hotrod.auth_password="samplePassword"/>
+    <properties infinispan.client.hotrod.auth_realm="default"/>
+    <properties infinispan.client.hotrod.sasl_mechanism="PLAIN"/>
+    <properties infinispan.client.hotrod.java_serial_whitelist=".*"/>
+    <properties infinispan.client.hotrod.marshaller="org.infinispan.commons.marshall.JavaSerializationMarshaller"/>
+  </httpSessionCache>
+    <library id="InfinispanLib">
+        <fileset dir="${shared.resource.dir}/infinispan" includes="*.jar"/>
+    </library>
+----
+
+The `libraryRef` attribute in the `httpSessionCache` element specifies the `InfinispanLib` value to reference a shared library to load the Infinispan JAR files.
+The `properties` elements that are embedded in the `httpSessionCache` element set the minimum configuration link:https://docs.jboss.org/infinispan/11.0/apidocs/org/infinispan/client/hotrod/configuration/package-summary.html[properties] that are needed for the link:https://infinispan.org/hotrod-clients[Infinispan Hot Rod client].
+This configuration uses link:https://infinispan.org/docs/dev/titles/hotrod_java/hotrod_java.html#authentication[PLAIN authentication].
+After you configure Infinispan in `client/server` mode, you need to start an Infinispan in the OpenShift environment.
+For more information, see xref:ROOT:configuring-infinispan-support.adoc[Configuring Infinispan as a JCache provider].
+
+=== Configuring Infinispan in embedded mode with OpenShift
+
+You can configure Infinispan in embedded mode with OpenShift to enable multiple embedded servers to form a cluster that provides high availability of user HTTP session data.
+Before you configure Infinispan in embedded mode, you need to enable the MicroProfile Reactive Streams and MicroProfile Metrics features in addition to the JCache session persistence feature.
+To configure Infinispan in embedded mode, you can configure the `httpSessionCache` element, as shown in the following example:
+
+[source,xml]
+----
+    <httpSessionCache libraryRef="InfinispanLib" uri="file:${shared.resource.dir}/infinispan/infinispan.xml"/>
+    <library id="InfinispanLib">
+        <fileset dir="${shared.resource.dir}/infinispan" includes="*.jar"/>
+    </library>
+</server>
+----
+The `libraryRef` attribute in the `httpSessionCache` element specifies the `InfinispanLib` value to reference a shared library to load the Infinispan JAR files.
+The `uri` attribute specifies the `file:${shared.resource.dir}/infinispan/infinispan.xml` value to reference the `Infinispan.xml` file.
+You must also configure the `infinispan` element to enable clustering, as shown in the following example:
+
+[source,xml]
+----
+<infinispan>
+  <jgroups>
+     <stack-file name="jgroups-kubernetes" path="/default-configs/default-jgroups-kubernetes.xml"/>
+  </jgroups>
+  <cache-container>
+    <transport stack="jgroups-kubernetes" />
+  </cache-container>
+</infinispan>
+----
+The `path` attribute in the `stack-file` element specifies the `/default-configs/default-jgroups-kubernetes.xml` value that references the default Kubernetes service that enables clustering in OpenShift.
+You also have to configure a `service.yaml` file and a `jvm.options` file to configure Infinispan in embedded mode with OpenShift.
+For more information, see xref:ROOT:configuring-infinispan-support.adoc[Configuring Infinispan as a JCache provider].
+
+=== Configure Infinispan in embedded mode without OpenShift
+
+You configure Infinispan in embedded mode without OpenShift.
+You have to enable the MicroProfile Reactive Streams and MicroProfile Metrics features in addition to the JCache session persistence feature.
+You also must have a shared library for Infinispan.
+In the following example, the `libraryRef` attribute in the `httpSessionCache` element references a shared library to load Infinispan JAR files from the `InfinispanLib`:
+
+[source,xml]
+----
+<httpSessionCache libraryRef="InfinispanLib”/>
+----
