@@ -14,27 +14,23 @@
 = Distributed session caching
 
 Caching HTTP sessions in your applications helps to improve performance and availability for the users.
-The `sessionCache` feature in Open Liberty provides failover of non-persistent user session data with the distributed in-memory HttpSession caching.
+The JCache Session Persistence feature in Open Liberty provides failover of non-persistent user session data with distributed in-memory Http session caching.
 
-You can store sessions locally on a server, on a relational database, or in-memory of your application.
+You can store sessions locally on a server, on a relational database, or in the in-memory storage of your application.
 However, a cached session on the server can be lost if the application instance fails.
 Also, a relational database might not be part of your application architecture.
-With distributed caching, the server or database doesn't need to store a cached session, as compared to non-distributed caching, which needs dedicated resources.
+With distributed caching, the server or database doesn't need to store a cached session, as compared to non-distributed caching, which needs dedicated resources, thus providing failover and improved performance.
 
-The `sessionCache` feature in Open Liberty provides distributed in-memory HttpSession caching.
-The `sessionCache` feature builds on top of an existing technology called link:https://hazelcast.com/glossary/jcache-java-cache/[JCache] that offers a standardized distributed in-memory caching API.
+The JCache Session Persistence feature builds on top of an existing technology called link:https://hazelcast.com/glossary/jcache-java-cache/[JCache] that offers a standardized distributed in-memory caching API.
 Though the feature builds on top of JCache, no direct usage of JCache API is necessary in your application, since Open Liberty handles the session caching in the web container layer.
-
-If your application is already using `HttpSessions`, it can benefit from the `sessionCache` feature.
-From an application perspective, using distributed session caching with `sessionCache` works the same way as non-distributed session caching.
-So if you have applications that are already caching data in HTTP sessions, no code changes are needed to benefit from the `sessionCache` feature.
 
 
 == Session caching in your application
 
-Distributed session caching with the `sessionCache` feature works the same way as non-distributed session caching in an application.
-If your application caches data, no code changes are needed to include the `sessionCache` feature.
-The following example shows what the HTTP session caching might look like:
+Distributed session caching with the JCache Session Persistence feature works the same way as non-distributed session caching in an application.
+If your application already caches data, no code changes are needed to include the JCache Session Persistence feature.
+The following example shows how two Open Liberty servers might share information.
+If the `dbThing` object is not found in session, it can be obtained from the database and cached for future use.
 
 [source, java]
 ----
@@ -45,15 +41,14 @@ public class ExampleServlet extends HttpServlet {
       throws ServletException, IOException {
         HttpSession session = req.getSession();
         Object dbThing = session.getAttribute("dbThing");
-        // If object is not found in session, obtain it and cache it for future use
         if (dbThing == null) {
-            dbThing = getFromDB(); // Some expensive operation
+            dbThing = getFromDB();
             session.setAttribute("dbThing", dbThing);
         }
     }
 }
 ----
-
+You need to join at least two servers together to benefit from the JCache Session Persistence feature.
 
 == Joining multiple servers together
 
@@ -62,19 +57,22 @@ image::blog_sessionCache.png[diagram that shows multiple liberty servers that sh
 
 The diagram shows how multiple liberty servers can share a persisted session cache.
 Each server stores a local session cache in-memory on the server.
-By using an underlying JCache provider like Hazelcast, those sessions are persisted.
-So when a new server starts up in a cloud environment, it has access to sessions created by other servers.
+By using an underlying JCache provider like link:https://hazelcast.com/[Hazelcast], those sessions are persisted.
+So when a new server starts in a cloud environment, it has access to sessions created by other servers.
+
+Besides the open source Hazelcast implementations, you can also use other implementations like, WebSphere eXtreme Scale, xref:configuring-infinispan-support.adoc[Infinispan], and Ehcache.
 
 
-The `sessionCache` feature is only useful when it is connected to at least one other server.
-Open Liberty server can behave in two different ways in a cluster.
+The JCache Session Persistence feature is only useful when it is connected to at least one other server, which forms a cluster.
+Open Liberty servers can behave in two different ways in a cluster.
 
 
-. Client-Server model: A Liberty server can act as the JCache client and connect to a dedicated JCache server.
+Client-Server model:: A Liberty server can act as the JCache client and connect to a dedicated JCache server.
 
-. Peer-to-Peer model: A Liberty server can connect with other Liberty servers that are also running with the `sessionCache` feature and configured to be part of the same cluster.
+Peer-to-Peer model:: A Liberty server can connect with other Liberty servers that are also running with the JCache Session Persistence feature and configured to be part of the same cluster.
 
-The following code shows a simple example of how two Liberty servers might share information that is cached in an HttpSession:
+The following code shows a simple example of how two Liberty servers might share information that is cached in an Http session.
+The first example shows the application running on Server A and the second example shows the application running on Server B:
 
 [source, java]
 ----
@@ -107,8 +105,8 @@ public class ServiceB extends HttpServlet {
 Each JCache implementation configures the cluster instances independently.
 
 For Hazelcast, a simple configuration file might look like the following example.
-However, you don’t need to specify a Hazelcast configuration file if the default Hazelcast configuration works for you:
- You can optionally create a Hazelcast configuration file, as shown in the following example, and xref:reference:feature/sessionCache-1.0.adoc[add a reference to the Hazelcast configuration file] in your `server.xml` file:
+However, you don’t need to specify a Hazelcast configuration file if the default Hazelcast configuration works for you.
+You can optionally create a Hazelcast configuration file, as shown in the following example, and xref:reference:feature/sessionCache-1.0.adoc#_minimum_configuration_to_persist_session_data_with_hazelcast_as_the_jcache_provider[add a reference to the Hazelcast configuration file] in your `server.xml` file:
 
 [source, java]
 ----
@@ -122,3 +120,5 @@ However, you don’t need to specify a Hazelcast configuration file if the defau
   </group>
 </hazelcast>
 ----
+
+Specifying the `myCluster` group name causes the Hazelcast instance to connect only with other instances that are also named `myCluster`.
