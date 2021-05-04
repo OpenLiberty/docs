@@ -16,7 +16,18 @@ REST endpoints can facilitate communication between applications by identifying 
 
 Endpoints help to specify the location of resources that are accessed by APIs to provide important functions that can test the performance of applications. With Open Liberty, you can automatically enable REST endpoints when you enable features in your server configuration. When you enable the xref:reference:feature/restConnector-2.0.adoc[Admin REST Connector feature], you can use REST endpoints to view the server configuration and validate server connections to resources, such as databases.
 
-By enabling the Admin REST Connector feature, you can use the `config` endpoint to view the server configuration. If you also enable the xref:reference:feature/jdbc-4.3.adoc[JDBC], xref:reference:feature/jca-1.7.adoc[JCA], xref:reference:feature/cloudant-1.0[Cloudant Integration], or xref:reference:feature/jms-2.0.adoc[JMS] features with the Admin REST Connector feature, you can use the `validation` endpoint to validate connections to certain types of resources.
+By enabling the Admin REST Connector feature, you can use the `config` endpoint to view the server configuration. If you also enable the xref:reference:feature/jdbc-4.3.adoc[JDBC], xref:reference:feature/jca-1.7.adoc[JCA], xref:reference:feature/cloudant-1.0[Cloudant Integration], or xref:reference:feature/jms-2.0.adoc[JMS] features with the Admin REST Connector feature, you can use the `validation` endpoint to validate connections to certain types of resources. The following table provides the the `config` and `validation` REST endpoint paths for the Admin REST Connector, JDBC, Cloudant Integration, JCA, and JMS features:
+
+.REST endpoint paths for Open Liberty features
+[cols=",",options="header",]
+|===
+|Feature |REST endpoint paths
+|Admin REST Connector |/ibm/api/config
+|JDBC |/ibm/api/validation/dataSource
+|JCA |/ibm/api/validation/connectionFactory
+|JMS |/ibm/api/validation/jmsconnectionFactory /ibm/api/validation/jmsQueueConnectionFactory /ibm/api/validation/jmsTopicConnectonFactory
+|Cloudant Integration |/ibm/api/validation/cloudantDatabase
+|===
 
 == Before you begin
 
@@ -34,7 +45,7 @@ If any of the MicroProfile OpenAPI features are enabled, you can use the followi
 
 == Viewing server configuration
 
-To view your server configuration, you need to specify the proper URL to use the `config` endpoint. The `config` endpoint URL for any server configuration element is specified with the base URL, the endpoint, the server configuration element name, and its unique ID (uid). In the following example, the `{configElementName}` variable specifies the server configuration element and the `{uid}` variable specifies the uid:
+To view your server configuration, you need to specify the proper URL to use the `config` endpoint. The `config` endpoint URL for any server configuration element is specified with the base URL, the endpoint, the server configuration element name, and its unique ID (uid). In the following example, the `{configElementName}` variable specifies the server configuration element and the `{uid}` variable specifies the unique ID:
 
 ----
 https://localhost:9443/ibm/api/config/{configElementName}/{uid}
@@ -42,11 +53,10 @@ https://localhost:9443/ibm/api/config/{configElementName}/{uid}
 
 The `https://localhost:9443/ibm/api` base URL is set by default. To list all instances of a specific configuration element name in the output of the `config` endpoint, omit the uid from the endpoint URL. If you want to list every instance of all the configuration elements in the output of the `config` endpoint, you must also omit the configuration element name from the endpoint URL.
 
-The output from an endpoint URL that doesn't specify a uid contains all instances of the specified configuration element name that is defined in the `server.xml` file and any configuration files that are included. If the output from a URL does not specify a uid or a configuration element name, it contains all instances of all server configuration element names that are defined in the `server.xml` file and any included configuration files.
-
+The output from an endpoint URL that doesn't specify a uid contains all instances of the specified configuration element name that is defined in the `server.xml` file and any configuration files that are included.
 == Validating a connection to a database
 
-When you use the `config` endpoint URL to view your server configuration, you can use the generated output to help specify the `validation` endpoint URL. This `validation` endpoint URL validates connections to resources that are configured with the `dataSource` element. The following example shows a `server.xml` file with the REST Connector and JDBC features enabled and a `derby` database that is configured as the default data source:
+When you use the `config` endpoint URL to view your server configuration, you can use the generated output to help specify the `validation` endpoint URL. The output from the `config` endpoint URL provides the `validation` endpoint path that is used to specify the `validation` endpoint URL. This `validation` endpoint URL validates connections to resources that are configured with the `dataSource` element. The following example shows a `server.xml` file with the REST Connector and JDBC features enabled and a `derby` database that is configured as the default data source:
 
 [source,xml]
 ----
@@ -72,9 +82,8 @@ When you use the `config` endpoint URL to view your server configuration, you ca
 </server>
 ----
 
-For more information, see the xref:reference:feature/restConnector-2.0[Admin REST Connector] feature.
 
-To validate the connection to this database, find the `validation` endpoint path by using the `https://localhost:9443/ibm/api/config/dataSource/DefaultDataSource` endpoint URL to view the `datasource` element configuration output. In the output, the `api` field specifies the `/validation/dataSource/DefaultDataSource` endpoint path, as shown in the following example:
+To validate the connection to this database, find the `validation` endpoint path by using the `https://localhost:9443/ibm/api/config/dataSource/DefaultDataSource` endpoint URL to view the `datasource` element configuration output. In the output, the `api` field specifies the `validation` endpoint path, as shown in the following example:
 [source,json]
 
 ----
@@ -125,8 +134,7 @@ To validate the connection to this database, find the `validation` endpoint path
 }
 ----
 
-Append the `/validation/dataSource/DefaultDataSource` endpoint path to the base URL of the server to specify the `https://localhost:9443/ibm/api/validation/dataSource/DefaultDataSource` endpoint URL. This URL generates the `validation` endpoint output for the `DefaultDataSource` that is specified in the endpoint URL.
-
+Append the `validation` endpoint path to the base URL of the server to specify the `https://localhost:9443/ibm/api/validation/dataSource/DefaultDataSource` endpoint URL. This URL generates the output for the specified `DefaultDataSource` element.
 Examine the output of the `validation` endpoint for success or failure. When the connection to the data source works properly, a success message appears, as shown in the following example:
 [source,json]
 
@@ -177,12 +185,12 @@ If you attempt to validate the connection to this data source with the `https://
 }
 ----
 
-To correct this failure, you need to provide credentials for validation when the data source is configured to use authentication. Validation of a data source supports container and application authentication by including the authentication parameter in the endpoint URL. If container authentication and an authentication alias are configured for your server, append the two parameters to the `validation` endpoint URL by specifying `container auth` and `authAlias` with the HTTP parameter syntax, as shown in the following example:
+To correct this failure, you need to provide credentials for validation when the data source is configured to use authentication. Validation of a data source supports container and application authentication by including the `auth` parameter in the endpoint URL. If container authentication and an authentication alias are configured for your server, append the `container auth` and `authAlias` parameters to the `validation` endpoint URL by using the HTTP parameter syntax, as shown in the following example:
 ----
 https://localhost:9443/ibm/api/validation/dataSource/myDS?auth=container&authAlias=db2authAlias
 ----
 
-If the data source that is validated uses application authentication, you must set the value of the authentication parameter to `application`. A username and password can be specified by including the X-Validation-User and X-Validation-Password HTTP headers. These headers specify credentials when you are not using container authentication to validate the connection to the database.
+If the data source or connection factory that is validated uses application authentication, you must set the value of the authentication parameter to `application`. A username and password can be specified by including the X-Validation-User and X-Validation-Password HTTP headers. These headers specify credentials when you are not using container authentication to validate the connection to the database. You set HTTP headers by using either browser plugins or HTTP tools.
 
 In addition to relational databases, Cloudant database connections can also be validated. For more information, see the xref:reference:feature/cloudant-1.0.adoc[Cloudant Integration] feature.
 
@@ -222,7 +230,7 @@ When you enable the JMS or JCA feature with the Admin REST Connector feature, yo
 </server>
 ----
 
-The `id` attribute in the `connectionFactory` element specifies a unique `cf1` value. You can use the unique value as the uid parameter of the `config` endpoint URL to view the output of the `connectionFactory` element configuration. For more information, see the xref:reference:feature/restConnector-2.0[Admin REST Connector] feature.
+The `id` attribute in the `connectionFactory` element specifies a unique `cf1` value. You can use the unique value as the uid parameter of the `config` endpoint URL to view the output of the `connectionFactory` element configuration.
 
 By examining the output from the `https://localhost:9443/ibm/api/config/connectionFactory/cf1` endpoint URL, you can find the `validation` endpoint path in the `api` field, as shown in the following example:
 [source,json]
@@ -250,9 +258,9 @@ By examining the output from the `https://localhost:9443/ibm/api/config/connecti
 }
 ----
 
-Append the `/validation/connectionFactory/cf1` endpoint path to the base server URL to specify the `https://localhost:9443/ibm/api/validation/connectionFactory/cf1` endpoint URL. The `auth` and `authAlias` parameters are not specified in the `validation` endpoint URL. The parameters are not specified because the `containerAuthData` element in the server configuration specifies the credentials that are used for authentication if container authentication is used without providing credentials.
+Append the `validation` endpoint path to the base server URL to specify the `https://localhost:9443/ibm/api/validation/connectionFactory/cf1` endpoint URL. The `auth` and `authAlias` parameters are not specified in the `validation` endpoint URL. The parameters are not specified because the `containerAuthData` element in the server configuration specifies the credentials that are used for authentication if container authentication is used without providing credentials.
 
-Examine the output of the `https://localhost:9443/ibm/api/validation/connectionFactory/cf1` endpoint URL to determine the success or failure of the connection to the connection factory. If the connection to the connection factory is successful, a success message appears, as shown in the following example:
+Examine the output of the `https://localhost:9443/ibm/api/validation/connectionFactory/cf1` endpoint URL to determine the success or failure of the connection. If the validation of the connection factory is successful, a success message appears, as shown in the following example:
 [source,json]
 ----
 {
