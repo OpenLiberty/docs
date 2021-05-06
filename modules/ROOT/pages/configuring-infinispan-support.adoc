@@ -17,10 +17,12 @@ To improve performance, applications can provide resources with high availabilit
 
 When you configure a JCache provider with the feature:sessionCache[display=JCache Session Persistence] feature, you can enable distributed in-memory HttpSession caching. HTTP sessions store data from HTTP requests that identifies users. Applications provide failover of non-persistent user session data when multiple instances are needed to avoid performance interruptions and maintain high availability. However, sessions that are non-persistent don't provide a way to store user data that can be used across multiple requests. To address this limitation, the JCache Session Persistence feature uses xref:distributed-session-caching.adoc[distributed session caching] to share user session data between different instances and improve high availability features in failover situations with session persistence. For more information, see link:/guides/sessions.html[Guide: Caching HTTP session data using JCache and Hazelcast].
 
-High availability features make applications more reliable by minimizing downtime and improving fault tolerance. To provide high availability features in Open Liberty, you must configure a JCache provider. Open Liberty supports link:https://infinispan.org/[Infinispan 11] as a JCache provider when you enable the JCache Session Persistence feature. You can use the following methods to configure Infinispan as a JCache provider:
+High availability features make applications more reliable by minimizing downtime and improving fault tolerance. To provide high availability features in Open Liberty, you can configure a JCache provider. Open Liberty supports link:https://infinispan.org/[Infinispan 11] as a JCache provider when you enable the JCache Session Persistence feature. You can use the following methods to configure Infinispan as a JCache provider:
 
 * <<Configuring Infinispan in client/server mode on OpenShift, Configuring Infinispan in client/server mode on OpenShift>>
 * <<Configuring Infinispan in embedded mode on OpenShift, Configuring Infinispan in embedded mode on OpenShift>>
+
+When Infinispan is configured in embedded mode, it performs requests faster than when it is configured in client/server mode. This faster performance is due to the network and serialization costs that are associated with the remote calls that happen when Infinispan is configured in client/server mode. However, in client/server mode, a cluster of Infinispan servers can be configured to share the workload for failover purposes. Configuring Infinispan in client/server mode also helps synchronize data among Open Liberty servers that frequently start and stop to maintain availability when you add an embedded Infinispan server to a cluster.
 
 == Before you begin
 
@@ -81,7 +83,7 @@ rm -f infinispan/smallrye-config-*.jar
 
 == Configuring Infinispan in client/server mode on OpenShift
 
-When you configure Infinispan in client/server mode on link:https://www.openshift.com/learn/what-is-openshift[OpenShift], you can connect Open Liberty to a remote Infinispan server that accesses cached HTTP session data from applications. This method improves performance by making data synchronization easier in application environments that must facilitate communication among multiple servers. To configure Infinispan in client/server mode on OpenShift, configure the `server.xml` file, as shown in the following example:
+When you configure Infinispan in client/server mode on link:https://www.openshift.com/learn/what-is-openshift[OpenShift], you can connect Open Liberty to a remote Infinispan server that accesses cached HTTP session data. This method improves performance by making data synchronization easier in application environments that must facilitate communication among multiple servers. To configure Infinispan in client/server mode on OpenShift, configure the `server.xml` file, as shown in the following example:
 [source,xml]
 ----
 <server>
@@ -117,7 +119,7 @@ The `--name=infinispan-server` option in the command maps to the `infinispan.cli
 
 == Configuring Infinispan in embedded mode on OpenShift
 
-When you configure Infinispan in embedded mode on OpenShift, you can connect to Infinispan servers with Open Liberty that are created in the same Java Virtual Machine (JVM). Infinispan provides access to link:http://www.jgroups.org/[JGroups], which enables servers that are in embedded in the JVM to form a link:https://infinispan.org/docs/dev/titles/configuring/configuring.html#cluster_transport[cluster]. This cluster of embedded servers in embedded mode provides high availability of user HTTP session data by performing user requests faster. To configure Infinispan in embedded mode, configure the `server.xml` file, as shown in the following example:
+When you configure Infinispan in embedded mode on OpenShift, an Infinispan server runs in the same Java Virtual Machine (JVM) as Open Liberty. Multiple embedded Infinispan servers can use link:http://www.jgroups.org/[JGroups] to form a link:https://infinispan.org/docs/dev/titles/configuring/configuring.html#cluster_transport[cluster] that provides high availability of user HTTP session data across all members. To configure Infinispan in embedded mode, configure the `server.xml` file, as shown in the following example:
 [source,xml]
 ----
 <server>
@@ -138,7 +140,7 @@ When you configure Infinispan in embedded mode on OpenShift, you can connect to 
 </server>
 ----
 
-After configuring embedded mode, configure the `infinispan` element in the `server.xml` file to create an `infinispan.xml` file:
+After configuring embedded mode in the `server.xml` file, create an `infinispan.xml` file to enable the link:https://infinispan.org/docs/11.0.x/titles/embedding/embedding.html#setting_up_clusters[JGroups Kubernetes transport stack]:
 [source,xml]
 ----
 <infinispan>
@@ -179,7 +181,7 @@ The `name` value of the `selector` key must match one of the labels that are ass
 ----
 oc new-app --image-stream=ol-runtime-infinispan-embedded:1.0.0 --name=embedded-servera -l name=ol-runtime-infinispan-embedded
 ----
-This application is defined by including the `name=ol-runtime-infinispan-embedded` label. This label matches the `name` value of the `selector` key that is defined in the `server.xml` file to integrate the application into the service.
+This application is defined by including the `name=ol-runtime-infinispan-embedded` label. This label matches the `name` value of the `selector` key that is defined in the `service.yaml` file to integrate the application into the service.
 
 Then, create a `jvm.options` file in the server directory, as shown in the following example:
 ----
