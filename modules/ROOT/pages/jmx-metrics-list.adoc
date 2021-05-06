@@ -16,7 +16,7 @@
 With Open Liberty, you can access Java Management Extensions (JMX) metrics.
 JMX metrics are provided by MXBeans and can be used with JConsole or other JMX-based tools.
 
-Enable the link:/docs/ref/feature/#monitor-1.0.html[Perfomance Monitoring feature] to monitor JMX metrics for your Open Liberty runtime environment.
+Enable the feature:monitor[display=Perfomance Monitoring] feature to monitor JMX metrics for your Open Liberty runtime environment.
 The following sections list the JMX metrics that are available for different monitoring capabilities:
 
 * <<jvm-stats,JVM monitoring>>
@@ -26,16 +26,20 @@ The following sections list the JMX metrics that are available for different mon
 * <<web-service-stats,JAX-WS monitoring>>
 * <<session-stats,Session monitoring>>
 * <<connection-pool-stats,Connection pool monitoring>>
+* <<rest-stats,RESTful resource method monitoring>>
+* <<grpc-server-stats,gRPC server monitoring>>
+* <<grpc-client-stats,gRPC client monitoring>>
 * <<sip-application,SIP application monitoring>>
 
 [#jvm-stats]
-== JvmStats MXBean
+== JVM monitoring: JvmStats MXBean
 You can use the `JvmStats` MXBean to monitor the JVM in Open Liberty.
 Each Open Liberty instance has one `JvmStats` MXBean.
 
 The following attributes are available for the `JvmStats` MXBean.
 The object name of the MXBean for these attributes is `WebSphere:type=JvmStats`:
 
+.JvmStats MXBean attributes
 [%header,cols="6,3,12"]
 |===
 
@@ -53,7 +57,7 @@ The object name of the MXBean for these attributes is `WebSphere:type=JvmStats`:
 
 |`GcCount`
 |Not applicable
-|The number of times garbage collection occurred since the JVM started.
+|The number of times that garbage collection occurred since the JVM started.
 
 |`GcTime`
 |Milliseconds
@@ -74,13 +78,14 @@ The object name of the MXBean for these attributes is `WebSphere:type=JvmStats`:
 |===
 
 [#request-timing-stats]
-== RequestTimingStats MXBean
+== Request monitoring: RequestTimingStats MXBean
 You can use the `RequestTimingStats` MXBean to collect request data to see how the Open Liberty server is performing in comparison with set goals.
-Servlet requests that are identified by the name of Servlet are tracked.
+Servlet requests that are identified by the name of `Servlet` are tracked.
 
 The following attributes are available for the `RequestTimingStats` MXBean.
 The object name of the MXBean for these attributes is `WebSphere:type=RequestTimingStats,name=*`:
 
+.RequestTimingStats MXBean attributes
 [%header,cols="6,3,12"]
 |===
 
@@ -107,14 +112,15 @@ The object name of the MXBean for these attributes is `WebSphere:type=RequestTim
 |===
 
 [#servlet-stats]
-== ServletStats MXBean
+== Servlet monitoring: ServletStats MXBean
 You can use the `ServletStats` MXBean to monitor web applications in Open Liberty.
 Performance data is available for each servlet in a web application.
 Each servlet has its own MXBean.
 
 The following attributes are available for the `ServletStats` MXBean.
-The object name of the MXBean for these attributes is `WebSphere:type=ServletStats,name=*`:
+The object name of the MXBean for these attributes is `WebSphere:type=ServletStats,name=<AppName>.<ServletName>`:
 
+.ServletStats MXBean attributes
 [%header,cols="6,3,12"]
 |===
 
@@ -153,13 +159,14 @@ The object name of the MXBean for these attributes is `WebSphere:type=ServletSta
 |===
 
 [#threadpool-stats]
-== ThreadPoolStats MXBean
+== Thread pool monitoring: ThreadPoolStats MXBean
 You can use the `ThreadPoolStats` MXBean to monitor the thread pool in Open Liberty.
-All web requests run in the Default Executor thread pool, and you can monitor the usage of this thread pool with the `ThreadPoolStats` MXBean.
+All web requests run in the `Default Executor` thread pool, and you can monitor the usage of this thread pool with the `ThreadPoolStats` MXBean.
 
 The following attributes are available for the `ThreadPoolStats` MXBean.
 The object name of the MXBean for these attributes is `WebSphere:type=ThreadPoolStats,name=Default Executor`:
 
+.ThreadPoolStats MXBean attributes
 [%header,cols="6,3,12"]
 |===
 
@@ -182,13 +189,14 @@ The object name of the MXBean for these attributes is `WebSphere:type=ThreadPool
 |===
 
 [#web-service-stats]
-== WebServiceStats MXBean
+== JAX-WS monitoring: WebServiceStats MXBean
 You can use the `WebServiceStats` MXBean for JAX-WS monitoring of Open Liberty.
 Performance data is available for each endpoint and operation in a JAX-WS application, and each web service endpoint has its own MXBean.
 
 The following attributes are available for the `WebServiceStats` MXBean.
-The object name of the MXBean for these attributes is `org.apache.cxf:type=WebServiceStats,service=\*,port=*`:
+The object name of the MXBean for these attributes is `org.apache.cxf:bus.id=<bus.name>,type=Performance.Counter.Server,service="<NameSpace><ServiceName>",port="<PortName>"` or `org.apache.cxf:bus.id=<bus.name>,type=Performance.Counter.Client,service="<NameSpace><ServiceName>",port="<PortName>"`:
 
+.WebServiceStats MXBean attributes
 [%header,cols="6,3,12"]
 |===
 
@@ -210,7 +218,7 @@ The object name of the MXBean for these attributes is `org.apache.cxf:type=WebSe
 
 |`NumInvocations`
 |Not applicable
-|The number of invocations to this endpoint or operation.
+|The number of invocations to the endpoint or operation.
 
 |`NumCheckedApplicationFaults`
 |Not applicable
@@ -235,13 +243,14 @@ The object name of the MXBean for these attributes is `org.apache.cxf:type=WebSe
 |===
 
 [#session-stats]
-== SessionStats MXBean
+== Session monitoring: SessionStats MXBean
 You can use the `SessionStats` MXBean to monitor performance data of sessions for each application in Open Liberty.
-The sessions that are associated with a single web application have their own `SessionStats` MXBean, meaning that there's one `SessionStats` MXBean for each web application.
+The sessions that are associated with a single web application have their own `SessionStats` MXBean, meaning that one `SessionStats` MXBean exists for each web application.
 
 The following attributes are available for the `SessionStats` MXBean.
 The object name of the MXBean for these attributes is `WebSphere:type=SessionStats,name=*`:
 
+.SessionStats MXBean attributes
 [%header,cols="6,3,12"]
 |===
 
@@ -252,7 +261,7 @@ The object name of the MXBean for these attributes is `WebSphere:type=SessionSta
 |`ActiveCount`
 |Not applicable
 |The total number of concurrently active sessions.
-A session is active if Liberty is processing a request that uses that session.
+A session is active if Open Liberty is processing a request that uses that session.
 
 |`CreateCount`
 |Not applicable
@@ -264,7 +273,7 @@ A session is active if Liberty is processing a request that uses that session.
 
 |`InvalidatedCountbyTimeout`
 |Not applicable
-|The total number of sessions invalidated by a timeout.
+|The total number of sessions that are invalidated by a timeout.
 
 |`LiveCount`
 |Not applicable
@@ -273,14 +282,15 @@ A session is active if Liberty is processing a request that uses that session.
 |===
 
 [#connection-pool-stats]
-== ConnectionPool MXBean
+== Connection pool monitoring: ConnectionPool MXBean
 You can use the `ConnectionPool` MXBean to monitor connection pools in Open Liberty.
 Connection pools manage connections from data sources and connection factories, and performance data is made available for each connection pool.
 The `ConnectionPool` MXBean is responsible for reporting metrics for a single connection pool.
 
 The following attributes are available for the `ConnectionPool` MXBean.
-The object name of the MXBean for these attributes is `Websphere:type=ConnectionPool,name=*`:
+The object name of the MXBean for these attributes is `WebSphere:type=ConnectionPoolStats,name=<IDENTIFIER_OF_CONNECTION_MANAGER>`:
 
+.ConnectionPool MXBean attributes
 [%header,cols="6,3,12"]
 |===
 
@@ -299,7 +309,7 @@ This number might include multiple connections that are shared from a single man
 
 |`DestroyCount`
 |Not applicable
-|The total number of managed connections that have been destroyed since pool creation.
+|The total number of managed connections that were destroyed since pool creation.
 
 |`FreeConnectionCount`
 |Not applicable
@@ -311,7 +321,7 @@ This number might include multiple connections that are shared from a single man
 
 |`InUseTimeDetails`
 |Milliseconds
-|In-use time details that include the total number of granted connections (excluding the ones that are currently in use), minimum in-use time, and maximum in-use time.
+|In-use time details that include minimum in-use time, maximum in-use time, and the total number of granted connections, excluding the connections that are currently in use.
 
 |`ManagedConnectionCount`
 |Not applicable
@@ -323,14 +333,185 @@ This number might include multiple connections that are shared from a single man
 
 |`WaitTimeDetails`
 |Milliseconds
-|Wait-time details that include the total number of queued requests, minimum wait time, and maximum wait time.
+|Wait-time details that include minimum wait time, maximum wait time, and the total number of queued requests.
+
+|===
+
+[#rest-stats]
+== RESTful resource method monitoring: RestStats MXBean
+You can use the `RestStats` MXBean to monitor RESTful resource methods in Open Liberty.
+Performance data is available for each RESTful resource method in the web application, and each method has its own MXBean.
+
+The following attributes are available for the `RestStats` MXBean.
+The object name of the MXBean for these attributes is `WebSphere:type=RestStats,name=*`:
+
+.RestStats MXBean attributes
+[%header,cols="6,3,12"]
+|===
+
+|MXBean attribute
+|Units
+|Description
+
+|`AppName`
+|Not applicable
+|The name of the application.
+
+|`Description`
+|Not applicable
+|A general description of these attributes.
+
+|`MethodName`
+|Not applicable
+|The name of the RESTful resource method.
+
+|`MinuteLatest`
+|Minute
+|The most recent minute in which an update was made to this MXBean.
+For example, if updates were most recently made at 12:00 and 12:05, the value of the `MinuteLatest` attribute is 12:05.
+The most recent minute can be the current minute.
+
+|`MinuteLatestMaximumDuration`
+|Nanoseconds
+|The longest recorded `ResponseTime` attribute within the most recent minute in which an update was made to this MXBean.
+For example, if updates were most recently made at 12:00 and 12:05, the value of the `MinuteLatestMaximumDuration` attribute is the longest recorded `ResponseTime` attribute within the minute of 12:05.
+For this attribute, being within a minute is defined as 0:00:00 to 0:59:999.
+The most recent minute can be the current minute.
+
+|`MinuteLatestMinimumDuration`
+|Nanoseconds
+|The shortest recorded `ResponseTime` attribute within the most recent minute in which an update was made to this MXBean.
+For example, if updates were most recently made at 12:00 and 12:05, the value of the `MinuteLatestMinimumDuration` attribute is the shortest recorded `ResponseTime` attribute within the minute of 12:05.
+For this attribute, being within a minute is defined as 0:00:00 to 0:59:999.
+The most recent minute can be the current minute.
+
+|`MinutePrevious`
+|Minute
+|The second-most recent minute in which an update was made to this MXBean.
+For example, if updates were most recently made at 12:00 and 12:05, the value of the `MinutePrevious` attribute is 12:00.
+
+|`MinutePreviousMaximumDuration`
+|Nanoseconds
+|The longest recorded `ResponseTime` attribute within the second-most recent minute in which an update was made to this MXBean.
+For example, if updates were most recently made at 12:00 and 12:05, the value of the `MinutePreviousMaximumDuration` attribute is the longest recorded `ResponseTime` attribute within the minute of 12:00.
+For this attribute, being within a minute is defined as 0:00:00 to 0:59:999.
+
+|`MinutePreviousMinimumDuration`
+|Nanoseconds
+|The shortest recorded `ResponseTime` attribute within the second-most recent minute in which an update was made to this MXBean.
+For example, if updates were most recently made at 12:00 and 12:05, the value of the `MinutePreviousMinimumDuration` attribute is the shortest recorded `ResponseTime` attribute within the minute of 12:00.
+For this attribute, being within a minute is defined as 0:00:00 to 0:59:999.
+
+|`RequestCount`
+|Not applicable
+|The number of hits to this RESTful resource method.
+
+|`RequestCountDetails`
+|Not applicable
+|Details about the `RequestCount` attribute value, including the request count.
+
+|`ResponseTime`
+|Nanoseconds
+|The total response time.
+
+|`ResponseTimeDetails`
+|Not applicable
+|Details about the `ResponseTime` attribute value, including the number of snapshots that are taken, minimum values, and maximum values.
+
+|===
+
+[#grpc-server-stats]
+== gRPC server monitoring: GrpcServerStats MXBean
+You can use the `GrpcServerStats` MXBean to monitor gRPC services.
+Performance data is available for each service.
+
+The following attributes are available for the `GrpcServerStats` MXBean.
+The object name of the MXBean for these attributes is `WebSphere:type=GrpcServerStats,name=*"`:
+
+.GrpcServerStats MXBean attributes
+[%header,cols="6,3,12"]
+|===
+
+|MXBean attribute
+|Units
+|Description
+
+|`AppName`
+|Not applicable
+|The application name.
+
+|`ReceivedMessagesCount`
+|Not applicable
+|The number of stream messages received from the client.
+
+|`ResponseTime`
+|Milliseconds
+|The response time of completed RPCs.
+
+|`RpcCompletedCount`
+|Not applicable
+|The number of RPCs completed on the server, regardless of success or failure.
+
+|`RpcStartedCount`
+|Not applicable
+|The number of RPCs started on the server.
+
+|`SentMessagesCount`
+|Not applicable
+|The number of stream messages sent by the server.
+
+|`ServiceName`
+|Not applicable
+|The gRPC service name.
+
+|===
+
+[#grpc-client-stats]
+== gRPC client monitoring: GrpcClientStats MXBean
+You can use the `GrpcClientStats` MXBean to monitor gRPC services.
+Performance data is available for each service.
+
+The following attributes are available for the `GrpcClientStats` MXBean.
+The object name of the MXBean for these attributes is `WebSphere:type=GrpcClientStats,name=*"`:
+
+.GrpcClientStats MXBean attributes
+[%header,cols="6,3,12"]
+|===
+
+|MXBean attribute
+|Units
+|Description
+
+|`ReceivedMessagesCount`
+|Not applicable
+|The number of stream messages received from the server.
+
+|`ResponseTime`
+|Milliseconds
+|The response time of completed RPCs.
+
+|`RpcCompletedCount`
+|Not applicable
+|The number of RPCs completed on the client, regardless of success or failure.
+
+|`RpcStartedCount`
+|Not applicable
+|The number of RPCs started on the client.
+
+|`SentMessagesCount`
+|Not applicable
+|The number of stream messages sent by the client.
+
+|`ServiceName`
+|Not applicable
+|The gRPC service name.
 
 |===
 
 [#sip-application]
-== SIP application MXBeans
+== SIP application monitoring: SIP application MXBeans
 Session Initiation Protocol (SIP) Performance Monitoring Infrastructure (PMI) is a component that collects SIP performance metrics from a running application server.
-With Open Liberty, the following types of SIP metrics are available to monitor:
+With Open Liberty, the following types of SIP metrics are available:
 
 * <<basic-counters,Basic counters>>
 * <<inbound-requests,Inbound requests>>
@@ -344,8 +525,9 @@ With Open Liberty, the following types of SIP metrics are available to monitor:
 === Basic counters
 The following table lists the SIP container basic counters.
 The object name of the MXBean for these counters is `WebSphere:type=SipContainerBasicCounters,name=SipContainer.Basic`.
-Because all the metrics that are listed in the following table are counters, there aren't any units that are associated with them:
+Because all the metrics that are listed in the following table are counters, no units are associated with them:
 
+.SIP container basic counter metrics
 [%header,cols="2,2,1,6"]
 |===
 
@@ -362,7 +544,7 @@ Because all the metrics that are listed in the following table are counters, the
 |New SIP application sessions
 |`NewSipApplications`
 |Server
-|The average number of new SIP application sessions created in the container and calculated over a configurable period.
+|The average number of new SIP application sessions that are created in the container and calculated over a configurable period.
 
 |Number of active SIP application sessions
 |`SipAppSessions`
@@ -400,8 +582,9 @@ Because all the metrics that are listed in the following table are counters, the
 === Inbound requests
 The following table lists the SIP container inbound requests.
 The object name of the MXBean for these requests is `WebSphere:type=InboundRequestCounters,name=SipContainer.InboundRequest`.
-Because all the metrics that are listed in the following table are counters, there aren't any units that are associated with them:
+Because all the metrics that are listed in the following table are counters, no units are associated with them:
 
+.SIP container inbound request metrics
 [%header,cols="2,3,1,4"]
 |===
 
@@ -491,8 +674,9 @@ Because all the metrics that are listed in the following table are counters, the
 === Inbound responses
 The following table lists the SIP container inbound responses.
 The object name of the MXBean for these responses is `WebSphere:type=InboundResponseCounters,name=SipContainer.InboundResponse`.
-Because all the metrics that are listed in the following table are counters, there aren't any units that are associated with them:
+Because all the metrics that are listed in the following table are counters, no units are associated with them:
 
+.SIP container inbound response metrics
 [%header,cols="2,3,1,4"]
 |===
 
@@ -762,8 +946,9 @@ Because all the metrics that are listed in the following table are counters, the
 === Outbound requests
 The following table lists the SIP container outbound requests.
 The object name of the MXBean for these requests is `WebSphere:type=OutboundRequestCounters,name=SipContainer.OutboundRequest`.
-Because all the metrics that are listed in the following table are counters, there aren't any units that are associated with them:
+Because all the metrics that are listed in the following table are counters, no units are associated with them:
 
+.SIP container outbound request metrics
 [%header,cols="2,3,1,4"]
 |===
 
@@ -853,8 +1038,9 @@ Because all the metrics that are listed in the following table are counters, the
 === Outbound responses
 The following table lists the SIP container outbound responses.
 The object name of the MXBean for these responses is `WebSphere:type=OutboundResponseCounters,name=SipContainer.OutboundResponse`.
-Because all the metrics that are listed in the following table are counters, there aren't any units that are associated with them:
+Because all the metrics that are listed in the following table are counters, no units are associated with them:
 
+.SIP container outbound response metrics
 [%header,cols="2,3,1,4"]
 |===
 
@@ -1125,6 +1311,7 @@ Because all the metrics that are listed in the following table are counters, the
 The following table lists the SIP container task duration metrics.
 The object name of the MXBean for these metrics is `WebSphere:type=TaskDurationCounters,name=SipContainer.TaskDuration`:
 
+.SIP container task duration metrics
 [%header,cols="2,2,1,1,3"]
 |===
 
@@ -1194,8 +1381,9 @@ The object name of the MXBean for these metrics is `WebSphere:type=TaskDurationC
 === Queue monitoring counters
 The following table lists the SIP container queue monitoring counters.
 The object name of the MXBean for these counters is `WebSphere:type=QueueMonitoringModule,name=SipContainer.QueueMonitor`.
-Because all the metrics that are listed in the following table are counters, there aren't any units that are associated with them:
+Because all the metrics that are listed in the following table are counters, no units are associated with them:
 
+.SIP container queue monitoring metrics
 [%header,cols="3,1,1,4"]
 |===
 
