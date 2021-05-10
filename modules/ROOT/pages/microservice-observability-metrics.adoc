@@ -44,6 +44,7 @@ The following sections describe metric types that are available with MicroProfil
 * <<meter,Meter>>
 * <<simpletimer,Simple timer>>
 * <<timer,Timer>>
+* <<histogram,Histogram>>
 
 [#concurrentgauge]
 === Concurrent gauge
@@ -165,6 +166,56 @@ public String donateAmountViaCreditCard(@FormParam("amount") Long amount, @FormP
         return "Thanks for donating!";
 
     return "Sorry, please try again.";
+}
+----
+
+[#histogram]
+=== Histogram
+A histogram is a metric that calculates the distribution of a value. It provides the following information about a value:
+
+- Maximum, minimum, and mean values
+- The value at the 50th, 75th, 95th, 98th, 99th, 99.9th percentile
+- A count of the number of values
+
+The histogram metric does not have an annotation. To record a value in the histogram, you must call the `histogram.update(long value)` method with the value that you want to record. The current state, or snapshot, of the histogram can be retrieved by using the `getSnapshot()` method. Histograms in MicroProfile Metrics only support integer or long values.
+
+Examples of histograms include the distribution of payload sizes that are retrieved or for an onboarding survey that collects the distribution of household income.
+
+The following example illustrates a histogram that is used to store the value of donations. This example provides the administrator with an idea of the distribution of donation amounts:
+
+----
+Metadata donationDistributionMetadata = new Metadata(
+    "donationDistribution",                      // name
+    "Donation Distribution",                     // display name
+    "The distribution of the donation amounts ", // description
+    MetricType.HISTOGRAM,                        // type
+    "dollars");                                  // units
+Histogram donationDistribution = registry.histogram(donationDistributionMetadata);
+public void addDonation(Long amount) {
+    totalDonations += amount;
+    donations.add(amount);
+    donationDistribution.update(amount);
+}
+----
+
+For this example, the following response is generated from the REST endpoints:
+
+----
+
+{
+  "com.example.samples.donationapp.DonationManager.donationDistribution": {
+      "count": 203,
+      "max": 102,
+      "mean": 19.300015535407777,
+      "min": 3,
+      "p50": 5.0,
+      "p75": 24.0,
+      "p95": 83.0,
+      "p98": 93.0,
+      "p99": 101.0,
+      "p999": 102.0,
+      "stddev": 26.35464238355834
+  }
 }
 ----
 
