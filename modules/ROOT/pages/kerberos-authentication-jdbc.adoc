@@ -1,4 +1,4 @@
-// Copyright (c) 2020 IBM Corporation and others.
+// Copyright (c) 2020,2021 IBM Corporation and others.
 // Licensed under Creative Commons Attribution-NoDerivatives
 // 4.0 International (CC BY-ND 4.0)
 //   https://creativecommons.org/licenses/by-nd/4.0/
@@ -8,7 +8,7 @@
 //
 :page-description:
 :seo-title: Kerberos Authentication for JDBC data sources
-:seo-description: You can configure your Open Liberty server to use Kerberos credentials to authenticate to a database that is backed by a Java Database Connectivity (JDBC) data sourc
+:seo-description: You can configure your Open Liberty server to use Kerberos credentials to authenticate to a database that is backed by a Java Database Connectivity (JDBC) data source
 :page-layout: general-reference
 :page-type: general
 = Kerberos authentication for JDBC data sources
@@ -17,34 +17,12 @@ Kerberos is a network authentication protocol through which a client and server 
 
 Applications that run on an Open Liberty server might need to access protected resources in a database, such as user account information or sales transaction records. In cases where such a database is protected by Kerberos authentication, your Open Liberty server can  supply the necessary credentials to access protected resources and confirm the authenticity of the database.
 
-== Global Kerberos configuration for Open Liberty
-
-Kerberos authentication in Open Liberty builds on the https://docs.oracle.com/en/java/javase/11/docs/api/jdk.security.auth/com/sun/security/auth/module/Krb5LoginModule.html[Kerberos Login Module] and Java Generic Security Service (JGSS) API that are  provided by the JDK.
-
-The optional xref:reference:config/kerberos.adoc[kerberos element] provides configuration options for any Open Liberty features that use Kerberos credentials. If you have any Kerberos-enabled features configured for your server, you can specify this element in your `server.xml` file, as shown in the following example:
-
-[source,xml]
-----
-<featureManager>
-  <feature>jdbc-4.2</feature>
-</featureManager>
-
-<kerberos keytab="${server.config.dir}/security/krb5.keytab" configFile="${server.config.dir}/security/krb5.conf"/>
-----
-
-This example shows a Kerberos configuration for the xref:reference:feature/jdbc-4.2.adoc[Java Database Connectivity feature]. Several different features support the `kerberos` element. To determine whether a feature supports this element, see the feature documentation.
-
-The `keytab` and `configFile` attributes are both optional. If you don't specify these attributes, Open Liberty resolves their values according to the following priority:
-
-1. The default locations that are defined by the JDK, such as the `{user.home}/krb5.keytab` file or a location that is specified by JDK-defined system properties
-2. The default locations that are defined by the operating system, such as the `/etc/krb5.keytab` file or a location that is specified by operating system-defined environment variables
-
-On the Windows operating system, the default Kerberos configuration file name is `krb5.ini`. On other operating systems, the file name is `krb5.conf`.
-
 == Kerberos configuration for JDBC data sources
 
+You can specify a Kerberos configuration in your `server.xml` file that provides values to any Open Liberty features that use Kerberos credentials. This configuration is optional. For more information, see xref:kerberos-authentication.adoc[Kerberos authentication for Open Liberty].
+
 To configure Kerberos authentication for JDBC data sources, you must enable the xref:reference:feature/jdbc-4.2.adoc[Java Database Connectivity feature]. For more information about JDBC data source connections, see xref:relational-database-connections-JDBC.adoc#_data_source_configuration[Data source configuration].
-After the Kerberos global configuration is defined, a Kerberos principal can be configured on an `authData` element in the `server.xml` file, as shown in the following example:
+After the Kerberos configuration is defined, a Kerberos principal can be configured on an `authData` element in the `server.xml` file, as shown in the following example:
 
 [source,xml]
 ----
@@ -60,7 +38,8 @@ After the Kerberos global configuration is defined, a Kerberos principal can be 
 </dataSource>
 ----
 
-The `krb5TicketCache` attribute is optional. If this attribute isn't specified, Open Liberty checks the default Kerberos credential cache location of the JDK or the operating system.
+The `krb5TicketCache` attribute is optional. If this attribute is not specified, Open Liberty resolves credential values from the `keytab` file that is configured in the  `kerberos` element. If no `keytab` file is configured, Open Liberty resolves credential values from the default Kerberos credential cache location for the Java SDK. For more information, see xref:kerberos-authentication.adoc[Kerberos authentication for Open Liberty].
+
 The `containerAuthDataRef` attribute references the `authData` element to authenticate the database connection.
 
 To enable portability of the configuration, the values for the `databaseName`, `serverName`, and `portNumber` properties are supplied by variables. For more information, see xref:reference:config/server-configuration-overview.adoc#variable-substitution[Variable substitution precedence].
@@ -106,4 +85,5 @@ For example, the following configuration enables a JDBC data source to use SPNEG
 == See also
 - xref:configuring-spnego-authentication.adoc[Configuring SPNEGO authentication]
 - xref:relational-database-connections-JDBC.adoc[Relational database connections with JDBC]
+- xref:kerberos-authentication.adoc[Kerberos authentication for Open Liberty]
 - https://web.mit.edu/kerberos/[Kerberos: The Network Authentication Protocol]
