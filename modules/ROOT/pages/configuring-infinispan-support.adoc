@@ -1,0 +1,192 @@
+
+// Copyright (c) 2020, 2021 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:seo-description:
+:page-layout: general-reference
+:page-type: general
+:seo-title: Configuring Infinispan as a JCache provider - OpenLiberty.io
+= Configuring Infinispan as a JCache provider
+
+To improve performance, applications can provide resources with high availability to create more flexibility at run time. With Open Liberty, you can use the JCache Session Persistence feature to configure a JCache provider to enable features of high availability.
+
+When you configure a JCache provider with the feature:sessionCache[display=JCache Session Persistence] feature, you can enable distributed in-memory HttpSession caching. HTTP sessions store data from HTTP requests that identifies users. Applications provide failover of non-persistent user session data when multiple instances are needed to avoid performance interruptions and maintain high availability. However, sessions that are non-persistent don't provide a way to store user data that can be used across multiple requests. To address this limitation, the JCache Session Persistence feature uses xref:distributed-session-caching.adoc[distributed session caching] to share user session data between different instances and improve high availability features in failover situations with session persistence. For more information, see link:/guides/sessions.html[Guide: Caching HTTP session data using JCache and Hazelcast].
+
+High availability features make applications more reliable by minimizing downtime and improving fault tolerance. To provide high availability features in Open Liberty, you can configure a JCache provider. Open Liberty supports link:https://infinispan.org/[Infinispan 11] as a JCache provider when you enable the JCache Session Persistence feature. You can use the following methods to configure Infinispan as a JCache provider:
+
+* <<Configuring Infinispan in client/server mode on OpenShift, Configuring Infinispan in client/server mode on OpenShift>>
+* <<Configuring Infinispan in embedded mode on OpenShift, Configuring Infinispan in embedded mode on OpenShift>>
+
+When Infinispan is configured in embedded mode, it performs requests faster than when it is configured in client/server mode. This faster performance is due to the network and serialization costs that are associated with the remote calls that happen when Infinispan is configured in client/server mode. However, in client/server mode, a cluster of Infinispan servers can be configured to share the workload for failover purposes. Configuring Infinispan in client/server mode also helps synchronize data among Open Liberty servers that frequently start and stop to maintain availability when you add an embedded Infinispan server to a cluster.
+
+== Before you begin
+
+To complete either method, you need to download the corresponding Infinispan 11 library JAR files. You can download these files by running link:https://maven.apache.org/index.html[Maven] commands to build the project that is configured with the `pom.xml` file.
+
+To download the JAR files for configuring Infinispan in client/server mode, configure the `pom.xml` file as shown in the following example:
+[source,xml]
+----
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+   <groupId>io.openliberty</groupId>
+  <artifactId>openliberty-infinispan-client</artifactId>
+  <version>1.0</version>
+  <dependencies>
+    <dependency>
+      <groupId>org.infinispan</groupId>
+      <artifactId>infinispan-jcache-remote</artifactId>
+      <version>11.0.3.Final</version>
+    </dependency>
+  </dependencies>
+</project>
+----
+
+Then, run the following commands from the command line to download and cleanup the JAR files:
+----
+mvn -f ./pom.xml versions:use-latest-releases -DallowMajorUpdates=false
+mvn -f ./pom.xml dependency:copy-dependencies -DoutputDirectory=${wlp.user.dir}/shared/resources/infinispan
+rm -f ${wlp.user.dir}/shared/resources/infinispan/jboss-transaction-api*.jar
+----
+
+To download the JAR files for configuring Infinispan in embedded mode, configure the `pom.xml` file as shown in the following example:
+[source,xml]
+----
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>io.openliberty</groupId>
+  <artifactId>openliberty-infinispan</artifactId>
+  <version>1.0</version>
+  <dependencies>
+    <dependency>
+      <groupId>org.infinispan</groupId>
+      <artifactId>infinispan-jcache</artifactId>
+      <version>11.0.3.Final</version>
+    </dependency>
+  </dependencies>
+</project>
+----
+
+Then, run the following commands from the command line to download and cleanup the JAR files:
+----
+mvn dependency:copy-dependencies -DoutputDirectory=infinispan
+rm -f infinispan/cdi-api-*.jar
+rm -f infinispan/javax.*.jar
+rm -f infinispan/jboss-transaction-api*.jar
+rm -f infinispan/microprofile-*-api-*.jar
+rm -f infinispan/smallrye-config-*.jar
+----
+
+== Configuring Infinispan in client/server mode on OpenShift
+
+When you configure Infinispan in client/server mode on link:https://www.openshift.com/learn/what-is-openshift[OpenShift], you can connect Open Liberty to a remote Infinispan server that accesses cached HTTP session data. To configure Infinispan in client/server mode on OpenShift, configure the `server.xml` file, as shown in the following example:
+[source,xml]
+----
+<server>
+    <featureManager>
+        <feature>servlet-4.0</feature>
+        <feature>sessionCache-1.0</feature>
+    </featureManager>
+    <httpEndpoint host="*"
+                  id="defaultHttpEndpoint"
+                  httpPort="9080"
+                  httpsPort="9443" />
+  <httpSessionCache libraryRef="InfinispanLib">
+    <properties infinispan.client.hotrod.server_list="infinispan-server:11222"/>
+    <properties infinispan.client.hotrod.auth_username="sampleUser"/>
+    <properties infinispan.client.hotrod.auth_password="samplePassword"/>
+    <properties infinispan.client.hotrod.auth_realm="default"/>
+    <properties infinispan.client.hotrod.sasl_mechanism="PLAIN"/>
+    <properties infinispan.client.hotrod.java_serial_whitelist=".*"/>
+    <properties infinispan.client.hotrod.marshaller="org.infinispan.commons.marshall.JavaSerializationMarshaller"/>
+  </httpSessionCache>
+    <library id="InfinispanLib">
+        <fileset dir="${shared.resource.dir}/infinispan" includes="*.jar"/>
+    </library>
+</server>
+----
+
+Then, run the following command to start an Infinispan server in the OpenShift environment:
+----
+oc new-app --docker-image=infinispan/server --name=infinispan-server -e USER="sampleUser" -e PASS="samplePassword"
+----
+
+The `--name=infinispan-server` option in the command maps to the `infinispan.client.hotrod.server_list` attribute in the `server.xml` file. The `USER` option maps to the `infinispan.client.hotrod.auth_username` attribute and the `PASS` option maps to the `infinispan.client.hotrod.auth_password` in the `server.xml` file.  For more information, see the feature:sessionCache[display=JCache Session Persistence] feature.
+
+== Configuring Infinispan in embedded mode on OpenShift
+
+When you configure Infinispan in embedded mode on OpenShift, an Infinispan server runs in the same Java Virtual Machine (JVM) as Open Liberty. Multiple embedded Infinispan servers can use link:http://www.jgroups.org/[JGroups] to form a link:https://infinispan.org/docs/dev/titles/configuring/configuring.html#cluster_transport[cluster] that provides high availability of user HTTP session data across all members. To configure Infinispan in embedded mode, configure the `server.xml` file, as shown in the following example:
+[source,xml]
+----
+<server>
+    <featureManager>
+        <feature>servlet-4.0</feature>
+        <feature>mpMetrics-2.0</feature>
+        <feature>mpReactiveStreams-1.0</feature>
+        <feature>sessionCache-1.0</feature>
+    </featureManager>
+    <httpEndpoint host="*"
+                  id="defaultHttpEndpoint"
+                  httpPort="9080"
+                  httpsPort="9443" />
+    <httpSessionCache libraryRef="InfinispanLib" uri="file:${shared.resource.dir}/infinispan/infinispan.xml"/>
+    <library id="InfinispanLib">
+        <fileset dir="${shared.resource.dir}/infinispan" includes="*.jar"/>
+    </library>
+</server>
+----
+
+Then, create an `infinispan.xml` file in the location that is specified by the `uri` attribute of the `httpSessionCache` element to enable the link:https://infinispan.org/docs/11.0.x/titles/embedding/embedding.html#setting_up_clusters[JGroups Kubernetes transport stack]:
+[source,xml]
+----
+<infinispan>
+  <jgroups>
+     <stack-file name="jgroups-kubernetes" path="/default-configs/default-jgroups-kubernetes.xml"/>
+  </jgroups>
+  <cache-container>
+    <transport stack="jgroups-kubernetes" />
+  </cache-container>
+</infinispan>
+----
+
+The JGroups stack determines how the Infinispan servers form a cluster. The `infinispan.xml` file uses the default Kubernetes template to enable clustering in OpenShift. For more information, see the feature:sessionCache[display=JCache Session Persistence] feature.
+
+After you create the `infinispan.xml` file, create a headless Kubernetes service to enable the Kubernetes JGroups transport stack to form a cluster. To create this service, run the `oc create -f service.yaml` command to create the following `service.yaml` file:
+[source,yaml]
+----
+  apiVersion: v1
+  kind: Service
+  metadata:
+    name: infinispan-embedded
+  spec:
+    clusterIP: None
+    ports:
+    - name: discovery
+      port: 7800
+      protocol: TCP
+      targetPort: 7800
+    selector:
+      name: ol-runtime-infinispan-embedded
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+----
+
+The `name` value of the `selector` key must match one of the labels that are associated with the Open Liberty applications that run in OpenShift. For example, you can define an application by using the following command:
+----
+oc new-app --image-stream=ol-runtime-infinispan-embedded:1.0.0 --name=embedded-servera -l name=ol-runtime-infinispan-embedded
+----
+This application is defined by including the `name=ol-runtime-infinispan-embedded` label. This label matches the `name` value of the `selector` key that is defined in the `service.yaml` file to integrate the application into the service.
+
+Then, create a `jvm.options` file in the server directory, as shown in the following example:
+----
+-Djava.net.preferIPv4Stack=true
+-Djgroups.dns.query=infinispan-embedded.myproject.svc.cluster.local
+----
+
+The `Djgroups.dns.query` specifies the DNS record that returns all of the members of the Infinispan cluster. If the environment doesn't support the IPv6 protocol, then you can set the `Djava.net.preferIPv4Stack` option to `"true"`.
