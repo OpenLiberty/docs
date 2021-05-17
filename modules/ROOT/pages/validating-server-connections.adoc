@@ -12,52 +12,46 @@
 :seo-title: Validating server connections - OpenLiberty.io
 = Validating server connections
 
-REST endpoints can facilitate communication between applications by identifying resources that are accessed by REST APIs to fulfill requests. Validating your server connections with REST endpoints provides a simple way to test that your application can access resources that enable interactions with REST APIs.
+Validating your server connections with REST endpoints is a simple way to test that your application can access databases and other sources of data. In Open Liberty, the features in your server configuration enable REST endpoints that you can use to view the server configuration and validate server connections to resources, such as databases.
 
-Endpoints help to specify the location of resources that are accessed by APIs to provide important functions that can test the performance of applications. With Open Liberty, you can automatically enable REST endpoints when you enable features in your server configuration. When you enable the xref:reference:feature/restConnector-2.0.adoc[Admin REST Connector feature], you can use REST endpoints to view the server configuration and validate server connections to resources, such as databases.
-
-By enabling the Admin REST Connector feature, you can use the `config` REST endpoint to view the server configuration. If you also enable the xref:reference:feature/jdbc-4.3.adoc[JDBC], xref:reference:feature/jca-1.7.adoc[JCA], xref:reference:feature/cloudant-1.0[Cloudant Integration], or xref:reference:feature/jms-2.0.adoc[JMS] features with the Admin REST Connector feature, you can use the `validation` endpoint to validate connections to certain types of resources. The following table provides the `config` and `validation` REST endpoint paths for the Admin REST Connector, JDBC, Cloudant Integration, JCA, and JMS features:
+By enabling the xref:reference:feature/restConnector-2.0.adoc[Admin REST Connector feature], you can use the `config` REST endpoint to view the server configuration. If you also enable the xref:reference:feature/jdbc-4.3.adoc[JDBC], xref:reference:feature/jca-1.7.adoc[JCA], xref:reference:feature/cloudant-1.0[Cloudant Integration], or xref:reference:feature/jms-2.0.adoc[JMS] features with the Admin REST Connector feature, you can use the `validation` endpoint to validate connections to certain types of resources. If any of the xref:reference:feature/mpOpenApi-2.0.adoc[MicroProfile OpenAPI] features are enabled, you can view dynamically generated OpenAPI documents for the `config` and `validation` REST endpoints. The following table provides the `config` and `validation` REST endpoint paths for the Admin REST Connector, JDBC, Cloudant Integration, JCA, JMS, and OpenAPI features:
 
 .REST endpoint paths for Open Liberty features
 [cols=",",options="header",]
 |===
 |Feature |REST endpoint paths
-|Admin REST Connector |/ibm/api/config
-|JDBC |/ibm/api/validation/dataSource
-|JCA |/ibm/api/validation/connectionFactory
-|JMS |/ibm/api/validation/jmsconnectionFactory /ibm/api/validation/jmsQueueConnectionFactory /ibm/api/validation/jmsTopicConnectonFactory
-|Cloudant Integration |/ibm/api/validation/cloudantDatabase
+|Admin REST Connector |/config/
+|JDBC |/validation/dataSource
+|JCA |/validation/connectionFactory
+|JMS |/validation/jmsconnectionFactory /validation/jmsQueueConnectionFactory /validation/jmsTopicConnectonFactory
+|Cloudant Integration |validation/cloudantDatabase
+|MicroProfile Open API |/openapi/platform/config /openapi/platform/validation
 |===
 
 == Before you begin
 
-To access the REST endpoints, you must complete authentication with the Open Liberty server. Ensure that you have a minimum of `reader-role` access to the `config` endpoint and `administrator-role` access to the `validation` endpoint. You can use any Open Liberty supported user registry to set up secure access. However, the following tasks include either QuickStart security or a basic registry with the xref:reference:feature/appSecurity-3.0.adoc[Application Security feature] enabled:
+To access the REST endpoints, you must authenticate with the Open Liberty server. Ensure that you have a minimum of `reader-role` access to the `config` endpoint and `administrator-role` access to the `validation` endpoint. You can use any Open Liberty supported user registry to set up secure access. However, the following examples include either QuickStart security or a basic registry with the xref:reference:feature/appSecurity-3.0.adoc[Application Security feature] enabled:
 
 * <<Validating a connection to a database, Validating a connection to a database>>
 * <<Validating JMS and JCA connection factories, Validating JMS and JCA connection factories>>
+* <<Viewing API documentation, Viewing API documentation>>
 
-If any of the MicroProfile OpenAPI features are enabled, you can use the following `config` and `validation` REST endpoint paths to view dynamically generated OpenAPI documents:
-
-----
-/openapi/platform/config
-/openapi/platform/validation
-----
 
 == Viewing server configuration
 
-To view your server configuration, you need to specify the proper URL to use the `config` REST endpoint. The `config` REST endpoint URL for any server configuration element is specified with the base URL, the REST endpoint path, the server configuration element name, and its unique ID (uid). In the following example, the `{configElementName}` variable specifies the server configuration element and the `{uid}` variable specifies the unique ID:
+To view your server configuration, you need to specify the proper URL to use the `config` REST endpoint. The `config` REST endpoint URL for any server configuration element is specified with the base URL, the REST endpoint path, the server configuration element name, and its unique ID (UID). In the following example, the `{configElementName}` variable specifies the server configuration element and the `{uid}` variable specifies the unique ID:
 
 ----
 https://localhost:9443/ibm/api/config/{configElementName}/{uid}
 ----
 
-The `https://localhost:9443` base URL is set by default. To list all instances of a specific configuration element name in the output of the `config` REST endpoint, omit the uid from the REST endpoint URL. If you want to list every instance of all the configuration elements in the output of the `config` REST endpoint, you must also omit the configuration element name from the REST endpoint URL.
+The `https://localhost:9443/ibm/api` base URL is set by default. To list all instances of a specific configuration element name in the output of the `config` REST endpoint, omit the `uid` from the REST endpoint URL. If you want to list every instance of all the configuration elements in the output of the `config` REST endpoint, you must also omit the configuration element name from the REST endpoint URL.
 
-The output from a REST endpoint URL that doesn't specify a uid or configuration element name contains all instances of all the `server.xml` file configuration elements. The output also includes any configuration files and any default instances that are defined by the features of the server.
+The output from a REST endpoint URL that doesn't specify a `uid` or configuration element name contains all instances of all the `server.xml` file configuration elements. The output also includes any configuration files and any default instances that are defined by the features of the server.
 
 == Validating a connection to a database
 
-When you use the `config` REST endpoint URL to view your server configuration, you can use the generated output to help specify the `validation` REST endpoint URL. The output from the `config` REST endpoint URL provides the `validation` REST endpoint path that is used to specify the `validation` REST endpoint URL. This `validation` REST endpoint URL validates connections to resources that are configured with the `dataSource` element. The following example shows a `server.xml` file with the REST Connector and JDBC features enabled and a `derby` database that is configured as the default data source:
+When you use the `config` REST endpoint URL to view your server configuration, you can use the generated output to help specify the `validation` REST endpoint URL. The output from the `config` REST endpoint URL provides the URL for the `validation` endpoint. This `validation` REST endpoint URL validates connections to resources that are configured with the `dataSource` element. The following example shows a `server.xml` file with the REST Connector and JDBC features enabled and a `derby` database that is configured as the default data source:
 
 [source,xml]
 ----
@@ -186,12 +180,12 @@ If you attempt to validate the connection to this data source with the `https://
 }
 ----
 
-To correct this failure, you need to provide credentials for validation when the data source is configured to use authentication. Validation of a data source supports container and application authentication by including the `auth` parameter in the REST endpoint URL. If container authentication and an authentication alias are configured for your server, append the `auth` and `authAlias` parameters to the `validation` REST endpoint URL by using the HTTP parameter syntax, as shown in the following example:
+To correct this failure, you need to provide credentials for validation when the data source is configured to use authentication. You can validate a data source with container and application authentication by including the `auth` parameter in the REST endpoint URL. If container authentication and an authentication alias are configured for your server, append the `auth` and `authAlias` parameters to the `validation` REST endpoint URL by using the HTTP query parameter syntax, as shown in the following example:
 ----
 https://localhost:9443/ibm/api/validation/dataSource/myDS?auth=container&authAlias=db2authAlias
 ----
 
-If the data source or connection factory that is validated uses application authentication, you must set the value of the authentication parameter to `application`. A username and password can be specified by including the X-Validation-User and X-Validation-Password HTTP headers. These headers specify credentials when you are not using container authentication to validate the connection to the database. You set HTTP headers by using either browser plugins or HTTP tools.
+If the data source or connection factory that is validated uses application authentication, you must set the value of the authentication parameter to `application`. You can use the X-Validation-User and X-Validation-Password HTTP headers to specify a username and password when you are not using container authentication to validate the connection to the database. You set HTTP headers by using either browser plugins or HTTP tools.
 
 In addition to relational databases, Cloudant database connections can also be validated. For more information, see the xref:reference:feature/cloudant-1.0.adoc[Cloudant Integration] feature.
 
@@ -231,7 +225,7 @@ When you enable the JMS or JCA feature with the Admin REST Connector feature, yo
 </server>
 ----
 
-The `id` attribute in the `connectionFactory` element specifies a unique `cf1` value. You can use the unique value as the uid parameter of the `config` REST endpoint URL to view the output of the `connectionFactory` element configuration.
+The `id` attribute in the `connectionFactory` element specifies a unique `cf1` value. You can use the unique value as the `uid` parameter of the `config` REST endpoint URL to view the output of the `connectionFactory` element configuration.
 
 By examining the output from the `https://localhost:9443/ibm/api/config/connectionFactory/cf1` REST endpoint URL, you can find the `validation` REST endpoint path in the `api` field, as shown in the following example:
 [source,json]
@@ -281,3 +275,18 @@ Examine the output of the `https://localhost:9443/ibm/api/validation/connectionF
    }
 }
 ----
+
+== Viewing API documentation
+When you enable any MicroProfile OpenAPI feature, you can view API documentation that helps you understand how REST APIs validate server connections with the `config` and `validation` REST endpoints. The API documentation provides descriptions of the REST endpoints and any other details that you need to use the REST API. You can generate this documentation in either YAML or JSON format by specifying the `format` parameter in the REST endpoint URL. If you do not specify the `format` parameter, the documentation is generated in YAML format by default. To generate the API document for the `validation` REST endpoint in YAML format, specify the following `validation` endpoint URL:
+
+----
+https://localhost:9443/openapi/platform/validation
+----
+
+To generate the API document for the `config` REST endpoint in JSON format, specify the following `config` endpoint URL:
+
+----
+https://localhost:9443/openapi/platform/config?format=json
+----
+
+For more information, see xref:documentation-api.adoc[API documentation with OpenAPI].
