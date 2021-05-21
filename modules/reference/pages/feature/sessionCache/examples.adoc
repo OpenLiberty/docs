@@ -1,11 +1,13 @@
 
 == Examples
 
-=== Minimum configuration to persist session data with Hazelcast as the JCache provider
+=== Persist HTTP session data with Hazelcast as the JCache provider
 
-The `sessionCache` feature does not include a JCache implementation, so you need to pick one and reference it as a library in your `server.xml` file.
+The `sessionCache` feature does not include a JCache implementation, so you must pick one and reference it as a library in your `server.xml` file.
+You must define a location for the implementation files with the library element and reference that library by specifying the `libraryRef` attribute for the `httpSessionCache` element.
 
-To configure the JCache Session Persistence feature, include the following configuration in your `server.xml` file:
+In the following example, Hazelcast in specified as the JCache implementation.
+The `library` element specifies that  Hazelcast must be used as the JCache provider, which is located in the `hazelcast.jar` library.
 
 [source, java]
 ----
@@ -15,7 +17,11 @@ To configure the JCache Session Persistence feature, include the following confi
   </library>
 ----
 
-=== Providing additional Hazelcast configuration
+=== Customizing the JCache implementation
+
+You can provide a configuration file to customize the how your JCache implementation manages HTTP session caching.
+To specify the file location, use the `uri` attribute for the `httpSessionCache` element.
+In the following example, the `uri` specifies the location of a Hazelcast configuration file:
 
 The following example shows the configuration of session persistence with Hazelcast as the JCache provider:
 
@@ -23,7 +29,7 @@ The following example shows the configuration of session persistence with Hazelc
 ----
 
 <library id="jCacheVendorLib">
-  <fileset dir="server1/hazelcast" includes="hazelcast.jar"/>
+  <fileset dir="${server.config.dir}/hazelcast" includes="hazelcast.jar"/>
 </library>
 
 <httpSessionCache libraryRef="jCacheVendorLib"
@@ -31,13 +37,14 @@ The following example shows the configuration of session persistence with Hazelc
 
 ----
 
-The `library` element specifies that  Hazelcast must be used as the JCache provider, which is located in the `hazelcast.jar` library.
-Additional Hazelcast configuration is provided in the `hazelcast.xml` file.
+The Hazelcast configuration file is optional.
+For more information, see xref:ROOT:distributed-session-caching.adoc[Distributed session caching].
 
-=== Configuring Infinispan in client/server mode on OpenShift
+=== Specify JCache vendor-specific properties
 
-You can configure Infinispan in `client/server` mode on OpenShift to connect to a remote Infinispan server with Open Liberty to access cached HTTP session data.
-To configure Infinispan in `client/server` mode, you can configure the `httpSessionCache` element, as shown in the following example:
+You can specify vendor-specific properties in your JCache configuration with the `properties` element.
+For information about the properties that are available, see the documentation for your chosen implementation.
+In the following example, Open Liberty is configured to access cached HTTP session data from a remote Infinispan server in `client/server` mode on OpenShift:
 
 [source,xml]
 ----
@@ -60,48 +67,3 @@ The `properties` elements that are embedded in the `httpSessionCache` element se
 This configuration uses link:https://infinispan.org/docs/dev/titles/hotrod_java/hotrod_java.html#authentication[PLAIN authentication].
 After you configure Infinispan in `client/server` mode, you need to start an Infinispan server in the OpenShift environment.
 For more information, see xref:ROOT:configuring-infinispan-support.adoc[Configuring Infinispan as a JCache provider].
-
-=== Configuring Infinispan in embedded mode on OpenShift
-
-You can configure Infinispan in embedded mode on OpenShift to enable multiple embedded servers to form a cluster that provides high availability of user HTTP session data.
-Before you configure Infinispan in embedded mode, you need to enable the feature:mpReactiveStreams[display=MicroProfile Reactive Streams] and feature:mpMetrics[display=MicroProfile Metrics features] in addition to the JCache session persistence feature.
-To configure Infinispan in embedded mode, you can configure the `httpSessionCache` element, as shown in the following example:
-
-[source,xml]
-----
-    <httpSessionCache libraryRef="InfinispanLib" uri="file:${shared.resource.dir}/infinispan/infinispan.xml"/>
-    <library id="InfinispanLib">
-        <fileset dir="${shared.resource.dir}/infinispan" includes="*.jar"/>
-    </library>
-</server>
-----
-The `libraryRef` attribute in the `httpSessionCache` element specifies the `InfinispanLib` value to reference a shared library, which loads the Infinispan JAR files.
-The `uri` attribute specifies the `file:${shared.resource.dir}/infinispan/infinispan.xml` value to reference the link:https://infinispan.org/docs/11.0.x/titles/configuring/configuring.html#declarative-configuring[Infinispan configuration] file.
-In the Infinispan configuration file, you must configure the `infinispan` element to enable clustering, as shown in the following example:
-
-[source,xml]
-----
-<infinispan>
-  <jgroups>
-     <stack-file name="jgroups-kubernetes" path="/default-configs/default-jgroups-kubernetes.xml"/>
-  </jgroups>
-  <cache-container>
-    <transport stack="jgroups-kubernetes" />
-  </cache-container>
-</infinispan>
-----
-The `path` attribute in the `stack-file` element specifies the `/default-configs/default-jgroups-kubernetes.xml` value that references the default Kubernetes service that enables clustering in OpenShift.
-You also have to configure a `service.yaml` file and a `jvm.options` file to configure Infinispan in embedded mode with OpenShift.
-For more information, see xref:ROOT:configuring-infinispan-support.adoc[Configuring Infinispan as a JCache provider].
-
-=== Configure Infinispan in embedded mode without OpenShift
-
-You can configure Infinispan in embedded mode without OpenShift.
-You have to enable the MicroProfile Reactive Streams and MicroProfile Metrics features in addition to the JCache session persistence feature.
-You also must have a shared library for Infinispan.
-In the following example, the `libraryRef` attribute in the `httpSessionCache` element references a shared library to load Infinispan JAR files from the `InfinispanLib`:
-
-[source,xml]
-----
-<httpSessionCache libraryRef="InfinispanLib”/>
-----
