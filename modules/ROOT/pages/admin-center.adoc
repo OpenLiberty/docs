@@ -136,24 +136,25 @@ Each batch job has an **Actions** icon, which you can select to stop, restart, o
 
 If batch jobs or job logs are on remote servers, link:/guides/cors.html[configure cross origin region sharing (CORS)] on each remote server. CORS enables Admin Center to request job information from remote servers.
 
-Note too that the batch features use a custom authorization specific to batch and role membership must be granted separately from the roles needed to access the Admin Center in the first place.  
-
-E.g. a 'batchadmin' user configured like:
+The Batch Management feature requires custom authorization to view and manage batch jobs. To use the Java Batch tool, you must configure a `com.ibm.ws.batch` custom authorization role, in addition to the reader or administrator role that is required to access the Admin Center. The following server.xml example shows configuration for a user, `wanda`, who is granted the administrator management role and the batchAdmin custom authorization role:
 
 [source,xml]
 ----
-  <reader-role>
-      <user>batchadmin</user>
-  </reader-role>
+  <administrator-role>
+      <user>wanda</user>
+  </administrator-role>
 
   <authorization-roles id="com.ibm.ws.batch">
       <security-role name="batchAdmin">
-          <user name="batchadmin"/>
+          <user name="wanda"/>
       </security-role>
   </authorization-roles>
 ----
 
-could use the Java Batch tool to view and operate on any and all jobs (as 'batchAdmin') but a user with just 'administrator-role' access might require one of the 'com.ibm.ws.batch' custom roles in order to even view any jobs at all (they are not automatically a 'batch-admin').
+With this configuration, the user has authorization to view and manage any configured Java batch jobs.  The `batchAdmin` authority could be combined with a more fine-grained, restrictive management authority by only granting 'wanda' the `reader-role` management role, which would still allow access to the Admin Center Java Batch tool.
+
+On the other hand, if no custom batch authorization role is configured, even a user in the administrator management role cannot view or manage Java batch jobs. For more information, see https://www.ibm.com/docs/en/was-liberty/nd?topic=liberty-securing-batch-environment[Securing the Liberty batch environment].
+
 
 [#openid]
 === Administer Open ID Connect Provider tasks with the OpenID Connect (OIDC) tools
