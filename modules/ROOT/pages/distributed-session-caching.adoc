@@ -22,7 +22,7 @@ Also, a relational database might not be part of your application architecture.
 With distributed caching, you don't need a single dedicated server or database to store a cached HTTP session.
 HTTP session cache data is distributed across multiple servers that act as a cluster.
 
-The JCache Session Persistence feature builds on an existing technology called link:https://hazelcast.com/glossary/jcache-java-cache/[JCache] that offers a standardized distributed in-memory caching API.
+The feature:sessionCache[display=JCache Session Persistence feature] builds on an existing technology called link:https://hazelcast.com/glossary/jcache-java-cache/[JCache] that offers a standardized distributed in-memory caching API.
 Though the feature builds on JCache, your application doesn't need to use the JCache API.
 Open Liberty handles the session caching in the web container layer.
 For more information about how Open Liberty handles HTTP session data, see the link:https://openliberty.io/docs/21.0.0.5/reference/javadoc/liberty-javaee8-javadoc.html#javax/servlet/http/HttpSession.html[HttpSession interface].
@@ -31,7 +31,7 @@ For more information about how Open Liberty handles HTTP session data, see the l
 
 Distributed session caching with the JCache Session Persistence feature works the same way as non-distributed session caching in an application.
 If your application already caches HTTP session data, you don't need to make any code changes in the application to use the the JCache Session Persistence feature.
-Instead, configure the JCache Session Persistence feature in your `server.xml` file and reference the library that contains your chosen JCache implementation.
+Instead, link:/docs/latest/reference/feature/sessionCache-1.0.html#_enabling_this_feature[configure the JCache Session Persistence feature in your server.xml file] and reference the library that contains your chosen JCache implementation.
 To benefit from the JCache Session Persistence feature, you must join at least two servers together.
 
 The following diagram shows two Open Liberty servers that share a persisted session cache by using a JCache implementation:
@@ -55,9 +55,10 @@ Client-Server model:: An Open Liberty server can act as the JCache client and co
 
 Peer-to-Peer model:: An Open Liberty server can connect with other Open Liberty servers that are also running with the JCache Session Persistence feature and configured to be part of the same cluster.
 
-The examples show two applications, service A and service B, that are both running on different Open Liberty servers that are part of the same cluster.
+The following examples show two applications, service A and service B, that are both running on different Open Liberty servers that are part of the same cluster.
 In the example, service A sets the value for the `foo` attribute to equal `bar`.
 Service B can then retrieve that value for the `foo` attribute from the distributed cache that is shared by all servers in the cluster.
+Your choice of model depends on the needs of your application, the resources that are available, and the specifications of your chosen JCache implementation.
 
 [source, java]
 ----
@@ -88,10 +89,13 @@ public class ServiceB extends HttpServlet {
 ----
 
 Each JCache implementation configures the cluster instances differently.
-See the documentation for your chosen implementation.
+For more information, see the documentation for your chosen implementation.
 
-You don’t need to specify a Hazelcast configuration file if the default Hazelcast configuration works for you.
-However, you can create configuration file similar to the following example and add a reference to it from your `server.xml` file to customize how Hazelcast defines the cluster:
+== Customize your JCache implementation
+
+Most JCache implementations provide sensible default settings.
+However, if you need to customize your implementation, you can specify a JCache configuration file and link:/docs/latest/reference/feature/sessionCache-1.0.html#_customizing_the_jcache_implementation[reference it from your server.xml file].
+The following example Hazlecast configuration file customizes how Hazelcast defines the cluster:
 
 [source, java]
 ----
@@ -107,3 +111,7 @@ However, you can create configuration file similar to the following example and 
 ----
 
 In this example, specifying the `myCluster` group name causes the Hazelcast instance to connect only with other instances that are also named `myCluster`.
+
+== See also
+
+xref:configuring-infinispan-support.adoc[Configuring Infinispan as a JCache provider]
