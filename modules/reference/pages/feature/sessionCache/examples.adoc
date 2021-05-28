@@ -1,0 +1,69 @@
+
+== Examples
+
+=== Persist HTTP session data with Hazelcast as the JCache provider
+
+The `sessionCache` feature does not include a JCache implementation, so you must pick one and reference it as a library in your `server.xml` file.
+You must define a location for the implementation files with the library element and reference that library by specifying the `libraryRef` attribute for the `httpSessionCache` element.
+
+In the following example, Hazelcast in specified as the JCache implementation.
+The `library` element specifies that  Hazelcast must be used as the JCache provider, which is located in the `hazelcast.jar` library.
+
+[source, java]
+----
+  <httpSessionCache libraryRef="JCacheLib"/>
+  <library id="JCacheLib">
+    <file name="/usr/lib/hazelcast.jar"/>
+  </library>
+----
+
+=== Customizing the JCache implementation
+
+You can provide a configuration file to customize the how your JCache implementation manages HTTP session caching.
+To specify the file location, use the `uri` attribute for the `httpSessionCache` element.
+In the following example, the `uri` specifies the location of a Hazelcast configuration file:
+
+The following example shows the configuration of session persistence with Hazelcast as the JCache provider:
+
+[source,xml]
+----
+
+<library id="jCacheVendorLib">
+  <fileset dir="${server.config.dir}/hazelcast" includes="hazelcast.jar"/>
+</library>
+
+<httpSessionCache libraryRef="jCacheVendorLib"
+                  uri="file:server1/hazelcast/hazelcast.xml"/>
+
+----
+
+The Hazelcast configuration file is optional.
+For more information, see xref:ROOT:distributed-session-caching.adoc[Distributed session caching].
+
+=== Specify JCache vendor-specific properties
+
+You can specify vendor-specific properties in your JCache configuration with the `properties` element.
+For information about the properties that are available, see the documentation for your chosen implementation.
+In the following example, Open Liberty is configured to access cached HTTP session data from a remote Infinispan server in `client/server` mode on OpenShift:
+
+[source,xml]
+----
+  <httpSessionCache libraryRef="InfinispanLib">
+    <properties infinispan.client.hotrod.server_list="infinispan-server:11222"/>
+    <properties infinispan.client.hotrod.auth_username="sampleUser"/>
+    <properties infinispan.client.hotrod.auth_password="samplePassword"/>
+    <properties infinispan.client.hotrod.auth_realm="default"/>
+    <properties infinispan.client.hotrod.sasl_mechanism="PLAIN"/>
+    <properties infinispan.client.hotrod.java_serial_whitelist=".*"/>
+    <properties infinispan.client.hotrod.marshaller="org.infinispan.commons.marshall.JavaSerializationMarshaller"/>
+  </httpSessionCache>
+    <library id="InfinispanLib">
+        <fileset dir="${shared.resource.dir}/infinispan" includes="*.jar"/>
+    </library>
+----
+
+The `libraryRef` attribute in the `httpSessionCache` element specifies the `InfinispanLib` value to reference a shared library, which loads the Infinispan JAR files.
+The `properties` elements that are embedded in the `httpSessionCache` element set the minimum configuration link:https://docs.jboss.org/infinispan/11.0/apidocs/org/infinispan/client/hotrod/configuration/package-summary.html[properties] that are needed for the link:https://infinispan.org/hotrod-clients[Infinispan Hot Rod client].
+This configuration uses link:https://infinispan.org/docs/dev/titles/hotrod_java/hotrod_java.html#authentication[PLAIN authentication].
+After you configure Infinispan in `client/server` mode, you need to start an Infinispan server in the OpenShift environment.
+For more information, see xref:ROOT:configuring-infinispan-support.adoc[Configuring Infinispan as a JCache provider].
