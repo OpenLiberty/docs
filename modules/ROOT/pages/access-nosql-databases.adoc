@@ -1,0 +1,56 @@
+// Copyright (c) 2021 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description: Caching sessions in your applications helps improve performance and availability for the users.
+:seo-title: Distributed session caching
+:seo-description: Caching sessions in your applications helps improve performance and availability for the users.
+:page-layout: general-reference
+:page-type: general
+= Accessing NoSQL databases
+
+You can access a NoSQL database with Open Liberty without enabling any feature in the `server.xml` file.
+You can configure access to a NoSQL database with a CDI producer.
+
+== Access MongoDB with CDI
+
+Using MongoDB with Open Liberty required enabling the `mongodb-2.0` feature and configuring several elements in the `server.xml` file, and was limited to certain versions of MongoDB.
+With improvements in CDI and the introduction of MicroProfile Config, you can configure access to any version of MongoDB with a CDI producer.
+
+== A CDI producer for MongoDB
+
+With a CDI producer, you are no longer restricted to MongoDB 2.X versions, and can easily provide a MongoDatabase to your application.
+This example demonstrates how to create a CDI producer to inject a MongoDatabase:
+
+```
+@ApplicationScoped
+public class MongoProducer {
+
+    @Produces
+    public MongoClient createMongo() {
+        return new MongoClient(new ServerAddress(), new MongoClientOptions.Builder().build());
+    }
+
+    @Produces
+    public MongoDatabase createDB(MongoClient client) {
+        return client.getDatabase("testdb");
+    }
+
+    public void close(@Disposes MongoClient toClose) {
+        toClose.close();
+    }
+}
+```
+
+You can also use a CDI producer to inject a MongoDatabase in a JAX-RS application, include authentication, and configure the MongoDB driver.
+For more information, see link:https://openliberty.io/blog/2019/02/19/mongodb-with-open-liberty.html[Access any version of MongoDB with Open Liberty using CDI].
+
+## Access CouchDB with CDI
+
+For accessing CouchDB with CDI in Open Liberty, you can use Cloudant as the CouchDB client, instead of the Mongoclient.
+
+For more information, see the feature:cloudant[display=Cloudant integration feature]
