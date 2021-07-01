@@ -63,7 +63,77 @@ public void add(CrewMember crewMember) {
 }
 
 ```
-Additionally, you can include authentication and configure the MongoDB driver with MicroProfile Config.
+The `createMongo` method can be enhanced to include authentication with a user name and an encoded password for additional security:
+
+```
+@Produces
+public MongoClient createMongo() {
+    String password = PasswordUtil.passwordDecode(encodedPass);
+    MongoCredential creds = MongoCredential.createCredential(user, dbName, password.toCharArray());
+    return new MongoClient(new ServerAddress(), creds, new MongoClientOptions.Builder().build());
+}
+```
+You need to add `passwordUtilities-1.0`, available as a Maven dependency:
+
+```
+<dependency>
+    <groupId>io.openliberty.features</groupId>
+    <artifactId>passwordUtilities-1.0</artifactId>
+    <version>18.0.0.4</version>
+</dependency>
+```
+Additionally, you need to enable the feature in the `server.xml` file:
+
+```
+<feature>passwordUtilities-1.0</feature>
+```
+
+Further, you can enable SSL, changing the `createMongo` method:
+
+```
+@Produces
+public MongoClient createMongo() throws SSLException {
+    String password = PasswordUtil.passwordDecode(encodedPass);
+    MongoCredential creds = MongoCredential.createCredential(user, dbName, password.toCharArray());
+    SSLContext sslContext = JSSEHelper.getInstance().getSSLContext("defaultSSLConfig", Collections.emptyMap(), null);
+    return new MongoClient(new ServerAddress(hostname, port), creds, new MongoClientOptions.Builder()
+                           .sslEnabled(true)
+                           .sslContext(sslContext)
+                           .build());
+}
+```
+
+== Configure MongoDB with MicroProfile Config
+
+You can configure variables like the user and password with MicroProfile Config by adding the following to your CDI producer:
+
+```
+@Inject
+@ConfigProperty(name = "mongo.hostname", defaultValue = "localhost")
+String hostname;
+
+@Inject
+@ConfigProperty(name = "mongo.port", defaultValue = "27017")
+int port;
+
+@Inject
+@ConfigProperty(name = "mongo.dbname", defaultValue = "testdb")
+String dbName;
+
+@Inject
+@ConfigProperty(name = "mongo.user")
+String user;
+
+@Inject
+@ConfigProperty(name = "mongo.pass.encoded")
+String encodedPass;
+```
+Add the following snippet to your  `microprofile-config.properties` or `server.env` file, to pull the values for `user` and `encodedPass` into the `MongoProducer` class:
+```
+mongo.user=sampleUser
+mongo.pass.encoded={aes}APtt+/vYxxPa0jE1rhmZue9wBm3JGqFK3JR4oJdSDGWM1wLr1ckvqkqKjSB2Voty8g==
+
+```
 For more information, see link:https://openliberty.io/blog/2019/02/19/mongodb-with-open-liberty.html[Access any version of MongoDB with Open Liberty using CDI].
 
 ## Access CouchDB with CDI
