@@ -22,9 +22,9 @@ The Open Liberty transaction service is activated by default when you enable fea
 == Transaction service configuration
 
 If you enable any Open Liberty features that use transactions, you can configure how the transaction service manages transaction recovery by specifying the `transaction` element in your `server.xml` file.
-For example, you can configure when transaction recovery occurs. By default, transaction recovery after a server failure happens when the transaction service is first used rather than at server startup. You can alter this behavior by specifying transaction service attributes. For more information about the available `transaction` element attributes, see config:transaction[display=Transaction Manager].
+For example, you can configure when transaction recovery occurs. By default, transaction recovery after a server failure happens when the transaction service is first used rather than at server startup. You can alter this behavior by specifying `transaction` element attributes. For more information about the available attributes, see config:transaction[display=Transaction Manager].
 
-In the following `server.xml` example, the `transaction` element specifies that transaction recovery occurs at server startup:
+In the following `server.xml` example, the `recoverOnStartup` attribute for the `transaction` element specifies that transaction recovery occurs at server startup:
 
 [source,xml]
 ----
@@ -37,8 +37,6 @@ In the following `server.xml` example, the `transaction` element specifies that 
 />
 ----
 
-In this example, the `recoverOnStartup` attribute specifies that transaction recovery occurs at server startup rather than when the transaction service is first used.
-
 The `totalTranLifetimeTimeout` attribute sets the maximum time for transactions that are started on this server to complete. The `propogatedOrBMTTranLifetimeTimeout` attribute sets the upper limit of the transaction timeout for transactions that run in this server. In this example, both values are set to  300 seconds.
 
 The `0` value for the `heuristicRetryWait` attribute specifies that the server does not retry a completion signal, such as a commit or rollback. By default, up to 5 retries occur after a transient exception from a resource manager or remote partner.
@@ -48,8 +46,6 @@ Setting the `acceptHeuristicHazard` attribute to `false` specifies that not all 
 == Authorization precedence for database transaction recovery
 
 When the Open Liberty transaction service recovers indoubt database transactions, it uses either the unique identifier or the JNDI name of the data source to locate the current `dataSource` element, and then determines the user ID and password to use for recovery based on the configuration of that element.
-
-You must not change the value of the `id` or `jndiName` data source attributes when a recovery is pending for a transaction in which the data source participated. If you change any other attributes of the `dataSource` element, those changes are retained for the recovery. For example, you can add a `recoveryAuthDataRef` attribute that specifies a data source user ID and password to use for recovery.
 
 The data source user ID and password to use for recovery are determined according to the following order of precedence:
 
@@ -77,6 +73,8 @@ The following example shopws a data source configuration for a Db2 database, whe
 ----
 +
 . If none of the previous conditions are satisfied, the recovery is attempted without any user ID and password and the behavior is determined by the configured JDBC driver and data source.
+
+You must not change the value of the `id` or `jndiName` data source attributes when a recovery is pending for a transaction in which the data source participated. If you change any other attributes of the `dataSource` element, those changes are retained for the recovery. For example, you can add a `recoveryAuthDataRef` attribute that specifies a data source user ID and password to use for recovery.
 
 If transactions are recovered by an application-defined data source, such as an `@DataSourceDefinition` annotation or a `data-source` element in a deployment descriptor file, you must ensure that the associated application is running when the recovery occurs. You cannot use configuration settings in the `server.xml` file to recover application-defined data sources.
 
@@ -109,12 +107,10 @@ To configure the Open Liberty transaction logs to be stored in an RDBMS, you can
 ----
 You can configure an Open Liberty server to recover the logs of a different application server. The original owning application server must not be running when you use this procedure. It is typically employed to perform any outstanding transactional recovery when the transaction service logs are available but the original owning application server cannot be started.
 
-Do not configure multiple application servers to use the same tables, which might result in data integrity issues and log corruption. If a suffix is specified, then the suffix is appended directly to both the name of the table and the index.
+If you store transaction logs in an RDBMS, each server must have its own tables. You can specify a unique table suffix by using the `transactionLogDBTableSuffix` attribute for the `transaction` element. The value for this attribute is a string that is post-pended to the table name to make it unique to the server where the table is hosted.
 
 === Manual configuration of database tables
 Optionally, you can create the database tables manually. Open Liberty attempts to create the necessary database tables when the server first starts. If it cannot create these databases, due to insufficient permission for example, the server fails to start. Under these circumstances, you must create the two database tables manually.
-
-For storing transaction logs in an RDBMS for an application server, each server must have its own tables. You must specify a table suffix by using the `transactionLogDBTableSuffix` attribute for the `transaction` element. The value for this attribute is a string that is post-pended to the table name to make it unique to the server where the table is hosted.
 
 The following sections provide example data definition language (DDL) structures to create tables and indexes for commonly used database vendors:
 
