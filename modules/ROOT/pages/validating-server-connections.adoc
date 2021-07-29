@@ -23,15 +23,19 @@ By enabling the xref:reference:feature/restConnector-2.0.adoc[Admin REST Connect
 |Admin REST Connector |/config
 |JDBC |/validation/dataSource
 |JCA |/validation/connectionFactory
-|JMS |/validation/jmsconnectionFactory  /validation/jmsQueueConnectionFactory  /validation/jmsTopicConnectonFactory
+|JMS |/validation/jmsconnectionFactory +
+/validation/jmsQueueConnectionFactory +
+/validation/jmsTopicConnectonFactory
 |Cloudant Integration |/validation/cloudantDatabase
-|MicroProfile Open API |/openapi/platform/config   /openapi/platform/validation
+|MicroProfile Open API |/openapi/platform/config +
+/openapi/platform/validation
 |===
 
 == Before you begin
 
-To access the REST endpoints, you must authenticate with the Open Liberty server. Ensure that you have a minimum of `reader-role` access to the `config` REST endpoint and `administrator-role` access to the `validation` REST endpoint. You can use any Open Liberty supported user registry to set up secure access. However, the following examples include either QuickStart security or a basic registry with the xref:reference:feature/appSecurity-3.0.adoc[Application Security feature] enabled:
+To access the REST endpoints, you must authenticate with the Open Liberty server. Ensure that you have a minimum of `reader-role` access to the `config` REST endpoint and `administrator-role` access to the `validation` REST endpoint. You can use any Open Liberty supported user registry to set up secure access. However, the following examples include either QuickStart security or a basic user registry with the xref:reference:feature/appSecurity-3.0.adoc[Application Security feature] enabled:
 
+* <<Viewing server configuration, Viewing server configuration>>
 * <<Validating a connection to a database, Validating a connection to a database>>
 * <<Validating JMS and JCA connection factories, Validating JMS and JCA connection factories>>
 * <<Viewing API documentation, Viewing API documentation>>
@@ -39,19 +43,18 @@ To access the REST endpoints, you must authenticate with the Open Liberty server
 
 == Viewing server configuration
 
-To view your server configuration, you need to specify the proper URL to use the `config` REST endpoint. The `config` REST endpoint URL for any server configuration element is specified with the base URL, the REST endpoint path, the server configuration element name, and its unique ID (UID). In the following example, the `{configElementName}` variable specifies the server configuration element and the `{uid}` variable specifies the UID:
+To view your server configuration, you need to specify the proper `config` REST endpoint URL. The `config` REST endpoint URL for any server configuration element is specified with the base URL, the REST endpoint path, the server configuration element name, and its unique ID (UID). In the following example, the `_configElementName_` variable specifies the server configuration element and the `_uid_` variable specifies the UID:
 
+[subs="quotes"]
 ----
-https://localhost:9443/ibm/api/config/{configElementName}/{uid}
+https://localhost:9443/ibm/api/config/_configElementName_/_uid_
 ----
 
-The `https://localhost:9443/ibm/api` base URL is set by default. To list all instances of a specific configuration element name in the output of the `config` REST endpoint, omit the `uid` from the REST endpoint URL. To list every instance of all the configuration elements in the output of the `config` REST endpoint, you must also omit the configuration element name from the REST endpoint URL.
-
-The output from a REST endpoint URL that doesn't specify a `uid` or configuration element name contains all instances of all the `server.xml` file configuration elements. The output also includes any configuration files and any default instances that are defined by the features of the server.
+The `https://localhost:9443/ibm/api` base URL is set by default. To list all instances of a specific configuration element name in the output of the `config` REST endpoint, omit the `uid` from the REST endpoint URL. To list every instance of all the `server.xml` file configuration elements in the output of the `config` REST endpoint, you must also omit the configuration element name from the REST endpoint URL. The output also includes any configuration files and any default instances that are defined by the features of the server.
 
 == Validating a connection to a database
 
-When you use the `config` REST endpoint URL to view your server configuration, you can use the generated output to help specify the `validation` REST endpoint URL. The output from the `config` REST endpoint URL provides the URL for the `validation` endpoint. This `validation` REST endpoint URL validates connections to resources that are configured with the `dataSource` element that is specified in the `config` REST endpoint URL. The `id` attribute in the `dataSource` element sets the UID that is specified in the `config` REST endpoint URL.
+When you use the `config` REST endpoint URL to view your server configuration, you can use the generated output to specify the `validation` REST endpoint URL. The output from the `config` REST endpoint URL provides the input URL for the `validation` endpoint. When the `dataSource` element is specified in the `config` REST endpoint URL, this `validation` REST endpoint URL validates connections to resources that are configured with the `dataSource` element.  The value of the `id` attribute in the `dataSource` element is the UID that is specified in the `config` REST endpoint URL.
 
 The following example shows a `server.xml` file with the REST Connector and JDBC features enabled and a Derby database that is configured as the default data source:
 
@@ -80,7 +83,7 @@ The following example shows a `server.xml` file with the REST Connector and JDBC
 ----
 
 
-To validate the connection to this database, find the `validation` REST endpoint path by using the `https://localhost:9443/ibm/api/config/dataSource/DefaultDataSource` REST endpoint URL to view the `datasource` element configuration output. In the output, the `api` field specifies the `validation` REST endpoint path, as shown in the following example:
+To validate the connection to this database, find the `validation` REST endpoint path by using the `https://localhost:9443/ibm/api/config/dataSource/DefaultDataSource` REST endpoint URL to view the `datasource` element configuration output. In the output, the `/ibm/api/validation/dataSource/DefaultDataSource` value of the `api` field specifies the `validation` REST endpoint path, as shown in the following example:
 [source,json]
 
 ----
@@ -182,7 +185,7 @@ If you attempt to validate the connection to this data source with the `https://
 }
 ----
 
-To correct this failure, you need to provide credentials for validation when the data source is configured to use authentication. You can validate a data source with container and application authentication by including the `auth` parameter in the REST endpoint URL. If container authentication and an authentication alias are configured for your server, append the `auth` and `authAlias` parameters to the `validation` REST endpoint URL by using the HTTP query parameter syntax:
+To correct this failure, provide credentials for validation when the data source is configured to use authentication. You can validate a data source with container and application authentication by including the `auth` parameter in the REST endpoint URL. If container authentication and an authentication alias are configured for your server, append the `auth` and `authAlias` parameters to the `validation` REST endpoint URL by using the following HTTP query parameter syntax:
 ----
 https://localhost:9443/ibm/api/validation/dataSource/myDS?auth=container&authAlias=db2authAlias
 ----
@@ -229,7 +232,7 @@ When you enable the JMS or JCA feature with the Admin REST Connector feature, yo
 
 The `id` attribute in the `connectionFactory` element specifies a unique `cf1` value. You can use the unique value as the `uid` parameter of the `config` REST endpoint URL to view the output of the `connectionFactory` element configuration.
 
-By examining the output from the `https://localhost:9443/ibm/api/config/connectionFactory/cf1` REST endpoint URL, you can find the `validation` REST endpoint path in the `api` field, as shown in the following example:
+By examining the output from the `https://localhost:9443/ibm/api/config/connectionFactory/cf1` REST endpoint URL, you can find the `validation` REST endpoint path in the `api` field specified with the `/ibm/api/validation/connectionFactory/cf1` value, as shown in the following example:
 [source,json]
 ----
 {
