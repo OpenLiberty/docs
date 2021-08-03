@@ -22,9 +22,10 @@ The Open Liberty transaction service is activated by default when you enable fea
 == Transaction service configuration
 
 If you enable any Open Liberty features that use transactions, you can configure how the transaction service manages transaction recovery by specifying the `transaction` element in your `server.xml` file.
-For example, you can configure when transaction recovery occurs. By default, transaction recovery after a server failure happens when the transaction service is first used rather than at server startup. You can alter this behavior by specifying `transaction` element attributes. For more information about the available attributes, see config:transaction[display=Transaction Manager].
 
-In the following `server.xml` example, the `recoverOnStartup` attribute for the `transaction` element specifies that transaction recovery occurs at server startup:
+For example, you can configure when transaction recovery occurs. By default, transaction recovery after a server failure happens when the transaction service is first used rather than at server startup. In some cases you might want to configure transaction recovery to occur at server startup to reduce the processing demands when the transaction service is first used. You can alter this behavior by specifying `transaction` element attributes. For more information about the available attributes, see config:transaction[display=Transaction Manager].
+
+In the following `server.xml` example, the `true` value for the `recoverOnStartup` attribute for the `transaction` element specifies that transaction recovery occurs at server startup:
 
 [source,xml]
 ----
@@ -41,7 +42,7 @@ The `totalTranLifetimeTimeout` attribute sets the maximum time for transactions 
 
 The `0` value for the `heuristicRetryWait` attribute specifies that the server does not retry a completion signal, such as a commit or rollback. By default, up to 5 retries occur after a transient exception from a resource manager or remote partner.
 
-Setting the `acceptHeuristicHazard` attribute to `false` specifies that not all applications on this server accept the possibility of heuristic hazard in a two-phase transaction that contains a one-phase resource.
+Setting the `acceptHeuristicHazard` attribute to `false` enables last participant support (LPS). LPS allows a single one-phase resource to participate in a two-phase transaction with one or more two-phase resources.
 
 == Authorization precedence for database transaction recovery
 
@@ -82,8 +83,6 @@ For more information about data source configuration, see xref:relational-databa
 
 == Transaction log management
 
-You can store your Open Liberty transaction logs in a relational database rather than as operating system files. This feature provides high availability (HA) support without having to use a shared file system. Storing transaction service logs in a relational database is supported for production use.
-
 By default, the transaction service stores transaction logs as operating system files. This HA transaction support requires the use of a shared file system to host the transaction logs, such as an NFSv4-mounted network-attached storage (NAS) or a storage area network (SAN).
 However, you can choose to store the transaction logs in a relational database management system (RDBMS) instead. With this feature, you can use your existing HA database as a shared repository for the transaction logs, as an alternative to using a shared file system. You can use any database type that Open Liberty supports.
 
@@ -105,10 +104,17 @@ To configure the Open Liberty transaction logs to be stored in an RDBMS, you can
   <fileset dir="C:/SQLLIB/java" includes="db2jcc4.jar db2jcc_license_cu.jar"/>
 </library>
 ----
-You can configure an Open Liberty server to recover the logs of a different application server. The original owning application server must not be running when you use this procedure. It is typically employed to perform any outstanding transactional recovery when the transaction service logs are available but the original owning application server cannot be started.
 
-If you store transaction logs in an RDBMS, each server must have its own tables. You can specify a unique table suffix by using the `transactionLogDBTableSuffix` attribute for the `transaction` element. The value for this attribute is a string that is post-pended to the table name to make it unique to the server where the table is hosted.
+If you store transaction logs in an RDBMS, each server must have its own tables. You can specify a unique table suffix by using the `transactionLogDBTableSuffix` attribute for the `transaction` element, as shown in the following example:
 
+[source,xml]
+----
+<transaction transactionLogDBTableSuffix="MyServer1" />
+----
+
+The value for this attribute is a string that is post-pended to the table name to make it unique to the server where the table is hosted. In this example, `MyServer1` is added as a suffix to any table names that are created for this server in an RDBMS.
+
+////
 === Manual configuration of database tables
 Optionally, you can create the database tables manually. Open Liberty attempts to create the necessary database tables when the server first starts. If it cannot create these databases, due to insufficient permission for example, the server fails to start. Under these circumstances, you must create the two database tables manually.
 
