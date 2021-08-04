@@ -17,13 +17,13 @@ The Open Liberty transaction service writes information to a transaction log for
 
 The transaction service maintains transaction logs to ensure the integrity of transactions. Information is written to the transaction logs in the prepare phase of a distributed transaction. If a server with active transactions restarts after a failure, the transaction service is able to use the logs to replay any indoubt transactions. This process allows the overall system to be brought back to a consistent state after a server failure.
 
-The Open Liberty transaction service is activated by default when you enable features that use transactions, such as feature:jpa[display=Java persistence API ], feature:jdbc[display=Java database connectivity], or feature:wasJmsServer[display=Message server]. Although the transaction service is implemented with sensible defaults, you can configure when database transaction recovery occurs and how database transactions are recovered by specifying the `transaction` element in your `server.xml` file. You can also choose to store your transaction logs in a relational database rather than as operating system files by configuring a dedicated, non-transactional data source to store the logs in.
+The transaction service is activated by default when you enable features that use transactions, such as feature:jpa[display=Java persistence API ], feature:jdbc[display=Java database connectivity], or feature:wasJmsServer[display=Message server]. Although the transaction service is implemented with sensible defaults, you can configure when database transaction recovery occurs and how database transactions are recovered by specifying the `transaction` element in your `server.xml` file. You can also choose to store your transaction logs in a relational database rather than as operating system files by configuring a dedicated, non-transactional data source to store the logs in.
 
 == Transaction service configuration
 
 If you enable any Open Liberty features that use transactions, you can configure how the transaction service manages transaction recovery by specifying the `transaction` element in your `server.xml` file.
 
-For example, you can configure when transaction recovery occurs. By default, transaction recovery after a server failure happens when the transaction service is first used rather than at server startup. In some cases you might want to configure transaction recovery to occur at server startup to reduce the processing demands when the transaction service is first used. You can alter this behavior by specifying `transaction` element attributes. For more information about the available attributes, see config:transaction[display=Transaction Manager].
+For example, you can configure when transaction recovery occurs. By default, transaction recovery after a server failure happens when the transaction service is first used rather than at server startup. In some cases, you might want to configure transaction recovery to occur at server startup to reduce the processing demands when the transaction service is first used. You can alter this behavior by specifying `transaction` element attributes. For more information about the available attributes, see config:transaction[display=Transaction Manager].
 
 In the following `server.xml` example, the `true` value for the `recoverOnStartup` attribute for the `transaction` element specifies that transaction recovery occurs at server startup:
 
@@ -40,9 +40,36 @@ In the following `server.xml` example, the `true` value for the `recoverOnStartu
 
 The `totalTranLifetimeTimeout` attribute sets the maximum time for transactions that are started on this server to complete. The `propogatedOrBMTTranLifetimeTimeout` attribute sets the upper limit of the transaction timeout for transactions that run in this server. In this example, both values are set to  300 seconds.
 
-The `0` value for the `heuristicRetryWait` attribute specifies that the server does not retry a completion signal, such as a commit or rollback. By default, up to 5 retries occur after a transient exception from a resource manager or remote partner.
+The `0` value for the `heuristicRetryWait` attribute specifies that the server does not retry a completion signal, such as a commit or rollback. By default, up to five retries occur after a transient exception from a resource manager or remote partner.
 
 Setting the `acceptHeuristicHazard` attribute to `false` provides last participant support (LPS). With LPS, a single one-phase resource can participate in a two-phase transaction with one or more two-phase resources.
+
+== Transaction log management
+
+By default, the transaction service stores transaction logs as operating system files. This transaction support requires the use of a shared file system to host the transaction logs, such as an NFSv4-mounted network-attached storage (NAS) or a storage area network (SAN). In some containerized environments, this configuration might be problematic due to the complexities of the implementation and the lack of support from some cloud service providers.
+
+However, you can choose to store the transaction logs in a relational database management system (RDBMS) instead. With this feature, you can use an existing database as a shared repository for the transaction logs, as an alternative to using a shared file system. You can use any database type that Open Liberty supports.
+
+To store your Open Liberty transaction logs in an RDBMS, you can configure a dedicated, non-transactional data source in your `server.xml` file. Specify the data source configuration inside an instance of the `transaction` element, as shown in the following example:
+
+[source,xml]
+----
+<transaction transactionLogDBTableSuffix="MyServer1" >
+  <dataSource transactional="false">
+    <jdbcDriver libraryRef="DB2JCC4LIB"/>
+    <properties.db2.jcc currentSchema="CBIVP"
+      databaseName="SAMPLE" driverType="4"
+      portNumber="50000" serverName="localhost"
+      user="db2admin" password="{xor}Oz1tPjsyNjE=" />
+  </dataSource>
+</transaction>
+
+<library id="DB2JCC4LIB">
+  <fileset dir="C:/SQLLIB/java" includes="db2jcc4.jar db2jcc_license_cu.jar"/>
+</library>
+----
+
+If you store transaction logs in an RDBMS, each server must have its own tables. You can specify a unique table suffix by using the `transactionLogDBTableSuffix` attribute for the `transaction` element. The value for this attribute is a string that is post-pended to the table name to make it unique to the server where the table is hosted. In the previous example, `MyServer1` is added as a suffix to any table names that are created for this server in an RDBMS.
 
 == Authorization precedence for database transaction recovery
 
@@ -62,9 +89,18 @@ The following example shows an `authData` element that defines a user ID and pas
 ----
 
 . If container-managed authentication is used, then the user ID and password from the container-managed authentication alias are used.
++
+The following example shows an `authData` element that defines a user ID and password. The `dataSource` element references this `authData` element in a `containerAuthDataRef` attribute:
++
+[source,xml]
+----
+<authData id="dbCreds" user="dbUser" password="{aes}AEJrzAGfDEmtxI18U/qEcv54kXmUIgUUV7b5pybw/BzH" />
+
+<dataSource jndiName="jdbc/myDataSource" containerAuthDataRef="dbCreds" />
+----
 
 . If no `recoveryAuthDataRef` attribute is specified and container-managed authentication is not configured, the user ID and password from the `dataSource` element are used. +
-The following example shopws a data source configuration for a Db2 database, where the user ID and password are specified in vendor-specific attributes on the `dataSource` element:
+The following example shows a data source configuration for a Db2 database, where the user ID and password are specified in vendor-specific attributes on the `dataSource` element:
 +
 [source,xml]
 ----
@@ -77,42 +113,11 @@ The following example shopws a data source configuration for a Db2 database, whe
 
 You must not change the value of the `id` or `jndiName` data source attributes when a recovery is pending for a transaction in which the data source participated. If you change any other attributes of the `dataSource` element, those changes are retained for the recovery. For example, you can add a `recoveryAuthDataRef` attribute that specifies a data source user ID and password to use for recovery.
 
-If transactions are recovered by an application-defined data source, such as an `@DataSourceDefinition` annotation or a `data-source` element in a deployment descriptor file, you must ensure that the associated application is running when the recovery occurs. You cannot use configuration settings in the `server.xml` file to recover application-defined data sources.
+If transactions are recovered by an application-defined data source, such as an `@DataSourceDefinition` annotation, the associated application must be running when recovery occurs. You cannot use configuration settings in the `server.xml` file to recover application-defined data sources.
 
 For more information about data source configuration, see xref:relational-database-connections-JDBC.adoc#_data_source_configuration[Data source configuration].
 
-== Transaction log management
 
-By default, the transaction service stores transaction logs as operating system files. This HA transaction support requires the use of a shared file system to host the transaction logs, such as an NFSv4-mounted network-attached storage (NAS) or a storage area network (SAN).
-However, you can choose to store the transaction logs in a relational database management system (RDBMS) instead. With this feature, you can use your existing HA database as a shared repository for the transaction logs, as an alternative to using a shared file system. You can use any database type that Open Liberty supports.
-
-To configure the Open Liberty transaction logs to be stored in an RDBMS, you can configure a dedicated, non-transactional data source in your `server.xml` file. Specify the data source configuration inside an instance of the `transaction` element, as shown in the following example:
-
-[source,xml]
-----
-<transaction>
-  <dataSource transactional="false">
-    <jdbcDriver libraryRef="DB2JCC4LIB"/>
-    <properties.db2.jcc currentSchema="CBIVP"
-      databaseName="SAMPLE" driverType="4"
-      portNumber="50000" serverName="localhost"
-      user="db2admin" password="{xor}Oz1tPjsyNjE=" />
-  </dataSource>
-</transaction>
-
-<library id="DB2JCC4LIB">
-  <fileset dir="C:/SQLLIB/java" includes="db2jcc4.jar db2jcc_license_cu.jar"/>
-</library>
-----
-
-If you store transaction logs in an RDBMS, each server must have its own tables. You can specify a unique table suffix by using the `transactionLogDBTableSuffix` attribute for the `transaction` element, as shown in the following example:
-
-[source,xml]
-----
-<transaction transactionLogDBTableSuffix="MyServer1" />
-----
-
-The value for this attribute is a string that is post-pended to the table name to make it unique to the server where the table is hosted. In this example, `MyServer1` is added as a suffix to any table names that are created for this server in an RDBMS.
 
 ////
 === Manual configuration of database tables
