@@ -95,20 +95,20 @@ If you are developing an application locally in a container, you can minimize di
 
 === Start dev mode with container support
 
-For Maven projects, specify the Liberty Maven plug-in with version `3.3` in your project `pom.xml` file, as shown in the following example:
+For Maven projects, specify the Liberty Maven plug-in with version `3.4` in your project `pom.xml` file, as shown in the following example:
 
 [source,xml]
 ----
 <plugin>
     <groupId>io.openliberty.tools</groupId>
     <artifactId>liberty-maven-plugin</artifactId>
-    <version>3.3</version>
+    <version>3.4</version>
 </plugin>
 ----
 
-For Gradle projects, specify the Liberty Gradle plug-in with version `3.1` in your project `build.gradle` file, as shown in the following example:
+For Gradle projects, specify the Liberty Gradle plug-in with version `3.2` in your project `build.gradle` file, as shown in the following example:
 
-[source,java]
+[source,groovy]
 ----
 apply plugin: 'liberty'
 
@@ -117,7 +117,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'io.openliberty.tools:liberty-gradle-plugin:3.1'
+        classpath 'io.openliberty.tools:liberty-gradle-plugin:3.2'
     }
 }
 ----
@@ -134,6 +134,21 @@ These commands compile your application, build the development image, and run th
 
 For more information, see the documentation for the https://github.com/OpenLiberty/ci.maven/blob/master/docs/dev.md#devc-container-mode[devc goal of the Liberty Maven plug-in] or the https://github.com/OpenLiberty/ci.gradle/blob/master/docs/libertyDev.md#libertydevc-task-container-mode[libertyDevc task of the Liberty Gradle plug-in].
 
+== Run multi-module Maven projects in dev mode
+
+A multi-module Maven project is a project that consists of multiple modules that are specified in the `modules` section of its `pom.xml` file. You can run a multi-module Maven project in dev mode or dev mode with container support.
+
+To start a multi-module project in dev mode, you can define the Liberty Maven plug-in in either the parent `pom.xml` file of every module or in the `pom.xml` of every module. Then, run the `mvn liberty:dev` command from the directory that contains the multi-module `pom.xml` file. When you run a multi-module Maven project in dev mode, changes in all modules are detected and hot deployed according to the Maven Reactor build order.
+
+Any modules that other modules rely on as a compile dependency must have a Java source folder that contains Java files before you start dev mode. Otherwise, the dependent modules might fail to compile. Open Liberty server configuration files, such as the `server.xml`, are used from the module that does not have any other dependent modules. If more than one module without any dependent modules exists, you can specify which module configuration files to use by including the `-pl <_module-with-liberty-config_> -am` parameters  in your `mvn liberty:dev` command.
+
+For example, to use Open Liberty configuration files from a module that is named `ear`, run the following command:
+
+----
+mvn liberty:dev -pl ear -am
+----
+
+For more information, see https://github.com/OpenLiberty/ci.maven/blob/main/docs/dev.md#multiple-modules[Multiple Modules].
 
 == See also
 
