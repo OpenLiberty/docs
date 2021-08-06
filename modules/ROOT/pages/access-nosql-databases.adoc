@@ -1,0 +1,145 @@
+// Copyright (c) 2021 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description: You can configure access to a NoSQL database with a CDI producer.
+:seo-title: Access NoSQL databases
+:seo-description: You can configure access to a NoSQL database with a CDI producer.
+:page-layout: general-reference
+:page-type: general
+= Access NoSQL databases with CDI
+
+NoSQL, or a 'not only SQL', database provides flexible schemas for potentially large amounts of unstructured data.
+You can access a NoSQL database with Open Liberty without enabling any feature in the `server.xml` file.
+
+== Access MongoDB with CDI
+
+You can configure access to any version of MongoDB with a CDI producer.
+For more information, see https://openliberty.io/guides/cdi-intro.html[Injecting dependencies into microservices].
+
+This example demonstrates how to create a CDI producer to inject a MongoDatabase instance:
+
+```
+@ApplicationScoped
+public class MongoProducer {
+
+    @Produces
+    public MongoClient createMongo() {
+        return new MongoClient(new ServerAddress(), new MongoClientOptions.Builder().build());
+    }
+
+    @Produces
+    public MongoDatabase createDB(MongoClient client) {
+        return client.getDatabase("testdb");
+    }
+
+    public void close(@Disposes MongoClient toClose) {
+        toClose.close();
+    }
+}
+```
+The `createMongo()` producer method returns an instance of MongoClient.
+The `createDB()` producer method returns an instance of MongoDatabase that depends on the MongoClient.
+The `close()`` method is a clean-up function for the MongoClient that closes the connection to the MongoDatabase instance.
+
+You can use the CDI producer that you created to inject a MongoDatabase instance in the application:
+
+```
+@Inject
+MongoDatabase db;
+
+@POST
+@Path("/add")
+@Consumes(MediaType.APPLICATION_JSON)
+public void add(CrewMember crewMember) {
+    MongoCollection<Document> crew = db.getCollection("Crew");
+    Document newCrewMember = new Document();
+    newCrewMember.put("Name",crewMember.getName());
+    crew.insertOne(newCrewMember);
+}
+
+```
+The `createMongo` method can be enhanced to include authentication with a user name and an encoded password for additional security:
+
+```
+@Produces
+public MongoClient createMongo() {
+    String password = PasswordUtil.passwordDecode(encodedPass);
+    MongoCredential creds = MongoCredential.createCredential(user, dbName, password.toCharArray());
+    return new MongoClient(new ServerAddress(), creds, new MongoClientOptions.Builder().build());
+}
+```
+You need to add `passwordUtilities-1.0`, available as a Maven dependency:
+
+```
+<dependency>
+    <groupId>io.openliberty.features</groupId>
+    <artifactId>passwordUtilities-1.0</artifactId>
+    <version>18.0.0.4</version>
+</dependency>
+```
+Additionally, you need to enable the feature in the `server.xml` file:
+
+```
+<feature>passwordUtilities-1.0</feature>
+```
+
+Further, you can enable SSL, changing the `createMongo` method:
+
+```
+@Produces
+public MongoClient createMongo() throws SSLException {
+    String password = PasswordUtil.passwordDecode(encodedPass);
+    MongoCredential creds = MongoCredential.createCredential(user, dbName, password.toCharArray());
+    SSLContext sslContext = JSSEHelper.getInstance().getSSLContext("defaultSSLConfig", Collections.emptyMap(), null);
+    return new MongoClient(new ServerAddress(hostname, port), creds, new MongoClientOptions.Builder()
+                           .sslEnabled(true)
+                           .sslContext(sslContext)
+                           .build());
+}
+```
+
+== Configure MongoDB with MicroProfile Config
+
+You can configure variables like the user and password with MicroProfile Config by adding the following to your CDI producer:
+
+```
+@Inject
+@ConfigProperty(name = "mongo.hostname", defaultValue = "localhost")
+String hostname;
+
+@Inject
+@ConfigProperty(name = "mongo.port", defaultValue = "27017")
+int port;
+
+@Inject
+@ConfigProperty(name = "mongo.dbname", defaultValue = "testdb")
+String dbName;
+
+@Inject
+@ConfigProperty(name = "mongo.user")
+String user;
+
+@Inject
+@ConfigProperty(name = "mongo.pass.encoded")
+String encodedPass;
+```
+Add the following snippet to your  `microprofile-config.properties` or `server.env` file, to pull the values for `user` and `encodedPass` into the `MongoProducer` class:
+```
+mongo.user=sampleUser
+mongo.pass.encoded={aes}APtt+/vYxxPa0jE1rhmZue9wBm3JGqFK3JR4oJdSDGWM1wLr1ckvqkqKjSB2Voty8g==
+
+```
+For more information, see link:https://openliberty.io/blog/2019/02/19/mongodb-with-open-liberty.html[Access any version of MongoDB with Open Liberty using CDI].
+
+## Access CouchDB with CDI
+
+To access https://couchdb.apache.org/[CouchDB] with CDI in Open Liberty, you can replace the MongoClient in the example with any any CouchDB client or https://www.ibm.com/cloud/cloudant[Cloudant].
+
+## See also
+
+Guide: https://openliberty.io/guides/mongodb-intro.html[Persisting data with MongoDB]
