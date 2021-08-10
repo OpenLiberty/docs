@@ -40,14 +40,14 @@ Open Liberty recognizes the implementation class names of various data source ty
 
 If you use https://maven.apache.org[Maven] or https://gradle.org[Gradle] build tools to build your application, you can configure a dependency to copy the JDBC driver files to the `${server.config.dir}/jdbc` directory. The driver files must be copied after the server is created but before the application is deployed so that the database instance is available to the  application at run time. With Maven, you can use the `copyDependencies` element for the https://github.com/OpenLiberty/ci.maven[Open Liberty Maven plug-in] to create a dependency for the JDBC driver. However, the https://github.com/OpenLiberty/ci.gradle[Open Liberty Gradle plug-in] does not directly support configuring the JDBC driver library. With Gradle, you must manually add a https://docs.gradle.org/current/dsl/org.gradle.api.tasks.Copy.html[Copy task] to your `build.gradle` file to manage the JDBC dependency.
 
-If you use Maven to build your application, you can download and deploy the JDBC driver by adding code that is similar to the following example to your `pom.xml` file. In this example, the `com.ibm.db2` dependency is copied to the `jdbc` directory in the `${server.config.dir}` directory at build time to deploy the IBM Db2 JDBC driver:
+If you use Maven to build your application, you can download and deploy the JDBC driver by adding code that is similar to the following example to your `pom.xml` file. In this example, the driver files are copied to the `jdbc` directory that is in the `${server.config.dir}` directory:
 
 [source,xml]
 ----
 <plugin>
 <groupId>io.openliberty.tools</groupId>
 <artifactId>liberty-maven-plugin</artifactId>
-<version>[3.3.4,)</version>
+<version>3.3.4</version>
   <configuration>
     <copyDependencies>
       <dependencyGroup>
@@ -55,7 +55,7 @@ If you use Maven to build your application, you can download and deploy the JDBC
      	  <dependency>
             <groupId>com.ibm.db2</groupId>
             <artifactId>jcc</artifactId>
-            <version>11.5.4.0</version>
+            <version>11.5.6.0</version>
       	  </dependency>
       </dependencyGroup>
      </copyDependencies>
@@ -64,7 +64,7 @@ If you use Maven to build your application, you can download and deploy the JDBC
 ----
 
 
-This example uses version `3.3.4` of the Liberty Maven plug-in. To use a different version, update the `version` value to specify the version that you want to use. For more information, see https://github.com/OpenLiberty/ci.maven/blob/main/docs/common-server-parameters.md#copying-dependencies-with-liberty-maven-plugin[Copying dependencies with liberty-maven-plugin].
+This example uses version `3.3.4` of the Liberty Maven plug-in. To use a different version, update the `version` value to specify the version that you want to use. For more information, see https://github.com/OpenLiberty/ci.maven/blob/main/docs/common-server-parameters.md#copying-dependencies-with-liberty-maven-plugin[Copying dependencies with the Open Liberty Maven plug-in].
 
 If you use Gradle to build your application, you can add a `copy` task to your `build.gradle` file. Then, add a dependency for that task to the `deploy` task in the `build.gradle` file so that the `copy` task runs after the server is created but before the application is deployed:
 
@@ -84,7 +84,7 @@ task copyJDBC(type: Copy) {
 deploy.dependsOn 'copyJDBC'
 ----
 
-In this `build.gradle` file example, a `configurations` instance that is called `jdbcLib` is declared with a dependency for the `com.ibm.db2:jcc:11.5.4.0` Db2 JDBC driver. The `copyJDBC` task specifies that the driver JAR files are copied into the `jdbc` folder in the server configuration directory. Finally, a `deploy` dependency specifies that the driver must be copied to the server before the application is deployed so it can be available at run time.
+In this `build.gradle` file example, a `configurations` instance that is called `jdbcLib` is declared with a dependency for the driver. The `copyJDBC` task specifies that the driver JAR files are copied into the `jdbc` folder in the server configuration directory. Finally, a `deploy` dependency specifies that the driver must be copied to the server before the application is deployed so it can be available at run time.
 
 == Data source configuration
 
