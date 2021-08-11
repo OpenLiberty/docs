@@ -11,7 +11,7 @@
 :seo-description:
 :page-layout: general-reference
 :page-type: general
-= Manage database transaction recovery with the transaction service
+= Manage transaction recovery with the transaction service
 
 The Open Liberty transaction service writes information to a transaction log for every global transaction that involves two or more resources, or that is distributed across multiple servers. You can configure the transaction service to control when and how database transactions are recovered after a server failure.
 
@@ -46,6 +46,34 @@ Setting the `acceptHeuristicHazard` attribute to `false` removes last participan
 
 For more information about transaction attributes, see config:transaction[display=Transaction Manager].
 
+You must not change the value of the `id` or `jndiName` data source attributes when a recovery is pending for a transaction in which the data source participated. If you change any other attributes of the `dataSource` element, those changes are retained for the recovery. For example, you can add a `recoveryAuthDataRef` attribute that specifies a data source user ID and password to use for recovery.
+
+If transactions are recovered by an application-defined data source, such as an `@DataSourceDefinition` annotation, the associated application must be running when recovery occurs. You cannot use configuration settings in the `server.xml` file to recover application-defined data sources.
+
+== Transaction recovery in a cloud environment
+
+In a cloud environment such as OpenShift, Open Liberty servers can be dynamically created or deleted, for example, to handle variations in system load. This possibility poses a problem for applications that use transactions. The sudden removal of a server instance might occur during two-phase commit (2PC) processing and leave transactional resources locked.
+
+To alleviate this problem, you can configure Open Liberty servers to automatically recover transactions on behalf of other servers. This process is called peer recovery. You can configure peer recovery and is by specifying the `recoveryGroup` and `recoveryIdentity` attributes of the `transaction` element in your `server.xml` file, as shown in the following example:
+
+[source,xml]
+----
+<transaction
+  ...
+  recoveryGroup="peer-group-name"
+  recoveryIdentity="${HOSTNAME}${wlp.server.name}"
+  ...
+/>
+----
+
+The value of the `recoveryIdentity` attribute must uniquely identify a server instance. In a Kubernetes environment, you can specify the `${HOSTNAME}` environment variable to map value to the name of the pod where the server is running, as shown in the previous example.
+
+An Open Liberty server that is configured with the `recoveryGroup` and `recoveryIdentity` attributes  continually monitors its peers, which are other server instances that are configured with the same `recoveryGroup` value. When a server detects that one of its peers is deleted, it recovers transactions by using the transaction logs from deleted server to release any remaining resource locks.
+
+To monitor peers, servers must be configured so that their transaction logs are accessible to all members of the recovery group. The use of a shared file system, such as an RWX persistent volume in a Kubernetes cluster, for this purpose is explicitly not supported where the file system crosses data centers. This limitation is due to the difficulty of implementing POSIX locking semantics in such a configuration. Under these circumstances, the transaction service must be configured to use a relational database for its transaction logs. For more information, see the _Transaction log management_ section.
+
+Similar to regular transaction recovery, a server that performs peer recovery must have access to the same set of transactional resources as the server that is being recovered.
+
 == Transaction log management
 
 By default, the transaction service stores transaction logs as operating system files. This transaction support requires the use of a shared file system to host the transaction logs, such as an NFSv4-mounted network-attached storage (NAS) or a storage area network (SAN). In some containerized environments, this configuration might be problematic due to the complexities of the implementation and the lack of support from some cloud service providers. As an alternative, you can configure the transaction service to use an existing database as a shared repository for the transaction logs. You can use any database type that Open Liberty supports.
@@ -70,6 +98,45 @@ To store your Open Liberty transaction logs in an RDBMS, you can configure a ded
 ----
 
 If you store transaction logs in an RDBMS, each server must have its own tables. You can specify a unique table suffix by using the `transactionLogDBTableSuffix` attribute for the `transaction` element. The value for this attribute is a string that is post-pended to the table name to make it unique to the server where the table is hosted. In the previous example, `MyServer1` is added as a suffix to any table names that are created for this server in an RDBMS.
+
+=== Manual configuration of database tables
+Open Liberty attempts to create the necessary transaction log tables on the configured database when the server first starts. If it cannot create tables on that database, the server fails to start. If you want to use a database that Open Liberty cannot automatically create transaction log tables for, you can create the tables manually by using Data Definition Language (DDL) statements.
+
+The following example shows the DDL structure that Open Liberty uses to create tables on a PostgreSQL database. Although Open Liberty can automatically create tables in a PostGre SQL database, you can adapt these structures to create tables on databases that Open Liberty does not automatically support.
+
+
+The following DDL structures show how to create the database table on postgreSQL:
+
+[source,SQL]
+----
+CREATE TABLE OL_TRAN_LOG (
+SERVER_NAME VARCHAR(128),
+SERVICE_ID SMALLINT,
+RU_ID BIGINT,
+RUSECTION_ID BIGINT,
+RUSECTION_DATA_INDEX SMALLINT,
+DATA BYTEA)
+----
+
+[source,SQL]
+----
+CREATE TABLE OL_PARTNER_LOG (SERVER_NAME VARCHAR(128),
+SERVICE_ID SMALLINT,
+RU_ID BIGINT,
+RUSECTION_ID BIGINT,
+RUSECTION_DATA_INDEX SMALLINT,
+DATA BYTEA)
+----
+
+The following DDL structures show how to create indexes for these tables:
+
+[source,SQL]
+----
+CREATE INDEX IXOLTRAN_LOG ON OL_TRAN_LOG ( RU_ID ASC, SERVICE_ID ASC, SERVER_NAME ASC)
+CREATE INDEX IXOLPARTNER_LOG ON OL_PARTNER_LOG ( RU_ID ASC, SERVICE_ID ASC, SERVER_NAME ASC)
+----
+
+For more information, consult the vendor documentation for your chosen database.
 
 == Authorization precedence for database transaction recovery
 
@@ -110,184 +177,4 @@ The following example shows a data source configuration for a Db2 database, wher
 +
 . If none of the previous conditions are satisfied, the recovery is attempted without any user ID and password and the behavior is determined by the configured JDBC driver and data source.
 
-You must not change the value of the `id` or `jndiName` data source attributes when a recovery is pending for a transaction in which the data source participated. If you change any other attributes of the `dataSource` element, those changes are retained for the recovery. For example, you can add a `recoveryAuthDataRef` attribute that specifies a data source user ID and password to use for recovery.
-
-If transactions are recovered by an application-defined data source, such as an `@DataSourceDefinition` annotation, the associated application must be running when recovery occurs. You cannot use configuration settings in the `server.xml` file to recover application-defined data sources.
-
 For more information, see xref:relational-database-connections-JDBC.adoc#_data_source_configuration[Data source configuration].
-
-
-
-////
-=== Manual configuration of database tables
-Optionally, you can create the database tables manually. Open Liberty attempts to create the necessary database tables when the server first starts. If it cannot create these databases, due to insufficient permission for example, the server fails to start. Under these circumstances, you must create the two database tables manually.
-
-The following sections provide example data definition language (DDL) structures to create tables and indexes for commonly used database vendors:
-
-- <<#db2,Db2>>
-- <<#oracle,Oracle>>
-- <<#postgreSQL,postgreSQL>>
-- <<#microsoft,Microsoft SQL Server>>
-
-[#db2]
-=== Db2
-
-The following DDL structures show how to create the tables on Db2:
-
-[source,SQL]
-----
-CREATE TABLE OL_TRAN_LOG(
-  SERVER_NAME VARCHAR(128),
-  SERVICE_ID SMALLINT,
-  RU_ID BIGINT,
-  RUSECTION_ID BIGINT,
-  RUSECTION_DATA_INDEX SMALLINT,
-  DATA BLOB)
-----
-
-[source,SQL]
-----
-CREATE TABLE OL_PARTNER_LOG(
-  SERVER_NAME VARCHAR(128),
-  SERVICE_ID SMALLINT,
-  RU_ID BIGINT,
-  RUSECTION_ID BIGINT,
-  RUSECTION_DATA_INDEX SMALLINT,
-  DATA BLOB)
-----
-
-The following DDL structures show how to create the tables on the old DB2 version:
-
-[source,SQL]
-----
-CREATE TABLE OL_TRAN_LOG(
-  SERVER_NAME VARCHAR(128),
-  SERVICE_ID SMALLINT,
-  RU_ID BIGINT,
-  RUSECTION_ID BIGINT,
-  RUSECTION_DATA_INDEX SMALLINT,
-  DATA LONG VARCHAR FOR BIT DATA)
-----
-
-[source,SQL]
-----
-CREATE TABLE OL_PARTNER_LOG(
-  SERVER_NAME VARCHAR(128),
-  SERVICE_ID SMALLINT,
-  RU_ID BIGINT,
-  RUSECTION_ID BIGINT,
-  RUSECTION_DATA_INDEX SMALLINT,
-  DATA LONG VARCHAR FOR BIT DATA)
-----
-
-The following DDL structures show how to create indexes for these tables:
-
-[source,SQL]
-----
-CREATE INDEX IXOLTRAN_LOG ON OL_TRAN_LOG (RU_ID ASC, SERVICE_ID ASC, SERVER_NAME ASC)
-CREATE INDEX IXOLPARTNER_LOG ON OL_PARTNER_LOG (RU_ID ASC, SERVICE_ID ASC, SERVER_NAME ASC)
-----
-
-[#oracle]
-=== Oracle
-
-The following DDL structures show how to create the database table on Oracle:
-
-[source,SQL]
-----
-CREATE TABLE OL_TRAN_LOG(
-  SERVER_NAME VARCHAR(128),
-  SERVICE_ID SMALLINT,
-  RU_ID NUMBER(19),
-  RUSECTION_ID NUMBER(19),
-  RUSECTION_DATA_INDEX SMALLINT,
-  DATA BLOB)
-----
-
-[source,SQL]
-----
-CREATE TABLE OL_PARTNER_LOG(
-  SERVER_NAME VARCHAR(128),
-  SERVICE_ID SMALLINT,
-  RU_ID NUMBER(19),
-  RUSECTION_ID NUMBER(19),
-  RUSECTION_DATA_INDEX SMALLINT,
-  DATA BLOB)
-----
-
-The following DDL structures show how to create indexes for these tables:
-
-[source,SQL]
-----
-CREATE INDEX IXOLTRAN_LOG ON OL_TRAN_LOG ( "RU_ID" ASC, "SERVICE_ID" ASC, "SERVER_NAME" ASC)
-CREATE INDEX IXOLPARTNER_LOG ON OL_PARTNER_LOG ( "RU_ID" ASC, "SERVICE_ID" ASC, "SERVER_NAME" ASC)
-----
-
-[#postgreSQL]
-=== PostgreSQL
-
-The following DDL structures show how to create the database table on postgreSQL:
-
-[source,SQL]
-----
-CREATE TABLE OL_TRAN_LOG (
-SERVER_NAME VARCHAR(128),
-SERVICE_ID SMALLINT,
-RU_ID BIGINT,
-RUSECTION_ID BIGINT,
-RUSECTION_DATA_INDEX SMALLINT,
-DATA BYTEA)
-----
-
-[source,SQL]
-----
-CREATE TABLE OL_PARTNER_LOG (SERVER_NAME VARCHAR(128),
-SERVICE_ID SMALLINT,
-RU_ID BIGINT,
-RUSECTION_ID BIGINT,
-RUSECTION_DATA_INDEX SMALLINT,
-DATA BYTEA)
-----
-
-The following DDL structures show how to create indexes for these tables:
-
-[source,SQL]
-----
-CREATE INDEX IXOLTRAN_LOG ON OL_TRAN_LOG ( RU_ID ASC, SERVICE_ID ASC, SERVER_NAME ASC)
-CREATE INDEX IXOLPARTNER_LOG ON OL_PARTNER_LOG ( RU_ID ASC, SERVICE_ID ASC, SERVER_NAME ASC)
-----
-
-[#microsoft]
-=== Microsoft SQL Server
-
-The following DDL structures show how to create the database table on Microsoft SQL Server:
-
-[source,SQL]
-----
-CREATE TABLE OL_TRAN_LOG (
-SERVER_NAME VARCHAR(128),
-SERVICE_ID SMALLINT,
-RU_ID BIGINT,
-RUSECTION_ID BIGINT,
-RUSECTION_DATA_INDEX SMALLINT,
-DATA VARBINARY(MAX))
-----
-
-[source,SQL]
-----
-CREATE TABLE OL_PARTNER_LOG (
-SERVER_NAME VARCHAR(128),
-SERVICE_ID SMALLINT,
-RU_ID BIGINT,
-RUSECTION_ID BIGINT,
-RUSECTION_DATA_INDEX SMALLINT,
-DATA VARBINARY(MAX))
-----
-
-The following DDL structures show how to create indexes for these tables:
-
-[source,SQL]
-----
-CREATE INDEX IXOLTRAN_LOG ON OL_TRAN_LOG ( "RU_ID" ASC, "SERVICE_ID" ASC, "SERVER_NAME" ASC)
-CREATE INDEX IXOLPARTNER_LOG ON OL_PARTNER_LOG ( "RU_ID" ASC, "SERVICE_ID" ASC, "SERVER_NAME" ASC)
-----
