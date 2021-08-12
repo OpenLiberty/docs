@@ -17,8 +17,16 @@ The Open Liberty transaction service writes information to a transaction log for
 
 The transaction service maintains transaction logs to ensure the integrity of transactions. Information is written to the transaction logs in the prepare phase of a distributed transaction. If a server with active transactions restarts after a failure, the transaction service is able to use the logs to replay any indoubt transactions. This process allows the overall system to be brought back to a consistent state after a server failure.
 
-The transaction service is activated by default when you enable features that use transactions, such as feature:jpa[display=Java persistence API ], feature:jdbc[display=Java database connectivity], or feature:wasJmsServer[display=Message server]. Although the transaction service is implemented with sensible defaults, you can configure when database transaction recovery occurs and how database transactions are recovered by specifying the `transaction` element in your `server.xml` file. You can also choose to store your transaction logs in a relational database rather than as operating system files by configuring a dedicated, non-transactional data source to store the logs in.
+The transaction service is activated by default when you enable features that use transactions, such as feature:jpa[display=Java persistence API ], feature:jdbc[display=Java database connectivity], or feature:wasJmsServer[display=Message server]. Although the transaction service is implemented with sensible defaults, you can configure when database transaction recovery occurs and how database transactions are recovered by specifying the `transaction` element in your `server.xml` file. You can also choose to store your transaction logs in a relational database rather than as operating system files by configuring a dedicated, non-transactional data source to store the logs.
 
+The following sections provide details about configuring Open Liberty for transaction recovery:
+
+- <<#service,Transaction service configuration>>
+- <<#cloud,Transaction recovery in a cloud environment>>
+- <<#log,Transaction log management>>
+- <<#auth,Authorization precedence for database transaction recovery>>
+
+[#service]
 == Transaction service configuration
 
 If you enable any Open Liberty features that use transactions, you can configure how the transaction service manages transaction recovery by specifying the `transaction` element in your `server.xml` file.
@@ -42,7 +50,7 @@ The `totalTranLifetimeTimeout` attribute sets the maximum time for transactions 
 
 The `0` value for the `heuristicRetryWait` attribute specifies that the server does not retry a completion signal, such as a commit or rollback. By default, up to five retries occur after a transient exception from a resource manager or remote partner.
 
-Setting the `acceptHeuristicHazard` attribute to `false` removes last participant support (LPS). With LPS, a single one-phase resource can participate in a two-phase transaction with one or more two-phase resources. However, enabling LPS carries some risk of a heuristic outcome for the transaction in the event of a network failure on the commit of the one-phase resource. To avoid this risk, you can set this attribute to `false`.
+Setting the `acceptHeuristicHazard` attribute to `false` removes last participant support (LPS). With LPS, a single one-phase resource can participate in a two-phase transaction with one or more two-phase resources. However, enabling LPS carries some risk of a heuristic outcome for the transaction in the event of a network failure on the commit of the one-phase resource. To avoid this risk, you can opt out of LPS support by setting this attribute to `false`.
 
 For more information about transaction attributes, see config:transaction[display=Transaction Manager].
 
@@ -50,11 +58,12 @@ You must not change the value of the `id` or `jndiName` data source attributes w
 
 If transactions are recovered by an application-defined data source, such as an `@DataSourceDefinition` annotation, the associated application must be running when recovery occurs. You cannot use configuration settings in the `server.xml` file to recover application-defined data sources.
 
+[#cloud]
 == Transaction recovery in a cloud environment
 
 In a cloud environment such as OpenShift, Open Liberty servers can be dynamically created or deleted, for example, to handle variations in system load. This possibility poses a problem for applications that use transactions. The sudden removal of a server instance might occur during two-phase commit (2PC) processing and leave transactional resources locked.
 
-To alleviate this problem, you can configure Open Liberty servers to automatically recover transactions on behalf of other servers. This process is called peer recovery. You can configure peer recovery and is by specifying the `recoveryGroup` and `recoveryIdentity` attributes of the `transaction` element in your `server.xml` file, as shown in the following example:
+To alleviate this problem, you can configure Open Liberty servers to automatically recover transactions on behalf of other servers. This process is called peer recovery. You can configure it by specifying the `recoveryGroup` and `recoveryIdentity` attributes in your `server.xml` file, as shown in the following example:
 
 [source,xml]
 ----
@@ -68,12 +77,14 @@ To alleviate this problem, you can configure Open Liberty servers to automatical
 
 The value of the `recoveryIdentity` attribute must uniquely identify a server instance. In a Kubernetes environment, you can specify the `${HOSTNAME}` environment variable to map value to the name of the pod where the server is running, as shown in the previous example.
 
-An Open Liberty server that is configured with the `recoveryGroup` and `recoveryIdentity` attributes  continually monitors its peers, which are other server instances that are configured with the same `recoveryGroup` value. When a server detects that one of its peers is deleted, it recovers transactions by using the transaction logs from deleted server to release any remaining resource locks.
+An Open Liberty server that is configured with the `recoveryGroup` and `recoveryIdentity` attributes  continually monitors its peers, which are other server instances that are configured with the same `recoveryGroup` value. When a server detects that one of its peers is deleted, it recovers transactions by using the transaction logs from the deleted server to release any remaining resource locks.
 
-To monitor peers, servers must be configured so that their transaction logs are accessible to all members of the recovery group. The use of a shared file system, such as an RWX persistent volume in a Kubernetes cluster, for this purpose is explicitly not supported where the file system crosses data centers. This limitation is due to the difficulty of implementing POSIX locking semantics in such a configuration. Under these circumstances, the transaction service must be configured to use a relational database for its transaction logs. For more information, see the _Transaction log management_ section.
+To monitor peers, servers must be configured so that their transaction logs are accessible to all members of the recovery group. A server that performs peer recovery must have access to the same set of transactional resources as the server that is being recovered.
 
-Similar to regular transaction recovery, a server that performs peer recovery must have access to the same set of transactional resources as the server that is being recovered.
+The use of a shared file system for this purpose, such as an RWX persistent volume in a Kubernetes cluster, is explicitly not supported where the file system crosses data centers. This limitation is due to the difficulty of implementing POSIX locking semantics in such a configuration. Under these circumstances, the transaction service must be configured to use a relational database for its transaction logs. For more information, see the _Transaction log management_ section.
 
+
+[#log]
 == Transaction log management
 
 By default, the transaction service stores transaction logs as operating system files. This transaction support requires the use of a shared file system to host the transaction logs, such as an NFSv4-mounted network-attached storage (NAS) or a storage area network (SAN). In some containerized environments, this configuration might be problematic due to the complexities of the implementation and the lack of support from some cloud service providers. As an alternative, you can configure the transaction service to use an existing database as a shared repository for the transaction logs. You can use any database type that Open Liberty supports.
@@ -99,13 +110,14 @@ To store your Open Liberty transaction logs in an RDBMS, you can configure a ded
 
 If you store transaction logs in an RDBMS, each server must have its own tables. You can specify a unique table suffix by using the `transactionLogDBTableSuffix` attribute for the `transaction` element. The value for this attribute is a string that is post-pended to the table name to make it unique to the server where the table is hosted. In the previous example, `MyServer1` is added as a suffix to any table names that are created for this server in an RDBMS.
 
+
 === Manual configuration of database tables
 Open Liberty attempts to create the necessary transaction log tables on the configured database when the server first starts. If it cannot create tables on that database, the server fails to start. If you want to use a database that Open Liberty cannot automatically create transaction log tables for, you can create the tables manually by using Data Definition Language (DDL) statements.
 
 The following example shows the DDL structure that Open Liberty uses to create tables on a PostgreSQL database. Although Open Liberty can automatically create tables in a PostGre SQL database, you can adapt these structures to create tables on databases that Open Liberty does not automatically support.
 
 
-The following DDL structures show how to create the database table on postgreSQL:
+The following DDL structures show how to create the database table on a PostgreSQL database:
 
 [source,SQL]
 ----
@@ -138,6 +150,7 @@ CREATE INDEX IXOLPARTNER_LOG ON OL_PARTNER_LOG ( RU_ID ASC, SERVICE_ID ASC, SERV
 
 For more information, consult the vendor documentation for your chosen database.
 
+[#auth]
 == Authorization precedence for database transaction recovery
 
 When the Open Liberty transaction service recovers indoubt database transactions, it uses either the unique identifier or the JNDI name of the data source to locate the current `dataSource` element. The service then determines the user ID and password to use for recovery based on the configuration of that element in the `server.xml` file.
