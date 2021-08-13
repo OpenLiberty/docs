@@ -13,16 +13,17 @@
 :page-type: general
 = Access NoSQL databases with CDI
 
-NoSQL, or a 'not only SQL', database provides flexible schemas for potentially large amounts of structured, semi-structured, and unstructured data for faster development.
+Not only SQL (NoSQL) databases provide flexible schemas for potentially large amounts of structured, semi-structured, and unstructured data.
 You can access a NoSQL database with Open Liberty without enabling any feature in the `server.xml` file.
 
-Earlier, using MongoDB and CouchDB required enabling the MongoDBb and CouchDBb features, which are now stabilized.
-To connect to newer versions of either database, you can https://openliberty.io/guides/cdi-intro.html[configure a CDI producer] in you application code.
+Before Open Liberty version 19.0.0.6, using MongoDB or Couch DB databases required you to enable the MongoDBb or CouchDBb feature.
+The Mongo DB feature was stabilized in version 19.0.0.4 and the CouchDB feature was stabilized in version 19.0.0.6.
+To connect to these databases in version 19.0.0.6 and later, you can https://openliberty.io/guides/cdi-intro.html[configure a CDI producer in your application code].
 
 == Access MongoDB with CDI
 
 You can configure access to any version of https://www.mongodb.com/[MongoDB] with a CDI producer.
-This example demonstrates how to create a CDI producer to inject a MongoDatabase instance:
+This example demonstrates how to create a CDI producer to inject a `MongoDatabase` instance:
 
 ```
 @ApplicationScoped
@@ -43,11 +44,10 @@ public class MongoProducer {
     }
 }
 ```
-The `createMongo()` producer method returns an instance of MongoClient.
-The `createDB()` producer method returns an instance of MongoDatabase that depends on the MongoClient.
-The `close()`` method is a clean-up function for the MongoClient that closes the connection to the MongoDatabase instance.
-
-You can use the CDI producer that you created to inject a MongoDatabase instance in the application:
+The `createMongo()producer` method returns a `MongoClient` instance.
+The `createDB()producer` method returns a `MongoDatabase` instance that depends on the `MongoClient` instance.
+The `close()` method is a clean-up function for the `MongoClient` instance that closes the connection to the `MongoDatabase` instance.
+You can use the CDI producer that you created to inject a `MongoDatabase` instance in the application:
 
 ```
 @Inject
@@ -64,7 +64,7 @@ public void add(CrewMember crewMember) {
 }
 
 ```
-The `createMongo` method can be enhanced to include authentication with a user name and an encoded password for additional security:
+The `createMongo` method can be enhanced to include authentication with a username and an encoded password for additional security:
 
 ```
 @Produces
@@ -74,23 +74,14 @@ public MongoClient createMongo() {
     return new MongoClient(new ServerAddress(), creds, new MongoClientOptions.Builder().build());
 }
 ```
-You need to add the `passwordUtilities-1.0` feature, available as a Maven dependency:
-
-```
-<dependency>
-    <groupId>io.openliberty.features</groupId>
-    <artifactId>passwordUtilities-1.0</artifactId>
-    <version>18.0.0.4</version>
-</dependency>
-```
-Additionally, you need to enable the `passwordUtilities-1.0` feature in the `server.xml` file:
+You need to enable the feature:passwordUtilities[display=Password Utilities] feature in the `server.xml` file:
 
 ```
 <feature>passwordUtilities-1.0</feature>
 ```
 
-Further, you can enable SSL.
-The `JSSEHelper` gets the `SSLContext`  to create a new `MongoClient` instance and change the `createMongo` method that looks like the following:
+You can enable TLS for your database connection.
+Add the `JSSEHelper` class to the `createMongo` method to get the `SSLContext` class, as shown in the following example:
 
 ```
 @Produces
@@ -104,6 +95,7 @@ public MongoClient createMongo() throws SSLException {
                            .build());
 }
 ```
+To access https://couchdb.apache.org/[CouchDB] with CDI in Open Liberty, you can replace the MongoClient in the example with any any CouchDB client or https://www.ibm.com/cloud/cloudant[Cloudant].
 
 == Configure MongoDB with MicroProfile Config
 
@@ -139,9 +131,6 @@ mongo.pass.encoded={aes}APtt+/vYxxPa0jE1rhmZue9wBm3JGqFK3JR4oJdSDGWM1wLr1ckvqkqK
 ```
 For more information, see link:https://openliberty.io/blog/2019/02/19/mongodb-with-open-liberty.html[Access any version of MongoDB with Open Liberty using CDI].
 
-## Access CouchDB with CDI
-
-To access https://couchdb.apache.org/[CouchDB] with CDI in Open Liberty, you can replace the MongoClient in the example with any any CouchDB client or https://www.ibm.com/cloud/cloudant[Cloudant].
 
 ## See also
 
