@@ -16,25 +16,39 @@
 A health check is a special REST API implementation that you can use to validate the status of a microservice and its dependencies. With MicroProfile Health, microservices can self-check their health and publish their overall status to a defined endpoint.
 
 A health check can assess anything that a microservice needs, including dependencies, system properties, database connections, endpoint connections, and resource availability. The overall status of the microservice depends on whether all the configured health checks pass.
-A microservice is considered available  and reports an `UP` status if all the configured health checks are successful. If one or more health checks fail, the microservice is considered unavailable and reports a `DOWN` status. Services can report their availability to a defined endpoint by implementing the API that is provided by https://github.com/eclipse/microprofile-health[MicroProfile Health]. A service orchestrator can use these status reports to decide how to manage and scale the microservices within an application. Health checks can also interact with https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/[Kubernetes liveness and readiness probes].
+A microservice is considered available  and reports an `UP` status if all the configured health checks are successful. If one or more health checks fail, the microservice is considered unavailable and reports a `DOWN` status. Services can report their availability to a defined endpoint by implementing the API that is provided by https://github.com/eclipse/microprofile-health[MicroProfile Health]. A service orchestrator can use these status reports to decide how to manage and scale the microservices within an application. Health checks can also interact with https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/[Kubernetes liveness and readiness probes], and in MicroProfile Health 3.1 and later, https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#define-startup-probes[Kubernetes startup probes].
 
 For example, in a microservices-based banking application, you might implement health checks on the login microservice, the balance transfer microservice, and the bill pay microservice. If a health check on the balance transfer microservice detects a bug or deadlock, it returns a `DOWN` status. In this case, if the `/health/live` endpoint is configured in a Kubernetes liveness probe, the probe restarts the microservice automatically. Restarting the microservice saves the user from encountering downtime or an error and preserves the functions of the other microservices in the application.
+
+In MicroProfile Health 3.1 and later, the startup check ensures that all the configured microservices have sufficient time to initialize before the liveness and readiness checks begin. This check is useful for applications that require extra startup time on their first initialization. It prevents the liveness and readiness checks from starting prematurely and potentially failing just because an application is not fully initialized. In the previous example, the startup check blocks the liveness and readiness checks from starting until it verifies that the login, balance transfer, and bill pay microservices are all fully initialized.
 
 You can use MicroProfile Health with Open Liberty by enabling the feature:mpHealth[display=MicroProfile Health] feature in your `server.xml` file.
 
 == MicroProfile Health endpoints and annotations
 
-MicroProfile Health provides the following three endpoints:
+MicroProfile Health provides the following four endpoints:
 
 - `/health/ready` +
 This endpoint returns the readiness of a microservice, or whether it is ready to process requests. It corresponds to the Kubernetes readiness probe.
 - `/health/live` +
 This endpoint returns the liveness of a microservice, or whether it encountered a bug or deadlock. If this check fails, the microservice is not running and can be stopped. This endpoint corresponds to the Kubernetes liveness probe, which automatically restarts the pod if the check fails.
+- `/health/started` +
+In MicroProfile Health 3.1 and later, you can use this endpoint to determine whether your deployed applications are initialized, according to criteria that you define. It corresponds to the Kubernetes startup probe.
 - `/health` +
 This endpoint aggregates the responses from the `/health/live` and `/health/ready` endpoints. It corresponds to the deprecated `@Health` annotation and is only available to provide compatibility with MicroProfile 1.0. If you are using MicroProfile 2.0 or higher, use the `/health/ready` or `/health/live` endpoints instead. The `@Health` annotation is not available in MicroProfile 4.0 or later or MicroProfile Health 3.0 or later.
 
-To add readiness or liveness health checks to your microservice, create a class in your application code that implements xref:reference:javadoc/microprofile-4.0-javadoc.adoc#class=org/eclipse/microprofile/health/HealthCheck.html&package=allclasses-frame.html[the HealthCheck interface] and add either the `@Liveness` or `@Readiness` annotation to it. These annotations specify the conditions that determine whether the health check passes or fails.
-You can view the results of the health checks by pointing your browser to one of the endpoint URLs, for example `http://localhost:9443/health/live` or `http://localhost:9443/health/ready`, where `9443` is the port number for your application. For more information, see link:/guides/microprofile-health.html[Adding health reports to microservices].
+To add readiness or liveness health checks to your microservice, create a class in your application code that implements xref:reference:javadoc/microprofile-4.0-javadoc.adoc#class=org/eclipse/microprofile/health/HealthCheck.html&package=allclasses-frame.html[the HealthCheck interface] and add either the <<#live,@Liveness>> or <<#ready,@Readiness>> annotation to it. These annotations specify the conditions that determine whether the health check passes or fails. In MicroProfile Health 3.1 and later, you can also add the <<#start,@Startup>> annotation to create your own health check procedures that verify whether your microservices are fully initialized.
+
+You can view health check results in a web browser by going to one of the endpoint URLs in the `http://_host:port_number_/health/_endpoint_` syntax. For example, if you configure the annotations in an application with a `9443` port number that runs on the same computer as your browser, the following endpoint URLs are available:
+
+- `\http://localhost:9443/health/live`
+- `\http://localhost:9443/health/ready`
+- `\http://localhost:9443/health/started` (MicroProfile 3.1 and later)
+
+For more information, see link:/guides/microprofile-health.html[Adding health reports to microservices].
+
+[#live]
+=== The @Liveness annotation
 
 The following example demonstrates the `@Liveness` annotation in a class that implements the `HealthCheck` interface. In this example, the `@Liveness` annotation checks the heap memory usage. If heap memory usage is less than 90%, it returns an `UP` status. If memory usage exceeds 90%, it returns a `DOWN` status:
 
@@ -58,11 +72,12 @@ public class MemoryCheck implements HealthCheck {
     }
 }
 ----
+
 For MicroProfile Health versions 2.x and earlier, the `.status` response is replaced by the `.state` response in the `HealthCheckResponse` class.
 
 The following example shows the JSON response from the `/health/live` endpoint if heap memory usage is less than 90%. The first status indicates the overall status of all health checks that are returned from the endpoint. An `UP` status indicates that all the configured checks passed and that the service is available. A `DOWN` status indicates that one or more checks failed and the service is unavailable. The second status indicates the status of the particular check that is specified by the preceding `name` value, which in this example is `heap-memory`. In this example, the liveness check passed and because it is the only check that is configured, the overall status is `UP`:
 
-[source,java]
+[source,json]
 ----
 {
   "status": "UP",
@@ -78,6 +93,9 @@ The following example shows the JSON response from the `/health/live` endpoint i
   ]
 }
 ----
+
+[#ready]
+=== The @Readiness annotation
 
 The next example shows the `@Readiness` annotation on a class that implements the `HealthCheck` interface. In this example, the `@Readiness` annotation checks for a database connection. If the connection is successful, it returns an `UP` status. If the connection is unsuccessful, it returns a `DOWN` status:
 
@@ -102,7 +120,7 @@ public class DatabaseReadyCheck implements HealthCheck {
 
 The following example shows the JSON response from the `/health/ready` endpoint if the database connection is unsuccessful. The first status indicates the overall status of all health checks that are returned from the endpoint. The second status indicates the status of the particular check that is specified by the preceding `name` value, which in this example is `databaseReady`. In this example, the readiness check failed and returned a `DOWN` status so the overall status is also `DOWN`:
 
-[source,java]
+[source,json]
 ----
 {
   "status": ”DOWN",
@@ -115,7 +133,54 @@ The following example shows the JSON response from the `/health/ready` endpoint 
 }
 ----
 
+
 In MicroProfile Health versions 2.0 and later, the overall default readiness status is `DOWN`, with an empty response, until all the deployed applications in Open Liberty are started. In MicroProfile Health versions 3.0 and later, the `mp.health.default.readiness.empty.response=UP` xref:external-configuration.adoc[MicroProfile Config] property is available. You can specify this property to change the overall default readiness status to `UP` while deployed applications are starting up.
+
+[#start]
+=== The @Startup annotation
+
+In MicroProfile Health versions 3.1 and later, you can configure the @Startup` annotation to define health check procedures that determine whether your deployed application is fully initialized.
+
+The following example shows the `@Startup` annotation on a class that implements the `HealthCheck` interface. In this example, the `@Startup` annotation checks for CPU usage as a measure of whether the application is fully initialized. If CPU usage is less than 90%, it returns an `UP` status. If CPU usage is greater than 90%, it returns a `DOWN` status:
+
+[source,java]
+----
+@Startup
+@ApplicationScoped
+public class StartupCPUUsageCheck implements HealthCheck {
+
+    @Override
+    public HealthCheckResponse call() {
+
+        if (getCpuUsage() < 0.90) {
+           return HealthCheckResponse.up(“startupCpuUsage”);
+        }
+        else {
+           return HealthCheckResponse.down(“startupCpuUsage”);
+        }
+    }
+}
+----
+
+The following example shows the JSON response from the `/health/started` endpoint if the CPU usage is less than 90%. The first status indicates the overall status of all health checks that are returned from the endpoint. The second status indicates the status of the particular check that is specified by the preceding `name` value, which in this example is `startupCpuUsage`. In this example, the startup check passed and returned an `UP` status:
+
+[source,json]
+----
+{
+  "status": ”UP",
+  "checks": [
+    {
+      "name": ”startupCpuUsage",
+      "status": ”UP",
+    }
+  ]
+}
+----
+
+In this example, the startup check determined that the application was initialized and the liveness and readiness checks can proceed. If the startup check returns a `DOWN` status, it blocks the liveness and readiness checks until the application is initialized and the startup check returns an `UP` status.
+
+In MicroProfile Health versions 3.1 and later, the overall default startup status is `DOWN`, with an empty response, until all the deployed applications in Open Liberty are started. If you want to change the overall default startup status to `UP` while deployed applications are starting up, you can specify the `mp.health.default.startup.empty.response=UP` xref:external-configuration.adoc[MicroProfile Config] property.
+
 
 == See also:
 
