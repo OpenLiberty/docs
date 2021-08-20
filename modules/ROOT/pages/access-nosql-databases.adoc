@@ -22,6 +22,7 @@ To connect to these databases in version 19.0.0.6 and later, you can https://ope
 
 == Access MongoDB with CDI
 
+To use CDI with Open Liberty, enable the feature:cdi[display=Contexts and Dependency Injection] feature.
 You can configure access to any version of https://www.mongodb.com/[MongoDB] with a CDI producer.
 This example demonstrates how to create a CDI producer to inject a `MongoDatabase` instance:
 
@@ -47,7 +48,7 @@ public class MongoProducer {
 The `createMongo()producer` method returns a `MongoClient` instance.
 The `createDB()producer` method returns a `MongoDatabase` instance that depends on the `MongoClient` instance.
 The `close()` method is a clean-up function for the `MongoClient` instance that closes the connection to the `MongoDatabase` instance.
-You can use the CDI producer that you created to inject a `MongoDatabase` instance in the application:
+You can use the CDI producer that you created as shown in the following example:
 
 ```
 @Inject
@@ -64,7 +65,12 @@ public void add(CrewMember crewMember) {
 }
 
 ```
-The `createMongo` method can be enhanced to include authentication with a username and an encoded password for additional security:
+
+== Secure your CDI producer
+
+A CDI producer can be tailored to your needs.
+The `createMongo` method can be enhanced to include authentication for additional security.
+You need to enable the feature:passwordUtilities[display=Password Utilities] feature in the `server.xml` file to include authentication with a username and an encoded password:
 
 ```
 @Produces
@@ -74,13 +80,7 @@ public MongoClient createMongo() {
     return new MongoClient(new ServerAddress(), creds, new MongoClientOptions.Builder().build());
 }
 ```
-You need to enable the feature:passwordUtilities[display=Password Utilities] feature in the `server.xml` file:
-
-```
-<feature>passwordUtilities-1.0</feature>
-```
-
-You can enable TLS for your database connection.
+You must https://openliberty.io/guides/mongodb-intro.html#configuring-the-mongodb-driver-and-the-server[enable TLS] for your database connection.
 Add the `JSSEHelper` class to the `createMongo` method to get the `SSLContext` class, as shown in the following example:
 
 ```
@@ -97,12 +97,11 @@ public MongoClient createMongo() throws SSLException {
 ```
 
 You can configure access to any version of https://couchdb.apache.org/[CouchDB] with a CDI producer in Open Liberty.
-To access CouchDB with CDI, you can replace the MongoClient in the example with any any CouchDB client or the https://www.ibm.com/cloud/cloudant[Cloudant] service.
+To access CouchDB with CDI, you can replace the MongoClient in the previous examples with any any CouchDB client or the https://www.ibm.com/cloud/cloudant[Cloudant] service.
 
 == Configure MongoDB with MicroProfile Config
 
-You can configure the MongoDB driver with MicroProfile Config.
-To configure the MongoDB driver, add the following to your CDI producer:
+To configure the MongoDB driver with MicroProfile Config you need to enable the feature:mpConfig[display=MicroProfile Config] feature and add the following code to your CDI producer:
 
 ```
 @Inject
@@ -137,3 +136,4 @@ For more information, see link:https://openliberty.io/blog/2019/02/19/mongodb-wi
 ## See also
 
 Guide: https://openliberty.io/guides/mongodb-intro.html[Persisting data with MongoDB]
+Blog: https://openliberty.io/blog/2019/02/19/mongodb-with-open-liberty.html?_ga=2.207768594.1663611092.1606818058-1399812591.1606212512[Access any version of MongoDB with Open Liberty using CDI]
