@@ -3,17 +3,18 @@
 The Social Media Login feature provides a set of built-in configuration elements for popular social media providers, in addition to generic configuration elements.
 The following examples show how to configure different scenarios in the `server.xml` file.
 
-=== Request log in with a social media ID
+=== Request login with a social media ID
 
 If multiple social media providers are configured, a customizable selection form is presented.
 The user can then sign in with a social media provider of their choice.
-The following example shows how to configure your application to request that the user logs in with their Google ID:
+The following example shows how to configure your application to request that the user logs in with their Google ID.
+In this example, `your_app_id` and `your_app_secret` are the Google client ID and client secret credentials for the `formlogin` application.
 
 [source,xml]
 ----
 <googleLogin clientId="your_app_id" clientSecret="your_app_secret"  />
 
-<!-- protected apps need to have a security constraint defined -->
+<!-- protected applications need to have a security constraint defined -->
 <application type="war" id="formlogin" name="formlogin" location="server1/apps/formlogin.war">
     <application-bnd>
         <security-role name="Employee">
@@ -27,7 +28,7 @@ The following example shows how to configure your application to request that th
 
 
 You can configure multiple social media providers for users to choose from.
-The user receives a customizable selection form before authentication with the available providers.
+The user receives a customizable selection form before authentication with the available providers included on the form.
 The following example includes a choice of Google, GitHub, Facebook, LinkedIn, and Twitter:
 
 [source,xml]
@@ -38,7 +39,7 @@ The following example includes a choice of Google, GitHub, Facebook, LinkedIn, a
 <linkedinLogin clientId="your_app_id"          clientSecret="your_app_secret"  />
 <twitterLogin  consumerKey="your_app_id"       consumerSecret="your_app_secret"/>
 
-<!-- protected apps need to have a security constraint defined -->
+<!-- protected applications need to have a security constraint defined -->
 <application type="war" id="formlogin" name="formlogin" location="server1/apps/formlogin.war">
     <application-bnd>
         <security-role name="Employee">
@@ -53,7 +54,7 @@ The following example includes a choice of Google, GitHub, Facebook, LinkedIn, a
 
 
 You can restrict the presentation of a social media provider to only users who are also in another configured registry.
-For example, use the `mapToUserRegistry` attribute to configure your app.
+For example, use the `mapToUserRegistry` attribute to configure your application.
 The user must authenticate through Google and also verify as an existing user in the company LDAP registry:
 
 [source,xml]
@@ -64,16 +65,16 @@ The user must authenticate through Google and also verify as an existing user in
 
 ----
 
-For more information on configuring an LDAP registry, see the LDAP User Registry (feature:ldapRegistry[]) feature.
+For more information on configuring an LDAP registry, see the feature:ldapRegistry[display=LDAP User Registry feature].
 
-=== Request log in with a social media ID or with their account for the configured registry
+=== Request login with a social media ID or with their account for the configured registry
 
 You can give users the option of logging in with either a social media provider or with their account on the configured registry.
-For example, use the `enableLocalAuthentication` attribute to configure your app so that users can have the option of logging in with a Google ID or with their account on their company's LDAP registry:
+For example, use the `enableLocalAuthentication` attribute to configure your application so that users can log in with a Google ID or with their account on their company's LDAP registry:
 
 [source,xml]
 ----
-<!-- user will be presented choice menu of either Google or ldap -->
+<!-- The user is given a choice menu of either Google or LDAP -->
 <googleLogin  clientId="your app id"  clientSecret="your app secret" />
 
 <socialLoginWebapp enableLocalAuthentication="true">
@@ -82,11 +83,11 @@ For example, use the `enableLocalAuthentication` attribute to configure your app
 
 ----
 
-=== Request log in with a social media ID for only a subset of applications, URLs, browsers, or IP addresses
+=== Request login with a social media ID for only a subset of applications, URLs, browsers, or IP addresses
 
 To protect only a subset of applications, URLs, or IP addresses, use an xref:ROOT:authentication-filters.adoc[authentication filter].
 The security configuration takes effect only when the conditions in the filter are met. For example,
-you might want a web app to be secured with the Social Media Login feature and a microservice app to be secured with the feature:mpJwt[display=MicroProfile JWT feature]. In the following example, only requests that contain the `/mywebapp` URL pattern are secured with Google credentials:
+you might want a web application to be secured with the Social Media Login feature and a microservice application to be secured with the feature:mpJwt[display=MicroProfile JWT feature]. In the following example, only requests that contain the `/mywebapp` URL pattern are secured with Google credentials:
 
 
 // tag::authfilter[]
@@ -104,14 +105,14 @@ you might want a web app to be secured with the Social Media Login feature and a
 ----
 // end::authfilter[]
 
-For more information, see the link:https://docs/ref/config/#authFilter.html[`authFilter`] configuration element..
+For more information, see the config:authFilter[display=authFilter element].
 
 === Provide other social media logins as options to the user
 
-To authenticate with a social media provider that isn't configured out-of-the-box with Open Liberty, use the link:https://docs/ref/config/#oauth2Login.html[`oauth2Login`] element for OAuth providers or the link:https://docs/ref/config/#oidcLogin.html[`oidcLogin`] element for OpenID Connect providers.
+To authenticate with a social media provider that isn't preconfigured with Open Liberty, use the config:oauth2Login[display=oauth2Login element] for OAuth providers or the config:oidcLogin[display=oidcLogin element] for OpenID Connect providers.
 These elements supply the configuration details that are needed to work with the provider.
 The details can usually be obtained from the developer instructions of the social media provider.
-The following example configures Instagram as the social media provider::
+The following example configures Instagram as the social media provider:
 
 [source,xml]
 ----
@@ -126,13 +127,10 @@ The following example configures Instagram as the social media provider::
 </oauth2Login>
 ----
 
-// LC: Leaving the following links in the source for now to show where this topic should link to when the relevant equivalent topics are published in the Open Liberty docs (do not link to the KC from Open Liberty docs). Remove this commented section when the relevant links are added in future.
-//More information on using the socialLogin feature is available https://www.ibm.com/support/knowledgecenter/en/SSEQTP_liberty/com.ibm.websphere.wlp.doc/ae/twlp_sec_sociallogin.html[here].
-//More information on using authentication filters is available https://www.ibm.com/support/knowledgecenter/en/SSEQTP_liberty/com.ibm.websphere.wlp.doc/ae/rwlp_auth_filter.html[here].
 
 === Use OpenShift service accounts to authenticate and authorize protected resource requests
 
-The `socialLogin-1.0` feature can be configured to use OpenShift service accounts to authenticate and authorize protected resource requests.
+The Social Media Login feature can be configured to use OpenShift service accounts to authenticate and authorize protected resource requests.
 With this configuration, server administrators can secure endpoints, for example, monitoring and metrics endpoints, that might produce sensitive information.
 The service accounts can authenticate themselves by providing a service account token that was created within the OpenShift cluster in the request.
 
