@@ -10,10 +10,10 @@
 :seo-title:
 :page-layout: general-reference
 :page-type: general
-= Troubleshooting ACME certificates
+= Troubleshooting Security
 
-If you experience a problem with Automatic Certificate Management Environment (ACME) certificate authority (CA) certificates, you can refer to error messages from your Open Liberty server or to HTTP error messages to debug the problem. The following information can help determine the cause of common problems and error messages that are associated with ACME CA certificates.
-
+== Troubleshooting ACME certificates
+If you experience problems with ACME certificate authority (CA) certificates, you can refer to error messages from your Open Liberty server or HTTP error messages to debug the problem. The following information can help determine the cause of common problems and error messages that are associated with ACME CA certificates.
 
 To help troubleshoot problems with ACME CA certificates, you can enable trace by using the following trace specification:
 ----
@@ -22,16 +22,16 @@ ACMECA=all
 
 The following sections describe common problems that you might encounter with ACME CA accounts and connections. For more information, see xref:acme-cert-management.adoc[Automated certificate management with ACME] and the feature:acmeCA[display=ACME Support] feature.
 
-== The certificate request times out
+=== The certificate request times out
 If the certificate request times out, you can set a longer timeout value by using the  `challengePollTimeout` and `orderPollTimeout` properties.
 
-== You received an HTTP code 429 message on a renew request
+=== You received an HTTP code 429 message on a renew request
 To prevent too many immediate certificate-renew requests and a possible negative impact on the server, certificate-renew requests are blocked for a small window of time. After this window expires, new requests can be made. The 429 message indicates when new requests can be made.
 
-== You received a message that indicates the rate limit was exceeded
+=== You received message that indicates the rate limit was exceeded
 Some CA, such as LetsEncrypt, enforce a rate limit on requesting new certificates. If you are testing and request several certificates in a short amount of time, use an appropriate testing server. For example, https://letsencrypt.org/docs/staging-environment/[LetsEncrypt provides a staging server with higher rate limits].
 
-== The certificate is renewed at startup when it isn't expired
+=== The certificate is renewed at startup when it isn't expired
 The following conditions can cause an unexpired certificate to be automatically renewed at startup:
 
 * The certificate is marked as revoked.
@@ -39,7 +39,7 @@ The following conditions can cause an unexpired certificate to be automatically 
 * The directory URI, the domain, or other account information was changed and a new certificate is required.
 * The server was started with the `--clean` option and historical information on the certificate was removed.
 
-== The authorization challenge fails with a CWPKI2001E message
+=== The authorization challenge fails with a CWPKI2001E message
 
 If the server fails to fetch a certificate, you might see an error message like the following example:
 ----
@@ -55,7 +55,7 @@ CWWKT0016I: Web application available (default_host): http://mydomainname.com:80
 To configure the hostname used for web applications, add or update the `host` attribute for the `httpEndpoint` configuration in your `server.xml` file.
 
 
-== After a failure to fetch the certificate, the keystore produces errors
+=== After a failure to fetch the certificate, the keystore produces errors
 
 If the server cannot fetch a certificate, an empty keystore is created. In older versions of Java, an empty keystore can cause an exception. Examples of this error include the following messages:
 ----
@@ -67,7 +67,7 @@ CWWKS9582E: The [defaultSSLConfig] sslRef attributes required by the orb element
 
 To work around this error after a failure to fetch the initial certificate, remove the empty keystore.
 
-== You received a CWPKI2058W warning message during a revocation check
+=== You received a CWPKI2058W warning message during a revocation check
 
 When you run containerized versions of ACME CA servers, the Online Certificate Status Protocol (OCSP) responder URL that is defined in the certificate might not be reachable. You can override the OCSP responder URL in the certificate by specifying the `ocspResponderUrl` attribute in the `acmeRevocationChecker` element. If this URL is not configured, the following  warning can occur during revocation checks:
 
@@ -83,3 +83,52 @@ If you see this network error warning and you are running with a test CA server,
    <acmeRevocationChecker enabled="false" />
 </acmeCA>
 ----
+
+
+== Troubleshooting LDAP
+
+If you experience problems with Kerberos authentication to an LDAP server, refer to error messages from your Open Liberty server or HTTP error messages to debug the problem. The following information can help determine the causes of common problems and error messages that are associated with Kerberos authentication to LDAP servers.
+
+=== Users cannot log in, even if non-Kerberos enabled registries are available.
+If multiple user registries are configured for an Open Liberty server, all basic, custom, and LDAP user registries are combined into a single federated user registry. By default, the server must successfully search for the user in all participating user registries to verify that the user is unique within the federated user registry. If a Kerberos-enabled LDAP server in a federated registry uses a Kerberos ticket cache to hold user credentials and the credentials expire, a search of the LDAP registry fails. To resolve the problem, renew the Kerberos ticket cache. For example, you can renew the Kerberos ticket cache by using https://docs.oracle.com/en/java/javase/11/tools/kinit.html#GUID-8AA6A058-419A-41D4-A61E-E5E1911E51E6[the Java kinit tool].
+
+To avoid failures if a user registry is unavailable, configure the `allowOpIfRepoDown` attribute in your `server.xml` file. Set the `allowOpIfRepoDown` attribute to `true` on the `primaryRealm` subelement of the `federatedRepository` element, as shown in the following example:
+
+[source,xml]
+----
+<federatedRepository>
+        <primaryRealm name="FederatedRealm" allowOpIfRepoDown="true">
+            <participatingBaseEntry name="o=SampleBasicRealm"/>
+            <participatingBaseEntry name="o=ibm,c=us"/>
+        </primaryRealm>
+</federatedRepository>
+----
+
+For more information, see the feature:federatedRegistry[display=Federated User Registry feature].
+
+=== Performance is slow when Kerberos is configured for a federated user registry.
+
+Enabling the `allowOpIfRepoDown` attribute on the `federatedRepository` element can help avoid failures if one or more user registries in a federated user registry are unavailable. However, this configuration might result in slower overall performance if Kerberos credentials are specified in a `ccache` file with the `krb5TicketCache` attribute. When Kerberos credentials are in a `ccache` file, Open Liberty attempts to auto-renew expiring credentials, which can result in slower performance.
+
+To avoid this problem, you can specify Kerberos credentials in a `keytab` file with the `kerberos` element. Credentials in a `keytab` file do not expire so auto-renewal is not necessary. For more information, see xref:kerberos-authentication.adoc[Kerberos authentication for Open Liberty].
+
+=== The Kerberos principal name is not in the Kerberos ticket cache file.
+
+If the Kerberos principal name is not found in the Kerberos ticket cache file, Open Liberty logs the `CWIML` message type. A missing Kerberos principal name can occur for the following reasons:
+
+- No credential was generated for the Kerberos principal name, which results in an incorrect Kerberos configuration.
+- The Kerberos ticket cache contains an expired credential.
+
+In either case, renew the Kerberos ticket cache to resolve the problem. For example, you can renew the Kerberos ticket cache by using https://docs.oracle.com/en/java/javase/11/tools/kinit.html#GUID-8AA6A058-419A-41D4-A61E-E5E1911E51E6[the Java kinit tool].
+
+Depending on the type of Java SDK, the message that you can receive is similar to one of the following examples:
+
+----
+CWIML4507E: Kerberos login failed with the user1@SAMPLE.COM Kerberos principal and the C:\krb5\krb5-user1.cc Kerberos credential cache (ccache). javax.security.auth.login.LoginException: Unable to obtain password from user
+
+CWIML4520E: The LDAP operation could not be completed. The LDAP naming exception javax.naming.AuthenticationException: GSSAPI [Root exception is javax.security.sasl.SaslException: GSS initiate failed [Caused by GSSException: No valid credentials provided (Mechanism level: Ticket expired (32))]] occurred during processing.
+
+CWIML4520E: The LDAP operation could not be completed. The LDAP naming exception javax.naming.NamingException: CWIML4507E: Kerberos login failed with the user1@SAMPLE.COM Kerberos principal and the C:\krb5\krb5-user1.cc Kerberos credential cache (ccache). javax.security.auth.login.LoginException: Unable to obtain password from user
+----
+
+To review the expiration time of the Kerberos principal user, run https://docs.oracle.com/en/java/javase/11/tools/klist.html#GUID-205BCE0D-F5D4-4A9C-ACBC-46423BAF616F[the Java klist tool].
