@@ -90,7 +90,7 @@ If you see this network error warning and you are running with a test CA server,
 
 === You received an FFDC1015I error message that the configured LDAP server cannot be reached
 
-If you are unable to reach the configured LDAP server, you might see an error message like the following example in the `messages.log ` file:
+If you are unable to reach the configured LDAP server, you might see an error message like the following example in the `messages.log` file:
 
 ----
 FFDC1015I: An FFDC Incident has been created: javax.naming.ServiceUnavailableException: myldapserver.mycompany.com:636; socket closed com.ibm.ws.security.registry.ldap.internal.LdapRegistry 298
@@ -100,7 +100,7 @@ If you see this message, check your LDAP server to verify that it is running and
 
 === Connection with the LDAP server fails with an SSL handshake error.
 
-If you enable SSL on your LDAP server without copying the signer of the LDAP server into the truststore that is referenced in the LDAPSSLSettings element, a connection with the LDAP server fails with an SSL handshake error. You might see the following message:
+If you enable SSL on your LDAP server without copying the signer of the LDAP server into the truststore that is referenced in the `LDAPSSLSettings` element, a connection with the LDAP server fails with an SSL handshake error. You might see the following message:
 
 ----
 The javax.naming.CommunicationException: simple bind failed: myldapserver.mycompany.com:636 [Root exception is javax.net.ssl.SSLHandshakeException: com.ibm.jsse2.util.g: PKIX path building failed: java.security.cert.CertPathBuilderException: unable to find valid certification path to requested target]
@@ -130,22 +130,32 @@ To fix the problem, set this property to the default value of `true`.
 
 === Login, authentication, or authorization is slow for LDAP or a federated repository.
 
-Several reasons can exist for a slow login. Review the following list for some common causes.
+Several reasons can exist for a slow login.
+Review the following list for some common causes.
 
-If the LDAP configuration for referrals is set to `follow`, then any referrals to other LDAP instances are followed on LDAP requests.
+- If the LDAP configuration for referrals is set to `follow`, then any referrals to other LDAP instances are followed on LDAP requests.
 This situation can result in contacting one or more additional LDAP servers, depending on your LDAP configuration, and thus, additional time is spent.
 For example, the LDAP1 server could follow a referral to the LDAP2 server, which could follow a referral to the LDAP3 server.
-If you do not need to acquire more information from other LDAP servers, set referrals to ignore.
-Additionally, one LDAP server could be experiencing a problem and error that might not display in the JVM logs.
-Examples include a TCP read timeout or a DNS issue when the LDAP server talks to a referred LDAP server. To diagnose these situations, you can capture packets to see how many calls are being made and if any delays or errors exist due to an LDAP server that is following a referral.
-A firewall or other software closes connections to LDAP. By default, a pool of LDAP connections is maintained to improve performance.
-If a cached connection is closed remotely, a new connection is made and put back in the context pool. This process can cause a delay and can cause errors to be logged in the JVM logs. To avoid this situation, set the context pool timeout to less than the remote connection closure time. For example, if a firewall closes the connection at 10 minutes, you could set the connection pool timeout for 9 minutes. Instead of encountering a failed connection and creating a new connection, the expiration is checked on a connection from the pool and a new connection is created, skipping the failure step. Example errors include the following one:
+If you do not need to acquire more information from other LDAP servers, set referrals to `ignore`.
+
+- One LDAP server could be experiencing a problem and error that might not display in the JVM logs.
+Examples include a TCP read timeout or a DNS issue when the LDAP server talks to a referred LDAP server.
+To diagnose these situations, you can capture packets to see how many calls are being made and if any delays or errors exist due to an LDAP server that is following a referral.
+A firewall or other software closes connections to LDAP.
+
+- By default, a pool of LDAP connections is maintained to improve performance.
+If a cached connection is closed remotely, a new connection is made and put back in the context pool.
+This process can cause a delay and can cause errors to be logged in the JVM logs.
+To avoid this situation, set the context pool timeout to less than the remote connection closure time.
+For example, if a firewall closes the connection at 10 minutes, you could set the connection pool timeout for 9 minutes.
+Instead of encountering a failed connection and creating a new connection, the expiration is checked on a connection from the pool and a new connection is created, skipping the failure step.
+For example, you might receive the following error:
 
 ----
 java.net.SocketException: Connection reset
 ----
 
-With federated repositories, all repositories and registries are checked to ensure that a unique user is in the realm.
+- With federated repositories, all repositories and registries are checked to ensure that a unique user is in the realm.
 If a repository or registry is responding slowly, every call is slow even if the user is not in the slow registry.
 Ensure that all participating base entries are responding promptly.
 
