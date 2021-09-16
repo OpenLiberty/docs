@@ -14,34 +14,33 @@
 
 A virtual host is a configuration entity that enables a single server to host multiple domain name and port configurations. You can configure virtual hosts on your Open Liberty server to isolate multiple applications from each other by associating each application with a different host.
 
-For example, your company might maintain two applications on the same server, one for customers and another for employees. By using virtual hosts, you can specify different hostname and port number configurations for each application. You can also specify aliases for each host, so that the customer application is accessed from  the `customer.exampleco.com` endpoint and the employee app is accessed from the `employee.exampleco.com` endpoint. Although the two applications run on the same server and share many of the same configuration resources, incoming requests for each application are isolated from the other.
+For example, your company might maintain two applications on the same server, one for customers and another for employees. By using virtual hosts, you can specify different hostname and port number configurations for each application. You can also specify aliases for each host, so that the customer application is accessed from  the `customer.exampleco.com` endpoint and the employee application is accessed from the `employee.exampleco.com` endpoint. Although the two applications run on the same server and share many of the same configuration resources, incoming requests for each application are isolated from the other.
 
-You can associate a virtual host with one or more web modules, but you can associate each web module with only one virtual host. Resources that are associated with one virtual host cannot share data with resources associated with another virtual host, even if the virtual hosts share a physical machine.
+You can associate a virtual host with one or more web modules, but you can associate each web module with only one virtual host. Resources that are associated with one virtual host cannot share data with resources that are associated with another virtual host, even if the virtual hosts share a physical machine.
 
 == Virtual host aliases
 
 Each virtual host has a logical name and a list of one or more DNS aliases by which it is known. A DNS alias is the TCP/IP hostname and port number combination that is used to request the servlet, such as `yourHostName:80`. When no port number is specified, the default is `80`.
 
 The virtual host configuration uses wildcard entries with the ports for its virtual host entries.
+
 - The default alias is `*:80`, which uses an external port that is not secure.
-- Aliases of the form `*:9080 `use the internal port that is not secure.
+- Aliases of the form `*:9080` use the internal port that is not secure.
 - Aliases of the form `*:9443` use the secure internal port.
 - Aliases of the form `*:443` use the secure external port.
 
-You can use wildcard entries for aliases by port and specify that all valid host name and address combinations on a particular port map to a particular virtual host. You can have any number of aliases for a virtual host.
-
-If a request specifies a resource by using an alias that cannot be mapped to an alias of a defined virtual host, a 404 error is returned in the browser that was used to issue the request.
+You can use wildcard entries for aliases by port to specify that all valid hostname and address combinations on a particular port map to a particular virtual host. You can have any number of aliases for a virtual host. If a request specifies a resource by using an alias that cannot be mapped to an alias of a defined virtual host, the result is a 404 error.
 
 == The default virtual host
-Open Liberty provides one default virtual host that is called `default_host`, which is automatically configured the first time you start your server. Unless you specifically want to isolate resources on the same server from one another, you probably do not need any virtual hosts in addition to the default host. However, the default virtual host is also used for JMX communications and other metrics processes. If you want to separate this traffic from incoming requests to an application, you can configure another virtual host for the application.
+Open Liberty provides one default virtual host that is called `default_host`, which is automatically configured the first time that you start your server. Unless you specifically want to isolate resources on the same server from one another, you probably do not need any virtual hosts in addition to the default host. However, the default virtual host is also used for JMX communications and other metrics processes. If you want to separate this traffic from incoming requests to an application, you can configure another virtual host for the application.
 
-The DNS aliases for the default virtual host are configured as `*:80` and `*:9080`, where port `80` is the HTTP server port and port `9080` is the port for HTTP transport. The default virtual host includes common aliases, such as the machine IP address, short host name, and fully qualified host name. One of these aliases comprises the first part of the path for accessing a resource such as a servlet. For example, the alias `localhost:80` is used in the `http://localhost:80/myServlet` request.
+The DNS aliases for the default virtual host are configured as `\*:80` and `*:9080`, where port `80` is the HTTP server port and port `9080` is the port for HTTP transport. The default virtual host includes common aliases, such as the machine IP address, short hostname, and fully qualified hostname. One of these aliases comprises the first part of the path for accessing a resource such as a servlet. For example, the alias `localhost:80` is used in the `\http://localhost:80/myServlet` request.
 
 == Virtual host configuration
 In Open Liberty, you can define virtual hosts or adjust the configuration of the default virtual host by specifying  attributes for the config:virtualHost[] configuration element in your `server.xml` file.
 
 === Isolate applications on the same server
-The following example illustrates a common use case for virtual hosting: configuring two applications on the to run on different ports on the same sever. Furthermore, the virtual host configuration for `application-2` specifies that this available only on the `localhost` interface.
+The following example illustrates a common use case for virtual hosting: configuring two applications to run on different ports on the same server. Furthermore, the virtual host configuration for `application-2` specifies that this application is available only on the `localhost` interface.
 
 [source,xml]
 ----
@@ -62,18 +61,18 @@ The following example illustrates a common use case for virtual hosting: configu
 
 The `defaultHttpEndpoint` HTTP endpoint is configured to expose all interfaces on port `9080`. The `alternateEndpoint` HTTP endpoint is configured to expose all interfaces  on port 9081.
 
-If the `App1` application that is configured in the `enterpriseApplication` element has a WAR file with an `ibm-web-bnd.xml` file that specifies `virtual-host name="application-1`, then this application can be accessed only at the `your_host_name:9080/app1_context_root` endpoint.
+If the `App1` application has a WAR file with an `ibm-web-bnd.xml` file that specifies `virtual-host name="application-1`, then this application can be accessed only at the `your_host_name:9080/app1_context_root` endpoint.
 
 If the `App2` application that is configured in the `webApplication` element has an `ibm-web-bnd.xml` file that specifies `virtual-host name="application-2`, then this application can be accessed only at the `localhost:9081/app2_context_root` endpoint.
 
-If a third application that specified no specific virtual host is deployed on the same server, that application is accessible only by a proxied request that contains a `HOST` header that specifies a different port. For example, if the request was made to a proxy on port `80`, a port that is not listed in any of the `hostAlias` specifications, the request is routed to the `default_host` virtual host.
+If a third application that doesn't specify a virtual host is deployed on the same server, it is accessible by a proxied request that maps to the default virtual host. For example, port `80` is not defined by any of the `hostAlias` attributes. If a request is made to a proxy on that port, it is routed to the default_host virtual host.
 
 === Isolate applications based on the requested host or port
 The default virtual host in Open Liberty, `default_host`, is used for JMX communications. To isolate JMX communications from application traffic, you can configure a separate virtual host for the application.
 
 Specify a new virtual host in your server.xml file and define the host aliases that are routed to it.
 
-The host name and the port that is being matched is the one that is originally requested by the user, which might or might not match the host and port that Open Liberty is using. The following example illustrates a `virtualHost` element and `hostAlias` attribute configuration in the server.xml file:
+The hostname and port that is being matched is the one that is originally requested by the user, which might not match the host and port that Open Liberty is using. The following example illustrates a `virtualHost` element and `hostAlias` attribute configuration in the server.xml file:
 
 [source,xml]
 ----
@@ -82,7 +81,7 @@ The host name and the port that is being matched is the one that is originally r
     <hostAlias>external.host.name:443</hostAlias>
 </virtualHost>
 ----
-If requests are coming from a proxy, this configuration routes any request that is made to the proxy's host and port to the "proxiedRequests" virtual host.
+If requests are coming from a proxy, this configuration routes any request that is made to the proxy host and port to the "proxiedRequests" virtual host.
 
 To associate your application with this virtual host, you must add a reference to it in the application code. Add a `virtual-host` element to the `ibm-web-bnd.xml` or `ibm-web-bnd.xmi` file of the application `WAR` file, as shown in the following example:
 
@@ -101,7 +100,7 @@ To associate your application with this virtual host, you must add a reference t
 ----
 
 === Restrict access to an application based on the originating endpoint
-To restrict access to system applications that are using the `defaultHttpEndpoint` HTTP endpoint, you can define a new endpoint and specify the `allowFromEndpointRef` attribute in you virtual host configuration. When this attribute is specified, a virtualHost accepts requests only from the specified endpoint.
+To restrict access to system applications that are using the `defaultHttpEndpoint` HTTP endpoint, you can define a new endpoint and specify the `allowFromEndpointRef` attribute in your virtual host configuration. When this attribute is specified, a virtualHost accepts requests only from the specified endpoint.
 
 
 In the following example, the `localHostOnly` HTTP endpoint specifies that ports `9081` and `9444` are exposed only on the localhost interface. The `default_host` is restricted to this endpoint by the `allowFromEndpointRef` attribute:
@@ -125,4 +124,4 @@ In the following example, the `localHostOnly` HTTP endpoint specifies that ports
 
 With this configuration, the `default_host` virtual host now accepts requests that are directed only at `localhost:9081` and `localhost:9444` that also originate from the `localHostOnly` endpoint. Any other request to ports `9081` and `9444` are refused. For example, a request from the `defaultHttpEndpoint` with Host headers that reference `localhost:9081` is refused.
 
-The `proxiedRequests` virtual host accepts any request that is issued to port `9080` or `9443`, which are the ports that are used by the `defaultHttpEndpoint` HTTP endpoint, in addition to those that have a host header that references the external host name from the proxy and port `80` or `443`.
+The `proxiedRequests` virtual host accepts any request to port `9080` or `9443`, which are the ports that are used by the `defaultHttpEndpoint` HTTP endpoint. It also accepts requests that have a host header that references the external hostname from the proxy and port `80` or `443`.
