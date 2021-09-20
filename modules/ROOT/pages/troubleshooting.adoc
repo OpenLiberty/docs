@@ -106,27 +106,6 @@ The javax.naming.CommunicationException: simple bind failed: myldapserver.mycomp
 ----
 Make sure that you copy the signer of the LDAP server into your truststore.
 
-=== You are unable to connect to the LDAP server due to exhaustion of the usable sockets on the local server
-
-If the usable sockets on the local server are exhausted, which can result in a failure when you connect to your LDAP server, you might see the following message in the FFDC logs:
-
-----
-The javax.naming.CommunicationException: myldapserver.mycompany.com:389 [Root exception is java.net.BindException: Address already in use: connect]
-----
-
-Make sure that the socket is not used and try again.
-
-=== You get an exception on the LDAP server with a heavy load
-
-Even though a user is valid, you might receive this error message if the LDAP server is under a heavy load:
-
-----
-CWWKS1100A: Authentication did not succeed for user ID xxxxx. An invalid user ID or password was specified
-----
-
-With the LDAP configuration, you can add the `reuseConnection=false` property or disable it by using the developer tools.
-To fix the problem, set this property to the default value of `true`.
-
 === Login, authentication, or authorization is slow for LDAP or a federated repository.
 
 Several reasons can exist for a slow login.
@@ -248,41 +227,6 @@ FFDC1015I: An FFDC Incident has been created: "java.lang.IllegalArgumentExceptio
 
 If you use a minimal SSL configuration, set the `ID` field to `defaultKeyStore`.
 
-=== You might get an exception if you use an LDAP user registry with sslEnabled and a sslRef value is not specified
-
-If a configuration has `sslEnabled` set to true but there is no `sslRef` value, as shown in the following example, you might get an exception:
-
-----
-<ltldapRegistry id="ldap" realm="SampleLdapIDSRealm"
-host="ccwin12.austin.ibm.com" port="636" ignoreCase="true"
-baseDN="o=ibm,c=us"
-bindDN="cn=root"
-bindPassword="rootpwd"
-ldapType="IBM Tivoli Directory Server"
-idsFilters="ibm_dir_server"
-sslEnabled="true"
-searchTimeout="8m" />
-----
-
-Enter an `sslRef` value to resolve this exception.
-If you are using a minimal SSL configuration, the `sslRef` field must be set to `defaultSSLConfig`.
-
-If you are using the `PKCS12` keystore, your minimal configuration can be as shown in the following example:
-
-----
-<ltkeyStore id="defaultKeyStore" location="key.p12"
-password="mypassword" />
-----
-
-If you are using the `JKS` keystore, your minimal configuration can be as shown in the following example:
-
-----
-<ltkeyStore id="defaultKeyStore" location="key.jks"
-password="mypassword" />
-----
-
-If a custom SSL configuration is configured, the name of that configuration must be placed in the `sslRef` field.
-
 === You get an error when you use a JDK from the WebSphere Application Server
 
 If you use a JDK from the WebSphere Application Server, you might see the following error if SSL is enabled on your Open Liberty Server:
@@ -321,5 +265,5 @@ ssl.ServerSocketFactory.provider=
 If you want to make this more reusable, you can put the `my.java.security` file in your server directory, and then can use a relative path like this:
 
 ----
--Djava.security.properties=./my.java.security 
+-Djava.security.properties=./my.java.security
 ----
