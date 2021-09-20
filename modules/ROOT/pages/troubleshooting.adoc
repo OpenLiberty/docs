@@ -248,3 +248,79 @@ FFDC1015I: An FFDC Incident has been created: "java.lang.IllegalArgumentExceptio
 ----
 
 If you use a minimal SSL configuration, set the `ID` field to `defaultKeyStore`.
+
+=== You might get an exception if you use an LDAP user registry with sslEnabled and a sslRef value is not specified
+
+If a configuration has `sslEnabled` set to true but there is no `sslRef` value, as shown in the following example, you might get an exception:
+
+----
+<ltldapRegistry id="ldap" realm="SampleLdapIDSRealm"
+host="ccwin12.austin.ibm.com" port="636" ignoreCase="true"
+baseDN="o=ibm,c=us"
+bindDN="cn=root"
+bindPassword="rootpwd"
+ldapType="IBM Tivoli Directory Server"
+idsFilters="ibm_dir_server"
+sslEnabled="true"
+searchTimeout="8m" />
+----
+
+Enter an `sslRef` value to resolve this exception.
+If you are using a minimal SSL configuration, the `sslRef` field must be set to `defaultSSLConfig`.
+
+If you are using the `PKCS12` keystore, your minimal configuration can be as shown in the following example:
+
+----
+<ltkeyStore id="defaultKeyStore" location="key.p12"
+password="mypassword" />
+----
+
+If you are using the `JKS` keystore, your minimal configuration can be as shown in the following example:
+
+----
+<ltkeyStore id="defaultKeyStore" location="key.jks"
+password="mypassword" />
+----
+
+If a custom SSL configuration is configured, the name of that configuration must be placed in the `sslRef` field.
+
+=== You get an error when you use a JDK from the WebSphere Application Server
+
+If you use a JDK from the WebSphere Application Server, you might see the following error if SSL is enabled on your Open Liberty Server:
+
+----
+java.net.SocketException: java.lang.ClassNotFoundException: Cannot find the specified class com.ibm.websphere.ssl.protocol.SSLSocketFactory
+      at javax.net.ssl.DefaultSSLSocketFactory.a(SSLSocketFactory.java:11)
+      at javax.net.ssl.DefaultSSLSocketFactory.createSocket(SSLSocketFactory.java:6)
+      at com.ibm.net.ssl.www2.protocol.https.c.afterConnect(c.java:161)
+      at com.ibm.net.ssl.www2.protocol.https.d.connect(d.java:36)
+      at sun.net.www.protocol.http.HttpURLConnection.getInputStream(HttpURLConnection.java:1184)
+      at java.net.HttpURLConnection.getResponseCode(HttpURLConnection.java:390)
+      at com.ibm.net.ssl.www2.protocol.https.b.getResponseCode(b.java:75)
+      at com.ibm.ws.jmx.connector.client.rest.internal.RESTMBeanServerConnection.loadJMXServerInfo(RESTMBeanServerConnection.java:142)
+      at com.ibm.ws.jmx.connector.client.rest.internal.RESTMBeanServerConnection.<init>(RESTMBeanServerConnection.java:114)
+      at com.ibm.ws.jmx.connector.client.rest.internal.Connector.connect(Connector.java:315)
+      at com.ibm.ws.jmx.connector.client.rest.internal.Connector.connect(Connector.java:103)
+----
+
+This error occurs because the WebSphere Application Server SSL socket factories are not supported by Liberty.
+You can get past this problem by taking the following steps:
+
+- Create a text file, such as my.java.security with the following two empty entries
+----
+ssl.SocketFactory.provider=
+ssl.ServerSocketFactory.provider=
+----
+
+- Create a `jvm.options` file for your Liberty server
+- Add the following property to your `jvm.options` file, that includes the full path to your text file that you just created
+
+----
+-Djava.security.properties=fullPathTo/my.java.security
+----
+
+If you want to make this more reusable, you can put the `my.java.security` file in your server directory, and then can use a relative path like this:
+
+----
+-Djava.security.properties=./my.java.security 
+----
