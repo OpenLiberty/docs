@@ -21,7 +21,7 @@ Inbound requests that are associated with one virtual host cannot access applica
 
 Each virtual host has a name and a list of one or more DNS aliases by which it is known. A DNS alias is the TCP/IP hostname and port number combination that is used to request the servlet, such as `yourHostName:80`. When no port number is specified, the default is `80`.
 
-The virtual host configuration uses wildcard entries with the ports for its virtual host entries. You can use wildcard entries for aliases by port to specify that all valid hostname and address combinations on a particular port map to a particular virtual host. You can specify any number of aliases for a virtual host. The default alias is `*:80`, which uses an external port that is not secure.
+The virtual host configuration accepts a wildcard value (`*``) for the hostname in virtual host alias configurations. You can use wildcard entries for aliases by port to specify that all valid hostname and address combinations on a particular port map to a particular virtual host. You can specify any number of aliases for a virtual host. The default alias is `*:80`, which uses an external port that is not secure. This default is used for any virtual hosts that do not specify an alias configuration, including the `default_host` default virtual host.
 
 The configuration of an alias determines whether a virtual host uses secure ports, and whether the ports are internal or external:
 - Aliases of the form `*:9080` use the internal port that is not secure.
@@ -39,7 +39,7 @@ The DNS aliases for the default virtual host are configured as `\*:80` and `*:90
 In Open Liberty, you can define virtual hosts or adjust the configuration of the default virtual host by specifying attributes for the config:virtualHost[] configuration element in your `server.xml` file.
 
 === Isolate applications on the same server
-The following example illustrates a common use case for virtual hosting: configuring two applications to run on different ports on the same server. Furthermore, the virtual host configuration for `application-2` specifies that this application is available only on the `localhost` interface.
+The following example illustrates a common use case for virtual hosting: configuring two applications to run on different ports on the same server. The configuration defines two HTTP endpoints and two virtual hosts. The alias configurations associate the `application-1` virtual host with the `defaultHttpEndpoint` endpoint and the `application-2` virutual host with the `alternateEndpoint` endpoint:
 
 [source,xml]
 ----
@@ -47,7 +47,7 @@ The following example illustrates a common use case for virtual hosting: configu
 <httpEndpoint id="alternateEndpoint" host="*" httpPort="9081" />
 
 <virtualHost id="application-1">
-    <hostAlias>your_host_name:9080</hostAlias>
+    <hostAlias>example_host:9080</hostAlias>
 </virtualHost>
 
 <virtualHost id="application-2">
@@ -58,13 +58,13 @@ The following example illustrates a common use case for virtual hosting: configu
 <webApplication location="myApp2.war" name="App2" />
 ----
 
+Furthermore, the virtual host configuration for `application-2` specifies that this application is available only on the `localhost` interface. This confiugrastion is useful if you want an application top accept traffic only from the computer where it is running, for development or testing purposes.
+
 The `defaultHttpEndpoint` HTTP endpoint is configured to expose all interfaces on port `9080`. The `alternateEndpoint` HTTP endpoint is configured to expose all interfaces  on port 9081.
-
 If the `App1` application has a WAR file with an `ibm-web-bnd.xml` file that specifies `virtual-host name="application-1`, then this application can be accessed only at the `your_host_name:9080/app1_context_root` endpoint.
-
 If the `App2` application that is configured in the `webApplication` element has an `ibm-web-bnd.xml` file that specifies `virtual-host name="application-2`, then this application can be accessed only at the `localhost:9081/app2_context_root` endpoint.
 
-If a third application that doesn't specify a virtual host is deployed on the same server, it is accessible by a proxied request that maps to the default virtual host. For example, port `80` is not defined by any of the `hostAlias` attributes. If a request is made to a proxy on that port, it is routed to the default_host virtual host.
+If a third application that doesn't specify a virtual host is deployed on the same server, it is accessible by a proxied request that maps to the default virtual host. For example, port `80` is not defined by any of the `hostAlias` attributes. If a request is made to a proxy on that port, it is routed to the `default_host` virtual host.
 
 === Isolate applications based on the requested host or port
 The default virtual host in Open Liberty, `default_host`, is used for JMX communications. To isolate JMX communications from application traffic, you can configure a separate virtual host for the application.
@@ -99,7 +99,7 @@ To associate your application with this virtual host, you must add a reference t
 ----
 
 === Restrict access to an application based on the originating endpoint
-To restrict access to system applications that are using the `defaultHttpEndpoint` HTTP endpoint, you can define a new endpoint and specify the `allowFromEndpointRef` attribute in your virtual host configuration. When this attribute is specified, a virtualHost accepts requests only from the specified endpoint.
+To restrict access to system applications that are using the `defaultHttpEndpoint` HTTP endpoint, you can define a new endpoint and specify the `allowFromEndpointRef` attribute in your virtual host configuration. When this attribute is specified, a virtualHost accepts requests only from the specified endpoint. While virtual host aliases can filter requests based on the `Host` HTTP header, the `allowFromEndpointRef` attribute can specify a constraints at the system network interface layer.
 
 In the following example, the `localHostOnly` HTTP endpoint specifies that ports `9081` and `9444` are exposed only on the localhost interface. The `default_host` is restricted to this endpoint by the `allowFromEndpointRef` attribute:
 
