@@ -306,3 +306,66 @@ If you want to make this more reusable, you can put the `my.java.security` file 
 ----
 -Djava.security.properties=./my.java.security
 ----
+
+== Troubleshooting non-SSO
+
+=== You receive a SESN0008E message that an anonymous user attempted to access a session owned by an authenticated user.
+
+When an unauthenticated user tries to access a session that is created
+by an authenticated user, you might see the following message:
+
+----
+SESN0008E: A user authenticated as anonymous has attempted to access a session owned by
+user:LdapRegistry/cn=steven,o=myCompany,c=US.
+----
+
+This error occurs when you use a JSP, for example, `login.jsp`, for your form-login and the SSO token that is sent by the browser is expired. The
+user is then prompted to log in again using the `login.jsp` page that is configured for the form-login. The jsp page, by default, tries to get a session that was originally created by the user whose token is expired. Thus the user is not
+authenticated and no credentials are established when you access this session, which results
+in this error.
+
+To avoid this error, restart the browser that starts a new session, or configure the `login.jsp`
+file to not create the session by default. If you choose to update the `login.jsp` file, set `<%@
+page session="false" %>`
+
+=== You receive a CWWKS9104A message that the user is not granted access to any of the required roles
+
+When a user doesn't have authorization to the roles required by the application, you might see the following message:
+
+----
+CWWKS9104A: Authorization failed for user {0} while invoking {1} on {2}. The user is not
+granted access to any of the required roles: {3}.
+----
+
+Make sure that the user or the group that the user belongs to is mapped to at least one of the roles that are mentioned in the error message. A user-to-role mapping that is defined
+in the `ibm-application-bnd.xmi/xml` file takes precedence over a mapping that is defined
+in the `server.xml file`. Check both resources to ensure that the correct mapping is defined.
+
+=== The authorization fails for the user
+
+If the user authorization fails you might see the following message:
+
+----
+CWWKS9104A: Authorization failed for user {0}.
+----
+
+This error can occur if you specify both an `application` and `webApplication` for the
+same context root. If a conflict happens the latest configuration that is defined is ignored
+and causes an unexpected error, such as CWWKS9104A.
+
+=== Application installation causes unexpected security behavior
+
+When you specify your application in both the `server.xml` files by using the application element and in the dropins folder.
+As a result, the application installation is attempted twice and the security configuration in the `server.xml` file might or might
+not take effect.
+
+You might see the folowing message,
+
+----
+CWWKZ0013E: It is not possible to start two applications called {0} followed by unexpected
+security behavior and error messages such as CWWKS9104A.
+----
+
+To fix this problem, you must remove your application from the dropins
+folder and copy it to another directory. If you must leave it in the dropins folder, you
+must disable the application monitoring by using the following code in your `server.xml` file, `<applicationMonitor dropinsEnabled="false"/>`
