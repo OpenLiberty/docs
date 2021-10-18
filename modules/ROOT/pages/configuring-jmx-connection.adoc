@@ -13,13 +13,14 @@
 :page-type: general
 = Configuring JMX connections
 
-Your application can remotely connect to the MBeanServer on Open Liberty with a JMX connector to access to individual MBeans, by using the REST connector feature.
+Your application can remotely connect to the MBeanServer on Open Liberty with a JMX connector to access to individual MBeans by using the REST connector feature.
 With JMX connections, you can monitor and manage registered resources in the server, for example, by using the JConsole interface.
 
 == Configuring a secure remote JMX connection to Open Liberty
 
 An application deployed on Open Liberty has unrestricted access to its MBeanServer directory.
-You can get a secure JMX connection for your application remotely with the feature:restConnector[display=Admin REST Connector] feature by using SSL, is now a xref:secure-communication-tls.adoc#_tls_and_ssl[synonym for TLS].
+You can get a secure JMX connection for your application remotely with the feature:restConnector[display=Admin REST Connector] feature by using the TLS protocol.
+Although the SSL protocol is now deprecated, the term SSL is often used as a xref:secure-communication-tls.adoc#_tls_and_ssl[synonym for TLS].
 The REST connector feature includes the feature:ssl[display=Secure Socket Layer] feature.
 To get a secure JMX connection remotely, enable the Admin REST Connector feature and configure the xref:secure-communication-tls.adoc[secure communication with Transport Layer Security (TLS)], by enabling the feature:transportSecurity[display=Transport Security] feature.
 Then, xref:application-configuration-hardening.adoc#user-roles-access[configure a user or group] to the administrator role in the `server.xml` file.
@@ -36,9 +37,9 @@ For more information, see https://www.openliberty.io/blog/2019/12/06/microprofil
 The JMX methods and MBeans accessed through the REST connector are currently protected by a single role named administrator.
 Use the  `quickStartSecurity` element for administrative role mapping with a single user if you haven't already configured another user registry.
 For more users and groups, use the xref:reference:feature:appSecurity-1.0/examples.adoc#_configure_a_basic_user_registry[basic registry] or the LDAP registry.
-You can also map the administrator role for Single sign-on authentication with no user registry or the user that is not configured in the  user registry.
+You can also map the administrator role for single sign-on authentication with no user registry or the user that is not configured in the  user registry.
 Use the xref:reference:feature:appSecurity-1.0/examples.adoc#_configure_a_basic_user_registry_with_quickstart_security[quickStartSecurity] element for a single user mapping.
-Here is an example that shows the minimal required configuration:
+The following example shows the minimal required configuration for the `quickStartSecurity` element:
 
 ----
  <featureManager>
@@ -49,7 +50,7 @@ Here is an example that shows the minimal required configuration:
 ----
 
 Or use the basic registry for administrative role mapping.
-Here is an example of the basic registry that gives the user "bob" or the group "group1" administrator role:
+In the following example, the basic registry gives an administrator role to the user `bob` or the group `group1`:
 
 ----
  <basicRegistry>
@@ -66,7 +67,7 @@ Here is an example of the basic registry that gives the user "bob" or the group 
 ----
 
 Or use the LDAP registry for administrator role mapping by adding the feature:ldapRegistry[LDAP User Registry feature] to your `server.xml` file.
-Here is an example of the LDAP registry that gives the user "bob" administrator role.
+In the following example, the LDAP registry gives an administrator role to the user `bob`.
 
 ----
  <ldapRegistry id="basic" host="" port="">
@@ -78,7 +79,8 @@ Here is an example of the LDAP registry that gives the user "bob" administrator 
  </administrator-role>
 ----
 
-Map the administrator role to an SSO user or group that does not exist in the configured user registry. First, configure SSO features, such as `samlWeb`, `openidConnectClient`, `socialLogin`, or `mpJwt`.
+Map the administrator role to an SSO user or group that does not exist in the configured user registry.
+First, configure SSO features, such as feature:samlWeb[display=SAML Web Single Sign-On], feature:openidConnectClient[display=OpenID Connect Client], feature:socialLogin[display=Social Media Login], or feature:mpJwt[display=MicroProfile JSON Web Token].
 
 Liberty security authorization is access-id based. An access-id takes following formats:
 
@@ -95,7 +97,9 @@ access-id for a group:
 ----
 
 For example, if a user is authenticated as `tom@example.com`, and the SSO server or issuer is identified as `https://idp.example.com`, the access-id for this user in Liberty issuer is: `user:https://idp.example.com/tom@example.com`.
-Assign an administrative role to a user authenticated by the SSO server. Map the role to the user's access-id instead of the user name. The following example shows how to assign an administrative role to the user `tom@example.com`, authenticated by the SSO server `https://idp.example.com`.
+Assign an administrative role to a user authenticated by the SSO server.
+Map the role to the user's access-id instead of the user name.
+The following example shows how to assign an administrative role to the user `tom@example.com`, authenticated by the SSO server `https://idp.example.com`:
 
 ----
  <administrator-role>
@@ -103,7 +107,7 @@ Assign an administrative role to a user authenticated by the SSO server. Map the
  </administrator-role>
 ----
 
-Similarly, to map an administrative role to a group from an SSO server, you map the role to the group access-id. For example:
+Similarly, to map an administrative role to a group from an SSO server, you map the role to the group access-id, as shown in the following example:
 
 ----
  <administrator-role>
@@ -111,7 +115,7 @@ Similarly, to map an administrative role to a group from an SSO server, you map 
  </administrator-role>
 ----
 
-If authentication is performed with `mpJwt`, the default user access-id is:
+If authentication is performed with the MicroProfile JSON Web Token feature, the default user access-id is:
 
 ----
  user:<value of "iss" claim>/<value of "upn" claim>
@@ -128,7 +132,5 @@ If authentication is performed with `samlWeb` feature, the default user access-i
 ----
  user:<value of "issuer" assertion>/<value of "NameID" assertion>
 ----
-
-For more information, see the configuration instructions for your chosen SSO feature.
 
 You can also access xref:introduction-monitoring-metrics.adoc#_jmx_metrics[JMX metrics] with monitoring tools like JConsole.
