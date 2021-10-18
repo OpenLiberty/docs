@@ -13,19 +13,122 @@
 :page-type: general
 = Configuring JMX connections
 
-Java Management Extensions (JMX) is a standard for monitoring and managing registered resources in the server.
-You can configure a JMX connector for your application to access the MBeanServer on Open Liberty, by using the REST connector feature.
+Your application can remotely connect to the MBeanServer on Open Liberty with a JMX connector to access to individual MBeans, by using the REST connector feature.
+With JMX connections, you can monitor and manage registered resources in the server, for example, by using the JConsole interface.
 
 == Configuring a secure remote JMX connection to Open Liberty
 
 An application deployed on Open Liberty has unrestricted access to its MBeanServer directory.
-You can get a secure JMX connection for your application remotely with the feature:restConnector[display=Admin REST Connector] feature by using SSL.
+You can get a secure JMX connection for your application remotely with the feature:restConnector[display=Admin REST Connector] feature by using SSL, is now a xref:secure-communication-tls.adoc#_tls_and_ssl[synonym for TLS].
 The REST connector feature includes the feature:ssl[display=Secure Socket Layer] feature.
+To get a secure JMX connection remotely, enable the Admin REST Connector feature and configure the xref:secure-communication-tls.adoc[secure communication with Transport Layer Security (TLS)], by enabling the feature:transportSecurity[display=Transport Security] feature.
+Then, xref:application-configuration-hardening.adoc#user-roles-access[configure a user or group] to the administrator role in the `server.xml` file.
+
 Remote access with the REST connector is protected by a single administrator role through the HTTPS port that is defined by the default `httpEndpoint` element.
 HTTPS calls use the server-side of the connector with any programming language that can make HTTPS calls, such as C++, JavaScript, and curl, to use the REST APIs.
 A Java client uses the client-side of the connector, which is in the `wlp/clients/restConnector.jar` file and implements the `javax.management.MBeanServerConnection` interface.
+Starting with 19.0.0.12, Open Liberty supports the reader role for read-only access to select administrative REST APIs and the Admin Center UI.
+The reader role is in addition to the Administrator management role that was the only management role within Open Liberty, which provided read and write access.
+For more information, see https://www.openliberty.io/blog/2019/12/06/microprofile-32-health-metrics-190012.html?_ga=2.192930607.446447995.1634563792-308686542.1580147341#rrs[Open Liberty reader role support].
 
-To get a secure JMX connection remotely, enable the Admin REST Connector feature and configure the xref:secure-communication-tls.adoc[Secure communication with Transport Layer Security (TLS)], by enabling the feature:transportSecurity[display=Transport Security] feature.
-Then, xref:application-configuration-hardening.adoc#user-roles-access[configure a user or group] to the administrator role in the `server.xml` file.
+== Configure a user or group to the administrator role
+
+The JMX methods and MBeans accessed through the REST connector are currently protected by a single role named administrator.
+Use the  `quickStartSecurity` element for administrative role mapping with a single user if you haven't already configured another user registry.
+For more users and groups, use the xref:reference:feature:appSecurity-1.0/examples.adoc#_configure_a_basic_user_registry[basic registry] or the LDAP registry.
+You can also map the administrator role for Single sign-on authentication with no user registry or the user that is not configured in the  user registry.
+Use the xref:reference:feature:appSecurity-1.0/examples.adoc#_configure_a_basic_user_registry_with_quickstart_security[quickStartSecurity] element for a single user mapping.
+Here is an example that shows the minimal required configuration:
+
+----
+ <featureManager>
+     <feature>restConnector-2.0</feature>
+ </featureManager>
+ <quickStartSecurity userName="bob" userPassword="bobpassword" />
+ <keyStore id="defaultKeyStore" password="keystorePassword"/>
+----
+
+Or use the basic registry for administrative role mapping.
+Here is an example of the basic registry that gives the user "bob" or the group "group1" administrator role:
+
+----
+ <basicRegistry>
+     <user name="bob" password="bobpassword"/>
+     <user name="joe" password="joepassword"/>
+     <group name="group1" ...>
+     </group>
+ </basicRegistry>
+
+ <administrator-role>
+     <user>bob</user>
+     <group>group1</group>
+ </administrator-role>
+----
+
+Or use the LDAP registry for administrator role mapping by adding the feature:ldapRegistry[LDAP User Registry feature] to your `server.xml` file.
+Here is an example of the LDAP registry that gives the user "bob" administrator role.
+
+----
+ <ldapRegistry id="basic" host="" port="">
+     <tds.properties ... />
+ </ldapRegistry>
+
+ <administrator-role>
+     <user>cn=bob,o=ibm,c=us</user>
+ </administrator-role>
+----
+
+Map the administrator role to an SSO user or group that does not exist in the configured user registry. First, configure SSO features, such as `samlWeb`, `openidConnectClient`, `socialLogin`, or `mpJwt`.
+
+Liberty security authorization is access-id based. An access-id takes following formats:
+
+access-id for a user:
+
+----
+ user:/<security realm name>/<user name>
+----
+
+access-id for a group:
+
+----
+ group:/<security realm name>/<group name>
+----
+
+For example, if a user is authenticated as `tom@example.com`, and the SSO server or issuer is identified as `https://idp.example.com`, the access-id for this user in Liberty issuer is: `user:https://idp.example.com/tom@example.com`.
+Assign an administrative role to a user authenticated by the SSO server. Map the role to the user's access-id instead of the user name. The following example shows how to assign an administrative role to the user `tom@example.com`, authenticated by the SSO server `https://idp.example.com`.
+
+----
+ <administrator-role>
+     <user-access-id> user:https://idp.example.com/tom@example.com</user-access-id>
+ </administrator-role>
+----
+
+Similarly, to map an administrative role to a group from an SSO server, you map the role to the group access-id. For example:
+
+----
+ <administrator-role>
+     <group-access-id>group:https://idp.example.com/ManagerGroups</group-access-id>
+ </administrator-role>
+----
+
+If authentication is performed with `mpJwt`, the default user access-id is:
+
+----
+ user:<value of "iss" claim>/<value of "upn" claim>
+----
+
+and the default group access-id is:
+
+----
+ group:<value of "iss" claim>/<value of "groups" claim>
+----
+
+If authentication is performed with `samlWeb` feature, the default user access-id is:
+
+----
+ user:<value of "issuer" assertion>/<value of "NameID" assertion>
+----
+
+For more information, see the configuration instructions for your chosen SSO feature.
 
 You can also access xref:introduction-monitoring-metrics.adoc#_jmx_metrics[JMX metrics] with monitoring tools like JConsole.
