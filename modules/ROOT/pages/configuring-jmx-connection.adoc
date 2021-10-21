@@ -13,126 +13,31 @@
 :page-type: general
 = Configuring JMX connections
 
-You can remotely connect to the MBeanServer on Open Liberty with a JMX connector to access to individual MBeans by using the REST connector feature.
-With JMX connections, you can monitor and manage registered resources in the server, for example, by using the JConsole interface.
+You can monitor and manage registered resources in your Open Liberty server by using Jakarta Management Extensions (JMX) management beans (MBeans).
+You can access individual JMX MBeans by remotely connecting to the Open Liberty MBean server through a secure JMX connection to the Open Liberty REST connector.
 
 == Configuring a secure remote JMX connection to Open Liberty
 
-You can get a secure JMX connection for your application remotely with the feature:restConnector[display=Admin REST Connector] feature by using the TLS protocol.
-Although the SSL protocol is now deprecated, the term SSL is often used as a xref:secure-communication-tls.adoc#_tls_and_ssl[synonym for TLS].
-The REST connector feature includes the feature:ssl[display=Secure Socket Layer] feature.
+You can configure a secure JMX connection by enabling the Admin REST Connector feature, configuring Transport Layer Security (TLS), and adding at least one user to the administrator or reader management roles.
+By default, the Admin REST Connector feature enables the Transport Security feature, which supports TLS connections.
+Remote access with a JMX connection is protected by a single administrator or reader role through the HTTPS port that is defined by the default `httpEndpoint` element.
 
-To get a secure JMX connection remotely, enable the Admin REST Connector feature and configure the xref:secure-communication-tls.adoc[secure communication with Transport Layer Security (TLS)], by enabling the feature:transportSecurity[display=Transport Security] feature.
-Remote access with the REST connector is protected by a single administrator role through the HTTPS port that is defined by the default `httpEndpoint` element.
-HTTPS calls use the server-side of the connector with any programming language that can make HTTPS calls, such as C++, JavaScript, and curl, to use the REST APIs.
-A Java client uses the client-side of the connector, which is in the `wlp/clients/restConnector.jar` file and implements the `javax.management.MBeanServerConnection` interface.
-Then, <<configure_a_user_or_group,configure a user or group>> to the administrator role in the `server.xml` file.
+You can access an Open Liberty REST connector from a Java client or directly through an HTTPS call to the JMX endpoints of the administrative REST APIs.
+A Java client uses the client-side of the REST connector, which is in the `wlp/clients/restConnector.jar` file and implements the `javax.management.MBeanServerConnection` interface.
+HTTPS calls use the server-side of the REST connector.
+Any programming language that can make HTTPS calls can use the REST APIs.
 
-Starting with 19.0.0.12, Open Liberty supports the reader role for read-only access to select administrative REST APIs and the Admin Center UI.
-The reader role is in addition to the Administrator management role that was the only management role within Open Liberty, which provided read and write access.
-For more information, see https://www.openliberty.io/blog/2019/12/06/microprofile-32-health-metrics-190012.html?_ga=2.192930607.446447995.1634563792-308686542.1580147341#rrs[Open Liberty reader role support].
+To configure a secure JMX connection, complete the following steps:
 
-[#configure_a_user_or_group ]
-== Configure a user or group to the administrator role
+. Enable the feature:restConnector[Admin REST connector feature] and Configure TLS certificates in your `server.xml` file.
+Ensure that the CN value of the certificate `subjectDN` entry is the host name of the machine where the server is running.
+If you plan to use the `jConsole` tool that the trust store contains the certificate of the server in the `jConsole` connection.
 
-All the JMX methods and MBeans accessed through the REST connector are currently protected by a single role named administrator.
-Use the  `quickStartSecurity` element for administrative role mapping with a single user if you haven't already configured another user registry.
-For more users and groups, use the link:/docs/latest/reference/feature/appSecurity-1.0.html#_configure_a_basic_user_registry[basic registry] or the LDAP registry.
-You can also map the administrator role for single sign-on authentication with no user registry or the user that is not configured in the  user registry.
+. link:/docs/latest/reference/feature/appSecurity-3.0.html#_configure_rest_api_management_roles[Configure at least one user or group to the administrator or reader role] in your `server.xml` file.
+For testing and development purposes, you can quickly configure a single user in the administrator role by link:/docs/latest/reference/feature/appSecurity-3.0.html#_configure_a_basic_user_registry_with_quickstart_security[configuring QuickStart security].
 
-Use the link:/docs/latest/reference/feature/appSecurity-1.0.html#_configure_a_basic_user_registry_with_quickstart_security[quickStartSecurity] element for a single user mapping.
-The following example shows the minimal required configuration for the `quickStartSecurity` element:
+. Access the REST connector by using a Java client application, through the https://docs.oracle.com/en/java/javase/17/management/using-jconsole.html#GUID-77416B38-7F15-4E35-B3D1-34BFD88350B5[jConsole tool] that is provided by the Java SDK, or by making HTTPS calls directly to the server.
 
-----
- <featureManager>
-     <feature>restConnector-2.0</feature>
- </featureManager>
- <quickStartSecurity userName="bob" userPassword="bobpassword" />
- <keyStore id="defaultKeyStore" password="keystorePassword"/>
-----
+== See also
 
-Or use the basic registry for administrative role mapping.
-In the following example, the basic registry gives an administrator role to the user `bob` or the group `group1`:
-
-----
- <basicRegistry>
-     <user name="bob" password="bobpassword"/>
-     <user name="joe" password="joepassword"/>
-     <group name="group1" ...>
-     </group>
- </basicRegistry>
-
- <administrator-role>
-     <user>bob</user>
-     <group>group1</group>
- </administrator-role>
-----
-
-Or use the LDAP registry for administrator role mapping by adding the feature:ldapRegistry[LDAP User Registry feature] to your `server.xml` file.
-In the following example, the LDAP registry gives an administrator role to the user `bob`.
-
-----
- <ldapRegistry id="basic" host="" port="">
-     <tds.properties ... />
- </ldapRegistry>
-
- <administrator-role>
-     <user>cn=bob,o=ibm,c=us</user>
- </administrator-role>
-----
-
-Map the administrator role to an SSO user or group that does not exist in the configured user registry.
-First, configure SSO features, such as feature:samlWeb[display=SAML Web Single Sign-On], feature:openidConnectClient[display=OpenID Connect Client], feature:socialLogin[display=Social Media Login], or feature:mpJwt[display=MicroProfile JSON Web Token].
-
-Liberty security authorization is access-id based. An access-id takes following formats:
-
-access-id for a user:
-
-----
- user:/<security realm name>/<user name>
-----
-
-access-id for a group:
-
-----
- group:/<security realm name>/<group name>
-----
-
-For example, if a user is authenticated as `tom@example.com`, and the SSO server or issuer is identified as `https://idp.example.com`, the access-id for this user in Liberty issuer is: `user:https://idp.example.com/tom@example.com`.
-Assign an administrative role to a user authenticated by the SSO server.
-Map the role to the user's access-id instead of the user name.
-The following example shows how to assign an administrative role to the user `tom@example.com`, authenticated by the SSO server `https://idp.example.com`:
-
-----
- <administrator-role>
-     <user-access-id> user:https://idp.example.com/tom@example.com</user-access-id>
- </administrator-role>
-----
-
-Similarly, to map an administrative role to a group from an SSO server, you map the role to the group access-id, as shown in the following example:
-
-----
- <administrator-role>
-     <group-access-id>group:https://idp.example.com/ManagerGroups</group-access-id>
- </administrator-role>
-----
-
-If authentication is performed with the MicroProfile JSON Web Token feature, the default user access-id is:
-
-----
- user:<value of "iss" claim>/<value of "upn" claim>
-----
-
-and the default group access-id is:
-
-----
- group:<value of "iss" claim>/<value of "groups" claim>
-----
-
-If authentication is performed with the SAML Web Single Sign-On feature, the default user access-id is:
-
-----
- user:<value of "issuer" assertion>/<value of "NameID" assertion>
-----
-
-You can also access xref:introduction-monitoring-metrics.adoc#_jmx_metrics[JMX metrics] with monitoring tools like JConsole.
+link:/docs/latest/introduction-monitoring-metrics.html#_jmx_metrics[JMX metrics]
