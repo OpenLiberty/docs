@@ -37,6 +37,14 @@ JPA for Open Liberty is supported by the feature:jpa[display=JPA feature] and th
 
 For examples of how to configure a provider implementation other than the default, see the feature:jpaContainer[display=JPA Container feature].
 
+=== JPA and local transaction contexts (LTC)
+
+Open Liberty provides both global and local transaction contexts to managed components. Providing these contexts to managed components and having threads to service managed components, a transaction is always active whether for a global transaction context (GTC) or a local transaction context (LTC).
+
+This processing has no effect on application-managed persistence contexts, that is, JPA entity managers that are acquired through `EntityManagerFactory` instances that are injected into an application with the `@PersistenceUnit` annotation. However, it can affect container-managed persistence contexts (CMTS), that is, JPA entity managers that are injected through the `@PersistenceContext` annotation.
+
+JPA API methods require that a `TransactionRequiredException` exception is thrown when they are called outside of the boundaries of a GTC, and this exception is still thrown as expected. However, while the LTC remains active and until a new GTC is started or the end of the component service invocation is reached, the CMTS persistence context remains active. Entities that are fetched by using either find or query by a CMTS entity manager within the bounds of an LTC are still managed by that persistence context, instead of becoming immediately detached. As a result, the persistence context that is kept alive by the LTC is disposed of once the GTC starts, and entities that are managed by that persistence context become detached. This outcome might seem like an unexpected behavior and a difference in behavior with some JPA programming guides.
+
 == See also
 
 - Guide: link:/guides/jpa-intro.html[Accessing and persisting data in microservices using JPA]
