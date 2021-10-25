@@ -14,7 +14,7 @@
 
 Open Liberty has a unified logging component that handles messages that are written by applications and the runtime, and provides First Failure Data Capture (FFDC) capability. Logging data that is written by applications by using the `System.out`, `System.err`, or `java.util.logging.Logger` streams is combined into the server logs.
 
-A server has three primary log files:
+A server has the following three primary log files:
 
 - `console.log` - This file is created by the `server start` command. It contains the redirected standard output and standard error streams from the JVM process. This console output is formatted for human readability and it lacks some information that is useful for automated log analysis.
 - `messages.log` - This file contains all messages that are written or captured by the logging component. All messages that are written to this file contain additional information such as the message timestamp and the ID of the thread that wrote the message. This file is suitable for automated log analysis. This file does not contain messages that are written directly by the JVM process.
@@ -49,6 +49,60 @@ com.ibm.ws.logging.max.file.size=100
 com.ibm.ws.logging.max.files=3
 com.ibm.ws.logging.console.log.level=OFF
 com.ibm.ws.logging.copy.system.streams=false
+----
+
+[#log_formats]
+== Log formats
+
+Each of the three Open Liberty primary log files has a default log format and several alternative formats that you can specify in your logging configuration. The format you choose for each log depends on the needs of your application and your infrastructure. For example, you might choose to output your messages log in JSON format if they are consumed by a log analysis platform. Alternatively, you might choose the TBASIC format if you need a consistent log format across all three of your log files.
+
+- The default format for the `console.log` file is `DEV`.
+- The default format for the `messages.log` file is `SIMPLE`.
+- The default format for the `trace.log` file is `ENHANCED`.
+
+The following examples show sample output in each of the available log formats: `DEV`, `SIMPLE`, `JSON`, `ENHANCED`, `ADVANCED`, and `TBASIC`.
+
+DEV (console log)::
+`[AUDIT   ] CWWKF0011I: The defaultServer server is ready to run a smarter planet. The defaultServer server started in 7.967 seconds.`
+
+SIMPLE (console and messages logs)::
+`[18/10/21 14:49:26:246 EDT] 0000003e com.ibm.ws.kernel.feature.internal.FeatureManager            A CWWKF0011I: The defaultServer server is ready to run a smarter planet. The defaultServer server started in 7.844 seconds`
+
+JSON (console and messages logs)::
+`{"type":"liberty_message","host":"HOST","ibm_userDir":"/wlp\/usr\/","ibm_serverName":"defaultServer","message":"CWWKF0011I: The defaultServer server is ready to run a smarter planet. The defaultServer server started in 7.967 seconds.","ibm_threadId":"0000003e","ibm_datetime":"2021-10-18T14:50:58.159-0400","ibm_messageId":"CWWKF0011I","module":"com.ibm.ws.kernel.feature.internal.FeatureManager","loglevel":"AUDIT","ibm_sequence":"1634583058159_0000000000009"}`
+
+ENHANCED (trace log)::
+`[type=com.ibm.ws.logging.source.trace,ibm_datetime=1634583276528,ibm_messageId=null,ibm_threadId=115,module=x.com.ibm.ws.collector.manager.buffer.BufferManagerImpl,severity=3,loglevel=FINEST,ibm_methodName=null,ibm_className=null,levelValue=300,threadName=Framework stop - Equinox Container: 6a3a43fe-0296-4079-8cef-4d2b687dfd73,correlationId=,org=,product=,component=,message=Adding event to buffer GenericData [type=com.ibm.ws.logging.source.trace,ibm_datetime=1634583276528,ibm_messageId=null,ibm_threadId=115,module=com.ibm.websphere.event.Topic,severity=<,loglevel=EXIT,ibm_methodName=getTopicData,ibm_className=null,levelValue=400,threadName=Framework stop - Equinox Container: 6a3a43fe-0296-4079-8cef-4d2b687dfd73,correlationId=,`
+
+ADVANCED (trace log)::
+`[type=com.ibm.ws.logging.source.trace,ibm_datetime=1634583501370,ibm_messageId=null,ibm_threadId=47,module=com.ibm.ws.event.internal.EventImpl,severity=>,loglevel=ENTRY,ibm_methodName=setFutures,ibm_className=null,levelValue=400,threadName=Framework Event Dispatcher: Equinox Container: 7bf4ac13-a055-405e-a908-e5f670af1a4a,correlationId=,org=,product=,component=,message=Entry
+,objectId=-1430934363]]`
+
+TBASIC (console, messages, and trace logs)::
+`[18/10/21 14:47:19:718 EDT] 0000003e FeatureManage A   CWWKF0011I: The defaultServer server is ready to run a smarter planet. The defaultServer server started in 7.718 seconds.`
+
+
+=== TBASIC log format
+
+The TBASIC logging format provides a consistent log format across your Open Liberty console, message, and trace log files.
+The `BASIC` logging format exists for the trace log.
+However, the output differs between the trace log and that of the console and messages logs.
+The TBASIC format provides a consistent format option for the trace, console, and messages logs that matches the `BASIC` option
+The `TBASIC` format also acts as an alias for the `BASIC` option.
+
+You can specify the `TBASIC` format  in the `bootstrap.properties` file, as shownn in the following example:
+
+----
+com.ibm.ws.logging.message.format=tbasic
+com.ibm.ws.logging.console.format=tbasic
+com.ibm.ws.logging.trace.format=tbasic
+----
+
+You can also specify the TBASIC log format for the messages and console logs as an environment variable in your `server.env` file, as shown in the following example:
+
+----
+WLP_LOGGING_MESSAGE_FORMAT=TBASIC
+WLP_LOGGING_CONSOLE_FORMAT=TBASIC
 ----
 
 [#json]
@@ -206,31 +260,6 @@ The `binaryLog` command-line tool can be used to convert the binary log to a tex
 binaryLog view defaultServer
 ----
 
-[#log_formats]
-== Log formats
-
-TBASIC logging format::
-
-The TBASIC logging format provides a consistent log format across your Open Liberty console, message, and trace files.
-A BASIC logging format exists for `traceFormat`.
-However, the output differs between `traceFormat` and that of the `consoleFormat` and `messageFormat`.
-The TBASIC format adds consistency to `consoleFormat`, `messageFormat`, and `traceFormat` to match the BASIC option for `traceFormat`.
-The TBASIC format also acts as an alias for the BASIC option.
-
-The new options can be used in the `bootstrap.properties` file:
-
-----
-com.ibm.ws.logging.message.format=tbasic
-com.ibm.ws.logging.console.format=tbasic
-com.ibm.ws.logging.trace.format=tbasic
-----
-
-You can specify the TBASIC log format in your `bootstrap.properties` file, as shown in the following example:
-
-----
-WLP_LOGGING_MESSAGE_FORMAT=TBASIC
-WLP_LOGGING_CONSOLE_FORMAT=TBASIC
-----
 
 [#settings]
 == Configuration settings by source
@@ -261,7 +290,7 @@ The following table shows the equivalent `server.xml` file, `bootstrap.propertie
 |consoleFormat
 |com.ibm.ws.logging.console.format
 |WLP_LOGGING_CONSOLE_FORMAT
-|This setting specifies the required format for the console. Valid values are `dev`, `simple`, `json`, `tbasic` format. By default, `consoleFormat` is set to `dev`.
+|This setting specifies the required format for the console. Valid values are `dev`, `simple`, `json`, `tbasic` format. By default, `consoleFormat` is set to `dev`. For more information, see <<#log_formats, Log formats>>.
 
 |consoleLogLevel
 |com.ibm.ws.logging.console.log.level
@@ -310,7 +339,7 @@ If you specify a value of `false`, the date and time are formatted according to 
 |messageFormat
 |com.ibm.ws.logging.message.format
 |WLP_LOGGING_MESSAGE_FORMAT
-|This setting specifies the required format for the `messages.log` file. Valid values are `simple`, `json`, or `tbasic` format. By default, `messageFormat` is set to `simple`.
+|This setting specifies the required format for the `messages.log` file. Valid values are `simple`, `json`, or `tbasic` format. By default, `messageFormat` is set to `simple`. For more information, see <<#log_formats, Log formats>>.
 
 |messageSource
 |com.ibm.ws.logging.message.source
@@ -330,7 +359,7 @@ If you specify a value of `false`, the date and time are formatted according to 
 |traceFormat
 |com.ibm.ws.logging.trace.format
 |
-|This setting controls the format of the trace log. The default format for Liberty is `ENHANCED`. You can also use `BASIC`, `TBASIC`, and `ADVANCED` formats.
+|This setting controls the format of the trace log. The default format for Liberty is `ENHANCED`. You can also use `BASIC`, `TBASIC`, and `ADVANCED` formats. For more information, see <<#log_formats, Log formats>>.
 
 |traceSpecification
 |com.ibm.ws.logging.trace.specification
