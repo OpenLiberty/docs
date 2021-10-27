@@ -32,8 +32,57 @@ You can obtain them from applications, the Open Liberty runtime, and the Java vi
 They can be gathered and stored in database tools, such as https://prometheus.io/[Prometheus], and displayed on dashboards, such as https://grafana.com/[Grafana].
 For more information about building observability into your applications, see xref:microservice-observability-metrics.adoc[Microservice observability with metrics].
 
-MicroProfile Metrics 2.3 explicitly enables the feature:monitor-1.0[display=Performance Monitoring] feature.
-If you use a version earlier than 2.3 of the MicroProfile Metrics feature, then you must also enable the Performance Monitoring feature.
+When using MicroProfile Metrics with the feature:monitor-1.0[display=Performance Monitoring] feature, you enable the reporting of `vendor` metrics on the `/metrics` endpoint.
+Prior to MicroProfile Metrics 2.3, the feature:monitor-1.0[display=Performance Monitoring] feature needs to be explicitly configured.
+In MicroProfile Metrics 2.3 and up, the feature:monitor-1.0[display=Performance Monitoring] feature is automatically enabled by the MicroProfile Metrics feature during startup.
+It is worth noting that the _REST base metrics_ introduced in MicroProfile Metrics 2.3 also relies on the feature:monitor-1.0[display=Performance Monitoring] feature to function.
+
+The feature:monitor-1.0[display=Performance Monitoring] feature retrieves statistical data from all available monitoring components.
+However, MicroProfile Metrics uses only a subset of those components.
+
+The latest release of MicroProfile Metrics sources data from the following monitoring components:
+-	ConnectionPool
+-	ThreadPool
+-	RequestTiming
+-	Session
+-	WebContainer
+-	REST
+-	GrpcClient
+-	GrpcServer
+You can identify with which MicroProfile Metrics release the associated metrics are offered by identifying the relevant metric in the table below and the version it was introduced in.
+For example, the Request Timing vendor metrics were introduced in MicroProfile Metrics 2.0.
+
+The superset of monitoring components also includes:
+-	JVM
+-	SIPContainerBasic
+-	SIPContainerInboundRequests
+-	SIPContainerInboundResponse
+-	SIPContainerOutboundRequests
+-	SIPContainerOutboundResponse
+-	SIPContainerQueueMonitor
+-	SIPContainerTaskDuration
+By default, all monitoring components are enabled. You can configure the exact monitoring components to be enabled by configuring the `server.xml` with the `filter` attribute for the monitor configuration element.
+
+To enable only the monitoring components used by MicroProfile Metrics you can configure the `server.xml`, as shown in the following example:
+
+[source,xml]
+----
+<monitor  filter="ConnectionPool,ThreadPool,RequestTiming,Session,WebContainer,REST,GrpcClient,GrpcServer"/>
+----
+
+To disable all _vendor metrics_, but to keep the REST _base metrics_ configure the `server.xml`, as shown in the following example:
+
+[source,xml]
+----
+<monitor  filter="REST"/>
+----
+
+To disable all monitoring components you can configure the `server.xml` like this:
+
+[source,xml]
+----
+<monitor  filter=" "/>
+----
 
 In the following table, the Prometheus metric names are listed after each metric.
 The table also lists the metric types, metric units, and descriptions of all metrics that are available for Open Liberty.
