@@ -141,9 +141,10 @@ This UI is built from the https://swagger.io/tools/swagger-ui/[Open Source Swagg
 Some deprecated annotations were removed between Microprofile OpenAPI versions 1.1 and 2.0, which might result in breaking changes between those versions.
 For more information, see the https://download.eclipse.org/microprofile/microprofile-open-api-2.0/microprofile-openapi-spec-2.0.html#release_notes_20[Release Notes for Microprofile OpenAPI 2.0].
 
+[#multi-module]
 == Multiple application and multi-module application support with MicroProfile OpenAPI
 
-By default, OpenAPI documentation is generated for only the first web module of the first application in your `EAR` file. The feature:mpOpenAPI[display=MicroProfile OpenAPI 2.0 feature] provides configuration properties to select which applications and web modules OpenAPI documentation is generated for. If more than one web module or application is specified, an OpenAPI document is generated for each module or application and then they are merged to create a single OpenAPI document. A property is also provided to set the `info` section of the final merged OpenAPI document.
+By default, OpenAPI documentation is generated for only the first web module of the first application in your `EAR` file. The feature:mpOpenAPI[display=MicroProfile OpenAPI feature], version 2.0 and later, provides configuration properties to select which applications and web modules OpenAPI documentation is generated for. If more than one web module or application is specified, an OpenAPI document is generated for each module or application and then they are merged to create a single OpenAPI document. A property is also provided to set the `info` section of the final merged OpenAPI document.
 
 For example, to include all the applications in your deployment in a single merged OpenAPI document, you might define the following MicroProfile Config property as a variable in your `server.xml` file:
 
@@ -153,7 +154,7 @@ For example, to include all the applications in your deployment in a single merg
 ----
 
 
-The following table lists xref:external-configuration.adoc[MicroProfile Config] properties that can be specified to configure which modules or applications are included in the generated OpenAPI documentation.
+The following table lists xref:external-configuration.adoc[MicroProfile Config] properties that can be specified to configure which modules or applications are included in the generated OpenAPI documentation. These properties are available when you enable the feature:mpOpenAp[iMicroProfile OpenAPI feature], version 2.0 and later.
 
 .Configuration properties for multiple application and multi-module application support
 [%header,cols="3,6,2,6a"]
@@ -189,35 +190,31 @@ This value excludes no applications or web modules.
 
 |===
 
-=== Configure OpenAPI documentation for a multi-module application
-In the following `microprofile-config.properties` file example, an OpenAPI document is configured for the `sample_app` application, which consists of an `EAR` file with five web modules.
+For configuration examples, see the feature:mpOpenApi[MicroProfile OpenAPI feature].
 
-* The `mp.openapi.extensions.liberty.merged.include` property specifies that all five modules are included in the final OpenAPI document.
-* The `mp.openapi.extensions.liberty.merged.exclude` overrides the `mp.openapi.extensions.liberty.merged.include` property to exclude the `module-3` and `module-5` web modules.
-* The `mp.openapi.extensions.liberty.merged.info` property sets the `info` section for the final OpenAPI document, which documents web modules 1, 2, and 4.
+=== Resolution of OpenAPI document merging conflicts
 
+When OpenAPI documentation from multiple modules is merged together, Open Liberty applies the following rules to resolve potential conflicts between the OpenAPI documents that are being merged:
 
-[source,java]
-----
-mp.openapi.extensions.liberty.merged.include=all
-mp.openapi.extensions.liberty.merged.exclude=sample_app/module-3,sample_app/module-5
-mp.openapi.extensions.liberty.merged.info=
-{
-  "title": "A multi-module sample application",
-  "description": "This is a sample application.",
-  "termsOfService": "http://example.com/sample_app/terms",
-  "contact": {
-    "name": "API Support",
-    "url": "http://www.example.com/sample_app/support",
-    "email": "sample_app_support@example.com"
-  },
-  "license": {
-    "name": "License 2.0",
-    "url": "https://www.example.org/licenses/LICENSE-2.0.html"
-  },
-  "version": "2.0.1"
-}
-----
+- If all server URLs end with the context root, the context root is removed from each server URL and added as a prefix to each path.
+
+- If no servers exist in a document, the context root is added as a prefix to each path.
+
+- If the same path is now declared in more than one document, a warning is logged and all but one of the clashing documents is excluded from the merged documentation.
+
+- If the same extension name is declared with different values at the top level of more than one document, a warning is logged. All but one of the clashing documents are excluded from the merged documentation.
+
+- If the top-level `servers` section is not identical across all documents, each server is removed from the top level and copied under the path that it applies to.
+
+- Component names are made unique by adding a number to the end of them where necessary. References to the component name are updated.
+
+- Operation IDs are made unique by adding a number to the end of them where necessary. References to the operation ID are updated.
+
+- If the `info` section is not identical across all documents, it is replaced by a standard info section that says that the documentation from several modules was merged.
+
+- If the top-level `security scheme` section is not the same across all documents, the security requirements are copied under each path that they apply to.
+
+- If the external documentation section is not the same across all documents, it is removed.
 
 == See also
 
