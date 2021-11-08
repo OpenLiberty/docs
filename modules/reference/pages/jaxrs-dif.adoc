@@ -1,0 +1,196 @@
+// Copyright (c) 2021 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description: With the release of the Jakarta RESTful Web Services 3.0 feature (`restfulWS-3.0`), the underlying JAX-RS implementation for Open Liberty changed from Apache CXF to RESTEasy. This change results in certain API behavior changes that might require you to update your application code.
+:seo-title: JAX-RS 3.0 behavior changes
+:seo-description: With the release of the Jakarta RESTful Web Services 3.0 feature (`restfulWS-3.0`), the underlying JAX-RS implementation for Open Liberty changed from Apache CXF to RESTEasy. This change results in certain API behavior changes that might require you to update your application code.
+:page-layout: general-reference
+:page-type: general
+= JAX-RS 3.0 behavior changes
+
+With the release of the RESTful Web Services 3.0 feature (`restfulWS-3.0`), the underlying JAX-RS implementation for Open Liberty changed from Apache CXF to RESTEasy. This change results in certain API behavior changes that might require you to update your application code.
+
+Jakarta RESTful Web Services (JAX-RS) is a Jakarta EE platform API. In Open Liberty 21.0.0.12 and later, you can use JAX-RS 3.0 functions by enabling the feature:restfulWS[display=RESTful Web Services 3.0] feature (`restfulWS-3.0`). Before 21.0.0.12, JAX-RS 2.x functions were available through the feature:jaxrs[display=Java RESTful Services] feature (`jaxrs-2.x`). The change in feature name and version reflects the change in API package name prefixes from `javax.*` to `jakarta.*`, which is common to all Jakarta EE 9.1 features.
+
+However, the underlying JAX-RS implementation for Open Liberty also changed from https://cxf.apache.org[Apache CXF] to https://resteasy.github.io[RESTEasy]. If you are updating your server configuration from `jaxrs-2.x` to `restfulWS-3.0`, the change in underlying implementation results in certain changes in API behavior that might require you to update your application code. The following sections detail changes in behavior between the `jaxrs-2.x` and `restfulWS-3.0` features.
+
+== CDI injection with the Application.getSingletons() method
+
+jaxrs-2.0 behavior::
+You can create an instance of a singleton class and a second instance is generated from CDI to inject into the singleton classes.
+
+RESTfulWS-3.0 behavior::
+You are required to get an instance of your singleton class from CDI if you want CDI injection into the singleton classes.
+
+== Server-side asynchronous support
+
+If the application does not include a `web.xml` file, or if it includes a `web.xml` file that only contains the servlet name, asynchronous behavior is automatically supported. If the application includes a `web.xml` file that contains a servlet class or other configuration options, you must specify `<async-supported>true</async-supported>` in the `web.xml` file to get server-side asynchronous support. This requirement does not exist for the `jaxrs-2.x` feature.
+
+== Null properties in the `jakarta.ws.rs.client` API
+
+jaxrs-2.0 behavior::
+A Client property with a null value is maintained as part of the Client internal configuration state.
+
+RESTfulWS-3.0 behavior::
+A Client property with a null value is removed from the Client internal configuration state.
+
+== `Response.readEntity()` method return when it is called on an empty entity
+
+jaxrs-2.0 behavior::
+The method returns null.
+
+RESTfulWS-3.0 behavior::
+
+== HttpHeaders.getRequestHeader(String _headerName_) method return when the specified _headerName_ value does not exist
+
+jaxrs-2.0 behavior::
+The method returns an `IllegalStateException` exception.
+
+RESTfulWS-3.0 behavior::
+The method returns an empty String object.
+
+== Liberty `ClientBuilder` properties are deprecated
+jaxrs-2.0 properties::
+- `com.ibm.ws.jaxrs.client.receive.timeout`
+- `com.ibm.ws.jaxrs.client.connection.timeout`
+
+RESTfulWS-3.0 alternatives::
+- `ClientBuilder.connectTimeout(long timeout, TimeUnit unit)`
+- `ClientBuilder.readTimeout(long timeout, TimeUnit unit)`
+
+These methods are also available in JAX-RS 2.0
+
+== RESTful WS parameter non-CDI injection
+
+jaxrs-2.0 behavior::
+JAX-RS parameters can be injected into a resource class constructor
+
+RESTfulWS-3.0 behavior::
+JAX-RS parameters cannot be injected into a resource class constructor. Resources are CDI beans. Only CDI injection can occur in resource class constructors.
+
+For example, the following code is valid for `jaxrs-2.x, but not for `RESTfulWS-3.0`.
+
+[source,java]
+----
+@Path("myPath")
+public class MyResource {
+
+    private String q1;
+
+    public MyResource(@QueryParam("q1") String q1) {
+        this.q1 = q1;
+    }
+
+    @GET
+    public Response get() {
+        doSomethingWith(q1);
+        // ...
+    }
+}
+----
+
+For `RESTfulWS-3.0`, the code must be rewritten similar to the following example.
+[source,java]
+----
+@Path("myPath")
+public class MyResource {
+
+    @GET
+    public Response get(@QueryParam("q1") String q1) {
+        doSomethingWith(q1);
+        // ...
+    }
+}
+----
+
+== Subresource locator methods path names
+
+RESTfulWS-3.0 behavior::
+Subresource locator methods can share the same path as a regular subresouce method.
+
+jaxrs-2.0 behavior::
+Subresource locator methods must not share the same path as a regular subresouce method.
+
+For example, the following code works with the `jaxrs-2.x` feature, but results in an error with the `RESTfulWebServices-3.0` feature.
+
+[source,java]
+----
+@Path("/root")
+public class MyRootResource {
+    /*
+     * Subresource locator method.
+     */
+    @Path("subresource")
+    public MyObject postSub() {
+        return new MyObject();
+    }
+
+    public static class MyObject {
+
+        @POST
+        public String hello() {
+            return "MyObject.hello()";
+        }
+    }
+
+    /*
+     * Subresource method.
+     */
+    @GET
+    @Path("subresource")
+    public String getSub() {
+        return "MyRootResource.getSub()";
+    }
+}
+----
+
+With `RESTfulWS-3.0`, this code returns an error that is similar to the following example.
+
+[source,console]
+----
+[6/16/21, 13:48:03:249 CDT] 00000050 org.jboss.resteasy.resteasy_jaxrs.i18n
+----
+
+== Application subclasses that use CDI injection must be annotated with the @ApplicationPath annotation
+
+jaxrs-2.0 behavior::
+Application subclasses are treated as managed beans and do not require the `@ApplicationPath` annotation for CDI injection.
+
+RESTfulWS-3.0 behavior::
+Application subclasses are not treated as managed beans and therefore require the `@ApplicationPath` annotation to include CDI injection. Resources are now CDI beans.
+Only CDI injection may only occur in resource class constructors.
+
+== CDI and bean-defining annotations
+
+jaxrs-2.0 behavior::
+To use CDI in applications, users must explicitly enable CDI with the feature:cdi[Contexts and Dependency Injection feature].
+
+RESTfulWS-3.0 behavior::
+- RESTful web services always use CDI.
+- The `@ApplicationPath`, `@Path`, and `@Provider` annotations are now CDI bean-defining annotations
+- By default, RESTful web services that are annotated with the `@Path` annotation are request-scoped.
+- By default, RESTful web services that are annotated with the `@Provider` or `@ApplicationPath` annotations are application-scoped.
+
+== EJBs that are listed in the getClasses() method for an application subclass
+
+jaxrs-2.0 behavior::
+Local interfaces of the EJB bean that are listed in the `getClasses()` method are ignored.
+
+RESTfulWS-3.0 behavior::
+Local interfaces of the EJB bean that are listed in the `getClasses()` method cause an exception that prevents the application from starting.
+
+== Wildcard characters in the `@ApplicationPath` annotation
+jaxrs-2.0 behavior::
+Wildcard characters are accepted for the `@ApplicationPath` annotation, for example, `@ApplicationPath(value="/rest1/*")`
+
+RESTfulWS-3.0 behavior::
+Wildcard characters are not accepted for the @ApplicationPath annotation and result in the request being rejected.
+
+
+== See also
+xref:ROOT:rest-microservices.adoc[RESTful microservices]
