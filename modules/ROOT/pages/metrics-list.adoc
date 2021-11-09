@@ -32,20 +32,21 @@ You can obtain them from applications, the Open Liberty runtime, and the Java vi
 They can be gathered and stored in database tools, such as https://prometheus.io/[Prometheus], and displayed on dashboards, such as https://grafana.com/[Grafana].
 For more information about building observability into your applications, see xref:microservice-observability-metrics.adoc[Microservice observability with metrics].
 
-To use the MicroProfile Metrics with the feature:monitor[display=Performance Monitoring] feature, enable the reporting of `vendor` metrics in the `/metrics` endpoint.
+When the MicroProfile metrics feature is enabled, a set of base metrics are always reported. You can augment this set of metrics by collecting `vendor` metrics, which are available from different monitoring components within your Open Liberty server. When you enable both the Performance Monitoring and the MicroProfile metrics features, you enable the reporting of `vendor` metrics on the `/metrics` endpoint.
 
 Before MicroProfile Metrics 2.3, the Performance Monitoring feature had to be explicitly configured.
 From MicroProfile Metrics 2.3, the Performance Monitoring feature is automatically enabled by MicroProfile Metrics during startup.
-The _REST base metrics_ introduced in MicroProfile Metrics 2.3 also relies on the Performance Monitoring feature to function.
+The _REST base metrics_ that were introduced in MicroProfile Metrics 2.3 also rely on the Performance Monitoring feature.
 
 The Performance Monitoring feature retrieves the statistical data from all available monitoring components.
 
 You can identify the relevant metric associated with the MicroProfile Metrics release in the <<#metrics-table,Metrics that are available for Open Liberty>> table, and the version it was introduced in.
 For example, the Request Timing vendor metrics were introduced in MicroProfile Metrics 2.0.
 
-By default, all monitoring components are enabled. You can configure the exact monitoring components to be enabled by configuring the `server.xml` file with the `filter` attribute for the monitor configuration element.
+By default, all monitoring components are enabled. You can configure only a subset of these monitoring components to be reported by specifying the `filter` attribute for the monitor configuration element in your `server.xml` file.
 
-To enable only the monitoring components used by MicroProfile Metrics you can configure the `server.xml` file, as shown in the following example:
+If your server is collecting more metrics data than you need, you can improve the server performance by collecting only those metrics that you intend to use.
+To enable only the monitoring components that are used by MicroProfile Metrics, add the following code to your 'server.xml' file.
 
 [source,xml]
 ----
@@ -224,7 +225,7 @@ This metric is a gauge.
 }
 |The number of times that the bulkhead logic was run. This number is usually once per method call, but it might be zero if a circuit breaker prevents execution or more than once per method call if the method call is retried. This metric is available when you use the `@Bulkhead` fault tolerance annotation.
 This metric is a counter.
-|Base metric, is available when MP Fault Tolerance feature is enabled.
+|Base metric, but available only when MP Fault Tolerance feature is enabled.
 |{ft-metric-features}
 |{mp-ft-3-0}
 
@@ -232,7 +233,7 @@ This metric is a counter.
 |base_ft_bulkhead_executionsRunning{method="<name>"}
 |The number of currently running executions. This metric is available when you use the `@Bulkhead` fault tolerance annotation.
 This metric is a gauge.
-|Base metric, is available when MP Fault Tolerance feature is enabled.
+|Base metric, but available only when MP Fault Tolerance feature is enabled.
 |{ft-metric-features}
 |{mp-ft-3-0}
 
@@ -240,7 +241,7 @@ This metric is a gauge.
 |base_ft_bulkhead_executionsWaiting{method="<name>"}
 |The number of executions currently waiting in the queue. This metric is available when you use the `@Bulkhead` fault tolerance annotation and the `@Asynchronous` annotation.
 This metric is a gauge.
-|Base metric, is available when MP Fault Tolerance feature is enabled.
+|Base metric, but available only when MP Fault Tolerance feature is enabled.
 |{ft-metric-features}
 |{mp-ft-3-0}
 
@@ -256,7 +257,7 @@ base_ft_bulkhead_runningDuration_seconds{
     quantile=["0.5"\|"0.75"\|"0.95"\|"0.98"\|"0.99"\|"0.999"]
 } / seconds
 |A histogram of the time that method executions spent running. This metric is available when you use the `@Bulkhead` fault tolerance annotation.
-|Base metric, is available when MP Fault Tolerance feature is enabled.
+|Base metric, but available only when MP Fault Tolerance feature is enabled.
 |{ft-metric-features}
 |{mp-ft-3-0}
 
@@ -272,7 +273,7 @@ base_ft_bulkhead_waitingDuration_seconds{
     quantile=["0.5"\|"0.75"\|"0.95"\|"0.98"\|"0.99"\|"0.999"]
 } / seconds
 |A histogram of the time that method executions spent waiting in the queue. This metric is available when you use the `@Bulkhead` fault tolerance annotation and the `@Asynchronous` annotation.
-|Base metric, is available when MP Fault Tolerance feature is enabled.
+|Base metric, but available only when MP Fault Tolerance feature is enabled.
 |{ft-metric-features}
 |{mp-ft-3-0}
 
@@ -286,7 +287,7 @@ base_ft_bulkhead_waitingDuration_seconds{
 }
 |The number of times that the circuit breaker logic was run. This number is usually once per method call, but might be more if the method call is retried. This metric is available when you use the `@CircuitBreaker` fault tolerance annotation.
 This metric is a counter.
-|Base metric, is available when MP Fault Tolerance feature is enabled.
+|Base metric, but available only when MP Fault Tolerance feature is enabled.
 |{ft-metric-features}
 |{mp-ft-3-0}
 
@@ -300,7 +301,7 @@ This metric is a counter.
 } / (seconds)
 |The amount of time that the circuit breaker has spent in each state. These values increase monotonically. This metric is available when you use the `@CircuitBreaker` fault tolerance annotation.
 This metric is a gauge.
-|Base metric, is available when MP Fault Tolerance feature is enabled.
+|Base metric, but available only when MP Fault Tolerance feature is enabled.
 |{ft-metric-features}
 |{mp-ft-3-0}
 
@@ -308,7 +309,7 @@ This metric is a gauge.
 |base_ft_circuitbreaker_opened_total{method="<name>"}
 |The number of times that the circuit breaker has moved from close state to open state. This metric is available when you use the `@CircuitBreaker` fault tolerance annotation.
 This metric is a counter.
-|Base metric, is available when MP Fault Tolerance feature is enabled.
+|Base metric, but available only when MP Fault Tolerance feature is enabled.
 |{ft-metric-features}
 |{mp-ft-3-0}
 
@@ -324,7 +325,7 @@ This metric is a counter.
 }
 |The number of times that the method was called.
 This metric is a counter.
-|Base metric, is available when MP Fault Tolerance feature is enabled.
+|Base metric, but available only when MP Fault Tolerance feature is enabled.
 |{ft-metric-features}
 |{mp-ft-3-0}
 
@@ -346,7 +347,7 @@ This metric is a counter.
 }
 |The number of times that the retry logic was run. This will always be once per method call. This metric is available when you use the `@Retry` fault tolerance annotation.
 This metric is a counter.
-|Base metric, is available when MP Fault Tolerance feature is enabled.
+|Base metric, but available only when MP Fault Tolerance feature is enabled.
 |{ft-metric-features}
 |{mp-ft-3-0}
 
@@ -354,7 +355,7 @@ This metric is a counter.
 |base_ft_retry_retries_total{method="<name>"}
 |The number of times that the method was retried. This metric is available when you use the `@Retry` fault tolerance annotation.
 This metric is a counter.
-|Base metric, is available when MP Fault Tolerance feature is enabled.
+|Base metric, but available only when MP Fault Tolerance feature is enabled.
 |{ft-metric-features}
 |{mp-ft-3-0}
 
@@ -368,7 +369,7 @@ This metric is a counter.
 }
 |The number of times that the timeout logic was run. This number is usually once per method call, but it might be zero if a circuit breaker prevents execution or more than once per method call if the method call is retried. This metric is available when you use the `@Timeout` fault tolerance annotation.
 This metric is a counter.
-|Base metric, is available when MP Fault Tolerance feature is enabled.
+|Base metric, but available only when MP Fault Tolerance feature is enabled.
 |{ft-metric-features}
 |{mp-ft-3-0}
 
@@ -383,7 +384,7 @@ base_ft_timeout_executionDuration_seconds{
     quantile=["0.5"\|"0.75"\|"0.95"\|"0.98"\|"0.99"\|"0.999"]
 } / (seconds)
 |A histogram of the execution time for the method. This metric is available when you use the `@Timeout` fault tolerance annotation.
-|Base metric, is available when MP Fault Tolerance feature is enabled.
+|Base metric, but available only when MP Fault Tolerance feature is enabled.
 |{ft-metric-features}
 |{mp-ft-3-0}
 
@@ -487,7 +488,7 @@ This metric is a counter.
 |vendor_jaxws_client_checkedApplicationFaults_total{endpoint=<endpointName>}
 |The number of checked application faults.
 This metric is a counter.
-|NA
+|N/A, always available
 |{vendor-metric-features}
 |{mp-2-0}
 
@@ -495,7 +496,7 @@ This metric is a counter.
 |vendor_jaxws_client_invocations_total{endpoint=<endpointName>}
 |The number of invocations to this endpoint or operation.
 This metric is a counter.
-|NA
+|N/A, always available
 |{vendor-metric-features}
 |{mp-2-0}
 
@@ -503,7 +504,7 @@ This metric is a counter.
 |vendor_jaxws_client_logicalRuntimeFaults_total{endpoint=<endpointName>}
 |The number of logical runtime faults.
 This metric is a counter.
-|NA
+|N/A, always available
 |{vendor-metric-features}
 |{mp-2-0}
 
@@ -511,7 +512,7 @@ This metric is a counter.
 |vendor_jaxws_client_responseTime_total_seconds{endpoint=<endpointName>} / (seconds)
 |The total response handling time since the start of the server.
 This metric is a gauge.
-|NA
+|N/A, always available
 |{vendor-metric-features}
 |{mp-2-0}
 
@@ -519,7 +520,7 @@ This metric is a gauge.
 |vendor_jaxws_client_runtimeFaults_total{endpoint=<endpointName>}
 |The number of runtime faults.
 This metric is a counter.
-|NA
+|N/A, always available
 |{vendor-metric-features}
 |{mp-2-0}
 
@@ -527,7 +528,7 @@ This metric is a counter.
 |vendor_jaxws_client_uncheckedApplicationFaults_total{endpoint=<endpointName>}
 |The number of unchecked application faults.
 This metric is a counter.
-|NA
+|N/A, always available
 |{vendor-metric-features}
 |{mp-2-0}
 
@@ -535,7 +536,7 @@ This metric is a counter.
 |vendor_jaxws_server_checkedApplicationFaults_total{endpoint=<endpointName>}
 |The number of checked application faults.
 This metric is a counter.
-|NA
+|N/A, always available
 |{vendor-metric-features}
 |{mp-2-0}
 
@@ -543,7 +544,7 @@ This metric is a counter.
 |vendor_jaxws_server_invocations_total{endpoint=<endpointName>}
 |The number of invocations to this endpoint or operation.
 This metric is a counter.
-|NA
+|N/A, always available
 |{vendor-metric-features}
 |{mp-2-0}
 
@@ -551,7 +552,7 @@ This metric is a counter.
 |vendor_jaxws_server_logicalRuntimeFaults_total{endpoint=<endpointName>}
 |The number of logical runtime faults.
 This metric is a counter.
-|NA
+|N/A, always available
 |{vendor-metric-features}
 |{mp-2-0}
 
@@ -559,7 +560,7 @@ This metric is a counter.
 |vendor_jaxws_server_responseTime_total_seconds{endpoint=<endpointName>} / (seconds)
 |The total response handling time since the start of the server.
 This metric is a gauge.
-|NA
+|N/A, always available
 |{vendor-metric-features}
 |{mp-2-0}
 
@@ -567,7 +568,7 @@ This metric is a gauge.
 |vendor_jaxws_server_runtimeFaults_total{endpoint=<endpointName>}
 |The number of runtime faults.
 This metric is a counter.
-|NA
+|N/A, always available
 |{vendor-metric-features}
 |{mp-2-0}
 
@@ -575,7 +576,7 @@ This metric is a counter.
 |vendor_jaxws_server_uncheckedApplicationFaults_total{endpoint=<endpointName>}
 |The number of unchecked application faults.
 This metric is a counter.
-|NA
+|N/A, always available
 |{vendor-metric-features}
 |{mp-2-0}
 
