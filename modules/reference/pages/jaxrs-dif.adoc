@@ -21,7 +21,7 @@ However, the underlying JAX-RS implementation for Open Liberty also changed from
 
 == CDI injection with the Application.getSingletons() method
 
-jaxrs-2.0 behavior::
+jaxrs-2.x behavior::
 You can create an instance of a singleton class and a second instance is generated from CDI to inject into the singleton classes.
 
 RESTfulWS-3.0 behavior::
@@ -29,51 +29,58 @@ You are required to get an instance of your singleton class from CDI if you want
 
 == Server-side asynchronous support
 
+jaxrs-2.x behavior::
+Server-side asynchronous behavior is automatically supported.
+
+RESTfulWS-3.0 behavior::
 If the application does not include a `web.xml` file, or if it includes a `web.xml` file that only contains the servlet name, asynchronous behavior is automatically supported. If the application includes a `web.xml` file that contains a servlet class or other configuration options, you must specify `<async-supported>true</async-supported>` in the `web.xml` file to get server-side asynchronous support. This requirement does not exist for the `jaxrs-2.x` feature.
 
-== Null properties in the `jakarta.ws.rs.client` API
+== Null properties in the jakarta.ws.rs.client API
 
-jaxrs-2.0 behavior::
+jaxrs-2.x behavior::
 A Client property with a null value is maintained as part of the Client internal configuration state.
 
 RESTfulWS-3.0 behavior::
 A Client property with a null value is removed from the Client internal configuration state.
 
-== `Response.readEntity()` method return when it is called on an empty entity
+== Response.readEntity() method return when it is called on an empty entity
 
-jaxrs-2.0 behavior::
+jaxrs-2.x behavior::
 The method returns null.
 
 RESTfulWS-3.0 behavior::
+The method returns an empty String object.
+
 
 == HttpHeaders.getRequestHeader(String _headerName_) method return when the specified _headerName_ value does not exist
 
-jaxrs-2.0 behavior::
+jaxrs-2.x behavior::
 The method returns an `IllegalStateException` exception.
 
 RESTfulWS-3.0 behavior::
 The method returns an empty String object.
 
-== Liberty `ClientBuilder` properties are deprecated
-jaxrs-2.0 properties::
-- `com.ibm.ws.jaxrs.client.receive.timeout`
-- `com.ibm.ws.jaxrs.client.connection.timeout`
+== Liberty ClientBuilder properties are deprecated
+
+jaxrs-2.x properties::
+- `com.ibm.ws.jaxrs.client.receive.timeout` property
+- `com.ibm.ws.jaxrs.client.connection.timeout` property
 
 RESTfulWS-3.0 alternatives::
-- `ClientBuilder.connectTimeout(long timeout, TimeUnit unit)`
-- `ClientBuilder.readTimeout(long timeout, TimeUnit unit)`
+- `ClientBuilder.connectTimeout(long timeout, TimeUnit unit)` method
+- `ClientBuilder.readTimeout(long timeout, TimeUnit unit)` method
 
-These methods are also available in JAX-RS 2.0
+
 
 == RESTful WS parameter non-CDI injection
 
-jaxrs-2.0 behavior::
+jaxrs-2.x behavior::
 JAX-RS parameters can be injected into a resource class constructor
 
 RESTfulWS-3.0 behavior::
 JAX-RS parameters cannot be injected into a resource class constructor. Resources are CDI beans. Only CDI injection can occur in resource class constructors.
 
-For example, the following code is valid for `jaxrs-2.x, but not for `RESTfulWS-3.0`.
+For example, the following code is valid for an application that runs on a server that specifies the `jaxrs-2.x` feature, but not for the  `RESTfulWS-3.0` feature.
 
 [source,java]
 ----
@@ -94,7 +101,7 @@ public class MyResource {
 }
 ----
 
-For `RESTfulWS-3.0`, the code must be rewritten similar to the following example.
+For a application that runs on a server that specifies the `RESTfulWS-3.0` feature, you must rewrite the code similar to the following example.
 [source,java]
 ----
 @Path("myPath")
@@ -113,10 +120,10 @@ public class MyResource {
 RESTfulWS-3.0 behavior::
 Subresource locator methods can share the same path as a regular subresouce method.
 
-jaxrs-2.0 behavior::
+jaxrs-2.x behavior::
 Subresource locator methods must not share the same path as a regular subresouce method.
 
-For example, the following code works with the `jaxrs-2.x` feature, but results in an error with the `RESTfulWebServices-3.0` feature.
+For example, the following code is valid for an application that runs on a server that specifies the `jaxrs-2.x` feature, but results in an error with the `RESTfulWebServices-3.0` feature.
 
 [source,java]
 ----
@@ -149,7 +156,7 @@ public class MyRootResource {
 }
 ----
 
-With `RESTfulWS-3.0`, this code returns an error that is similar to the following example.
+With the `RESTfulWS-3.0` feature, this code returns an error that is similar to the following example.
 
 [source,console]
 ----
@@ -158,7 +165,7 @@ With `RESTfulWS-3.0`, this code returns an error that is similar to the followin
 
 == Application subclasses that use CDI injection must be annotated with the @ApplicationPath annotation
 
-jaxrs-2.0 behavior::
+jaxrs-2.x behavior::
 Application subclasses are treated as managed beans and do not require the `@ApplicationPath` annotation for CDI injection.
 
 RESTfulWS-3.0 behavior::
@@ -167,26 +174,26 @@ Only CDI injection may only occur in resource class constructors.
 
 == CDI and bean-defining annotations
 
-jaxrs-2.0 behavior::
-To use CDI in applications, users must explicitly enable CDI with the feature:cdi[Contexts and Dependency Injection feature].
+jaxrs-2.x behavior::
+To use CDI in applications, users must explicitly enable CDI with the feature:cdi[display=Contexts and Dependency Injection feature].
 
 RESTfulWS-3.0 behavior::
 - RESTful web services always use CDI.
-- The `@ApplicationPath`, `@Path`, and `@Provider` annotations are now CDI bean-defining annotations
+- The `@ApplicationPath`, `@Path`, and `@Provider` annotations are now CDI bean-defining annotations.
 - By default, RESTful web services that are annotated with the `@Path` annotation are request-scoped.
 - By default, RESTful web services that are annotated with the `@Provider` or `@ApplicationPath` annotations are application-scoped.
 
 == EJBs that are listed in the getClasses() method for an application subclass
 
-jaxrs-2.0 behavior::
+jaxrs-2.x behavior::
 Local interfaces of the EJB bean that are listed in the `getClasses()` method are ignored.
 
 RESTfulWS-3.0 behavior::
 Local interfaces of the EJB bean that are listed in the `getClasses()` method cause an exception that prevents the application from starting.
 
-== Wildcard characters in the `@ApplicationPath` annotation
-jaxrs-2.0 behavior::
-Wildcard characters are accepted for the `@ApplicationPath` annotation, for example, `@ApplicationPath(value="/rest1/*")`
+== Wildcard characters in the @ApplicationPath annotation
+jaxrs-2.x behavior::
+Wildcard characters are accepted for the `@ApplicationPath` annotation, for example, `@ApplicationPath(value="/rest1/*")`.
 
 RESTfulWS-3.0 behavior::
 Wildcard characters are not accepted for the @ApplicationPath annotation and result in the request being rejected.
