@@ -51,6 +51,100 @@ For testing and development purposes, you can quickly configure a single user in
 
 
   * For information about accessing the REST connector by making HTTPS calls, when the Admin REST connector feature is enabled, you can access the API documentation at the `\https://<host>:<port>/IBMJMXConnectorREST/api` URL, for example, `\http://localhost:9443/IBMJMXConnectorREST/api`.
+  * To develop a JMX client application to access the secured Open Liberty REST connector, complete the steps in the following section.
+
+== Developing a JMX Java client for Open Liberty
+* Start with the following sample application code. Add the Liberty REST connector client library to the application classpath: `liberty_home/clients/restConnector.jar`.
++
+[source,java]
+----
+import javax.management.remote.JMXServiceURL;
+import javax.management.MBeanServerConnection;
+import javax.management.remote.JMXConnector;
+import javax.management.remote.JMXConnectorFactory;
+import java.util.HashMap;
+
+
+public class Test {
+
+  public static void main(String[] args) {
+    System.setProperty("javax.net.ssl.trustStore", <truststore location>);
+    System.setProperty("javax.net.ssl.trustStorePassword", <truststore password>);
+
+    //If the type of the trustStore is not PKCS12, which is default,
+    //set the type by using the following line.
+    System.setProperty("javax.net.ssl.trustStoreType", <truststore type>);
+
+   try {
+      HashMap<String, Object> environment = new HashMap<String, Object>();
+      environment.put("jmx.remote.protocol.provider.pkgs", "com.ibm.ws.jmx.connector.client");
+      environment.put(JMXConnector.CREDENTIALS, new String[] { "userid", "password" });
+
+      JMXServiceURL url = new JMXServiceURL("service:jmx:rest://localhost:9443/IBMJMXConnectorREST");
+      JMXConnector connector = JMXConnectorFactory.newJMXConnector(url, environment);
+      connector.connect();
+      MBeanServerConnection mbsc = connector.getMBeanServerConnection();
+    } catch(Throwable t) {
+         ...
+    }
+  }
+}
+----
+
+* If the server generates the server keystore for a non-production environment, use that keystore as the application client truststore.
+The keystore that the server generates for a non-production environment contains the client certificate.
+* Replace the `userid` and `password` values for the `JMXConnector.CREDENTIALS` property. Use the administrator user ID and password for the server.
+* Set the hostname and port number for the server in the `JMXServiceURL` constructor by using one of the following methods:
+  * Use the HTTPS port number. The default number is 9443.
+  * Use the contents of the `${server.output.dir}/logs/state/com.ibm.ws.jmx.rest.address` file as the `JMXServiceURLconstructor` parameter. The program writes this file when a server starts with the Admin REST connector feature that is configured and contains the REST endpoint, such as service:jmx:rest://localhost:9443/IBMJMXConnectorREST.
+* To run the client application on a different host machine from the server, configure the server HTTP endpoint to accept connections from remote hosts.
+For example, use an asterisk (*) as the value of the host attribute for the `defaultHttpEndpoint` endpointin your `server.xml` file.
++
+[source,xml]
+----
+<httpEndpoint id="defaultHttpEndpoint"
+     httpPort="9080"
+     httpsPort="9443"
+     host="*" />
+----
++
+  * The certificates that are installed with Liberty might not contain the host name of where the server is running. If you want to disable host name verification of SSL certificates, you can set the `com.ibm.ws.jmx.connector.client.disableURLHostnameVerification` system property to `true`, which disables host name verification for all connections. To disable host name verification on a per-connection basis, pass the property as a new environment when you create the JMX connection in your application code.
+
+[source,java]
+----
+...
+HashMap<String, Object> environment = new HashMap<String, Object>();
+environment.put("com.ibm.ws.jmx.connector.client.rest.maxServerWaitTime", 0);
+environment.put("com.ibm.ws.jmx.connector.client.rest.notificationDeliveryInterval", 65000);
+...
+----
+
+The Liberty REST connector can use a specific custom SSL socket factory to obtain sockets. If the following exception is displayed, you can create your own SSLContext from your own keystores and then use the SocketFactory from that context with the REST connector.
+[source,console]
+----
+javax.net.ssl.SSLHandshakeException: com.ibm.jsse2.util.j: PKIX path building failed: java.security.cert.CertPathBuilderException: unable to find valid certification path to requested target
+----
+
+Add the following code to your application.
+[source,java]
+----
+KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
+InputStream inputStream = new FileInputStream("myTrustStore.jks");
+trustStore.load(inputStream, "password".toCharArray());
+TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+trustManagerFactory.init(trustStore);
+TrustManager[] trustManagers = trustManagerFactory.getTrustManagers();
+SSLContext sslContext = SSLContext.getInstance("SSL");
+sslContext.init(null, trustManagers, null);
+
+Map<String, Object> environment = new HashMap<String, Object>();
+environment.put(ConnectorSettings.CUSTOM_SSLSOCKETFACTORY, sslContext.getSocketFactory());
+environment.put(ConnectorSettings.DISABLE_HOSTNAME_VERIFICATION, true);
+environment.put("jmx.remote.protocol.provider.pkgs", "com.ibm.ws.jmx.connector.client");
+environment.put(JMXConnector.CREDENTIALS, new String[] { "userid", "password" });
+JMXServiceURL url = new JMXServiceURL("REST", "localhost", 9443, "/IBMJMXConnectorREST");
+jmxConn = JMXConnectorFactory.connect(url, environment);
+----
 
 == See also
 
