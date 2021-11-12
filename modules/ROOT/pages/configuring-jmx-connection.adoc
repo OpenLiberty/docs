@@ -94,9 +94,32 @@ public class Test {
 * If the server generates the server keystore for a non-production environment, use that keystore as the application client truststore.
 The keystore that the server generates for a non-production environment contains the client certificate.
 * Replace the `userid` and `password` values for the `JMXConnector.CREDENTIALS` property. Specify a user ID and password for the administrator or reader role that you configured for step 3 of the pre.
-* Set the hostname and port number for the server in the `JMXServiceURL` constructor by using one of the following methods:
+* Set the hostname and port number for the server in the `JMXServiceURL` constructor parameter by using one of the following options:
   ** Use the HTTPS port number. The default number is 9443.
-  ** Use the contents of the `${server.output.dir}/logs/state/com.ibm.ws.jmx.rest.address` file as the `JMXServiceURLconstructor` parameter. The file contains the REST endpoint, such as `service:jmx:rest://localhost:9443/IBMJMXConnectorREST`. The program writes this file when a server starts with the Admin REST connector feature enabled. 
+  ** Use the contents of the `${server.output.dir}/logs/state/com.ibm.ws.jmx.rest.address` file as the `JMXServiceURL` constructor parameter. The file contains the REST endpoint, which in this example is `service:jmx:rest://localhost:9443/IBMJMXConnectorREST`. The program writes this file when a server starts with the Admin REST connector feature enabled.
+
+* You can configure optional REST connector settings by adding system properties to the environment `Map` object. In the following example, the `com.ibm.ws.jmx.connector.client.rest.maxServerWaitTime` property sets the amount of time that the client waits for the server to become available to 6500 milliseconds. The `com.ibm.ws.jmx.connector.client.rest.notificationDeliveryIntervalproperty` sets the maximum amount of time that the server waits for new notifications before it responds to a request for notifications from the client to zero milliseconds.
+[source,java]
+----
+...
+HashMap<String, Object> environment = new HashMap<String, Object>();
+environment.put("com.ibm.ws.jmx.connector.client.rest.maxServerWaitTime", 0);
+environment.put("com.ibm.ws.jmx.connector.client.rest.notificationDeliveryInterval", 65000);
+...
+----
+
+* The certificates that are installed with Liberty might not contain the host name of where the server is running. If you want to disable hostname verification of SSL certificates, you can set the `com.ibm.ws.jmx.connector.client.disableURLHostnameVerification` system property to `true`, which disables host name verification for all connections. To disable host name verification on a per-connection basis, pass the property as a new environment when you create the JMX connection in your application code, as shown in the following example.
+
+[source,java]
+----
+...
+HashMap<String, Object> environment = new HashMap<String, Object>();
+environment.put("jmx.remote.protocol.provider.pkgs", "com.ibm.ws.jmx.connector.client");
+environment.put("com.ibm.ws.jmx.connector.client.disableURLHostnameVerification", Boolean.TRUE);
+environment.put(JMXConnector.CREDENTIALS, new String[] { "userid", "password" });
+...
+----
+
 * To run the client application on a different host machine from the server, configure the server HTTP endpoint to accept connections from remote hosts.
 For example, use an asterisk (`*`) as the value of the host attribute for the `defaultHttpEndpoint` endpoint in your `server.xml` file.
 +
@@ -107,20 +130,9 @@ For example, use an asterisk (`*`) as the value of the host attribute for the `d
      httpsPort="9443"
      host="*" />
 ----
-+
-  ** The certificates that are installed with Liberty might not contain the host name of where the server is running. If you want to disable host name verification of SSL certificates, you can set the `com.ibm.ws.jmx.connector.client.disableURLHostnameVerification` system property to `true`, which disables host name verification for all connections. To disable host name verification on a per-connection basis, pass the property as a new environment when you create the JMX connection in your application code.
 
 
-[source,java]
-----
-...
-HashMap<String, Object> environment = new HashMap<String, Object>();
-environment.put("com.ibm.ws.jmx.connector.client.rest.maxServerWaitTime", 0);
-environment.put("com.ibm.ws.jmx.connector.client.rest.notificationDeliveryInterval", 65000);
-...
-----
-
-The Open Liberty REST connector can use a specific custom SSL socket factory to obtain sockets. If the following exception is displayed, you can create your own SSLContext from your own keystores and then use the SocketFactory from that context with the REST connector.
+* The Open Liberty REST connector can use a specific custom SSL socket factory to obtain sockets. If the following exception is displayed, you can create your own SSLContext from your own keystores and then use the SocketFactory from that context with the REST connector.
 [source,console]
 ----
 javax.net.ssl.SSLHandshakeException: com.ibm.jsse2.util.j: PKIX path building failed: java.security.cert.CertPathBuilderException: unable to find valid certification path to requested target
