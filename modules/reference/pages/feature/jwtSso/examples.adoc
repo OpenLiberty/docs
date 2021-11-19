@@ -1,7 +1,14 @@
-== Change the token expiration time
+== Examples
 
-With the `jwtSso` feature, you can use a JSON Web Token (JWT) as a Single-Sign-On (SSO) cookie.
-The following example shows how you can configure the `jwtSso` feature to change the token expiration time:
+With the JSON Web Token Single Sign-On feature, you can configure JSON Web Tokens (JWT) as an authentication mechanism for single-sign-on (SSO) authentication.
+
+The JWT SSO cookie is configured by enabling the JSON Web Token Single Sign-On feature.
+When a user is authenticated, Open Liberty creates a signed JWT as an SSO cookie and returns it to the browser.
+The browser can then include the JWT cookie in subsequent requests to the Open Liberty server.
+
+=== Change the token expiration time
+
+To customize the expiration time of a JWT, configure the `jwtBuilder` element, as shown in the following example:
 
 [source, xml]
 ----
@@ -10,11 +17,11 @@ The following example shows how you can configure the `jwtSso` feature to change
  <jwtBuilder id="myBuilder" expiresInSeconds="1800"/>
 ----
 
-The `jwtBuilderRef` attribute refers to the `jwtBuilder` element `myBuilder`.
+The `jwtBuilderRef` attribute refers to the `jwtBuilder` element with the `myBuilder` ID.
 The `id` attribute for the `jwtBuilder` element that is named `myBuilder` identifies the JWT builder.
 The `expiresInSeconds` attribute indicates the token expiration time that is set to 1800 seconds for a newly generated token.
 
-== Disable JWT cookies
+=== Disable JWT cookies
 
 By default, when a client is authenticated with Open Liberty through the JWT SSO feature, a JWT cookie is created and sent to the HTTP servlet.
 In the following example, the JWT cookies are disabled by specifying the `disableJwtCookie` attribute with a value of `true` in the `server.xml` file.
@@ -23,4 +30,62 @@ You can use a mechanism other than JWT cookies for authentication, as the JWT co
 [source, xml]
 ----
 <jwtSso id="sample" disableJwtCookie="true" />
+----
+
+=== Configure JWT SSO authentication for a subset of requests
+
+You can configure an authentication filter to specify whether certain requests for protected resources are authenticated with JWT SSO.
+If the request meets the criteria that are specified in the authentication filter, then the request can authenticate with JWT to access the protected resource.
+Conversely, if the request does not meet the criteria that are configured in the JWT SSO authentication filter, then the user is prompted to provide login credentials.
+For more information, see xref:ROOT:authentication-filters.adoc[Authentication filters].
+
+[source, xml]
+----
+<jwtSso cookieName="myjwt" jwtBuilderRef="myBuilder" authFilterRef="myAuthFilter"/>
+
+<authFilter id="myAuthFilter">
+         <requestUrl id="myRequestUrl" urlPattern="/SimpleServlet" matchType="contains"/>
+</authFilter>
+----
+
+In the example, request URLs that contain the `/SimpleServlet` pattern are authenticated by using JWT SSO authentication.
+If the JSON Web Token Single Sign-On feature is enabled but no authentication filter is configured, all requests that include a JWT cookie are processed by JWT SSO authentication.
+
+=== Change JWT validation criteria
+
+You can specify the `mpJwt` element to configure how incoming JWTs are validated and consumed by the server.
+Only one `mpJwt` element can exist in the `server.xml` file.
+In the following example, the `jwtBuilder` element specifies the issuer claim for JWTs that the server creates.
+The `mpJwt` element specifies the issuer claim and key alias for incoming JWTs that the server receives:
+
+[source, xml]
+----
+<jwtSso includeLtpaCookie="true" jwtBuilderRef="myBuilder">
+<jwtBuilder id="myBuilder" issuer="http://server.example.com" />
+<mpJwt id="myMpJwt" issuer="http://server.example.com"
+keyName="myJwtSigner"/>
+----
+
+=== Retrieve a JWT issuer public key from a JWK endpoint
+
+The JWTs created by Open Liberty are signed by the issuer and verified by the consumer.
+The consumer that uses the public key of the issuer later verifies the signature.
+If you use multiple servers, you must store the public key of the issuer in the `truststore` file of the consumer.
+Alternatively, you can also retrieve the key from the JWK endpoint of the issuer.
+
+The default JWK endpoint is `http(s)://<host>:<port>/jwt/ibm/api/defaultJWT/jwk`.
+
+To retrieve the JWT issuer public key from a JWK endpoint, specify the endpoint in the `jwksUri` attribute for the `mpJwt` element in your `sever.xml` file:
+
+[source, xml]
+----
+<mpJwt id="myMpJwt" jwksUri="https://localhost:19443/jwt/ibm/api/defaultJWT/jwk" />
+----
+
+If you specify a non-default JWT builder, the JWK endpoint is `http(s)://<host>:<port>/jwt/ibm/api/(builderId)/jwk`, where `(builderId)` is the value of the `id` attribute for the `jwtBuilderelement`.
+In the following example, the configured `jwtSso` element results in a JWK endpoint of `http(s)://<host>:<port>/jwt/ibm/api/myBuilder/jwk`.
+
+[source, xml]
+----
+<jwtSso jwtBuilderRef="myBuilder"/> <jwtBuilder id="myBuilder" />
 ----

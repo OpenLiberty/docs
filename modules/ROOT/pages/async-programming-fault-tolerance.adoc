@@ -1,4 +1,4 @@
-// Copyright (c) 2020 IBM Corporation and others.
+// Copyright (c) 2021 IBM Corporation and others.
 // Licensed under Creative Commons Attribution-NoDerivatives
 // 4.0 International (CC BY-ND 4.0)
 //   https://creativecommons.org/licenses/by-nd/4.0/
@@ -51,7 +51,7 @@ The following two use cases demonstrate how you can use the `@Asynchronous` anno
 [#apply-to-asynch-api]
 === Fault tolerance applied to an asynchronous API call
 You can use the `@Asynchronous` annotation to apply fault tolerance policies to an asynchronous API call that returns a `CompletionStage` object.
-Without the `@Asynchronous` annotation, the other fault tolerance annotations don't behave as you might expect.
+Without the `@Asynchronous` annotation, the other fault tolerance annotations, such as `@Retry`, don't behave as you might expect.
 In the following use case, the `.rx()` method from the JAX-RS Client API calls remote REST services asynchronously:
 
 [source,java]
@@ -67,7 +67,7 @@ public CompletionStage<String> clientDemo() {
 }
 ----
 
-After the `clientDemo()` method is called, you receive a `CompletionStage<String>` return type, which is named `response` in this example.
+After the `clientDemo()` method is called without any annotations, you receive a `CompletionStage<String>` return type, which is named `response` in this example.
 Then, you can add an action to take after the `CompletionStage` object completes:
 
 [source,java]
@@ -79,7 +79,7 @@ response.thenAccept(System.out::println);
 If the request fails, you might want to retry the request with the `@Retry` annotation.
 In this example, using the `@Retry` annotation doesn't work because the method doesn't throw an exception even if the request fails.
 The method always returns a `CompletionStage` object through which the success or failure of the request is reported.
-However, if you add the `@Asynchronous` annotation, then the `@Retry` annotation is applied after the `CompletionStage` object completes, rather than when the method returns:
+However, if you add the `@Asynchronous` annotation, then the `@Retry` annotation is applied when the `CompletionStage` object completes, rather than when the method returns:
 
 [source,java]
 ----
@@ -149,12 +149,36 @@ When a method is annotated with the `@Asynchronous` annotation, things change in
 The following diagram shows how the fault tolerance annotations work together without the `@Asynchronous` annotation:
 
 .Execution flow without the @Asynchronous annotation
-image::/img/blog/FT-synchronous-execution-flow.png[a diagram of execution flow without the @Asynchronous annotation]
+image::FT-synchronous-execution-flow.png[a diagram of execution flow without the @Asynchronous annotation]
 
-The next diagram shows how the fault tolerance annotations work together with the `@Asynchronous` annotation. Differences in execution flow are noted in dark green in the diagram:
+In this diagram, a call to a fault tolerance-annotated method consists of at least one attempt.
+If retry is enabled, several attempts might be made.
+Each attempt takes the following steps:
+
+* The circuit breaker is checked.
+If the circuit breaker is open, then the result of the attempt is a `CircuitBreakerException` exception, and the rest of the steps for the attempt are skipped.
+* If the circuit breaker isn’t open, then the timeout timer starts and the method attempts to reserve space on the bulkhead.
+* If the bulkhead isn’t full, a reservation is acquired, and the method runs.
+The result of the attempt is the value that’s returned or the exception that’s thrown by the method.
+If the timeout expires while the method is running, then the thread that’s running the method is interrupted.
+After the method returns or throws an exception, the bulkhead reservation is released, which frees up the space on the bulkhead.
+* However, if the bulkhead is full, the method isn’t run, and the result of the attempt is a `BulkheadException` exception.
+* Next, the timeout stops.
+If the timeout expired before it stopped, then the result of the attempt is replaced with a `TimeoutException` exception.
+* The result of the attempt is recorded by the circuit breaker.
+
+The attempt is now complete and has a result.
+If a retry is needed, then the result is discarded and a new attempt is started, meaning that the previous steps are repeated.
+After an attempt completes and no retry is needed, a fallback might be needed if the last attempt resulted in an exception.
+Whether a fallback is needed depends on the fallback configuration.
+If a fallback is needed, the fallback runs and the result of the fallback replaces the previous result.
+Finally, the result is returned to the user.
+
+The next diagram shows how the fault tolerance annotations work together with the `@Asynchronous` annotation.
+The **Return Future or CompletionStage** box, which is green, is in addition to the boxes in the previous diagram:
 
 .Execution flow with the @Asynchronous annotation
-image::/img/blog/FT-asynchronous-execution-flow.png[a diagram of execution flow with the @Asynchronous annotation]
+image::FT-asynchronous-execution-flow.png[a diagram of execution flow with the @Asynchronous annotation]
 
 The following changes in execution flow occur when you use the `@Asynchronous` annotation:
 
@@ -163,9 +187,9 @@ After the method runs, the result from the method is propagated to the `Completi
 * In addition to either accepting or rejecting the execution, the bulkhead can also queue the execution to run later.
 If the method is accepted by the bulkhead, it's then scheduled to run on another thread, rather than immediately.
 * When a timeout is used, then the method is interrupted if the timeout expires.
-If the timeout expires, the execution skips forward to the point noted in the *Timeout Expires* block in the diagram.
-The result is then processed as if the method finished with a `TimeoutException`.
-* If there's a fallback, the fallback also runs asynchronously so that it's scheduled to run on another thread.
+If the timeout expires, the execution skips forward to the point noted in the *Timeout Expires* box in the diagram.
+The result is then processed as if the method finished with a `TimeoutException` exception.
+* If a fallback occurs, the fallback also runs asynchronously so that it's scheduled to run on another thread.
 
 == Interactions with other fault tolerance annotations
 Annotating a method with the `@Asynchronous` annotation impacts the following fault tolerance annotations:
@@ -175,12 +199,11 @@ Annotating a method with the `@Asynchronous` annotation impacts the following fa
 
 [#interaction-w-bulkhead]
 === Interaction with the @Bulkhead annotation
-When you use the `@Asynchronous` and `@Bulkhead` annotations together, fault tolerance provides the option to queue up executions if the maximum number of executions are already running.
-If less than the maximum concurrent executions are running when you call the method, then your method is scheduled to run immediately.
-Otherwise, the method is added to a queue.
+When you use the `@Asynchronous` and `@Bulkhead` annotations together, fault tolerance provides the option to queue up requests if the maximum number of requests are already running.
+If less than the maximum concurrent requests are running when you call the method, then your method is scheduled to run immediately.
 
-If any requests are in the queue when one execution of the method finishes, then the first execution from the queue starts.
-When the queue is full, then the method fails with a `BulkheadException`.
+If any requests are in the queue when one execution of the method finishes, then the first request from the queue starts.
+When the queue is full, then the method fails with a `BulkheadException` exception.
 The size of the queue can be configured with the `waitingTaskQueue` parameter on the `@Bulkhead` annotation.
 
 [#interaction-w-timeout]
@@ -190,7 +213,7 @@ Even if the method is still running, it's running on another thread so you can s
 The thread that's running the method is interrupted so that it can stop working and save resources.
 
 If you need to apply a timeout to a long-running operation that doesn't respond to being interrupted, you can use the `@Asynchronous` annotation.
-The operation might still run to completion, even though the timeout expired and you received a `TimeoutException`.
+The operation might still run to completion, even though the timeout expired and you received a `TimeoutException` exception.
 
 == Limitations of returning a Future object
 

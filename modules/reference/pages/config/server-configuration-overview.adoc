@@ -23,17 +23,17 @@ This example `server.xml` file configures the server to do the following things:
 ----
 <server description="new server">
     <featureManager>
-        <feature>jsp-2.3</feature> // <!--1-->
+        <feature>jsp-2.3</feature>
     </featureManager>
     <httpEndpoint id="defaultHttpEndpoint"
-                  httpPort="9080" // <!--2-->
+                  httpPort="9080"
                   httpsPort="9443" />
-    <applicationManager autoExpand="true" /> // <!--3-->
+    <applicationManager autoExpand="true" />
 </server>
 ----
-<1> Support the JavaServer Pages 2.3 feature
-<2> Listen to incoming traffic to `localhost` on port `9080`
-<3> Automatically expand WAR files when they are deployed
+* The `feature` element configures Open Liberty to support the JavaServer Pages 2.3 (`jsp-2.3`) feature.
+* The `httpPort` attribute is set to `9080`, which configures Open Liberty to listen to incoming traffic to `localhost` on port `9080`.
+* The `autoExpand` attribute is set to `true` so that WAR files are automatically expanded when they are deployed.
 
 The term _server  configuration_ can be used to refer to all of the files that make up the server  configuration or specifically to the configuration that's in the XML files.
 If it's not clear in context, the term _server XML  configuration_ might be used to refer to the configuration in the XML files.
@@ -155,6 +155,7 @@ To resolve variable references to their values, the following sources are consul
 . environment variables
 . `bootstrap.properties`
 . Java system properties
+. Variables loaded from files in the `${server.config.dir}/variables` directory
 . variable values declared in the `server.xml` file
 . variables declared on the command line
 
@@ -203,6 +204,25 @@ For versions 19.0.0.3 and earlier, you can access environment variables by addin
               httpPort="9080" />
 ----
 
+Variables can be loaded from files located in directories that are specified by the `VARIABLE_SOURCE_DIRS` environment variable.
+If this environment variable is not specified, the default location for the variable directory is `${server.config.dir}/variables`.
+
+The name of the file is used as the variable name, and the contents of the file are used as the variable value.
+For example, you can create a file in the variables directory that is named `httpPort` with the text string `9080` as the only content.
+You can then use the variable `${httpPort}` in the `server.xml` file and it resolves to `9080`.
+
+If you create a file in a directory within the variables directory, then the parent directory is added to the variable name.
+For example, you can create a `${httpPort}` file in the `ports` subdirectory within the variable directory, the variable name is `${ports/httpPort}`.
+
+Variables in the `VARIABLE_SOURCE_DIRS` directories can also be defined in properties files.
+If the name of the file ends in `.properties`, each property in the file is used to create a variable.
+For example, you can create a file that is named `ports.properties` with the following contents:
+----
+httpPort=9080
+httpsPort=9443
+----
+With this configuration, you can specify the `${httpPort}` and `${httpsPort}` variables in your `server.xml` file and their values resolve to `9080` and `9443`.
+
 Variable values are always interpreted as a string with simple type conversion.
 Therefore, a list of ports (such as `80,443`) might be interpreted as a single string rather than as two port numbers.
 You can force the variable substitution to split on the `,` by using a `list` function, as shown in the following example:
@@ -244,9 +264,9 @@ The default is `${wlp.user.dir}/servers/${wlp.server.name}`.
 The default is `${server.config.dir}`.
 
 == Configuration merging
-Since the configuration can consist of multiple files, it is possible that two files provide the same  configuration
+Since the configuration can consist of multiple files, it is possible that two files provide the same configuration.
 In these situations, the server configuration is merged according to a set of simple rules.
-In {projectName}, configuration is separated into singleton and factory  configuration each of which has its own rules for merging.
+In {projectName}, configuration is separated into singleton and factory configuration each of which has its own rules for merging.
 Singleton configuration is used to configure a single element (for example, logging).
 Factory configuration is used to configure multiple entities, such as an entire application or data source.
 
@@ -379,7 +399,7 @@ You can set the value of the `onConflict` attribute to `IGNORE` or `REPLACE` any
 You can set the `location` attribute to a relative or absolute file path, or to an HTTP URL.
 
 == Configuration references
-Most configuration in {projectName} is self-contained but it is often useful to share  configuration
+Most configuration in {projectName} is self-contained, but it is often useful to share configuration.
 For example, the JDBC driver configuration might be shared by multiple data sources.
 You can refer to any factory configuration element that is defined as a direct child of the `server` element.
 
