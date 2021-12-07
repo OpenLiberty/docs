@@ -67,20 +67,22 @@ The server configuration files are processed in the following order:
 
 [#server-env]
 === server.env
-The `server.env` files are optional. These files are read by the `bin/server` shell script and specify environment variables that are primarily used to influence the behavior of the `bin/server` script.
+The `server.env` files are optional. These files are read by the `bin/server` shell script and specify the environment variables that are primarily used to influence the behavior of the `bin/server` script.
 The `server.env` files are read from the following locations in order:
 
 . `${wlp.install.dir}/etc/`
 . `${wlp.user.dir}/shared/`
 . `${server.config.dir}/`
 
-If the same property is set in multiple locations, then the last value found is used. You can also specify these environment variables in the shell environment, but the `server.env` files take precedence over those variables.
+If the same property is set in multiple locations, then the last value that is found is used. You can also specify these environment variables in the shell environment, but the `server.env` files take precedence over those variables.
 
 The most common use of these files is to set the following environment variables:
 
 * `JAVA_HOME` - Indicates which JVM to use. If this is not set, the system default is used.
-* `WLP_USER_DIR` - Indicates the location of the `usr` directory that contains the server  configuration.
-This can only be set in the `etc/server.env` file because the other locations are relative to the `usr` directory.
+
+* `WLP_USER_DIR` - Indicates the location of the `usr` directory that contains the server configuration.
+This can only be set in the `etc/server.env` file as the other locations are relative to the `usr` directory.
+
 * `WLP_OUTPUT_DIR` - Indicates where the server writes files to.
 By default, the server writes to the directory structure that the configuration is read from.
 However, in some secure profiles the server configuration needs to be read-only so the server must write files to another location.
@@ -94,22 +96,30 @@ WLP_USER_DIR=/opt/wlp-usr
 ----
 
 * Key values must not contain spaces.
-* Empty lines are ignored.
-* Lines that start with the number sign #  are ignored, except for "# enable_variable_expansion" which enables variable expansion on Linux.
-* There should be no white space surrounding the equal sign (=).
-* All characters are literal except when:
-** An expansion variable is specified on Windows (variable name between exclamation points.) For example !variableName! is replaced by the value of the variable
-** The caret (^) is used to escape a variable expansion character like the exclamation point (!)
-** variable expansion is enabled on Linux. In which case single quotes ('), double quotes (") and backslash (\) behave the same as in the shell environment.
-For example, surrounding a string in single quotes (') prevents the expansion of variables, while surrounding a string in double quotes (") does not, and backslash (\) is an escape character which removes the meaning of a special character.
 
-As of 22.0.0.1, support for variable expansion has been added to the server.env file on Linux. This support has always existed on Windows, though it has never been documented.
+* Empty lines are ignored.
+
+* Lines that start with the number sign # are ignored, except for the "# enable_variable_expansion" which enables variable expansion on Linux.
+
+* No white space surrounding the equal sign (=).
+
+* All characters are literal except when:
+
+** An expansion variable is specified on Windows (variable name between exclamation points.) For example !variableName! is replaced by the value of the variable.
+
+** The caret sign (^) is used to escape a variable expansion character like the exclamation point (!)
+
+** variable expansion is enabled on Linux. In which case single quotation marks ('), double quotation marks ("), and backslash (\) behave the same as in the shell environment.
+
+For example, surrounding a string in single quotation marks (') prevents the expansion of variables, while surrounding a string in double quotation marks (") does not, and backslash (\) is an escape character which removes the meaning of a special character.
+
+As of 22.0.0.1, support for variable expansion has been added to the `server.env` file on Linux. This support has always existed on Windows, though it was not documented.
 The syntax for specifying expansion variables is operating system dependent.
 
 [#exp-var-windows]
 ==== Specifying expansion variables on Windows
 
-Variable expansion support is enabled by default on Windows. You specify expansion variables using Windows delayed expansion syntax: !variable_name! This is replaced by the value of the variable.
+Variable expansion support is enabled by default on Windows. You specify expansion variables by using the Windows delayed expansion syntax: !variable_name! This is replaced by the value of the variable.
 
 Example `server.env` file:
 [source,properties]
@@ -136,7 +146,7 @@ Once enabled, you need to add quotation marks around values containing spaces, a
 MESSAGE1='Don\'t do that'
 ----
 
-Expansion variables are prefixed by a "$" and the variable name can also be enclosed in curly braces {}. For example $variable_name or ${variable_name}.
+Expansion variables are prefixed by a "$" and the variable name can also be enclosed in curly braces {}. For example, $variable_name or ${variable_name}.
 
 Example `server.env` file:
 [source,properties]
