@@ -38,32 +38,23 @@ This example `server.xml` file configures the server to do the following things:
 The term _server  configuration_ can be used to refer to all of the files that make up the server  configuration or specifically to the configuration that's in the XML files.
 If it's not clear in context, the term _server XML  configuration_ might be used to refer to the configuration in the XML files.
 
-* <<server-configuration-overview.adoc#configuration-files, Configuration files>>
-** <<server-configuration-overview.adoc#server-env, server.env>>
-*** <<server-configuration-overview.adoc#exp-var-windows, Specifying expansion variables on Windows>>
-*** <<server-configuration-overview.adoc#exp-var-linux, Specifying expansion variables on Linux>>
-** <<server-configuration-overview.adoc#jvm-options, jvm.options>>
-** <<server-configuration-overview.adoc#bootstrap-properties, bootstrap.properties>>
-** <<server-configuration-overview.adoc#server-xml, server.xml>>
-* <<server-configuration-overview.adoc#variable-substitution, Variable substitution precedence>>
-* <<server-configuration-overview.adoc#configuration-merging, Configuration merging>>
-** <<server-configuration-overview.adoc#merging-singleton-configuration, Merging singleton configuration>>
-** <<server-configuration-overview.adoc#merging-factory-configuration, Merging factory configuration>>
-* <<server-configuration-overview.adoc#include-processing, Include processing>>
-* <<server-configuration-overview.adoc#configuration-references, Configuration references>>
-* <<server-configuration-overview.adoc#dynamic-updates, Dynamic updates>>
-* <<server-configuration-overview.adoc#log-messages, Log messages>>
-
+* <<#configuration-files,Configuration files>>
+* <<#variable-substitution,Variable substitution precedence>>
+* <<#configuration-merging,Configuration merging>>
+* <<#include-processing,Include processing>>
+* <<#configuration-references,Configuration references>>
+* <<#dynamic-updates,Dynamic updates>>
+* <<#log-messages,Log messages>>
 
 
 [#configuration-files]
 == Configuration files
 The server configuration files are processed in the following order:
 
-. <<server-configuration-overview.adoc#server-env,`server.env`>> - Environment variables are specified in this file.
-. <<server-configuration-overview.adoc#jvm-options,`jvm.options`>> - JVM options are set in this file.
-. <<server-configuration-overview.adoc#bootstrap-properties,`bootstrap.properties`>> - This file influences the startup of the {projectName} server.
-. <<server-configuration-overview.adoc#server-xml,`server.xml`>> - This mandatory file specifies the server configuration and features.
+. <<#server-env,server.env>> - Environment variables are specified in this file.
+. <<#jvm-options,jvm.options>> - JVM options are set in this file.
+. <<#bootstrap-properties,bootstrap.properties>> - This file influences the startup of the {projectName} server.
+. <<#server-xml,server.xml>> - This mandatory file specifies the server configuration and features.
 
 [#server-env]
 === server.env
@@ -78,7 +69,7 @@ If the same property is set in multiple locations, then the last value that is f
 
 The most common use of these files is to set the following environment variables:
 
-* `JAVA_HOME` - Indicates which JVM to use. If this is not set, the system default is used.
+* `JAVA_HOME` - Indicates which JVM to use. If the JVM is not set, the system default is used.
 
 * `WLP_USER_DIR` - Indicates the location of the `usr` directory that contains the server configuration.
 This can only be set in the `etc/server.env` file as the other locations are relative to the `usr` directory.
@@ -101,25 +92,25 @@ WLP_USER_DIR=/opt/wlp-usr
 
 * Lines that start with the number sign # are ignored, except for the "# enable_variable_expansion" which enables variable expansion on Linux.
 
-* No white space surrounding the equal sign (=).
+* No white space surrounding the equal sign (`=`).
 
 * All characters are literal except when:
 
-** An expansion variable is specified on Windows (variable name between exclamation points.) For example !variableName! is replaced by the value of the variable.
+** An expansion variable is specified on Windows (variable name between exclamation points.) For example, `!variableName!` is replaced by the value of the variable.
 
-** The caret sign (^) is used to escape a variable expansion character like the exclamation point (!)
+** The caret sign (`^`) is used to escape a variable expansion character like the exclamation point (!)
 
-** variable expansion is enabled on Linux. In which case single quotation marks ('), double quotation marks ("), and backslash (\) behave the same as in the shell environment.
+** variable expansion is enabled on Linux. In which case single quotation marks (`'`), double quotation marks (`"`), and backslash (`\`) behave the same as in the shell environment.
 
-For example, surrounding a string in single quotation marks (') prevents the expansion of variables, while surrounding a string in double quotation marks (") does not, and backslash (\) is an escape character which removes the meaning of a special character.
+For example, surrounding a string in single quotation marks (`'`) prevents the expansion of variables, while surrounding a string in double quotation marks (`"`) does not, and backslash (`\`) is an escape character that removes the meaning of a special character.
 
-As of 22.0.0.1, support for variable expansion has been added to the `server.env` file on Linux. This support has always existed on Windows, though it was not documented.
+As of 22.0.0.1, support for variable expansion provided to the `server.env` file on Linux. This support has always existed on Windows, though it was not documented.
 The syntax for specifying expansion variables is operating system dependent.
 
 [#exp-var-windows]
 ==== Specifying expansion variables on Windows
 
-Variable expansion support is enabled by default on Windows. You specify expansion variables by using the Windows delayed expansion syntax: !variable_name! This is replaced by the value of the variable.
+Variable expansion support is enabled by default on Windows. You specify expansion variables by using the Windows delayed expansion syntax: `!variable_name!`, that is replaced by the value of the variable.
 
 Example `server.env` file:
 [source,properties]
@@ -134,19 +125,19 @@ WLP_USER_DIR=!USERPROFILE!\wlp-usr
 
 By default, `server.env` files do not support variable expansion on Linux. The "value" in each `KEY=value` pair is interpreted literally. So, by default, you do not need to escape special characters, such as spaces. However, this changes when you enable support for variable expansion.
 
-To enable support for variable expansion, add the following comment near the top of the `server.env` file:
+To enable support for variable expansion, add the following comment at the beginning of the `server.env` file:
 [source,properties]
 ----
 # enable_variable_expansion
 ----
 
-Once enabled, you need to add quotation marks around values containing spaces, and it is necessary to escape inner quotation marks. For example, the inner quotation mark is escaped in the following value:
+Once enabled, you need to add quotation marks around values that have spaces, and it is necessary to escape inner quotation marks. For example, the inner quotation mark is escaped in the following value:
 [source,properties]
 ----
 MESSAGE1='Don\'t do that'
 ----
 
-Expansion variables are prefixed by a "$" and the variable name can also be enclosed in curly braces {}. For example, $variable_name or ${variable_name}.
+Expansion variables are prefixed by a "`$`" and the variable name can also be enclosed in curly braces {}. For example, `$variable_name` or `${variable_name}`.
 
 Example `server.env` file:
 [source,properties]
