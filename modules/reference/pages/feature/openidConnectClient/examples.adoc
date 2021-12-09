@@ -2,13 +2,7 @@
 
 === Minimal configuration for Open Liberty to act as an OpenID Connect client
 
-To enable your Open Liberty server to act as an OpenID Connect Client, you must also enable the feature:transportSecurity[display=Transport Security] feature, xref:ROOT:user-registries-application-security.adoc[configure a user registry], and configure the truststore of the server to include the signer certificates of the OpenID Connect Providers that are supported.
-
-User identities that are returned by an OpenID Connect Provider (OP) are not mapped to a registry user by default, so no users are required to be configured in the registry. However, if the `mapIdentityToRegistryUser` attribute of the config:openidConnectClient[] element is set to `true`, a user entry must exist for the identity that is returned from the OP in order for authentication and authorization to succeed.
-
-OpenID Connect is configured to use the default TLS configuration that is specified by the server. Therefore, the default TLS configuration for the server must use the truststore that is configured for OpenID Connect. If a default outbound TLS configuration is specified, this configuration must use the truststore that is configured for OpenID Connect. For more information, see link:/docs/latest/reference/feature/transportSecurity-1.0.html#_configure_outbound_tls[Configure outbound TLS].
-
-The following example shows the minimal configuration for the `openidConnectClient` element that works with the default OP.
+The following example shows the minimal configuration for the `openidConnectClient` element to work with the default OP.
 The client must have a configured application available at the specified URL pattern that can handle redirect requests from an OP. This URL must also precisely match the redirect URL that is registered for the client with the OP.
 
 [source,xml]
@@ -20,3 +14,36 @@ The client must have a configured application available at the specified URL pat
     tokenEndpointUrl="https://server.example.com:443/oidc/endpoint/OidcConfigSample/token">
 </openidConnectClient>
 ---
+
+This configuration assumes the following default values.
+
+- `scope=openid profile`
++
+You can use the `scope` attribute for the `openidConnectClient` to edit required scopes. For example, you can change the required scope to `openid profile email`. For more information about OpenID scopes, see the https://openid.net/developers/specs/[OpenID Connect specification].
+- This Relying Party (RP) registers the `https://<host name>:<ssl port>/oidcclient/redirect/client01` redirect URL with the OP. In this URL, both the hostname and SSL port are automatically resolved and `client01` is the value of the `id` attribute of the `openidConnectClient` element. If a proxy is in front of the RP, you can override the hostname and port by specifying the `redirectToRPHostAndPort` attribute, for example, `redirectToRPHostAndPort="https://<host name>:<ssl port>"``.
+
+The OpenID Connect RP cannot route requests through a proxy host automatically. If you use a proxy to access the OP, the values for any OP-related URL properties must contain the proxy host and port, not the external OP host and port. In most cases, you can replace the OP host and port with the proxy host and port. The URL that you enter must be visible to both the RP and client (browser or application). For further guidance on how to determine the correct URL to use, contact your proxy administrator.
+
+In the previous example, the client expects the SSL port to be set to `443`.
+
+=== Configure a discovery endpoint for an OpenID Connect Provider
+
+The following example shows a minimal configuration that automatically discovers the OP.
+
+[source,xml]
+---
+<openidConnectClient id="RP"
+    clientId="ebb996943plm4450bdb674c211a9fab0"
+    clientSecret="g12ciZL1zsVYk6yXTMa2iopa8TBwC178CGq42mdJCALYCdQT1kE1ecB010GE"
+    discoveryEndpointUrl="https://example.server.com/oidc/endpoint/OidcConfigSample/.well-known/openid-configuration">
+</openidConnectClient>
+----
+
+If a discovery endpoint is configured, all other configured OIDC endpoints are ignored. All endpoints are replaced with the following discovered endpoints.
+
+- `issuer`
+- `authorization_endpoint`
+- `token_endpoint`
+- `userinfo_endpoint`
+- `jwks_uri
+- `revocation_endpoint`
