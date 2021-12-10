@@ -20,7 +20,9 @@ This configuration assumes the following default values.
 - `scope=openid profile`
 +
 You can use the `scope` attribute for the `openidConnectClient` to edit required scopes. For example, you can change the required scope to `openid profile email`. For more information about OpenID scopes, see the https://openid.net/developers/specs/[OpenID Connect specification].
-- This Relying Party (RP) registers the `https://<host name>:<ssl port>/oidcclient/redirect/client01` redirect URL with the OP. In this URL, both the hostname and SSL port are automatically resolved and `client01` is the value of the `id` attribute of the `openidConnectClient` element. If a proxy is in front of the RP, you can override the hostname and port by specifying the `redirectToRPHostAndPort` attribute, for example, `redirectToRPHostAndPort="https://<host name>:<ssl port>"``.
+- The Relying Party (RP) registers the `\https://<host name>:<ssl port>/oidcclient/redirect/client01` redirect URL with the OP.
++
+In this URL, both the hostname and SSL port are automatically resolved and `client01` is the value of the `id` attribute of the `openidConnectClient` element. If a proxy is in front of the RP, you can override the hostname and port by specifying the `redirectToRPHostAndPort` attribute, for example, `redirectToRPHostAndPort="https://<host name>:<ssl port>"``.
 
 The OpenID Connect RP cannot route requests through a proxy host automatically. If you use a proxy to access the OP, the values for any OP-related URL properties must contain the proxy host and port, not the external OP host and port. In most cases, you can replace the OP host and port with the proxy host and port. The URL that you enter must be visible to both the RP and client (browser or application). For further guidance on how to determine the correct URL to use, contact your proxy administrator.
 
@@ -47,3 +49,43 @@ If a discovery endpoint is configured, all other configured OIDC endpoints are i
 - `userinfo_endpoint`
 - `jwks_uri
 - `revocation_endpoint`
+
+=== Configure a third-party OpenID Connect provider
+
+To configure the Liberty OpenID Connect client to use a third-party OpenID Connect Provider, such as Microsoft Azure or Google, you must configure the following attributes. You can obtain these attribute values by calling the OP discovery endpoint, which provides a JSON document at the path that is formed by adding the `/.well-known/openid-configuration` string to the issuer URI. For example, for Google, this document is available at the `\https://accounts.google.com/.well-known/openid-configuration` URL.
+
+- `jwkEndpointUrl`
++
+Set this  attribute to the URL of the OP JSON Web Key Set JWK document that is defined `jwks_uri` in the discovery file.
+- `issuerIdentifier`
++
+Set the  attribute to the issuer as defined in the discovery file. An ID Token that does not contain this value as an iss claim is rejected.
+- `signatureAlgorithm="RS256"`
++
+The Liberty OpenID Connect client's default signature algorithm is HS256.
+- `userIdentityToCreateSubject`
++
+Set the  attribute to a claim name that is used by the vendor ID Token that represents a user's unique identifier.
+- `groupIdentifier`
++
+Set the attribute to the claim name that represents the user's group memberships or roles.
+
+The following example shows a sample configuration to connect to Google as an OpenID Connect Provider.
+
+[source,xml]
+---
+<openidConnectClient id="sample client"
+    clientId="ebb996943plm4450bdb674c211a9fab0"
+    clientSecret="g12ciZL1zsVYk6yXTMa2iopa8TBwC178CGq42mdJCALYCdQT1kE1ecB010GE"
+    discoveryEndpointUrl="https://accounts.google.com/.well-known/openid-configuration"
+    jwkEndpointUrl="https://www.googleapis.com/oauth2/v3/certs"
+    issuerIdentifier="https://accounts.google.com"
+    signatureAlgorithm="RS256"
+    userIdentityToCreateSubject="email"
+    groupIdentifier="">
+</openidConnectClient>
+----
+
+=== Support Multiple OpenID Connect Providers
+
+You can configure Liberty as an OpenID Connect Relying Party to multiple OpenID Connect Providers by creating multiple `openidConnectClient` elements and setting authentication filters to route incoming authentication requests to each configuration. Each `openidConnectClient` element defines one single sign-on relationship with one OpenID Connect Provider. Use the `authFilterRef` attribute to reference the authentication filter to specify the configured authentication filter for each `openidConnectClient` element. 
