@@ -26,8 +26,6 @@ In this URL, both the hostname and SSL port are automatically resolved and `clie
 
 The OpenID Connect RP cannot route requests through a proxy host automatically. If you use a proxy to access the OP, the values for any OP-related URL properties must contain the proxy host and port, not the external OP host and port. In most cases, you can replace the OP host and port with the proxy host and port. The URL that you enter must be visible to both the RP and client (browser or application). For further guidance on how to determine the correct URL to use, contact your proxy administrator.
 
-In the previous example, the client expects the SSL port to be set to `443`.
-
 === Configure a discovery endpoint for an OpenID Connect Provider
 
 The following example shows a minimal configuration that automatically discovers the OP.
@@ -50,6 +48,12 @@ If a discovery endpoint is configured, all other configured OIDC endpoints are i
 - `jwks_uri
 - `revocation_endpoint`
 
+=== Configure JSON Web Token (JWT) authentication for OpenID Connect
+
+Any trusted party in possession of a JWT can use that token to get access to the associated resources in Open Liberty. The Open Liberty resource server validates the JWT and creates the authenticated subject from it. To be accepted as an authentication token, the JWT must contain `iss`, `sub`, and `exp` claims and be signed with a recognized signature algorithms. Recognized signature algorithms are listed as possible values for the `signatureAlgorithm` attribute of the config:openidConnectClient[] element. An unsigned JWT token is also accepted when the `signatureAlgorithm` attribute is set to `none`. JSON Web Encryption (JWE) is also supported.
+
+
+
 === Configure a third-party OpenID Connect provider
 
 To configure the Liberty OpenID Connect client to use a third-party OpenID Connect Provider, such as Microsoft Azure or Google, you must configure the following attributes. You can obtain these attribute values by calling the OP discovery endpoint, which provides a JSON document at the path that is formed by adding the `/.well-known/openid-configuration` string to the issuer URI. For example, for Google, this document is available at the `\https://accounts.google.com/.well-known/openid-configuration` URL.
@@ -59,7 +63,7 @@ To configure the Liberty OpenID Connect client to use a third-party OpenID Conne
 Set this  attribute to the URL of the OP JSON Web Key Set JWK document that is defined `jwks_uri` in the discovery file.
 - `issuerIdentifier`
 +
-Set the  attribute to the issuer as defined in the discovery file. An ID Token that does not contain this value as an iss claim is rejected.
+Set the  attribute to the issuer as defined in the discovery file. An ID Token that does not contain this value as an `iss` claim is rejected.
 - `signatureAlgorithm="RS256"`
 +
 The Liberty OpenID Connect client's default signature algorithm is HS256.
@@ -86,7 +90,6 @@ The following example shows a sample configuration to connect to Google as an Op
 </openidConnectClient>
 ---
 
-=== Accept JWE tokens
 === Support Multiple OpenID Connect Providers
 
 You can configure Liberty as an OpenID Connect Relying Party to multiple OpenID Connect Providers by creating multiple `openidConnectClient` elements and setting authentication filters to route incoming authentication requests to each configuration. Each `openidConnectClient` element defines one single sign-on relationship with one OpenID Connect Provider. Use the `authFilterRef` attribute to reference the authentication filter to specify the configured authentication filter for each `openidConnectClient` element.
@@ -160,14 +163,14 @@ You can configure an OpenID Connect Client to optionally accept a valid OAuth 2.
 
 If your hosting environment does not allow access to the `/oidcclient` context root, you can modify the context root by configuring the config:oidcClientWebapp[] element. By default, the Liberty OpenID Connect Client redirect servlet listens on the `/oidcclient` context root, and theredirect URL format is `https://<host_name>:<ssl_port>/oidcclient/redirect/<configuration_ID>`. If you cannot use this context root, you can set a different context root.
 
-For example, if your hosting environment requires that you use the `/acme/openid` context root, add the following element in your `server.xml` file:
+For example, if your hosting environment requires that you use the `/example/openid` context root, add the following element in your `server.xml` file:
 
 [source,xml]
 ---
-<oidcClientWebapp contextPath="/acme/openid" />
+<oidcClientWebapp contextPath="/example/openid" />
 ---
 
-The resulting redirect URL format is `\https://<host_name>:<ssl_port>/acme/openid/redirect/<configuration_ID>`.
+The resulting redirect URL format is `\https://<host_name>:<ssl_port>/example/openid/redirect/<configuration_ID>`.
 
 === Pass additional request parameters to OpenID Connect
 
