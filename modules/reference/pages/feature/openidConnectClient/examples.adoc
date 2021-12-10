@@ -1,0 +1,185 @@
+== Examples
+
+=== Minimal configuration for Open Liberty to act as an OpenID Connect client
+
+The following example shows the minimal configuration for the `openidConnectClient` element to work with the default OP.
+The client must have a configured application available at the specified URL pattern that can handle redirect requests from an OP. This URL must also precisely match the redirect URL that is registered for the client with the OP.
+
+[source,xml]
+---
+<openidConnectClient id="client01"
+    clientId="client01"
+    clientSecret="{xor}LDo8LTor"
+    authorizationEndpointUrl="https://server.example.com:443/oidc/endpoint/OidcConfigSample/authorize"
+    tokenEndpointUrl="https://server.example.com:443/oidc/endpoint/OidcConfigSample/token">
+</openidConnectClient>
+---
+
+This configuration assumes the following default values.
+
+- `scope=openid profile`
++
+You can use the `scope` attribute for the `openidConnectClient` to edit required scopes. For example, you can change the required scope to `openid profile email`. For more information about OpenID scopes, see the https://openid.net/developers/specs/[OpenID Connect specification].
+- The Relying Party (RP) registers the `\https://<host name>:<ssl port>/oidcclient/redirect/client01` redirect URL with the OP.
++
+In this URL, both the hostname and SSL port are automatically resolved and `client01` is the value of the `id` attribute of the `openidConnectClient` element. If a proxy is in front of the RP, you can override the hostname and port by specifying the `redirectToRPHostAndPort` attribute, for example, `redirectToRPHostAndPort="https://<host name>:<ssl port>"``.
+
+The OpenID Connect RP cannot route requests through a proxy host automatically. If you use a proxy to access the OP, the values for any OP-related URL properties must contain the proxy host and port, not the external OP host and port. In most cases, you can replace the OP host and port with the proxy host and port. The URL that you enter must be visible to both the RP and client (browser or application). For further guidance on how to determine the correct URL to use, contact your proxy administrator.
+
+=== Configure a discovery endpoint for an OpenID Connect Provider
+
+The following example shows a minimal configuration that automatically discovers the OP.
+
+[source,xml]
+---
+<openidConnectClient id="RP"
+    clientId="ebb996943plm4450bdb674c211a9fab0"
+    clientSecret="g12ciZL1zsVYk6yXTMa2iopa8TBwC178CGq42mdJCALYCdQT1kE1ecB010GE"
+    discoveryEndpointUrl="https://example.server.com/oidc/endpoint/OidcConfigSample/.well-known/openid-configuration">
+</openidConnectClient>
+---
+
+If a discovery endpoint is configured, all other configured OIDC endpoints are ignored. All endpoints are replaced with the following discovered endpoints.
+
+- `issuer`
+- `authorization_endpoint`
+- `token_endpoint`
+- `userinfo_endpoint`
+- `jwks_uri
+- `revocation_endpoint`
+
+=== Configure JSON Web Token (JWT) authentication for OpenID Connect
+
+Any trusted party in possession of a JWT can use that token to get access to the associated resources in Open Liberty. The Open Liberty resource server validates the JWT and creates the authenticated subject from it. To be accepted as an authentication token, the JWT must contain `iss`, `sub`, and `exp` claims and be signed with a recognized signature algorithms. Recognized signature algorithms are listed as possible values for the `signatureAlgorithm` attribute of the config:openidConnectClient[] element. An unsigned JWT token is also accepted when the `signatureAlgorithm` attribute is set to `none`. JSON Web Encryption (JWE) is also supported.
+
+
+
+=== Configure a third-party OpenID Connect provider
+
+To configure the Liberty OpenID Connect client to use a third-party OpenID Connect Provider, such as Microsoft Azure or Google, you must configure the following attributes. You can obtain these attribute values by calling the OP discovery endpoint, which provides a JSON document at the path that is formed by adding the `/.well-known/openid-configuration` string to the issuer URI. For example, for Google, this document is available at the `\https://accounts.google.com/.well-known/openid-configuration` URL.
+
+- `jwkEndpointUrl`
++
+Set this  attribute to the URL of the OP JSON Web Key Set JWK document that is defined `jwks_uri` in the discovery file.
+- `issuerIdentifier`
++
+Set the  attribute to the issuer as defined in the discovery file. An ID Token that does not contain this value as an `iss` claim is rejected.
+- `signatureAlgorithm="RS256"`
++
+The Liberty OpenID Connect client's default signature algorithm is HS256.
+- `userIdentityToCreateSubject`
++
+Set the  attribute to a claim name that is used by the vendor ID Token that represents a user's unique identifier.
+- `groupIdentifier`
++
+Set the attribute to the claim name that represents the user's group memberships or roles.
+
+The following example shows a sample configuration to connect to Google as an OpenID Connect Provider.
+
+[source,xml]
+---
+<openidConnectClient id="sample client"
+    clientId="ebb996943plm4450bdb674c211a9fab0"
+    clientSecret="g12ciZL1zsVYk6yXTMa2iopa8TBwC178CGq42mdJCALYCdQT1kE1ecB010GE"
+    discoveryEndpointUrl="https://accounts.google.com/.well-known/openid-configuration"
+    jwkEndpointUrl="https://www.googleapis.com/oauth2/v3/certs"
+    issuerIdentifier="https://accounts.google.com"
+    signatureAlgorithm="RS256"
+    userIdentityToCreateSubject="email"
+    groupIdentifier="">
+</openidConnectClient>
+---
+
+=== Support Multiple OpenID Connect Providers
+
+You can configure Liberty as an OpenID Connect Relying Party to multiple OpenID Connect Providers by creating multiple `openidConnectClient` elements and setting authentication filters to route incoming authentication requests to each configuration. Each `openidConnectClient` element defines one single sign-on relationship with one OpenID Connect Provider. Use the `authFilterRef` attribute to reference the authentication filter to specify the configured authentication filter for each `openidConnectClient` element.
+
+In the following example, authentication requests that contain the `/mywebapp/members` URL pattern are filtered by the `authFilter1` authentication filter to the OP that is referenced by the `RP1` configuration. Authentication requests that contain the `/mywebapp/guests` URL pattern are filtered by the `authFilter2` authentication filter to the OP that is referenced by the `RP2` configuration
+
+[source,xml]
+---
+<openidConnectClient id="RP1"
+    authFilterRef="authFilter1"
+    clientId="RP1"
+    clientSecret="{xor}LDo8LTor"
+    authorizationEndpointUrl="https://server.example.com:443/oidc/endpoint/OidcConfigSample/authorize"
+    tokenEndpointUrl="https://server.example.com:443/oidc/endpoint/OidcConfigSample/token">
+</openidConnectClient>
+
+<openidConnectClient id="RP2"
+    authFilterRef="authFilter2"
+    clientId="RP2"
+    clientSecret="{xor}DLo8LTor"
+    authorizationEndpointUrl="https://server.example2.com:443/oidc/endpoint/OidcConfigSample/authorize"
+    tokenEndpointUrl="https://server.example2.com:443/oidc/endpoint/OidcConfigSample/token">
+</openidConnectClient>
+
+<authFilter id="authFilter1">
+    <requestUrl
+        id="myUrlFilter"
+        urlPattern="/mywebapp/members"
+        matchType="contains" />
+</authFilter>
+
+<authFilter id="authFilter2">
+    <requestUrl
+        id="myUrlFilter2"
+        urlPattern="/mywebapp/guests"
+        matchType="contains" />
+</authFilter>
+---
+
+For more information, see xref:ROOT:authentication-filters.adoc[Authentication filters].
+
+=== Disable LTPA cookies
+
+The Liberty OpenID Connect relying party automatically creates a single-sign-on (SSO) token after the ID Token is processed. You can configure Liberty to not create an SSO token for the server, or an SSO token for the resource that is protected with OpenID Connect, by specifying the `disableLtpaCookie` attribute for the `openidConnectClient` element.
+
+[source,xml]
+---
+<openidConnectClient id="nocookie"
+    ...
+    disableLtpaCookie="true
+    ...
+</openidConnectClient>
+---
+
+When you set this attribute to true, the Open Liberty OpenID Connect client accepts only authentication requests that previously authenticated with the configured OP, and the authentication session lifetime is limited to the lifetime of the ID Token from that OP.
+
+=== Accept an OAuth 2.0 bearer access token without redirecting to an OpenID Connect provider
+
+You can configure an OpenID Connect Client to optionally accept a valid OAuth 2.0 bearer access token as an authentication token without redirecting the request to an OpenID Connect provider. With this configuration, if a request contains a valid OAuth 2.0 bearer access token, the Liberty OpenID Connect Client automatically validates it and creates an authenticated subject based on the token validation result. If the request does not contain an access token or the access token is invalid, then the Liberty OpenID Connect Client continues to redirect the user to an OpenID Connect provider. This function enables the Liberty server to serve both the browser client and non-browser client like a RESTful client.
+
+[source,xml]
+---
+<openidConnectClient id="nocookie"
+    ...
+    inboundPropagation="supported"
+    ...
+</openidConnectClient>
+---
+
+=== Modify the context root
+
+If your hosting environment does not allow access to the `/oidcclient` context root, you can modify the context root by configuring the config:oidcClientWebapp[] element. By default, the Liberty OpenID Connect Client redirect servlet listens on the `/oidcclient` context root, and theredirect URL format is `https://<host_name>:<ssl_port>/oidcclient/redirect/<configuration_ID>`. If you cannot use this context root, you can set a different context root.
+
+For example, if your hosting environment requires that you use the `/example/openid` context root, add the following element in your `server.xml` file:
+
+[source,xml]
+---
+<oidcClientWebapp contextPath="/example/openid" />
+---
+
+The resulting redirect URL format is `\https://<host_name>:<ssl_port>/example/openid/redirect/<configuration_ID>`.
+
+=== Pass additional request parameters to OpenID Connect
+
+To provide additional authorization parameters to the OP, configure `authzParameter` elements. For example, the following configuration properties pass `api_key` and `account` parameters to the authorization endpoint.
+
+[source,xml]
+---
+<authzParameter name="api_key" value="567890" />
+<authzParameter name="account" value="123456" />
+---
+
+To configure additional parameters for the token endpoint, use the tokenParameter element.
