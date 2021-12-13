@@ -2,18 +2,24 @@
 
 === Minimal configuration for Open Liberty to act as an OpenID Connect client
 
+To enable your Open Liberty server to act as an OpenID Connect Client, you must also enable the feature:transportSecurity[display=Transport Security] feature, xref:ROOT:user-registries-application-security.adoc[configure a user registry], and configure a truststore of the server to include the signer certificates of the OpenID Connect Providers that are supported. Truststores are configured on `keyStore` elements in the `server.xml` file. You can specify a non-default trustore for OpenID Connect by referencing the truststore configuration from the `trustStoreRef` attribute for the of the config:openidConnectClient[] element.
+
+User identities that are returned by an OpenID Connect Provider (OP) are not mapped to a registry user by default, so no users are required to be configured in the registry. However, if the `mapIdentityToRegistryUser` attribute of the `openidConnectClient` element is set to `true`, a user entry must exist for the identity that is returned from the OP in order for authentication and authorization to succeed.
+
+OpenID Connect is configured to use the default TLS configuration that is specified by the server. Therefore, unless you specify an alternative TLS configuration for Open ID connect, the default TLS configuration for the server must use the truststore that is configured for OpenID Connect. If a default outbound TLS configuration is specified, this configuration must also use the truststore that is configured for OpenID Connect. You can specify a TLS configuration other than the default for OpenID Connect by referencing it from the `sslRef` attribute for the of the `openidConnectClient` element. For more information, see link:/docs/latest/reference/feature/transportSecurity-1.0.html#_configure_transport_layer_security_tls[Configure TLS].
+
 The following example shows the minimal configuration for the `openidConnectClient` element to work with the default OP.
 The client must have a configured application available at the specified URL pattern that can handle redirect requests from an OP. This URL must also precisely match the redirect URL that is registered for the client with the OP.
 
 [source,xml]
----
+----
 <openidConnectClient id="client01"
     clientId="client01"
     clientSecret="{xor}LDo8LTor"
     authorizationEndpointUrl="https://server.example.com:443/oidc/endpoint/OidcConfigSample/authorize"
     tokenEndpointUrl="https://server.example.com:443/oidc/endpoint/OidcConfigSample/token">
 </openidConnectClient>
----
+----
 
 This configuration assumes the following default values.
 
@@ -31,13 +37,13 @@ The OpenID Connect RP cannot route requests through a proxy host automatically. 
 The following example shows a minimal configuration that automatically discovers the OP.
 
 [source,xml]
----
+----
 <openidConnectClient id="RP"
     clientId="ebb996943plm4450bdb674c211a9fab0"
     clientSecret="g12ciZL1zsVYk6yXTMa2iopa8TBwC178CGq42mdJCALYCdQT1kE1ecB010GE"
     discoveryEndpointUrl="https://example.server.com/oidc/endpoint/OidcConfigSample/.well-known/openid-configuration">
 </openidConnectClient>
----
+----
 
 If a discovery endpoint is configured, all other configured OIDC endpoints are ignored. All endpoints are replaced with the following discovered endpoints.
 
@@ -50,7 +56,13 @@ If a discovery endpoint is configured, all other configured OIDC endpoints are i
 
 === Configure JSON Web Token (JWT) authentication for OpenID Connect
 
-Any trusted party in possession of a JWT can use that token to get access to the associated resources in Open Liberty. The Open Liberty resource server validates the JWT and creates the authenticated subject from it. To be accepted as an authentication token, the JWT must contain `iss`, `sub`, and `exp` claims and be signed with a recognized signature algorithms. Recognized signature algorithms are listed as possible values for the `signatureAlgorithm` attribute of the config:openidConnectClient[] element. An unsigned JWT token is also accepted when the `signatureAlgorithm` attribute is set to `none`. JSON Web Encryption (JWE) is also supported.
+Any trusted party with a JWT can use that token to get access to the associated resources in Open Liberty. The Open Liberty resource server validates the JWT and creates the authenticated subject from it. To be accepted as an authentication token, the JWT must contain `iss`, `sub`, and `exp` claims and be signed with a recognized signature algorithm. Recognized signature algorithms are listed as possible values for the `signatureAlgorithm` attribute of the config:openidConnectClient[] element. An unsigned JWT token is also accepted when the `signatureAlgorithm` attribute is set to `none`. JSON Web Encryption (JWE) is also supported.
+
+To configure an Open Liberty server to accept a JWT as an authentication token, you must set the  `inboundPropagation` attribute to `required`. You must also configure a truststore that includes the JSON Web Key (JWK) endpoint certificate so that the Open Liberty server can make TLS connections to the JWK endpoint. If the default trustore for your server does not include the JWK endpoint certificate, you can reference an alternative truststore from the `trustStoreRef` attribute for the of the `openidConnectClient` element.
+
+In the following example, the default TLS configuration includes the JWK endpoint certificate. This example also assumes that the JWT token issuer supports a JSON Web Key (JWK) and the JWT is signed with the RS256 algorithm.
+
+
 
 === Accept tokens in JWE format
 
@@ -97,7 +109,7 @@ You can configure Liberty as an OpenID Connect Relying Party to multiple OpenID 
 In the following example, authentication requests that contain the `/mywebapp/members` URL pattern are filtered by the `authFilter1` authentication filter to the OP that is referenced by the `RP1` configuration. Authentication requests that contain the `/mywebapp/guests` URL pattern are filtered by the `authFilter2` authentication filter to the OP that is referenced by the `RP2` configuration
 
 [source,xml]
----
+----
 <openidConnectClient id="RP1"
     authFilterRef="authFilter1"
     clientId="RP1"
@@ -127,7 +139,7 @@ In the following example, authentication requests that contain the `/mywebapp/me
         urlPattern="/mywebapp/guests"
         matchType="contains" />
 </authFilter>
----
+----
 
 For more information, see xref:ROOT:authentication-filters.adoc[Authentication filters].
 
@@ -136,13 +148,13 @@ For more information, see xref:ROOT:authentication-filters.adoc[Authentication f
 The Liberty OpenID Connect relying party automatically creates a single-sign-on (SSO) token after the ID Token is processed. You can configure Liberty to not create an SSO token for the server, or an SSO token for the resource that is protected with OpenID Connect, by specifying the `disableLtpaCookie` attribute for the `openidConnectClient` element.
 
 [source,xml]
----
+----
 <openidConnectClient id="nocookie"
     ...
-    disableLtpaCookie="true
+    disableLtpaCookie="true"
     ...
 </openidConnectClient>
----
+----
 
 When you set this attribute to true, the Open Liberty OpenID Connect client accepts only authentication requests that previously authenticated with the configured OP, and the authentication session lifetime is limited to the lifetime of the ID Token from that OP.
 
@@ -151,13 +163,13 @@ When you set this attribute to true, the Open Liberty OpenID Connect client acce
 You can configure an OpenID Connect Client to optionally accept a valid OAuth 2.0 bearer access token as an authentication token without redirecting the request to an OpenID Connect provider. With this configuration, if a request contains a valid OAuth 2.0 bearer access token, the Liberty OpenID Connect Client automatically validates it and creates an authenticated subject based on the token validation result. If the request does not contain an access token or the access token is invalid, then the Liberty OpenID Connect Client continues to redirect the user to an OpenID Connect provider. This function enables the Liberty server to serve both the browser client and non-browser client like a RESTful client.
 
 [source,xml]
----
+----
 <openidConnectClient id="nocookie"
     ...
     inboundPropagation="supported"
     ...
 </openidConnectClient>
----
+----
 
 === Modify the context root
 
@@ -166,10 +178,10 @@ If your hosting environment does not allow access to the `/oidcclient` context r
 For example, if your hosting environment requires that you use the `/example/openid` context root, add the following element in your `server.xml` file:
 
 [source,xml]
----
+----
 <oidcClientWebapp contextPath="/example/openid" />
 ---
-
+-
 The resulting redirect URL format is `\https://<host_name>:<ssl_port>/example/openid/redirect/<configuration_ID>`.
 
 === Pass additional request parameters to OpenID Connect
@@ -177,9 +189,9 @@ The resulting redirect URL format is `\https://<host_name>:<ssl_port>/example/op
 To provide additional authorization parameters to the OP, configure `authzParameter` elements. For example, the following configuration properties pass `api_key` and `account` parameters to the authorization endpoint.
 
 [source,xml]
----
+----
 <authzParameter name="api_key" value="567890" />
 <authzParameter name="account" value="123456" />
----
+----
 
-To configure additional parameters for the token endpoint, use the tokenParameter element.
+To configure parameters for the token endpoint, use the `tokenParameter` element.
