@@ -4,7 +4,7 @@
 
 To enable your Open Liberty server to act as an OpenID Connect Client, you must also enable the feature:transportSecurity[display=Transport Security] feature, xref:ROOT:user-registries-application-security.adoc[configure a user registry], and configure a truststore of the server to include the signer certificates of the OpenID Connect Providers that are supported. Truststores are configured on `keyStore` elements in the `server.xml` file. You can specify a non-default trustore for OpenID Connect by referencing the truststore configuration from the `trustStoreRef` attribute for the of the config:openidConnectClient[] element.
 
-User identities that are returned by an OpenID Connect Provider (OP) are not mapped to a registry user by default, so no users are required to be configured in the registry. However, if the `mapIdentityToRegistryUser` attribute of the `openidConnectClient` element is set to `true`, a user entry must exist for the identity that is returned from the OP in order for authentication and authorization to succeed.
+User identities that are returned by an OpenID Connect Provider (OP) are not mapped to a registry user by default, so no users are required to be configured in the registry. However, if the `mapIdentityToRegistryUser` attribute of the `openidConnectClient` element is set to `true`, a user entry must exist for the identity that is returned from the OP for authentication and authorization to succeed.
 
 OpenID Connect is configured to use the default TLS configuration that is specified by the server. Therefore, unless you specify an alternative TLS configuration for Open ID connect, the default TLS configuration for the server must use the truststore that is configured for OpenID Connect. If a default outbound TLS configuration is specified, this configuration must also use the truststore that is configured for OpenID Connect. You can specify a TLS configuration other than the default for OpenID Connect by referencing it from the `sslRef` attribute for the of the `openidConnectClient` element. For more information, see link:/docs/latest/reference/feature/transportSecurity-1.0.html#_configure_transport_layer_security_tls[Configure TLS].
 
@@ -60,9 +60,29 @@ Any trusted party with a JWT can use that token to get access to the associated 
 
 To configure an Open Liberty server to accept a JWT as an authentication token, you must set the  `inboundPropagation` attribute to `required`. You must also configure a truststore that includes the JSON Web Key (JWK) endpoint certificate so that the Open Liberty server can make TLS connections to the JWK endpoint. If the default trustore for your server does not include the JWK endpoint certificate, you can reference an alternative truststore from the `trustStoreRef` attribute for the of the `openidConnectClient` element.
 
-In the following example, the default TLS configuration includes the JWK endpoint certificate. This example also assumes that the JWT token issuer supports a JSON Web Key (JWK) and the JWT is signed with the RS256 algorithm.
+In the following example, the default TLS configuration includes the JWK endpoint certificate. This example also assumes that the JWT token issuer supports a JSON Web Key (JWK) and the JWT is signed with the RS256 algorithm. The `issuerIdentifier `attribute is configured to match the JWT issuer `iss` claim.
 
+[source,xml]
+----
+<openidConnectClient id="RS" inboundPropagation="required"
+  jwkEndpointUrl="https://example.com/jwtserver/jwk" signatureAlgorithm="RS256"
+  issuerIdentifier="https://idp.example.com:8020/jwt" >
+</openidConnectClient>
+----
 
+You can define how to map JWT claims to the subject the Open Liberty creates by specifying the following `openidConnectClient` element attributes:
+
+- `userIdentifier`
+- `userUniqueIdentifier`
+- `groupIdentifier`
+- `realmName`
+- `realmIdentifier`
+
+If both the `realmName` and `realmIdentifier` attributes are configured, the `realmName` value takes precedence and the `realmIdentifier` value is ignored.
+
+If you do not define claim-to-subject mapping, the following default mapping rules apply:
+- The subject (`sub`) claim is used as the principal name and unique security name of the user.
+- The issuer (`iss`) claim is the default realm and used as the subject realm. If a `realmName` claim is included in the JWT token, the `realmName` claim is used as the subject realm instead of the `iss` claim.
 
 === Accept tokens in JWE format
 
@@ -89,7 +109,7 @@ Set the attribute to the claim name that represents the user's group memberships
 The following example shows a sample configuration to connect to Google as an OpenID Connect Provider.
 
 [source,xml]
----
+----
 <openidConnectClient id="sample client"
     clientId="ebb996943plm4450bdb674c211a9fab0"
     clientSecret="g12ciZL1zsVYk6yXTMa2iopa8TBwC178CGq42mdJCALYCdQT1kE1ecB010GE"
@@ -100,7 +120,7 @@ The following example shows a sample configuration to connect to Google as an Op
     userIdentityToCreateSubject="email"
     groupIdentifier="">
 </openidConnectClient>
----
+----
 
 === Support Multiple OpenID Connect Providers
 
@@ -180,16 +200,16 @@ For example, if your hosting environment requires that you use the `/example/ope
 [source,xml]
 ----
 <oidcClientWebapp contextPath="/example/openid" />
----
--
-The resulting redirect URL format is `\https://<host_name>:<ssl_port>/example/openid/redirect/<configuration_ID>`.
+----
+
+The resulting redirect URL format is `\https://_host_name_: _ssl_port_/example/openid/redirect/<configuration_ID>`.
 
 === Pass additional request parameters to OpenID Connect
 
 To provide additional authorization parameters to the OP, configure `authzParameter` elements. For example, the following configuration properties pass `api_key` and `account` parameters to the authorization endpoint.
 
 [source,xml]
-----
+---
 <authzParameter name="api_key" value="567890" />
 <authzParameter name="account" value="123456" />
 ----
