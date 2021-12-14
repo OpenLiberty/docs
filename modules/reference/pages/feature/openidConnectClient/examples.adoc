@@ -70,6 +70,12 @@ In the following example, the default TLS configuration includes the JWK endpoin
 </openidConnectClient>
 ----
 
+Claim to subject mapping::
+If you do not define claim-to-subject mapping, the following default mapping rules apply:
++
+- The subject (`sub`) claim is used as the principal name and unique security name of the user.
+- The issuer (`iss`) claim is the default realm and used as the subject realm. If a `realmName` claim is included in the JWT token, the `realmName` claim is used as the subject realm instead of the `iss` claim.
++
 You can define how to map JWT claims to the subject the Open Liberty creates by specifying the following `openidConnectClient` element attributes:
 
 - `userIdentifier`
@@ -77,12 +83,23 @@ You can define how to map JWT claims to the subject the Open Liberty creates by 
 - `groupIdentifier`
 - `realmName`
 - `realmIdentifier`
-
++
 If both the `realmName` and `realmIdentifier` attributes are configured, the `realmName` value takes precedence and the `realmIdentifier` value is ignored.
++
+You can also programmatically map JWT to subjects by implementing the `com.ibm.wsspi.security.oauth.UserCredentialResolver` service programming interface (SPI). For information about this interface, see the Java documentation that is provided with the Open Liberty in the `${wlp.install.dir}/dev/spi/ibm/` directory.
 
-If you do not define claim-to-subject mapping, the following default mapping rules apply:
-- The subject (`sub`) claim is used as the principal name and unique security name of the user.
-- The issuer (`iss`) claim is the default realm and used as the subject realm. If a `realmName` claim is included in the JWT token, the `realmName` claim is used as the subject realm instead of the `iss` claim.
+JWT audiences::
+To define a list of trusted audiences, configure the `audiences` attribute on the `openidConnectClient` element.
++
+A valid JWT token must satisfy one of the following conditions:
+
+- If the audiences attribute is configured, the audience (aud) claim value must be one of the configured audiences. To ignore the audience check, set the `audiences` attribute to `ALL_AUDIENCES`.
+- If the audiences attribute is not configured, but the JWT token contains an `aud` claim that is a valid URL, the resources service URL must have the `aud` value as a prefix.
++
+For example, the following audience is valid because the resource URL begins with the `aud` claim value from the incoming JWT:
+
+  ** Audience claim: `"aud":"https://<server>:<port>/something"`
+  ** Resource service URL: `https://<server>:<port>/something/specific`
 
 === Accept tokens in JWE format
 
