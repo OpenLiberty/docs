@@ -2,11 +2,11 @@
 
 === Minimal configuration for Open Liberty to act as an OpenID Connect client
 
-To enable your Open Liberty server to act as an OpenID Connect Client, you must also enable the feature:transportSecurity[display=Transport Security] feature, xref:ROOT:user-registries-application-security.adoc[configure a user registry], and configure a truststore of the server to include the signer certificates of the OpenID Connect Providers that are supported. Truststores are configured on `keyStore` elements in the `server.xml` file. You can specify a non-default trustore for OpenID Connect by referencing the truststore configuration from the `trustStoreRef` attribute for the of the config:openidConnectClient[] element.
+To enable your Open Liberty server to act as an OpenID Connect (OIDC) Client, you must also enable the feature:transportSecurity[display=Transport Security] feature, xref:ROOT:user-registries-application-security.adoc[configure a user registry], and configure a truststore of the server to include the signer certificates of the OIDC Providers that are supported. Truststores are configured on `keyStore` elements in the `server.xml` file. You can specify a non-default trustore for OIDC by referencing the truststore configuration from the `trustStoreRef` attribute for the of the config:openidConnectClient[] element.
 
-User identities that are returned by an OpenID Connect Provider (OP) are not mapped to a registry user by default, so no users are required to be configured in the registry. However, if the `mapIdentityToRegistryUser` attribute of the `openidConnectClient` element is set to `true`, a user entry must exist for the identity that is returned from the OP for authentication and authorization to succeed.
+User identities that are returned by an OIDC Provider (OP) are not mapped to a registry user by default, so no users are required to be configured in the registry. However, if the `mapIdentityToRegistryUser` attribute of the `openidConnectClient` element is set to `true`, a user entry must exist for the identity that is returned from the OP for authentication and authorization to succeed.
 
-OpenID Connect is configured to use the default TLS configuration that is specified by the server. Therefore, unless you specify an alternative TLS configuration for Open ID connect, the default TLS configuration for the server must use the truststore that is configured for OpenID Connect. If a default outbound TLS configuration is specified, this configuration must also use the truststore that is configured for OpenID Connect. You can specify a TLS configuration other than the default for OpenID Connect by referencing it from the `sslRef` attribute for the of the `openidConnectClient` element. For more information, see link:/docs/latest/reference/feature/transportSecurity-1.0.html#_configure_transport_layer_security_tls[Configure TLS].
+OIDC is configured to use the default TLS configuration that is specified by the server. Therefore, unless you specify an alternative TLS configuration for Open ID connect, the default TLS configuration for the server must use the truststore that is configured for OIDC. If a default outbound TLS configuration is specified, this configuration must also use the truststore that is configured for OIDC. You can specify a TLS configuration other than the default for OIDC by referencing it from the `sslRef` attribute for the of the `openidConnectClient` element. For more information, see link:/docs/latest/reference/feature/transportSecurity-1.0.html#_configure_transport_layer_security_tls[Configure TLS].
 
 The following example shows the minimal configuration for the `openidConnectClient` element to work with the default OP.
 The client must have a configured application available at the specified URL pattern that can handle redirect requests from an OP. This URL must also precisely match the redirect URL that is registered for the client with the OP.
@@ -103,9 +103,34 @@ For example, the following audience is valid because the resource URL begins wit
 
 === Accept tokens in JWE format
 
+In version 22.0.0.1 and later, You can configure an Open Liberty OIDC Relying Party to process access and ID tokens that are in a JWE format. The corresponding OpenID Connect Provider must support creating JWE access or ID tokens. Set the OpenID Connect Provider with the OIDC Relying Party public key that is used to encrypt the Content Encryption Key according to the OIDC Provider documentation.
+
+The following example shows a sample configuration to accept JWTs in JWE format.
+
+[source,xml]
+----
+<openidConnectClient id="JWE" inboundPropagation="required"
+  jwkEndpointUrl="https://example.com/jwtserver/jwk" signatureAlgorithm="RS256"
+  issuerIdentifier="https://idp.example.com:8020/jwt"
+  keyManagementKeyAlias="privateKeyAlias"
+  accessTokenCacheEnabled="true"
+  accessTokenCacheTimeout="10s"
+  tokenReuse="true">
+</openidConnectClient>
+----
+
+* You must set the `keyManagementKeyAlias` attribute to the private key alias of the key management key that is used to decrypt the Content Encryption Key of the JWE format token. This key must exist in the key store that is configured for OIDC.
+* This example specifies optional attributes to configure the RP to cache access token validation results for inbound propagation.
+  ** The `accessTokenCacheEnabled` attribute enables validation results to be cached
+  ** The `accessTokenCacheTimeout` attribute specifies a duration that the authenticated subject that is created by using a propagated access token is cached.
+  ** The `tokenReuse` attribute specifies that the  OpenID Connect Relying Party must cache results for a JWT that includes a `jti` claim.
+
+If you manage single sign-on (SSO) for OIDC with the feature:socialLogin[display=Social Login] feature you can enable that feature to process tokens in JWE format by setting the `keyManagementKeyAlias` attribute on the `oidcLogin` element to the private key alias of the key management key that is used to decrypt the Content Encryption Key of the JWE format token. For more information, see config:oidcLogin[display=OIDC Social Login].
+
+
 === Configure a third-party OpenID Connect provider
 
-To configure the Liberty OpenID Connect client to use a third-party OpenID Connect Provider, such as Microsoft Azure or Google, you must configure the following attributes. You can obtain these attribute values by calling the OP discovery endpoint, which provides a JSON document at the path that is formed by adding the `/.well-known/openid-configuration` string to the issuer URI. For example, for Google, this document is available at the `\https://accounts.google.com/.well-known/openid-configuration` URL.
+To configure the Liberty OIDC client to use a third-party OIDC Provider, such as Microsoft Azure or Google, you must configure the following attributes. You can obtain these attribute values by calling the OP discovery endpoint, which provides a JSON document at the path that is formed by adding the `/.well-known/openid-configuration` string to the issuer URI. For example, for Google, this document is available at the `\https://accounts.google.com/.well-known/openid-configuration` URL.
 
 - `jwkEndpointUrl`
 +
@@ -115,7 +140,7 @@ Set this  attribute to the URL of the OP JSON Web Key Set JWK document that is d
 Set the  attribute to the issuer as defined in the discovery file. An ID Token that does not contain this value as an `iss` claim is rejected.
 - `signatureAlgorithm="RS256"`
 +
-The Liberty OpenID Connect client's default signature algorithm is HS256.
+The Liberty OIDC client's default signature algorithm is HS256.
 - `userIdentityToCreateSubject`
 +
 Set the  attribute to a claim name that is used by the vendor ID Token that represents a user's unique identifier.
@@ -123,7 +148,7 @@ Set the  attribute to a claim name that is used by the vendor ID Token that repr
 +
 Set the attribute to the claim name that represents the user's group memberships or roles.
 
-The following example shows a sample configuration to connect to Google as an OpenID Connect Provider.
+The following example shows a sample configuration to connect to Google as an OIDC Provider.
 
 [source,xml]
 ----
@@ -141,7 +166,7 @@ The following example shows a sample configuration to connect to Google as an Op
 
 === Support Multiple OpenID Connect Providers
 
-You can configure Liberty as an OpenID Connect Relying Party to multiple OpenID Connect Providers by creating multiple `openidConnectClient` elements and setting authentication filters to route incoming authentication requests to each configuration. Each `openidConnectClient` element defines one single sign-on relationship with one OpenID Connect Provider. Use the `authFilterRef` attribute to reference the authentication filter to specify the configured authentication filter for each `openidConnectClient` element.
+You can configure Liberty as an OIDC Relying Party to multiple OIDC Providers by creating multiple `openidConnectClient` elements and setting authentication filters to route incoming authentication requests to each configuration. Each `openidConnectClient` element defines one single sign-on relationship with one OIDC Provider. Use the `authFilterRef` attribute to reference the authentication filter to specify the configured authentication filter for each `openidConnectClient` element.
 
 In the following example, authentication requests that contain the `/mywebapp/members` URL pattern are filtered by the `authFilter1` authentication filter to the OP that is referenced by the `RP1` configuration. Authentication requests that contain the `/mywebapp/guests` URL pattern are filtered by the `authFilter2` authentication filter to the OP that is referenced by the `RP2` configuration
 
@@ -182,7 +207,7 @@ For more information, see xref:ROOT:authentication-filters.adoc[Authentication f
 
 === Disable LTPA cookies
 
-The Liberty OpenID Connect relying party automatically creates a single-sign-on (SSO) token after the ID Token is processed. You can configure Liberty to not create an SSO token for the server, or an SSO token for the resource that is protected with OpenID Connect, by specifying the `disableLtpaCookie` attribute for the `openidConnectClient` element.
+The Liberty OIDC relying party automatically creates a single-sign-on (SSO) token after the ID Token is processed. You can configure Liberty to not create an SSO token for the server, or an SSO token for the resource that is protected with OIDC, by specifying the `disableLtpaCookie` attribute for the `openidConnectClient` element.
 
 [source,xml]
 ----
@@ -193,11 +218,11 @@ The Liberty OpenID Connect relying party automatically creates a single-sign-on 
 </openidConnectClient>
 ----
 
-When you set this attribute to true, the Open Liberty OpenID Connect client accepts only authentication requests that previously authenticated with the configured OP, and the authentication session lifetime is limited to the lifetime of the ID Token from that OP.
+When you set this attribute to true, the Open Liberty OIDC client accepts only authentication requests that previously authenticated with the configured OP, and the authentication session lifetime is limited to the lifetime of the ID Token from that OP.
 
 === Accept an OAuth 2.0 bearer access token without redirecting to an OpenID Connect provider
 
-You can configure an OpenID Connect Client to optionally accept a valid OAuth 2.0 bearer access token as an authentication token without redirecting the request to an OpenID Connect provider. With this configuration, if a request contains a valid OAuth 2.0 bearer access token, the Liberty OpenID Connect Client automatically validates it and creates an authenticated subject based on the token validation result. If the request does not contain an access token or the access token is invalid, then the Liberty OpenID Connect Client continues to redirect the user to an OpenID Connect provider. This function enables the Liberty server to serve both the browser client and non-browser client like a RESTful client.
+You can configure an OIDC Client to optionally accept a valid OAuth 2.0 bearer access token as an authentication token without redirecting the request to an OIDC provider. With this configuration, if a request contains a valid OAuth 2.0 bearer access token, the Liberty OIDC Client automatically validates it and creates an authenticated subject based on the token validation result. If the request does not contain an access token or the access token is invalid, then the Liberty OIDC Client continues to redirect the user to an OIDC provider. This function enables the Liberty server to serve both the browser client and non-browser client like a RESTful client.
 
 [source,xml]
 ----
@@ -210,7 +235,7 @@ You can configure an OpenID Connect Client to optionally accept a valid OAuth 2.
 
 === Modify the context root
 
-If your hosting environment does not allow access to the `/oidcclient` context root, you can modify the context root by configuring the config:oidcClientWebapp[] element. By default, the Liberty OpenID Connect Client redirect servlet listens on the `/oidcclient` context root, and theredirect URL format is `https://<host_name>:<ssl_port>/oidcclient/redirect/<configuration_ID>`. If you cannot use this context root, you can set a different context root.
+If your hosting environment does not allow access to the `/oidcclient` context root, you can modify the context root by configuring the config:oidcClientWebapp[] element. By default, the Liberty OIDC Client redirect servlet listens on the `/oidcclient` context root, and theredirect URL format is `https://<host_name>:<ssl_port>/oidcclient/redirect/<configuration_ID>`. If you cannot use this context root, you can set a different context root.
 
 For example, if your hosting environment requires that you use the `/example/openid` context root, add the following element in your `server.xml` file:
 
