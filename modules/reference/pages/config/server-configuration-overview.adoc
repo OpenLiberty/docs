@@ -35,9 +35,10 @@ This example `server.xml` file configures the server to do the following things:
 * The `httpPort` attribute is set to `9080`, which configures Open Liberty to listen to incoming traffic to `localhost` on port `9080`.
 * The `autoExpand` attribute is set to `true` so that WAR files are automatically expanded when they are deployed.
 
-The term _server  configuration_ can be used to refer to all of the files that make up the server  configuration or specifically to the configuration that's in the XML files.
-If it's not clear in context, the term _server XML  configuration_ might be used to refer to the configuration in the XML files.
+The term _server configuration_ can be used to refer to all of the files that make up the server configuration or specifically to the configuration that's in the XML files.
+If it's not clear in context, the term _server XML configuration_ might be used to refer to the configuration in the XML files.
 
+The following are the different sections that are covered as a part of the server configuration overview.
 * <<#configuration-files,Configuration files>>
 * <<#variable-substitution,Variable substitution precedence>>
 * <<#configuration-merging,Configuration merging>>
@@ -76,7 +77,7 @@ This can only be set in the `etc/server.env` file as the other locations are rel
 
 * `WLP_OUTPUT_DIR` - Indicates where the server writes files to.
 By default, the server writes to the directory structure that the configuration is read from.
-However, in some secure profiles the server configuration needs to be read-only so the server must write files to another location.
+However, in some secure profiles, the server configuration needs to be read-only so the server must write files to another location.
 
 The `server.env` file is in `KEY=value` format, as shown in the following example:
 
@@ -88,13 +89,13 @@ WLP_USER_DIR=/opt/wlp-usr
 
 The following restrictions apply to the `server.env` files:
 
-* The Key values must not contain any spaces.
+* All the Key values must not contain any spaces.
 
-* Empty lines are to be ignored.
+* All the empty lines are to be ignored.
 
-* The Lines that start with the number sign # are ignored, except for the "# enable_variable_expansion" which enables variable expansion on Linux.
+* All the lines that start with the number sign `#` are ignored, except for the "# enable_variable_expansion" which enables variable expansion on Linux.
 
-* There should be no white space surrounding the equal sign (`=`).
+* Ensure that there is no white space that surrounds the equal sign (`=`).
 
 * All the characters are literal except in the following cases:
 
@@ -103,24 +104,23 @@ The following restrictions apply to the `server.env` files:
 ** The caret sign (`^`) is used to escape a variable expansion character like the exclamation point (!).
 
 ** The variable expansion is enabled on Linux. In which case single quotation marks (`'`), double quotation marks (`"`), and backslash (`\`) behave the same as in the shell environment.
-For example, surrounding a string in single quotation marks (`'`) prevents the expansion of variables, while surrounding a string in double quotation marks (`"`) does not, and backslash (`\`) is an escape character that removes the meaning of a special character.
+For example, placing a string in single quotation marks (`'`) prevents the expansion of variables, while placing a string in double quotation marks (`"`) does not, and backslash (`\`) is an escape character that removes the meaning of a special character.
 
 
 [#exp-var-windows]
 ==== Expansion variables
-Expansion variable encapsulates the ability to access as well as manipulate the values of variables.
+Expansion variable has the ability to access as well as manipulate the values of variables. You can specify expansion variables in the value definition of other variables.
 
-As of 22.0.0.1, support for variable expansion provided to the `server.env` file on Linux. Expansion variables are prefixed by a `$` and the variable name can also be enclosed in curly braces {}. For example, `$variable_name` or `${variable_name}`.
-
-This support has always existed on Windows, though it was not documented.
+The values that these expansion variables supply can be defined as environment variables in your server configuration or shell variables in your shell environment.
 
 The syntax for specifying expansion variables is operating system dependent.
 
-===== Expansion variables for Windows
-
-Variable expansion support is enabled by default on Windows. You specify expansion variables by using the Windows delayed expansion syntax: `!variable_name!`, that is replaced by the value of the variable.
-
+Expansion variables for Windows::
++
+Variable expansion support is enabled by default on Windows. You specify expansion variables by using the Windows delayed expansion syntax: `!variable_name!`, which is replaced by the value of the variable.
++
 Example for expansion variable for windows shown in the following `server.env` file:
++
 [source,properties]
 ----
 IBM_DIR=!ProgramFiles!\IBM
@@ -129,25 +129,29 @@ WLP_USER_DIR=!USERPROFILE!\wlp-usr
 ----
 
 [#exp-var-linux]
-===== Expansion variables for Linux
+Expansion variables for Linux::
++
+As of 22.0.0.1, support for variable expansion is provided to the `server.env` file on Linux. Expansion variables are prefixed by a `$` and the variable name can also be enclosed in curly braces {}. For example, `$variable_name` or `${variable_name}`.
 
 By default, `server.env` files do not support variable expansion on Linux. The "value" in each `KEY=value` pair is interpreted literally. So, by default, you do not need to escape special characters, such as spaces. However, this changes when you enable support for variable expansion.
-
++
 To enable support for variable expansion, add the following comment at the beginning of the `server.env` file:
++
 [source,properties]
 ----
 # enable_variable_expansion
 ----
-
++
 Once enabled, you need to add quotation marks around values that have spaces, and it is necessary to escape inner quotation marks.
 For example, the inner quotation mark is escaped in the following value:
-
++
 [source,properties]
 ----
 MESSAGE1='Don\'t do that'
 ----
-
-Example for expansion variable for linux shown in the following `server.env` file:
++
+Example for expansion variable for Linux shown in the following `server.env` file:
++
 [source,properties]
 ----
 JAVA_HOME=/opt/ibm/java
