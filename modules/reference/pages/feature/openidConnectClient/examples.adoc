@@ -25,7 +25,17 @@ To enable your Open Liberty server to act as an OpenID Connect (OIDC) Client, yo
 User identities that are returned by an OIDC Provider (OP) are not mapped to a registry user by default, so no users are required to be configured in the registry. However, if the `mapIdentityToRegistryUser` attribute of the `openidConnectClient` element is set to `true`, a user entry must exist for the identity that is returned from the OP.
 - Configure a truststore for the server that includes the signer certificates of the OIDC Providers that are supported. Truststores are configured on config:keyStore[] element in the `server.xml` file.
 +
-OIDC is configured to use the default TLS configuration that is specified by the server. Therefore, unless you specify an alternative TLS configuration for OpenID connect, the default TLS configuration for the server must use the truststore that is configured for OIDC. If a default outbound TLS configuration is specified, this configuration must also use the truststore that is configured for OIDC. You can specify a TLS configuration for OIDC other than the default by referencing it from the `sslRef` attribute of the `openidConnectClient` element. Alternatively, you can specify a nondefault truststore for OIDC by referencing the truststore configuration from the `trustStoreRef` attribute for the `openidConnectClient` element. For more information, see link:/docs/latest/reference/feature/transportSecurity-1.0.html#_configure_transport_layer_security_tls[Configure TLS].
+OIDC is configured to use the default TLS configuration that is specified by the server. Therefore, unless you specify an alternative TLS configuration for OpenID connect, the default TLS configuration for the server must reference the truststore that is configured for OIDC. The following example shows a default TLS configuration in the `server.xml` file that is modified to include the a truststore that includes signer certificates for OIDC.
++
+[source,xml]
+----
+<sslDefault sslRef="DefaultSSLSettings" />
+<ssl id="DefaultSSLSettings" keyStoreRef="myKeyStore" trustStoreRef="myTrustStore" />
+<keyStore id="myKeyStore" password="{xor}EzY9Oi0rJg==" type="PKCS12" location="${server.config.dir}/resources/security/BasicKeyStore.p12" />
+<keyStore id="myTrustStore" password="{xor}EzY9Oi0rJg==" type="PKCS12" location="${server.config.dir}/resources/security/BasicTrustStore.p12" />
+----
++
+If a default outbound TLS configuration is specified, this configuration must also use the truststore that is configured for OIDC. You can specify a TLS configuration for OIDC other than the default by referencing it from the `sslRef` attribute of the `openidConnectClient` element. Alternatively, you can specify a nondefault truststore for OIDC by referencing the truststore configuration from the `trustStoreRef` attribute for the `openidConnectClient` element. For more information, see link:/docs/latest/reference/feature/transportSecurity-1.0.html#_configure_transport_layer_security_tls[Configure TLS].
 
 The following example shows the minimal configuration for the `openidConnectClient` element to work with the default OP.
 The client must have a configured application that is available at the specified URL pattern that can handle redirect requests from an OP. This URL must also precisely match the redirect URL that is registered for the client with the OP.
@@ -65,7 +75,7 @@ The following example shows a minimal configuration that automatically discovers
 </openidConnectClient>
 ----
 
-If a discovery endpoint is configured, any other configured OIDC endpoints are replaced with the following discovered endpoints.
+If a discovery endpoint is configured, any other configured OIDC endpoints are ignored and replaced with the following discovered endpoints.
 
 - `issuer`
 - `authorization_endpoint`
