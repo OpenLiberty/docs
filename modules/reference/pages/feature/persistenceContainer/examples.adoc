@@ -1,0 +1,35 @@
+== Examples
+
+=== Configure an alternative JPA implementation
+
+EclipseLink is the default JPA implementation for Open Liberty. To use a different implementation, you must configure a shared library for the alternative JPA persistence provider and make that library available to any applications that need to use it. In addition to the JPA Container feature, you must also enable the feature:bells[display=Basic Extensions using Liberty Libraries feature] to give the Open Liberty server access to the shared library.
+
+In the following example, Hibernate is specified as the JPA implementation for an application that is named `myApp`:
+
+[source,xml]
+----
+<featureManager>
+   <feature>persistenceContainer-3.0</feature>
+   <feature>bells-1.0</feature>
+      ...
+</featureManager>
+
+<library id="HibernateLib">
+    <fileset dir="${shared.resource.dir}/jpa30_hibernate" includes="*.jar"/>
+</library>
+
+<bell libraryRef="HibernateLib"/>
+
+<application location="myApp.war">
+   <classloader commonLibraryRef="HibernateLib"/>
+</application>
+----
+
+The `library` element specifies a shared library that is made available to both the server and the application.
+The `fileset` element specifies the base directory to search for files and the file patterns to include in search results. In this example, any files in the `${shared.resource.dir}/jpa21_hibernate` directory with the `.jar` extension are included in search results.
+
+The `bell` element enables Hibernate to register as the default persistence provider for the Open Liberty runtime.
+
+To directly reference Hibernate APIs in your application, you must configure a shared library classloader within the `application` element.
+The `location` parameter specifies the location of the application files.
+The `classloader` element adds any files and directories that are specified by the `commonLibraryRef` attribute to the application class path, which makes them available to the application.
