@@ -23,19 +23,19 @@ To enable your Open Liberty server to act as an OpenID Connect (OIDC) Client, yo
 - xref:ROOT:user-registries-application-security.adoc[Configure a user registry].
 +
 User identities that are returned by an OIDC Provider (OP) are not mapped to a registry user by default, so no users are required to be configured in the registry. However, if the `mapIdentityToRegistryUser` attribute of the `openidConnectClient` element is set to `true`, a user entry must exist for the identity that is returned from the OP.
-- Configure a truststore for the server that includes the signer certificates of the OIDC Providers that are supported. Truststores are configured on config:keyStore[] element in the `server.xml` file.
+- Configure a truststore for the server that includes the signer certificates of the OIDC Providers that are supported. Truststores are configured on the config:keyStore[] element in the `server.xml` file.
 +
-OIDC is configured to use the default TLS configuration that is specified by the server. Therefore, unless you specify an alternative TLS configuration for OpenID connect, the default TLS configuration for the server must reference the truststore that is configured for OIDC. The following example shows a default TLS configuration in the `server.xml` file that is modified to include the truststore that includes signer certificates for OIDC.
+OIDC uses the default TLS configuration that is specified by the server. Therefore, unless you specify an alternative TLS configuration for OIDC, the default TLS configuration for the server must reference the truststore that is configured for OIDC. The following example shows a default TLS configuration in the `server.xml` file that is modified to include a truststore that contains signer certificates for OIDC.
 +
 [source,xml]
 ----
 <sslDefault sslRef="DefaultSSLSettings" />
-<ssl id="DefaultSSLSettings" keyStoreRef="myKeyStore" trustStoreRef="myTrustStore" />
+<ssl id="DefaultSSLSettings" keyStoreRef="myKeyStore" trustStoreRef="OIDCTrustStore" />
 <keyStore id="myKeyStore" password="{xor}EzY9Oi0rJg==" type="PKCS12" location="${server.config.dir}/resources/security/BasicKeyStore.p12" />
-<keyStore id="myTrustStore" password="{xor}EzY9Oi0rJg==" type="PKCS12" location="${server.config.dir}/resources/security/BasicTrustStore.p12" />
+<keyStore id="OIDCTrustStore" password="{xor}EzY9Oi0rJg==" type="PKCS12" location="${server.config.dir}/resources/security/OIDCTrustStore.p12" />
 ----
 +
-If a default outbound TLS configuration is specified, this configuration must also use the truststore that is configured for OIDC. You can specify a TLS configuration for OIDC other than the default by referencing it from the `sslRef` attribute of the `openidConnectClient` element. Alternatively, you can specify a nondefault truststore for OIDC by referencing the truststore configuration from the `trustStoreRef` attribute for the `openidConnectClient` element. For more information, see link:/docs/latest/reference/feature/transportSecurity-1.0.html#_configure_transport_layer_security_tls[Configure TLS].
+If a default outbound TLS configuration is specified, this configuration must also use the truststore that is configured for OIDC. You can specify a TLS configuration for OIDC other than the default by referencing it from the `sslRef` attribute of the `openidConnectClient` element. Alternatively, you can specify a nondefault truststore for OIDC by referencing the truststore configuration from the `trustStoreRef` attribute for the `openidConnectClient` element. For more information, see link:/docs/latest/reference/feature/transportSecurity-1.0.html#_configure_transport_layer_security_tls[Configure TLS] and the config:openidConnectClient[] element.
 
 The following example shows the minimal configuration for the `openidConnectClient` element to work with the default OP.
 The client must have a configured application that is available at the specified URL pattern that can handle redirect requests from an OP. This URL must also precisely match the redirect URL that is registered for the client with the OP.
@@ -54,7 +54,7 @@ This configuration assumes the following default values.
 
 - `scope=openid profile`
 +
-You can use the `scope` attribute for the `openidConnectClient` to edit required scopes. For example, you can change the required scope to `openid profile email`. For more information about OpenID scopes, see the https://openid.net/developers/specs/[OpenID Connect specification].
+You can use the `scope` attribute for the `openidConnectClient` element to edit required scopes. For example, you can change the required scope to `openid profile email`. For more information about OpenID scopes, see the https://openid.net/developers/specs/[OpenID Connect specification].
 - The client registers the `\https://<host name>:<ssl port>/oidcclient/redirect/client01` redirect URL with the OP.
 +
 In this URL, both the hostname and SSL port are automatically resolved and `client01` is the value of the `id` attribute of the `openidConnectClient` element. If a proxy is in front of the RP, you can override the hostname and port by specifying the `redirectToRPHostAndPort` attribute, for example, `redirectToRPHostAndPort="https://<host name>:<ssl port>"`.
@@ -87,7 +87,7 @@ If a discovery endpoint is configured, any other configured OIDC endpoints are i
 [#jwt]
 === Configure JSON Web Token (JWT) authentication for OpenID Connect
 
-Any trusted party with a JWT can use that token to get access to the associated resources in Open Liberty. The Open Liberty server validates the JWT and creates the authenticated subject from it. To be accepted as an authentication token, the JWT must contain `iss`, `sub`, and `exp` claims and be signed with a recognized signature algorithm. Recognized signature algorithms are listed as possible values for the `signatureAlgorithm` attribute of the config:openidConnectClient[] element. An unsigned JWT is accepted when the `signatureAlgorithm` attribute is set to `none`. JSON Web Encryption (JWE) is also supported.
+Any trusted party with a JWT can use that token to get access to the associated resources in Open Liberty. The Open Liberty server validates the JWT and creates the authenticated subject from it. To be accepted as an authentication token, the JWT must contain `iss`, `sub`, and `exp` claims and be signed with a recognized signature algorithm. Recognized signature algorithms are listed as possible values for the `signatureAlgorithm` attribute of the config:openidConnectClient[] element. An unsigned JWT is accepted when the `signatureAlgorithm` attribute is set to `none`. <<#jwe,JSON Web Encryption (JWE)>> is also supported.
 
 To configure an Open Liberty server to accept a JWT as an authentication token, you must set the `inboundPropagation` attribute to `required`. You must also configure a truststore that includes the JSON Web Key (JWK) endpoint certificate so that the Open Liberty server can make TLS connections to the JWK endpoint. If the default truststore for your server does not include the JWK endpoint certificate, you can reference an alternative truststore from the `trustStoreRef` attribute for the `openidConnectClient` element.
 
@@ -116,9 +116,9 @@ You can customize how JWT claims are mapped to the subject that Open Liberty cre
 - `realmName`
 - `realmIdentifier`
 +
-You can specify an alternative claim as the value for any of these attributes. For example, to use the `name` claim for the principal name instead of the `sub` claim, you can specify `userIdentifier="name"`. For more information about these attributes, see config:openidConnectClient[].
-+
 If both the `realmName` and `realmIdentifier` attributes are configured, the `realmName` value takes precedence and the `realmIdentifier` value is ignored.
++
+You can specify an alternative claim as the value for any of these attributes. For example, to use the `name` claim for the principal name instead of the `sub` claim, you can specify `userIdentifier="name"`. For more information about these attributes, see the config:openidConnectClient[] element.
 +
 You can also programmatically map JWT to subjects by implementing the `com.ibm.wsspi.security.oauth.UserCredentialResolver` service programming interface (SPI). For information, see the Java documentation that is provided with the Open Liberty installation in the `${wlp.install.dir}/dev/spi/ibm/` directory.
 
@@ -128,16 +128,21 @@ To define a list of trusted audiences, configure the `audiences` attribute on th
 A valid JWT must satisfy one of the following conditions:
 
 - If the audiences attribute is configured, the `aud` claim value in the JWT must be one of the configured audiences. To ignore the audience check, set the `audiences` attribute to `ALL_AUDIENCES`.
-- If the `audiences` attribute is not configured, but the JWT contains an `aud` claim that is a valid URL, the URL for the resource that is being accessed must include the `aud` value as a prefix.
+- If the `audiences` attribute is not configured, but the JWT contains an `aud` claim that is a valid URL, the URL for the resource that is being accessed must include the complete `aud` value as a prefix.
 +
-For example, the following audience is valid because the resource URL begins with the `aud` claim value from the JWT.
+For example, the following audience is valid because the resource URL begins with the complete `aud` claim value from the JWT.
 
   ** Audience claim: `"aud":"https://<server>:<port>/something"`
   ** Resource service URL: `\https://<server>:<port>/something/specific`
+
+Resource requests::
+If a web client sends a JWT to an Open Liberty server in the request `Authorization` header or as a form-encoded body parameter, no extra server configuration is required. If the JWT is sent in a customized request header field, you must configure the `headerName` attribute for the `openidConnectClient` element to equal the name of the field. For example, if you configure `headerName="jwt"`, a web client can send the token on the `jwt` header field, as shown in the following resource request example.
 +
-However, the following audience is not valid because the resource URL does not begin with the `aud` claim value from the JWT.
-  ** Audience claim: "aud":"https://<server>:<port>/something/specific"
-  ** Resource URL: `\https://<server>:<port>/something`
+----
+GET /resource HTTP/1.1
+Host: server.example.com
+jwt: mF_9.B5f-4.1JqM
+----
 
 [#jwe]
 === Accept tokens in JWE format
@@ -206,7 +211,7 @@ The following example shows a sample configuration to connect to Google as an OI
 [#filter]
 === Support Multiple OpenID Connect Providers
 
-You can configure Open Liberty as an OIDC client to multiple OPs by creating multiple `openidConnectClient` elements and setting authentication filters to route incoming authentication requests to each configuration. Each `openidConnectClient` element defines one single sign-on relationship with one OIDC Provider. Use the `authFilterRef` attribute to reference the authentication filter to specify the configured authentication filter for each `openidConnectClient` element.
+You can configure Open Liberty as an OIDC client to multiple OPs by creating multiple `openidConnectClient` elements and setting authentication filters to route incoming authentication requests to each configuration. Each `openidConnectClient` element defines one SSO relationship with one OIDC Provider. Use the `authFilterRef` attribute to reference the authentication filter to specify the configured authentication filter for each `openidConnectClient` element.
 
 In the following example, authentication requests that contain the `/mywebapp/members` URL pattern are filtered to the OP that is referenced by the `RP1` configuration. Authentication requests that contain the `/mywebapp/guests` URL pattern are filtered to the OP that is referenced by the `RP2` configuration.
 
@@ -291,7 +296,7 @@ The resulting redirect URL format is `https://_host_name_: _ssl_port_/example/op
 [#params]
 === Pass request parameters to OpenID Connect
 
-To provide extra authorization parameters to the OP, configure config:authzParameter[] elements. For example, the following configuration properties pass `api_key` and `account` parameters to the authorization endpoint.
+To provide extra authorization parameters to the OP, configure `authzParameter` elements. For example, the following configuration properties pass `api_key` and `account` parameters to the authorization endpoint.
 
 [source,xml]
 ----
@@ -299,4 +304,4 @@ To provide extra authorization parameters to the OP, configure config:authzParam
 <authzParameter name="account" value="123456" />
 ----
 
-To configure parameters for the token endpoint, use the config:tokenParameter[] element.
+To configure parameters for the token endpoint, use the `tokenParameter` element.
