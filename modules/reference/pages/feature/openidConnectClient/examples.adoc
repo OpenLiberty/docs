@@ -25,7 +25,7 @@ To enable your Open Liberty server to act as an OpenID Connect (OIDC) Client, yo
 User identities that are returned by an OIDC Provider (OP) are not mapped to a registry user by default, so no users are required to be configured in the registry. However, if the `mapIdentityToRegistryUser` attribute of the `openidConnectClient` element is set to `true`, a user entry must exist for the identity that is returned from the OP.
 - Configure a truststore for the server that includes the signer certificates of the OIDC Providers that are supported. Truststores are configured on config:keyStore[] element in the `server.xml` file.
 +
-OIDC is configured to use the default TLS configuration that is specified by the server. Therefore, unless you specify an alternative TLS configuration for OpenID connect, the default TLS configuration for the server must reference the truststore that is configured for OIDC. The following example shows a default TLS configuration in the `server.xml` file that is modified to include the a truststore that includes signer certificates for OIDC.
+OIDC is configured to use the default TLS configuration that is specified by the server. Therefore, unless you specify an alternative TLS configuration for OpenID connect, the default TLS configuration for the server must reference the truststore that is configured for OIDC. The following example shows a default TLS configuration in the `server.xml` file that is modified to include the truststore that includes signer certificates for OIDC.
 +
 [source,xml]
 ----
@@ -59,7 +59,7 @@ You can use the `scope` attribute for the `openidConnectClient` to edit required
 +
 In this URL, both the hostname and SSL port are automatically resolved and `client01` is the value of the `id` attribute of the `openidConnectClient` element. If a proxy is in front of the RP, you can override the hostname and port by specifying the `redirectToRPHostAndPort` attribute, for example, `redirectToRPHostAndPort="https://<host name>:<ssl port>"`.
 
-The OpenID Connect RP cannot route requests through a proxy host automatically. If you use a proxy to access the OP, the values for any OP-related URL properties must contain the proxy host and port, not the external OP host and port. In most cases, you can replace the OP host and port with the proxy host and port. The URL that you enter must be visible to both the RP and client (browser or application). For further guidance on how to determine the correct URL to use, contact your proxy administrator.
+The OpenID Connect RP cannot route requests through a proxy host automatically. If you use a proxy to access the OP, the values for any OP-related URL properties must contain the proxy host and port, not the external OP host and port. In most cases, you can replace the OP host and port with the proxy host and port. The URL that you enter must be visible to both the RP and the client browser or application that is used to access the application that is hosted by the RP server. For further guidance on how to determine the correct URL to use, contact your proxy administrator.
 
 [#discovery]
 === Configure a discovery endpoint for an OpenID Connect Provider
@@ -81,7 +81,7 @@ If a discovery endpoint is configured, any other configured OIDC endpoints are i
 - `authorization_endpoint`
 - `token_endpoint`
 - `userinfo_endpoint`
-- `jwks_uri
+- `jwks_uri`
 - `revocation_endpoint`
 
 [#jwt]
@@ -91,7 +91,7 @@ Any trusted party with a JWT can use that token to get access to the associated 
 
 To configure an Open Liberty server to accept a JWT as an authentication token, you must set the `inboundPropagation` attribute to `required`. You must also configure a truststore that includes the JSON Web Key (JWK) endpoint certificate so that the Open Liberty server can make TLS connections to the JWK endpoint. If the default truststore for your server does not include the JWK endpoint certificate, you can reference an alternative truststore from the `trustStoreRef` attribute for the `openidConnectClient` element.
 
-In the following example, the default TLS configuration includes the JWK endpoint certificate. This example also assumes that the JWT issuer supports a JWK and the JWT is signed with the RS256 algorithm. The `issuerIdentifier `attribute is configured to match the JWT issuer `iss` claim.
+In the following example, the default TLS configuration includes the JWK endpoint certificate. This example also assumes that the JWT issuer supports a JWK and the JWT is signed with the RS256 algorithm. The `issuerIdentifier` attribute is configured to match the JWT issuer `iss` claim.
 
 [source,xml]
 ----
@@ -100,6 +100,7 @@ In the following example, the default TLS configuration includes the JWK endpoin
   issuerIdentifier="https://idp.example.com:8020/jwt" >
 </openidConnectClient>
 ----
+The Open Liberty server expects each request to provide a valid JWT token and does not create or use single-sign-on (SSO) cookies for JWT authentication. If you want the Open Liberty server to create SSO cookies, set the `authnSessionDisabled` attribute on the `openidConnectClient` element to `false`.
 
 Claim to subject mapping::
 If you do not define claim-to-subject mapping, the following default rules apply:
@@ -107,13 +108,15 @@ If you do not define claim-to-subject mapping, the following default rules apply
 - The subject (`sub`) claim is used as the principal name and unique security name of the user.
 - The issuer (`iss`) claim is the default realm and used as the subject realm. If a `realmName` claim is included in the JWT, the `realmName` claim is used as the subject realm instead of the `iss` claim.
 +
-You can define how to map JWT claims to the subject the Open Liberty creates by specifying the following `openidConnectClient` element attributes.
+You can customize how JWT claims are mapped to the subject that Open Liberty creates by specifying the following `openidConnectClient` element attributes.
 
 - `userIdentifier`
 - `userUniqueIdentifier`
 - `groupIdentifier`
 - `realmName`
 - `realmIdentifier`
++
+You can specify an alternative claim as the value for any of these attributes. For example, to use the `name` claim for the principal name instead of the `sub` claim, you can specify `userIdentifier="name"`. For more information about these attributes, see config:openidConnectClient[].
 +
 If both the `realmName` and `realmIdentifier` attributes are configured, the `realmName` value takes precedence and the `realmIdentifier` value is ignored.
 +
@@ -125,12 +128,16 @@ To define a list of trusted audiences, configure the `audiences` attribute on th
 A valid JWT must satisfy one of the following conditions:
 
 - If the audiences attribute is configured, the `aud` claim value in the JWT must be one of the configured audiences. To ignore the audience check, set the `audiences` attribute to `ALL_AUDIENCES`.
-- If the `audiences` attribute is not configured, but the JWT contains an `aud` claim that is a valid URL, the resources service URL must include the `aud` value as a prefix.
+- If the `audiences` attribute is not configured, but the JWT contains an `aud` claim that is a valid URL, the URL for the resource that is being accessed must include the `aud` value as a prefix.
 +
 For example, the following audience is valid because the resource URL begins with the `aud` claim value from the JWT.
 
   ** Audience claim: `"aud":"https://<server>:<port>/something"`
   ** Resource service URL: `\https://<server>:<port>/something/specific`
++
+However, the following audience is not valid because the resource URL does not begin with the `aud` claim value from the JWT.
+  ** Audience claim: "aud":"https://<server>:<port>/something/specific"
+  ** Resource URL: `\https://<server>:<port>/something`
 
 [#jwe]
 === Accept tokens in JWE format
@@ -192,7 +199,7 @@ The following example shows a sample configuration to connect to Google as an OI
     issuerIdentifier="https://accounts.google.com"
     signatureAlgorithm="RS256"
     userIdentityToCreateSubject="email"
-    groupIdentifier="">
+    groupIdentifier="aud">
 </openidConnectClient>
 ----
 
@@ -241,7 +248,7 @@ For more information, see xref:ROOT:authentication-filters.adoc[Authentication f
 [#ltpa]
 === Disable LTPA cookies
 
-The Open Liberty OIDC client automatically creates an SSO token after the ID Token is processed. You can configure the server to not create an SSO by specifying the `disableLtpaCookie` attribute for the `openidConnectClient` element.
+The Open Liberty OIDC client automatically creates an SSO token after the ID Token is processed. You can configure the server not to create an SSO token by specifying the `disableLtpaCookie` attribute for the `openidConnectClient` element.
 
 [source,xml]
 ----
@@ -284,7 +291,7 @@ The resulting redirect URL format is `https://_host_name_: _ssl_port_/example/op
 [#params]
 === Pass request parameters to OpenID Connect
 
-To provide extra authorization parameters to the OP, configure `authzParameter` elements. For example, the following configuration properties pass `api_key` and `account` parameters to the authorization endpoint.
+To provide extra authorization parameters to the OP, configure config:authzParameter[] elements. For example, the following configuration properties pass `api_key` and `account` parameters to the authorization endpoint.
 
 [source,xml]
 ----
@@ -292,4 +299,4 @@ To provide extra authorization parameters to the OP, configure `authzParameter` 
 <authzParameter name="account" value="123456" />
 ----
 
-To configure parameters for the token endpoint, use the `tokenParameter` element.
+To configure parameters for the token endpoint, use the config:tokenParameter[] element.
