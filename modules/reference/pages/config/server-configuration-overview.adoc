@@ -35,38 +35,50 @@ This example `server.xml` file configures the server to do the following things:
 * The `httpPort` attribute is set to `9080`, which configures Open Liberty to listen to incoming traffic to `localhost` on port `9080`.
 * The `autoExpand` attribute is set to `true` so that WAR files are automatically expanded when they are deployed.
 
-The term _server  configuration_ can be used to refer to all of the files that make up the server  configuration or specifically to the configuration that's in the XML files.
-If it's not clear in context, the term _server XML  configuration_ might be used to refer to the configuration in the XML files.
+The term _server configuration_ can be used to refer to all of the files that make up the server configuration or specifically to the configuration that's in the XML files.
+If it's not clear in context, the term _server XML configuration_ might be used to refer to the configuration in the XML files.
 
+The following sections provide more details on configuring a server.
+
+* <<#configuration-files,Configuration files>>
+* <<#variable-substitution,Variable substitution precedence>>
+* <<#configuration-merging,Configuration merging>>
+* <<#include-processing,Include processing>>
+* <<#configuration-references,Configuration references>>
+* <<#dynamic-updates,Dynamic updates>>
+* <<#log-messages,Log messages>>
+
+
+[#configuration-files]
 == Configuration files
 The server configuration files are processed in the following order:
 
-. <<server-configuration-overview.adoc#server-env,`server.env`>> - Environment variables are specified in this file.
-. <<server-configuration-overview.adoc#jvm-options,`jvm.options`>> - JVM options are set in this file.
-. <<server-configuration-overview.adoc#bootstrap-properties,`bootstrap.properties`>> - This file influences the startup of the {projectName} server.
-. <<server-configuration-overview.adoc#server-xml,`server.xml`>> - This mandatory file specifies the server configuration and features.
+. <<#server-env,server.env>> - Environment variables are specified in this file.
+. <<#jvm-options,jvm.options>> - JVM options are set in this file.
+. <<#bootstrap-properties,bootstrap.properties>> - This file influences the startup of the {projectName} server.
+. <<#server-xml,server.xml>> - This mandatory file specifies the server configuration and features.
 
 [#server-env]
 === server.env
-The `server.env` files are optional.
-These files are read by the `bin/server` shell script and specify environment variables that are primarily used to influence the behavior of the `bin/server` script.
-`server.env` files are read from the following locations in order:
+The `server.env` files are optional. These files are read by the `bin/server` shell script and specify the environment variables that are primarily used to influence the behavior of the `bin/server` script.
+The `server.env` files are read from the following locations in order:
 
 . `${wlp.install.dir}/etc/`
 . `${wlp.user.dir}/shared/`
 . `${server.config.dir}/`
 
-If the same property is set in multiple locations, then the last value found is used.
+If the same property is set in multiple locations, then the last value that is found is used. You can also specify these environment variables in the shell environment, but the `server.env` files take precedence over those variables.
 
 The most common use of these files is to set the following environment variables:
 
-* `JAVA_HOME` - Indicates which JVM to use.
-If this is not set, the system default is used.
-* `WLP_USER_DIR` - Indicates the location of the `usr` directory that contains the server  configuration
-This can only be set in the `etc/server.env` file because the other locations are relative to the `usr` directory.
-* `WLP_OUTPUT_DIR` - Indicates where the server writes files to.
-By default, the server writes to the directory structure that the configuration is read from.
-However, in some secure profiles the server configuration needs to be read-only so the server must write files to another location.
+* `JAVA_HOME` - Indicates which JVM to use. If the JVM is not set, the system default is used.
+
+* `WLP_USER_DIR` - Indicates the location of the `usr` directory that contains the server configuration.
+Set this environment variable only in the `etc/server.env` file, because other locations are relative to the `usr` directory.
+
+* `WLP_OUTPUT_DIR` - Indicates where the server writes files.
+By default, the server writes to the directory structure from which the configuration is read.
+However, in some secure profiles, the server configuration is read-only so the server must write files to another location.
 
 The `server.env` file is in `KEY=value` format, as shown in the following example:
 
@@ -76,9 +88,69 @@ JAVA_HOME=/opt/ibm/java
 WLP_USER_DIR=/opt/wlp-usr
 ----
 
-Key values must not contain spaces.
-The values are interpreted literally so you don’t need to escape special characters, such as spaces.
-These files don't support variable substitution.
+The following restrictions apply to the `server.env` files:
+
+* Key values must not contain any spaces.
+
+* Empty lines are ignored.
+
+* Lines that start with the number sign ( # ) are ignored, except for the `# enable_variable_expansion` line, which enables variable expansion on Linux.
+
+* Ensure no white space surrounds the equal sign ( = ).
+
+* All characters are literal except when expansion variables are enabled.
+
+[#exp-var-windows]
+==== Expansion variables
+Expansion variables are environment or shell variables that are replaced by their values. You can specify expansion variables in the value definition of other variables.
+The values that these expansion variables supply can be defined as environment variables in your server configuration or shell variables in your shell environment.
+The caret sign ( ^ ) is used to escape a variable expansion character like the exclamation point (!) on Windows.
+The syntax for specifying expansion variables is operating system dependent.
+
+Variable expansion support is enabled by default on Windows. You specify expansion variables by using the Windows delayed expansion syntax: `!variable_name!`, which is replaced by the value of the variable.
+
+The following `server.env` file example shows the syntax for expansion variables on Windows.
+
+[source,properties]
+----
+IBM_DIR=!ProgramFiles!\IBM
+JAVA_HOME=!IBM_DIR!\java
+WLP_USER_DIR=!USERPROFILE!\wlp-usr
+----
+
+[#exp-var-linux]
+In version 22.0.0.1 and later, Open Liberty supports expansion variables in the `server.env` file on Linux systems. Expansion variables are prefixed by a dollar sign ( $ ) and the variable name can optionally be enclosed in curly braces ( {} ), for example, `$variable_name` or `${variable_name}`.
+
+When you enable expansion variables for Linux, single quotation marks ( ' ), double quotation marks ( " ), and backslash ( \ ) behave the same as in the shell environment. For example, placing a string in single quotation marks prevents the expansion of variables.
+Placing a string in double quotation marks does not prevent the expansion of variables, and the backslash is an escape character that removes the meaning of a special character.
+
+By default, `server.env` files do not support variable expansion on Linux. The value in each `KEY=value` pair is interpreted literally and you do not need to escape special characters, such as spaces.
+However, when you enable support for variable expansion, you must escape special characters.
+
+To enable support for variable expansion, add the following comment at the beginning of the `server.env` file.
+
+[source,properties]
+----
+# enable_variable_expansion
+----
+
+When expansion variables are enabled, you must enclose any values that contain spaces in quotation marks. You must also escape inner quotation marks.
+For example, the inner quotation mark is escaped in the following value:
+
+[source,properties]
+----
+MESSAGE1='Don\'t do that'
+----
+
+The following `server.env` file example shows the syntax for expansion variables on Linux. The values for the `WLP_USER_DIR` and `LOG_DIR` environment variables contain expansion variables.
+
+[source,properties]
+----
+# enable_variable_expansion
+JAVA_HOME=/opt/ibm/java
+WLP_USER_DIR=/home/${USER}/wlp-usr
+LOG_DIR=${WLP_USER_DIR}/logs
+----
 
 [#jvm-options]
 === jvm.options
@@ -263,6 +335,7 @@ The default is `${wlp.user.dir}/servers/${wlp.server.name}`.
 * `server.output.dir` - the directory where the server writes the workarea, logs, and other runtime-generated files.
 The default is `${server.config.dir}`.
 
+[#configuration-merging]
 == Configuration merging
 Since the configuration can consist of multiple files, it is possible that two files provide the same configuration.
 In these situations, the server configuration is merged according to a set of simple rules.
@@ -270,6 +343,7 @@ In {projectName}, configuration is separated into singleton and factory configur
 Singleton configuration is used to configure a single element (for example, logging).
 Factory configuration is used to configure multiple entities, such as an entire application or data source.
 
+[#merging-singleton-configuration]
 === Merging singleton configuration
 For singleton configuration elements that are specified more than once, the configuration is merged.
 If two elements exist with different attributes, both attributes are used.
@@ -342,6 +416,7 @@ is treated as:
 </server>
 ----
 
+[#merging-factory-configuration]
 === Merging factory configuration
 Factory configuration merges use the same rules as singleton configuration except elements are not automatically merged just because the element names match.
 With factory  configuration it is valid to configure the same element and mean two different logical objects.
@@ -361,6 +436,7 @@ The first application is `myapp.war`, which has a context root of `myawesomeapp`
 </server>
 ----
 
+[#include-processing]
 == Include processing
 In addition to the default locations, additional configuration files can be brought in by using the `include` element.
 When a server configuration file contains an include reference to another file, the server processes the contents of the referenced file as if they were included inline in place of the `include` element.
@@ -398,6 +474,7 @@ You can set the value of the `onConflict` attribute to `IGNORE` or `REPLACE` any
 
 You can set the `location` attribute to a relative or absolute file path, or to an HTTP URL.
 
+[#configuration-references]
 == Configuration references
 Most configuration in {projectName} is self-contained, but it is often useful to share configuration.
 For example, the JDBC driver configuration might be shared by multiple data sources.
@@ -414,6 +491,7 @@ The configuration element that makes the reference uses an attribute that always
 </server>
 ----
 
+[#dynamic-updates]
 == Dynamic updates
 The server monitors the server XML configuration for updates and dynamically reloads when changes are detected.
 Changes to non-XML files (`server.env`, `bootstrap.properties`, and `jvm.options`) are not dynamic because they are only read at startup.
@@ -432,6 +510,7 @@ To disable file system polling and reload only when an MBean is notified, specif
 <config updateTrigger="mbean" />
 ----
 
+[#log-messages]
 == Log messages
 When the server runs, it might output log messages that reference configuration.
 The references in the log use an XPath-like structure to specify configuration elements.
