@@ -1,0 +1,119 @@
+// Copyright (c) 2022 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description:
+:seo-description:
+:page-layout: general-reference
+:page-type: general
+= MicroProfile GraphQL
+
+MicroProfile GraphQl is an API for building services that exercise fine-grained control over the data that they request and receive. It provides a code-first approach to development that is an alternative to, though not necessarily a replacement for, REST architecture.
+
+== What is GraphQL?
+
+GraphQL is an open-source data query and manipulation language for APIs and a runtime that fulfills queries with existing data. It uses a schema to define operations that are called resolvers, which can be either a query type or a  mutation type. Queries are read-only and fetch data. Mutations can create, delete, or modify data. The GraphQL schema describes all the data types and operations that are used in a GraphQL service. You can also document your service by adding names and text descriptions to the various object types and operations in the schema.
+
+You can use a GraphQL service to obtain data from multiple sources such as APIs, databases, and other services. The GraphQL service can then collate this data into a single object, which simplifies the data retrieval. You make only a single request to the GraphQL service, instead of multiple requests to the individual data sources. GraphQL services require less data fetching than REST services, which results in lower application load times and lower data transfer costs. GraphQL also enables clients to better customize requests to the server.
+
+Many enterprise companies use GraphQL, including Atlassian, Coursera, Facebook, GitHub, PayPal, Twitter, and many more.
+
+=== GraphQL and REST
+
+Unlike REST APIs, each HTTP request that is sent to a GraphQL service goes to a single HTTP endpoint. Create, read, update, and delete operations and their details are differentiated by the contents of the request. If the operation returns data, the user specifies the properties of the data that they want returned. For read operations, a JSON object is returned that contains only the data and properties that are specified. For other operations, a JSON object might be returned containing information such as a success message. Returning only the specified properties in a read operation reduces both the size of responses and the processing time because GraphQL calculates these properties only if they are requested. 
+
+
+=== What is GraphiQL?
+
+GraphiQL helps you make queries to a GraphQL service. In the GraphiQL UI, you need to type only the body of the query for the purposes of manual tests and examples.
+
+This web-based UI allows you to write and execute GraphQL queries and mutations in real time with advanced editing features like command completion, query history, schema introspection, etc. To enable the UI, you must first write and deploy a MicroProfile GraphQL application. Then add this line to your server.xml: <variable name="io.openliberty.enableGraphQLUI" value="true" /> You can access the UI using a web browser by accessing your GraphQL app’s context root and adding /graphql-ui. For example, suppose we use the default port (9080) and our app is named myGraphQLApp, we would access the UI at: http://localhost:9080/myGraphQLApp/graphql-u
+
+== GraphQL and Open Liberty
+
+Client API? GraphiQL?
+
+There will be a new mpGraphQL-1.0 feature that will enable users to define GraphQLendpoints using annotations similar to creating JAX-RS  resources.
+
+GraphQL applications use a schema that acts as a description of the data provided by the server and as a contract between the client and server. Most GraphQL programming models require developers to dual-maintain their schema and the application code that supports it. MicroProfile GraphQL takes a "code first" approach which allows developers to write Java code using annotations to mark GraphQL schema elements, and then the MicroProfile GraphQL implementation generates the schema at runtime.
+
+Once the application is deployed, Liberty’s MP GraphQLimplementation will scan the application and create a schema at /<context-root>/graphql/schema.graphql--it will also create a virtual servlet at /<context-root>/graphql•Clients will then be able to read the schema and invoke queries/mutations provided by the application.
+These annotations are all from the MP GraphQLAPIs, but it is also possible to use JSON-B annotations on entity types.Once the application is deployed, Liberty’s MP GraphQLimplementation will scan the application and create a schema at /<context-root>/graphql/schema.graphql--it will also create a virtual servlet at /<context-root>/graphql
+Clients will then be able to read the schema and invoke queries/mutations provided by the application.•These annotations are all from the MP GraphQLAPIs, but it is also possible to use JSON-B annotations on entity types.
+
+=== Application security and GraphQL
+
+It may be necessary to restrict access to certain queries/mutations to certain authenticated users. While it is not part of the MicroProfile GraphQL 1.0 specification (it is under consideration for a future version of the spec), Open Liberty makes authorization checks possible by using the @DenyAll, @PermitAll, and @RolesAllowed annotations. These annotations must be placed on the class or method of classes annotated with @GraphQLApi.
+
+When implementing authorization with MicroProfile GraphQL, you need to enable the appSecurity-3.0 (or appSecurity-2.0) feature in the server configuration. You also need to set up the user registry and web container metadata for authentication and authorization.
+
+=== Observability and GraphQL
+
+Metrics will be available  for GraphQLqueries/mutations•Tracks invocation  count and cumulative  time spent in method Reported  via mpMetrics-2.3 feature.
+
+If you enable the mpMetrics-2.3 feature with mpGraphQL-1.0, Open Liberty tracks the number of times a particular query or mutation method is invoked—​and the cumulative time spent in that method. These metrics can be useful for determining what data is being accessed, how often, and where time is spent in execution.
+
+Metrics collection and reporting for GraphQL applications is not mentioned in either the MicroProfile GraphQL 1.0 spec or the MicroProfile Metrics 2.3 spec, so the actual stats are collected and reported under the "vendor" category. To see these stats, you can browse to: http://localhost:9080/metrics/vendor
+
+The stats are prefixed with vendor_mp_graphql_ and should look something like this:
+
+[source,console]
+----
+# TYPE vendor_mp_graphql_Query_currentConditions_total counter
+vendor_mp_graphql_Query_currentConditions_total 27
+# TYPE vendor_mp_graphql_Query_currentConditions_elapsedTime_seconds gauge
+vendor_mp_graphql_Query_currentConditions_elapsedTime_seconds 0.10273818800000001
+# TYPE vendor_mp_graphql_Conditions_wetBulbTempF_total counter
+vendor_mp_graphql_Conditions_wetBulbTempF_total 4
+# TYPE vendor_mp_graphql_Conditions_wetBulbTempF_elapsedTime_seconds gauge
+vendor_mp_graphql_Conditions_wetBulbTempF_elapsedTime_seconds 0.031866015000000004
+# TYPE vendor_mp_graphql_Mutation_reset_total counter
+vendor_mp_graphql_Mutation_reset_total 3
+# TYPE vendor_mp_graphql_Mutation_reset_elapsedTime_seconds gauge
+vendor_mp_graphql_Mutation_reset_elapsedTime_seconds 0.007540145000000001
+----
+
+=== Getting started with MicroProfile GraphQL and Open Liberty
+
+== See also
+
+GraphQLMicroProfileGraphQLuses a “code-first” approach to developing GraphQLapplications.  This is analogous to using JAX-RS  annotations to produce a RESTful application.
+
+GraphQL is a remote data access API that addresses issues like under-fetching and over-fetching that are inherent in most RESTful applications.  It allows clients to specify the exact data they want - to "have it their way".
+
+
+
+
+=== over and under fetching
+Avengers example- overfetching- you get more than the names... also under fetching means you have to make multiple calls to get info you dont need
+=== mirgating a data model
+migrating the data model- you add a new entity, all calls will fetch it rather they want it or not, and they must be able to tolerate it
+
+It is very  easy for a sys admin to control access to these different entities (i.e. ensure nobody  outside the firewall can create a new customer, but anybody  can access widget  info). Not so with GraphQL–all operations  come through to the same URI (/{context-root}/graphql)  and can use either GET or POST interchangeably.
+
+There is always  a tradeoff.  GraphQLallows “right-size” fetching, but there is filtering that takes place  on the server side which takes more CPU cycles.  Environments where network I/O is cheap and CPU cycles are expensive  may prefer REST over GraphQL.
+
+
+
+
+
+
+get the data you want, all  the data you want, and nothing  else!
+Code-first development –write the code (similar to JAX-RS), then let Liberty create the schema!
+
+
+
+Users would like to be able to “right-size” their data interactions with remote resources. REST APIs tend to either over-fetch or under-fetch, resulting in either excess data transfer or multiple  round-trips.
+
+Users would like to be able  to add to their data model  without requiring clients to upgrade  to a new version  of the application.
+
+
+As a developer,  I want to rapidly build applications  capable  of querying  and modifying  entities  over HTTP allowing  clients to avoid  over-or under-fetching so that clients can quickly get the data they need  without wasting network bandwidth.
+
+As a developer, I want to be able to update my application’s data model with minimal  changes to existing  clients so that my application  can evolve  to meet new requirements  with no or limited  changes to existing  clients.
+
+As a developer,  I want to build applications  that can be self-documented  into a schema file with a known location  so that clients can easily  discover the available  services and data model  and invoke  them in a spec-defined manner.
