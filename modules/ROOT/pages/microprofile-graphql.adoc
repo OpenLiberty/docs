@@ -24,7 +24,13 @@ Many enterprise companies use GraphQL, including Atlassian, Coursera, Facebook, 
 
 === GraphQL and REST
 
-Unlike REST APIs, each HTTP request that is sent to a GraphQL service goes to a single HTTP endpoint. Create, read, update, and delete operations and their details are differentiated by the contents of the request. If the operation returns data, the user specifies the properties of the data that they want returned. For read operations, a JSON object is returned that contains only the data and properties that are specified. For other operations, a JSON object might be returned containing information such as a success message. Returning only the specified properties in a read operation reduces both the size of responses and the processing time because GraphQL calculates these properties only if they are requested. 
+Unlike REST APIs, each HTTP request that is sent to a GraphQL service goes to a single HTTP endpoint. Create, read, update, and delete operations and their details are differentiated by the contents of the request. If the operation returns data, you specify in the request the properties of the data that you want returned. For read operations, a JSON object is returned that contains only the data and properties that are specified. For other operations, a JSON object might be returned containing information such as a success message. Returning only the specified properties in a read operation reduces both the size of responses and the overall processing time because GraphQL calculates these properties only if they are requested.
+
+This efficiency in GraphQL services addresses issues like under-fetching and over-fetching that are inherent in most RESTful applications. For example, you might query a GrapQL service that returns the current temperature in 10 cities across the world. In a REST model, you might have to query a different endpoint for each city, an example of under-fetching that results in multiple round trips to get the data you need. Each of those endpoints might return data that you didn't ask for, such as the wind conditions or barometric pressure. These responses are an example of over-fetching, and the processing cost of filtering the extra data falls to the service that makes the request. With GraphQL, the differentiation is contained in the request so that you can query only a single endpoint and receive exactly the data that you are looking for.
+
+Another benefit of GraphQL is the ability to update your thew data model for your service with minimal impact to any existing client applications. In a RESTful application, when you add a new entity to your data model, all client calls fetch it, whether they want it or not, and they must be able to tolerate it. This limitation might require clients to upgrade whenever you change your data model. With GraphQL, you have more flexibility to update your data model because clients only receive an entity if they specifically request it. Clients can also understand these updates by looking at your GraphQL schema and decide what to fetch.
+
+Despite these advantages, GraphQL is not a replacement for REST and the benefits come with tradeoffs that might not be worthwhile in some environments. GraphQL offers relief from over and under-fetching, but requires filtering on the server side that requires more CPU cycles. Particularly, environments with robust network capability but where CPU cycles are expensive might prefer REST over GraphQL.
 
 
 === What is GraphiQL?
@@ -95,7 +101,7 @@ migrating the data model- you add a new entity, all calls will fetch it rather t
 
 It is very  easy for a sys admin to control access to these different entities (i.e. ensure nobody  outside the firewall can create a new customer, but anybody  can access widget  info). Not so with GraphQL–all operations  come through to the same URI (/{context-root}/graphql)  and can use either GET or POST interchangeably.
 
-There is always  a tradeoff.  GraphQLallows “right-size” fetching, but there is filtering that takes place  on the server side which takes more CPU cycles.  Environments where network I/O is cheap and CPU cycles are expensive  may prefer REST over GraphQL.
+
 
 
 
@@ -113,7 +119,3 @@ Users would like to be able  to add to their data model  without requiring clien
 
 
 As a developer,  I want to rapidly build applications  capable  of querying  and modifying  entities  over HTTP allowing  clients to avoid  over-or under-fetching so that clients can quickly get the data they need  without wasting network bandwidth.
-
-As a developer, I want to be able to update my application’s data model with minimal  changes to existing  clients so that my application  can evolve  to meet new requirements  with no or limited  changes to existing  clients.
-
-As a developer,  I want to build applications  that can be self-documented  into a schema file with a known location  so that clients can easily  discover the available  services and data model  and invoke  them in a spec-defined manner.
