@@ -12,6 +12,8 @@ The server creates the default keystore and certificate if you have the `default
 <keyStore id="defaultKeyStore" password="yourPassword"/>
 ----
 
+=== Default keystore and TLS certificate configurations
+
 When the `defaultKeyStore` value is specified, Open Liberty builds a TLS configuration around it with an ID attribute value of `defaultSSLConfig`.
 In this default TLS configuration, the `defaultKeyStore` file is used as both the keystore and truststore.
 
@@ -22,10 +24,10 @@ Likewise, if a `defaultKeyStore` entry exists without a password in the `server.
 If you don't want to use the generated keystore password, remove the `keystore_password` entry from the `server.env` file.
 If a default keystore file was already generated with the password from the `server.env` file, you might need to remove it.
 
-If the keystore configuration for the `defaultKeyStore` element is in place and the keystore does not exist on server startup, the server calls the `createSSLCertificate` command to create the keystore with a password that is specified in the TLS configuration.
+If the keystore configuration for the `defaultKeyStore` element is in place and the keystore does not exist on server startup, the server creates a keystore.
 
-The table below lists the default keystore element details.
- 
+The following table lists the default keystore file details.
+
 .The default keystore details
 [%header,cols=2*]
 |===
@@ -33,13 +35,13 @@ The table below lists the default keystore element details.
 |Description
 
 |Location
-|The keystore file is called `key.p12` and is in the server or clients resources/security directory.
+|The keystore file is called `key.p12` and is in the server or client `${server.config.dir}/resources/security` directory.
 
 |Keystore type
 |The keystore type is `PKCS12`.
 
 |Password
-|Password that is provided in the keystore element. If no password is provided in the keystore element, the auto generated password in the `server.env` file is used.
+|The default password is the password that is specified in the keystore element. If no password is provided in the keystore element, the keystore password in the `server.env` file is used.
 
 |===
 
@@ -49,11 +51,14 @@ The default ciphers include all ciphers that are size 128-bit and higher.
 Client authentication is not enabled by the default configuration.
 
 In this configuration, the server creates the keystore and a certificate, if no certificate exists during SSL initialization.
-The certificate is self-signed, the default certificate size is 2048, with a validity period of 365 days and a signature algorithm of `SHA256WITHRSA`.
+The certificate is self-signed, the default certificate size is 2048 kb, with a validity period of 365 days and a signature algorithm of `SHA256WITHRSA`.
 The certificate gets created with the `CN=<hostname>`,`OU=<client or server name>`,`O=ibm`,`C=US` as the `subjectDN` attribute. The hostname value is the hostname of the computer where the server is running.
 
-You can use the xref:reference:command/securityUtility-createSSLCertificate.adoc[`securityUtility createSSLCertificate`] command to create the default certificate.
-You can run the command to specify options or a default certificate and keystore are created automatically on server startup, using the password from the keystore configuration in your `server.xml` file.
+You can run the xref:reference:command/securityUtility-createSSLCertificate.adoc[securityUtility createSSLCertificate] command to create and customize the default certificate and keystore.
+
+For more information, see xref:reference:config/ssl.adoc[SSL Repertoire].
+
+=== Specify an alternate SSL configuration as default
 
 You can designate a different `ssl` element in the configuration as the default SSL configuration by specifying the `sslRef` attribute on the `sslDefault` element, as shown in the following example:
 
@@ -61,8 +66,6 @@ You can designate a different `ssl` element in the configuration as the default 
 ----
 <sslDefault sslRef="customSSLConfiguration"/>
 ----
-
-For more information, see xref:reference:config/ssl.adoc[SSL Repertoire].
 
 === Use the Java Virtual Machine (JVM) default truststore
 
