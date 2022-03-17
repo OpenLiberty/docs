@@ -15,7 +15,8 @@ The server creates a default `keystore` and certificate if you specify `defaultK
 === Default keystore and TLS certificate configurations
 
 When the `defaultKeyStore` value is specified, Open Liberty builds a TLS configuration around it with an ID attribute value of `defaultSSLConfig`.
-In this default TLS configuration, the generated keystore file is used as both the keystore and truststore.
+If the keystore does not exist on server startup, the server also creates a default keystore file.
+In the default TLS configuration, this keystore file is used as both the keystore and truststore.
 
 Open Liberty creates a keystore password when the server is created and puts it in the `${server.config.dir}/server.env` file that is in the server home directory.
 If no `keyStore` element exists to create the default keystore file, this password is used to create a keystore file.
@@ -23,8 +24,6 @@ This keystore file is then used as the default keystore file.
 Likewise, if a `defaultKeyStore` entry exists without a password in the `server.xml` file, the password from the `server.env` file is used to open the file.
 If you don't want to use the generated keystore password, remove the `keystore_password` entry from the `server.env` file.
 If a default keystore file was already generated with the password from the `server.env` file, you might need to remove it.
-
-If the keystore configuration for the `defaultKeyStore` element is in place and the keystore does not exist on server startup, the server creates a keystore.
 
 The following table lists the default keystore file details.
 
@@ -49,9 +48,10 @@ Levels TLSv1, TLSv1.1, TLSv1.2, and  TLSv1.3 are enabled, according to what the 
 The default ciphers include all ciphers that are size 128-bit and higher.
 Client authentication is not enabled by the default configuration.
 
-In this configuration, the server creates the keystore and a certificate, if no certificate exists during SSL initialization.
-The certificate is self-signed, the default certificate size is 2048 kb, with a validity period of 365 days and a signature algorithm of `SHA256WITHRSA`.
-The certificate gets created with the `CN=<hostname>`,`OU=<client or server name>`,`O=ibm`,`C=US` as the `subjectDN` attribute. The hostname value is the hostname of the computer where the server is running.
+If no certificate exists during TLS initialization, the server also creates a default certificate.
+The default certificate is self-signed, with a certificate size of 2048 kb. The validity period is 365 days and the signature algorithm is `SHA256WITHRSA`.
+The certificate is created with `CN=<hostname>`,`OU=<client or server name>`,`O=ibm`,`C=US` as the `subjectDN` attribute.
+The hostname value is the hostname of the computer where the server is running.
 
 You can also run the xref:reference:command/securityUtility-createSSLCertificate.adoc[securityUtility createSSLCertificate] command to create and customize the default certificate and keystore.
 
