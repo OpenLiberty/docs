@@ -32,6 +32,7 @@ The following sections provide more information about configuring your Open Libe
 * <<#binary,Binary logging>>
 * <<#log_formats,Log formats>>
 * <<#settings,Configuration settings by source>>
+* <<#trace,Trace specification>>
 
 [#configuaration]
 == Logging configuration
@@ -425,5 +426,88 @@ An asterisk pass:[*] acts as a wildcard to match multiple components based on a 
 |com.ibm.ws.json.access.log.fields
 |WLP_LOGGING_JSON_ACCESS_LOG_FIELDS
 |When logs are in JSON format, you can use this setting to replace the default HTTP access log JSON fields with fields that are specified by the `logFormat` attribute of the `accesLogging` element.
+
+|===
+
+[#trace]
+== Trace specification
+
+You can set logging properties in the server configuration file by adding a logging element to the server configuration file as follows:
+
+[source,sh]
+----
+<logging traceSpecification="*=audit:com.myco.mypackage.*=finest"/>
+----
+
+The format of the log detail level specification:
+[source,sh]
+----
+<component> = <level>
+----
+
+where `<component>` is the component for which to set a log detail level, and `<level>` is one of the valid logger levels like `off`, `fatal`, `severe`, `warning`, `audit`, `info`, `config`, `detail`, `fine`, `finer`, `finest` or `all`.
+Separate multiple log detail level specifications with colons `:`.
+For a given component, the level is determined by the most specific trace specification that applies to that component.
+
+Components correspond to Java packages and classes, or to collections of Java packages.
+Use an asterisk `*` as a wildcard to indicate components that include all the classes in all the packages that are contained by the specified component. For example:
+
+.Example
+[cols="6,9"]
+|===
+|`*`
+|Specifies all traceable code that is running in the application server, including the product system code and customer code.
+
+|`com.ibm.ws.*`
+|Specifies all classes with the package name beginning with com.ibm.ws.
+
+|`com.ibm.ws.classloading.AppClassLoader`
+|Specifies the AppClassLoader class only.
+
+|===
+
+
+The following table lists the valid levels for application servers at Open Liberty.
+
+.Valid logging levels
+[%header,cols="6,9"]
+|===
+| Logging level|Content or Significance
+
+|off
+|Logging is turned off.
+
+|fatal
+|Task cannot continue and component, application, and server cannot function.
+
+|severe
+|Task cannot continue but component, application, and server can still function. This level can also indicate an impending unrecoverable error.
+
+|warning
+|Potential error or impending error. This level can also indicate a progressive failure. For example, the potential leaking of resources.
+
+|audit
+|Significant event that affects server state or resources
+
+|info
+|General information that outlines overall task progress
+
+|config
+|Configuration change or status
+
+|detail
+|General information that details subtask progress
+
+|fine
+|Trace information - General trace + method entry, exit, and return values
+
+|finer
+|Trace information - Detailed trace
+
+|finest
+|Trace information - A more detailed trace that includes all the detail that is needed to debug problems
+
+|all
+|All events are logged. If you create custom levels, all includes those levels, and can provide a more detailed trace than finest.
 
 |===
