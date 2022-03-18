@@ -1,21 +1,49 @@
 :page-layout: general-reference
 :page-type: general
-:page-description: You can configure JAX-RS resources that run on Open Liberty to send and receive multipart/form-data payloads to and from clients.
+:page-description: You can configure Jakarta Restful Web Services resources that run on Open Liberty to send and receive multipart/form-data payloads to and from clients.
 :page-categories:
-:seo-title: Send and receive multipart/form-data parts in JAX-RS
-:seo-description: You can configure Jakarta RESTful Web Services (JAX-RS) resources that run on Open Liberty to send and receive multipart/form-data payloads to and from clients.
+:seo-title: Send and receive multipart/form-data parts in Jakarta Restful Web Services
+:seo-description: You can configure Jakarta RESTful Web Services (formerly JAX-RS) resources that run on Open Liberty to send and receive multipart/form-data payloads to and from clients.
 
-= Send and receive multipart/form-data parts in JAX-RS
+= Send and receive multipart/form-data parts in Jakarta Restful Web Services
 
-You can send different types of file data in a single HTTP request by using the `multipart/form-data` content type. Jakarta RESTful Web Services (JAX-RS) resources that run on Open Liberty can send and receive `multipart/form-data` parts to and from clients.
+You can send different types of file data in a single HTTP request by using the `multipart/form-data` content type. Jakarta RESTful Web Services (formerly JAX-RS) resources that run on Open Liberty can send and receive `multipart/form-data` parts to and from clients.
 
-The `multipart/form-data` content type is often used for form data in web applications. This content type can send multiple attachments, which are called parts, as a multipart payload in a single HTTP request. For example, a form that you use to upload a resume PDF file, a photo, and text for your name and address might send this content as `multipart/form-data` parts. JAX-RS resources can implement the `multipart/form-data` content type to receive such form data from a client. They can also use this content type to send multipart payloads back to a client in response to an HTTP request.
+The `multipart/form-data` content type is often used for form data in web applications. This content type can send multiple attachments, which are called parts, as a multipart payload in a single HTTP request. For example, a form that you use to upload a resume PDF file, a photo, and text for your name and address might send this content as `multipart/form-data` parts. Jakarta Restful Web Services resources can implement the `multipart/form-data` content type to receive such form data from a client. They can also use this content type to send multipart payloads back to a client in response to an HTTP request.
 
-You can send and receive `multipart/form-data` parts with JAX-RS resources in Open Liberty by enabling the feature:restfulWS[display=Jakarta RESTful Services] feature and implementing the necessary code in your JAX-RS resource methods.
+== Prerequisites for sending and receiving multipart/form-data parts with Open Liberty
 
-== Send multipart/form-data parts from JAX-RS resources
+You can send and receive `multipart/form-data` parts with Jakarta Restful Web Services resources by enabling the feature:restfulWS[display=Jakarta RESTful Web Services] feature and implementing the necessary code in your resource methods. However, you must also add a dependency to your Maven or Gradle project to make the required library available to your applications.
 
-One way to send multipart form data in an HTTP request is to use an HTML form. You might create an HTML form for a human user to send file data to a web application. The following example shows an HTML form that sends an HTTP request in three parts that each specifies a particular content type:
+If you use Maven to build your applications, add the following dependency to your `pom.xml` file.
+
+[source,xml]
+----
+<dependency>
+  <groupId>io.openliberty.api</groupId>
+  <artifactId>io.openliberty.jaxrs30</artifactId>
+  <version>1.0</version>
+  <scope>provided</scope>
+</dependency>
+----
+
+If you use Gradle, add the following dependency to your `build.gradle` file.
+
+[source,groovy]
+----
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+           providedCompile 'io.openliberty.api:io.openliberty.jaxrs30:1.0'
+    }
+}
+----
+
+== Send multipart/form-data parts from Jakarta Restful Web Services resources
+
+One way to send multipart form data in an HTTP request is to use an HTML form. You might create an HTML form for a human user to send file data to a web application. The following example shows an HTML form that sends an HTTP request in three parts that each specifies a particular content type.
 
 [source,HTML]
 ----
@@ -31,11 +59,15 @@ One way to send multipart form data in an HTTP request is to use an HTML form. Y
 ----
 In this example, the `type` attribute in the `input` element specifies the content type for each part of the HTTP request.
 
-However, if you want to automate the transfer of form data, you can write a JAX-RS client that sends a multipart payload. For example, you might create a microservice that automatically submits a purchase order when it receives a certain low inventory event.
-To send a multipart payload, you must send a list of `IAttachment` objects. Each `IAttachment` object in that list represents a single part in the multipart payload. In the following example, a JAX-RS client sends a `POST` request to a remote service. The request has three parts: an XML file, an ID string for the file, and a text description of the file.
+However, if you want to automate the transfer of form data, you can write a Jakarta Restful Web Services client that sends a multipart payload. For example, you might create a microservice that automatically submits a purchase order when it receives a certain low inventory event.
+To send a multipart payload, you must send a list of `IAttachment` objects. Each `IAttachment` object in that list represents a single part in the multipart payload. In the following example, a Jakarta Restful Web Services client sends a `POST` request to a remote service. The request has three parts: an XML file, an ID string for the file, and a text description of the file.
 
 [source,java]
 ----
+import com.ibm.websphere.jaxrs20.multipart.AttachmentBuilder;
+import com.ibm.websphere.jaxrs20.multipart.IAttachment;
+...
+
 List<IAttachment> attachments = new ArrayList<>();
 
 attachments.add(AttachmentBuilder.newBuilder("fileid")
@@ -67,12 +99,15 @@ In this example, the `IAttachment` list contains `attachments` objects for the X
 
 Normally, you must close an `InputStream` object by calling the `InputStream close()` method. However, if you are sending multipart payloads in Open Liberty, do not close the `InputStream` object. Open Liberty closes it for you after the data is sent. The server throws an `IOException` error if the stream is closed beforehand.
 
-== Receive multipart/form-data parts with JAX-RS resources
+== Receive multipart/form-data parts with Jakarta Restful Web Services resources
 
-To receive a multipart payload, a JAX-RS resource must implement a method to receive the `multipart/form-data` parts of an HTTP request, as shown in the following example:
+To receive a multipart payload, a Jakarta Restful Web Services resource must implement a method to receive the `multipart/form-data` parts of an HTTP request, as shown in the following example.
 
 [source,java]
 ----
+import com.ibm.websphere.jaxrs20.multipart.IAttachment;
+...
+
 @POST
 @Consumes("multipart/form-data")
 public Response postFormData(List <IAttachment> attachments) throws IOException{
