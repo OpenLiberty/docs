@@ -1,6 +1,6 @@
 :page-layout: general-reference
 :page-type: general
-= Tuning open liberty
+= Performance tuning Open Liberty
 
 Open Liberty supports different attributes in the `server.xml` file to influence application performance.
 You can tune these parameters and attributes of Open Liberty to achieve better performance.
@@ -30,51 +30,35 @@ Setting the minimum heap size and maximum heap size to the same value can provid
 == Tune transport channel services
 The transport channel services manage client connections, I/O processing for HTTP, thread pools, and connection pools.
 For applications on Open Liberty, the following attributes are available for different elements that can be used to improve runtime performance, scalability, or both.
-
+In the following table, the The examples shows you how to code these options in the `server.xml` file:
 
 .Logging configuration settings
-[%header,cols="6,9,9,9"]
+[cols="d,d,l,d", options="header"]
 |===
-| Server configuration|Attribute|Example|Description
+| Server configuration | Attribute | Example | Description
 
-|xref:httpOptions.adoc[httpOptions]
+|config:httpOptions[]
 |maxKeepAliveRequests
-|The following example shows you how to code this option in the `server.xml` file:
-[source,sh]
-----
-<httpOptions maxKeepAliveRequests="-1" />
-----
+|<httpOptions maxKeepAliveRequests="-1" />
 |This option specifies the maximum number of persistent requests that are allowed on a single HTTP connection if persistent connections are enabled.
 A value of -1 means unlimited. This option supports low latency or high throughput applications, and SSL connections for use in situations where building up a new connection can be costly.
 
-|xref:connectionManager.adoc[connectionManager]
+|config:connectionManager[]
 |maxPoolSize
-|The following example shows you how to code this option in the `server.xml` file:
-[source,sh]
-----
-<connectionManager ... maxPoolSize="40" />
-----
+|<connectionManager ... maxPoolSize="40" />
 |This option specifies the maximum number of physical connections for the connection pool.
 The default value is 50. The optimal setting here depends on the application characteristics.
 For an application in which every thread obtains a connection to the database, you might start with a 1:1 mapping to the coreThreads attribute.
 
-|xref:connectionManager.adoc[connectionManager]
+|config:connectionManager[]
 |purgePolicy
-|The following example shows you how to code this option in the `server.xml` file:
-[source,sh]
-----
-<connectionManager ... purgePolicy="FailingConnectionOnly" />
-----
+|<connectionManager ... purgePolicy="FailingConnectionOnly" />
 |This option specifies which connections to destroy when a stale connection is detected in a pool.
 The default value is the entire pool. It might be better to purge only the failing connection.
 
-|xref:connectionManager.adoc[connectionManager]
+|config:connectionManager[]
 |numConnectionsPerThreadLocal
-|The following example shows you how to code this option in the `server.xml` file:
-[source,sh]
-----
-<connectionManager ... numConnectionsPerThreadLocal="1" />
-----
+|<connectionManager ... numConnectionsPerThreadLocal="1" />
 |This option specifies the number of database connections to cache for each executor thread.
 This setting can provide a major improvement on large multi-core machines by reserving the specified number of database connections for each thread.
 Using thread local storage for connections can increase performance for applications on multi-threaded systems.
@@ -84,23 +68,15 @@ When you use `numConnectionsPerThreadLocal`, consider two other values:
 * The connection pool maximum connections
 For best performance, if you have **n** applications threads, you must set the maximum pool connections to at least **n** times the value of the `numConnectionsPerThreadLocal` attribute and you must use the same credentials for all connection requests.
 
-|xref:dataSource.adoc[dataSource]
+|config:dataSource[]
 |statementCacheSize
-|The following example shows you how to code this option in the `server.xml` file:
-[source,sh]
-----
-<dataSource ... statementCacheSize="60" >
-----
+|<dataSource ... statementCacheSize="60" >
 |This option specifies the maximum number of cached prepared statements per connection. To set this option, complete the following prerequisite:
 * Review the application code (or an SQL trace that you gather from the database or database driver) for all unique prepared statements.
 * Ensure that the cache size is larger than the number of statements.
 
-|xref:dataSource.adoc[dataSource]
+|config:dataSource[]
 |isolationLevel
-|The following example shows you how to code this option in the `server.xml` file:
-[source,sh]
-----
-<dataSource ... isolationLevel="TRANSACTION_READ_COMMITTED">
-----
+|<dataSource ... isolationLevel="TRANSACTION_READ_COMMITTED">
 |The data source isolation level specifies the degree of data integrity and concurrency, which in turns controls the level of database locking.
-Different options are available for the default transaction isolation level. For more information, see see xref:dataSource.adoc[dataSource].
+Different options are available for the default transaction isolation level. For more information, see see config:dataSource[dataSource].
