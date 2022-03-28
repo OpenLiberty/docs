@@ -9,8 +9,11 @@ The following sections provide more information about tuning parameters and attr
 
 * <<#jvm, Tune the JVM>>
 * <<#transport_channel, Tune transport channel services>>
-* <<#default_executor, Tune the default executor>>
-* <<#startup_time, Tune the startup time>>
+* <<#tune_defaultexecutor, Tune the default executor>>
+* <<#decrease_responsetime, Decrease response time of servlets>>
+* <<#idle_cpu, Reduce idle server CPU time>>
+* <<#startup_time, Tuning startup time>>
+
 
 [#jvm]
 == Tune the JVM
@@ -82,6 +85,52 @@ For best performance, if you have **n** applications threads, you must set the m
 Different options are available for the default transaction isolation level. For more information, see see config:dataSource[dataSource].
 
 |===
+
+[#tune_defaultexecutor]
+== Tune the default executor
+
+The Open Liberty default executor is self-tuning and adapts to the current workload by dynamically adding or removing threads.
+For most workloads, the executor does not require any tuning, and you are advised not to change any settings of the executor unless you encounter specific problems with thread creation.
+
+For more information, see see href:thread-pool-tuning.adoc[Thread pool tuning].
+
+
+[#decrease_responsetime]
+== Decrease response time of servlets
+
+To decrease response time of servlets, add the following attribute to the `server.xml` file:
+
+[source,sh]
+----
+<webContainer skipMetaInfResourcesProcessing="true"/>
+----
+
+
+[#idle_cpu]
+== Reduce idle server CPU time
+
+To reduce idle server CPU time, add the following attributes to the `server.xml` file:
+
+[source,sh]
+----
+<applicationMonitor dropinsEnabled="false" updateTrigger="disabled"/>
+<config updateTrigger="disabled"/>
+----
+
+When the attributes are added, your server no longer monitors for configuration or application updates.
+
+The `updateTrigger` attribute can also be set to the value of mbean for both the `applicationMonitor` element and the `config` element.
+This setting allows applications and configurations to be updated by an `MBean` method.
+However, some amount of CPU time is used.
+To reduce the amount of CPU time used, you can set the `pollingRate` attribute of the `applicationMonitor` element and the `monitorInterval` attribute of the `config` element to large values.
+
+The following example shows how to reduce the amount of CPU time that is used when you set the `updateTrigger` attribute to the value of mbean:
+
+[source,sh]
+----
+<applicationMonitor updateTrigger="mbean" pollingRate="60s"/>
+<config updateTrigger="mbean" monitorInterval="60s"/>
+----
 
 
 [#startup_time]
