@@ -1,0 +1,128 @@
+// Copyright (c) 2020 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:seo-description:
+:page-layout: general-reference
+:page-type: general
+:seo-title: Configuring a custom user registry - OpenLiberty.io
+= Configuring a custom user registry with the BELLS feature
+
+The BELLS feature provides a method of implementing a custom user registry in Open Liberty. With the BELLS feature, you can configure a custom user registry quickly when a custom user registry JAR file is available.
+
+The following steps create an application that is used to verify that the user registry is configured by logging on to the application with login credentials that are defined in the sample custom user registry. The WebSphere Developer Tools (WDT) for Eclipse are used to update the `META-INF` file in the custom user registry JAR file.
+
+=== Download sample files for the custom user registry
+1. Download the `CustomUserRegistrySample.jar` file from the link:https://developer.ibm.com/wasdev/downloads/#asset/samples-Custom_User_Registry[sample custom user registry].
+2. Extract custom user registry files from the `CustomUserRegistrySample.jar` file. +
+The `com/ibm/ws/samples/cur/FileRegistrySample.java` sample custom user registry source file is extracted along with the `users.props` configuration file for users and the `groups.props` configuration file for groups. +
+These files are used to help create the Open Liberty test server.
+
+=== Create a new Open Liberty test server
+
+1. In the server view of Eclipse, right-click, then click **New > Server** and click **Open Liberty**.
+2. Install an Open Liberty server or specify the existing server location.
+3. Install the BELLS feature. +
+You can run the following command from the `bin` directory of the Open Liberty installation:
++
+----
+wlpbininstallUtility install bells-1.0
+----
++
+You must agree to the **Additional Features Terms & Conditions** to finish the installation.
+4. Place the `user.props` and `groups.props` files in the `resources/security` folder of the server. +
+The file paths are used to update the source code.
+5. Download the `basicauth.war` link:https://github.com/WASdev/sample.servlet.basicauth/releases[test application] and place it in the `dropins` directory.
++
+----
+wlp/usr/servers/bells/dropins/basicauth.war
+----
++
+The server is now ready to install the Custom User Registry JAR file.
+
+=== Create a custom user registry JAR file that works with the BELLS feature
+
+. Create a project in Eclipse.
+... Click **File > New > Other**.
+... Under **Java EE**, click **Application Client Project**, then click **Next**.
+... Name the project CUR_SAMPLE and clear the **Add project to an EAR** check box, then click **Finish**.
+. Open the Package Explorer view
+... Locate the **appclientModule** folder in the **CUR_SAMPLE** project that you just created. Right-click the folder and add a new package that is named `com.ibm.ws.samples.bells.cur`. 
+. Add the `FileRegistrySample.java` file to the package and update the package name within the file to `com.ibm.ws.sample.bells.cur` to match the package name.
+... If there are compilation errors because of a build path error, click on **Project** in the tool bar.
+... Click **Properties**.
+... In **Java Build Path**, click the **Libraries** tab.
+... Add the `wlp/lib/*jars` path.
+... Add the `FileRegistrySample.java` file to the package and update the package name within the file to `package com.ibm.ws.samples.bells.cur`.
+. In the **META-INF** folder, create a sub-folder called `services`.
+... In the sub-folder, create a file called `com.ibm.websphere.security.UserRegistry.` +
+`com.ibm.websphere.security.UserRegistry` is the interface that the custom user registry implements.
+. Open the `com.ibm.websphere.security.UserRegistry` file in a text editor.
+... Add the following line:
++
+----
+ com.ibm.ws.samples.bells.cur.FileRegistrySample
+----
+The `com.ibm.websphere.security.UserRegistry` file is a configuration file and registers the `FileRegistrySample.java` service provider. +
+`com.ibm.websphere.security.UserRegistry` is the fully-qualified interface class name and `com.ibm.ws.samples.bells.cur.FileRegistrySample.java` is the implementation class. Because the BELLS feature follows a Java service loader pattern, this configuration registers the service provider, which is the custom user registry.
+. Update the source code to include the correct `user.props` and `groups.props` file paths.
++
+----
+public class FileRegistrySample implements UserRegistry {
+
+   //private static String USERFILENAME = null;
+   //private static String GROUPFILENAME = null;
+
+private static String USERFILENAME="C:/LibertyRuntime/javaee7-16.0.0.2.wlp/usr/servers/bells/resource/security/users.props";
+
+private static String GROUPFILENAME="C:/LibertyRuntime/javaee7-16.0.0.2.wlp/usr/servers/bells/resource/security/groups.props";
+----
+. Update the realm name that the application receives from the Basic Auth prompt.
++
+----
+public String getRealm()
+      throws CustomRegistryException {
+      //String name = "customRealm";
+     String name = "defaultRealm";
+      return name;   }
+----
+. Export the application as a JAR file into the `resources/sharedlib` directory of the server.
+... Right-click the project.
+... Click **Export > App Client Jar file**.
+
+=== Configure the server.xml file with the BELLS feature and shared library
+1. Add the BELLS feature to the `server.xml` file.
++
+----
+<feature>bells-1.0</feature>
+----
+2. Add the shared library.
++
+----
+<library id="bellsCurLib" name="bellsCurLib">
+        <file name="${server.config.dir}/resources/sharedLib/bellsCur.jar"></file>
+</library>
+<bell libraryRef="bellsCurLib"></bell>
+----
+
+=== Test that the BELLS feature implements the custom user registry
+1. From the command prompt, navigate to the `bin` directory to start the server.
++
+----
+server run bells
+----
++
+The following message confirms that the application is ready:
++
+----
+[AUDIT   ] CWWKT0016I: Web application available (default_host): http://localhost:9080/basicauth/
+----
+2. Open the `http://localhost:9080/basicauth` application link.
+... Click the servlet link.
+... Log in the with credentials `user1` as the user name and `user1pwd` as the password. +
+These credentials are the details that are defined in the `user.props` file that is referenced by the custom user registry in the `FileRegistrySample.java` file. If the authentication is successful, the server configuration properties are displayed in the browser.
+This display means that the BELLS feature implementation is properly working. The sample application shows that `user1` has logged in successfully.

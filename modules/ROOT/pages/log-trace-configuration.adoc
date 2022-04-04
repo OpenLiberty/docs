@@ -32,6 +32,7 @@ The following sections provide more information about configuring your Open Libe
 * <<#binary,Binary logging>>
 * <<#log_formats,Log formats>>
 * <<#settings,Configuration settings by source>>
+* <<#log_details,Trace log detail levels>>
 
 [#configuaration]
 == Logging configuration
@@ -219,8 +220,6 @@ LogRecordContext.removeExtension(extensionName);
 ----
 
 After you remove an extension, JSON output for subsequent logs and trace that are made on the same thread do not include that field.
-
-
 
 [#http]
 === Selectable HTTP access log JSON fields
@@ -416,6 +415,8 @@ An asterisk pass:[*] acts as a wildcard to match multiple components based on a 
 
 - `com.ibm.ws.classloading.AppClassLoader` Specifies the AppClassLoader class only.
 
+For more information on logging levels, see <<#logging_levels,Valid log detail levels for the trace log>>.
+
 |appsWriteJson
 |com.ibm.ws.logging.apps.write.json
 |WLP_LOGGING_APPS_WRITE_JSON
@@ -426,4 +427,67 @@ An asterisk pass:[*] acts as a wildcard to match multiple components based on a 
 |WLP_LOGGING_JSON_ACCESS_LOG_FIELDS
 |When logs are in JSON format, you can use this setting to replace the default HTTP access log JSON fields with fields that are specified by the `logFormat` attribute of the `accesLogging` element.
 
+|===
+
+[#log_details]
+== Trace log detail levels
+
+You can specify the `traceSpecification` attribute for the logging element in your `server.xml` file to selectively enable trace and set the trace log detail level for specific components in your server configuration.
+The following example specifies the `audit` detail level for all code that is running on the server and the `finest` detail level for an example package.
+
+[source,sh]
+----
+<logging traceSpecification="*=audit:com.myco.mypackage.*=finest"/>
+----
+
+In this example, the two detail level specifications are separated by a colon (`:`).
+The wildcard value `pass:[*]=audit` applies to all traceable code that is running on the server.
+The `com.myco.mypackage.pass:[*]=finest` value applies to all classes with the package name that begins with `com.myco.mypackage.`.
+
+The following table lists the valid log detail levels that you can specify in the `traceSpecification` attribute.
+You can specify an empty value for any component to disable all trace for that component.
+Any component that is not specified is initialized to a default state of `pass:[*]=info`.
+
+
+[#logging_levels]
+.Valid log detail levels for the trace log
+[%header,cols="6,9"]
+|===
+| Logging level|Content or Significance
+
+|off
+|Logging is turned off.
+
+|fatal
+|Task cannot continue and component, application, and server cannot function.
+
+|severe
+|Task cannot continue but component, application, and server can still function. This level can also indicate an impending unrecoverable error.
+
+|warning
+|Potential error or impending error. This level can also indicate a progressive failure. For example, the potential leaking of resources.
+
+|audit
+|Significant event that affects server state or resources
+
+|info
+|General information that outlines overall task progress
+
+|config
+|Configuration change or status
+
+|detail
+|General information that details subtask progress
+
+|fine
+|General trace that includes method entry, exit, and return values
+
+|finer
+|Detailed trace
+
+|finest
+|A more detailed trace that includes all the detail that is needed to debug problems
+
+|all
+|All events are logged. If you create custom levels, `all` includes those levels, and can provide a more detailed trace than finest.
 |===
