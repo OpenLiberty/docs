@@ -7,6 +7,16 @@
 - <<#object,Specify custom LDAP object classes>>
 - <<#federate,Federate LDAP user registries>>
 - <<#krb5,Configure Kerberos authentication for LDAP servers>>
+- <<#Certfilter,Configure certificate filter mode for the LDAP server>>
+- <<#mapldapattributes,Define mapping between LDAP attributes and the user registry schema attributes>>
+- <<#mapldapuserreg,Define mapping between LDAP attributes and the user registry `externalId` attribute>>
+- <<#configurefailover,Configure failover for multiple LDAP servers>>
+- <<#configuresslconfiguration,Configure SSL configuration to connect to the LDAP server>>
+
+
+[#configurefailover]
+=== Configure failover for multiple LDAP servers
+
 
 [#simple]
 === Configure an LDAP user registry
@@ -15,7 +25,7 @@ To configure an LDAP user registry, you must specify the base distinguished name
 Most LDAP servers require bind credentials to authenticate a client to the server.
 
 To bind with simple authentication, the bind distinguished name and password are specified in the `ldapRegistry` element.
-The following example shows a simple configuration that uses the IBM Tivoli Directory Server as an LDAP user registry:
+The following example shows a simple configuration that uses the IBM Tivoli Directory Server as an LDAP user registry.
 
 [source,xml]
 ----
@@ -26,7 +36,12 @@ The following example shows a simple configuration that uses the IBM Tivoli Dire
 
 ----
 
-For information on troubleshooting LDAP, see xref:Root:troubleshooting.adoc#Troubleshooting_LDAP
+you can use the xref:reference:command/securityUtility-encode.adoc[securityUtility encode] command to encode the `bindPassword` password for you.
+When you run the `securityUtility encode` command, you either supply the password to encode as an input from the command line or, if no arguments are specified, the tool prompts you for the password.
+The tool then outputs the encoded value.
+Copy this encoded value output by the tool, and use this value for the `bindPassword` password.
+
+For more information on troubleshooting LDAP, see xref:ROOT:pages/troubleshooting.adoc#Troubleshooting_LDAP[Troubleshooting LDAP].
 
 [#filters]
 === Customize search filters
@@ -35,7 +50,7 @@ You can customize the group and user filters to include custom classes or attrib
 The configuration for specifying filters varies depending on the LDAP type you specify. Each LDAP type has a different set of filter properties.
 For more information about the LDAP type, see xref:reference:feature/ldapRegistry-3.0.adoc#_feature_configuration_elements[Feature configuration elements].
 Use the `%v` variable for attribute value assertions that you want to replace at run time with a particular login name or group name.
-The following example shows custom and group filters that are specified for the IBM Tivoli Directory Server LDAP type:
+The following example shows custom and group filters that are specified for the IBM Tivoli Directory Server LDAP type.
 
 [source,xml]
 ----
@@ -69,8 +84,8 @@ For more information about TLS and SSL configurations, see xref:reference:config
 </ldapRegistry>
 
 <ssl id="LDAPSSLSettings" keyStoreRef="LDAPKeyStore" trustStoreRef="LDAPTrustStore" />
-<keyStore id="LDAPKeyStore" location="server1/resources/security/key.jks" type="JKS" password="password" />
-<keyStore id="LDAPTrustStore" location="server1/resources/security/trust.jks" type="JKS" password="password" />
+<keyStore id="LDAPKeyStore" location="server1/resources/security/key.p12" type="PKCS12" password="password" />
+<keyStore id="LDAPTrustStore" location="server1/resources/security/trust.p12" type="PKCS12" password="password" />
 ----
 
 [#object]
@@ -81,7 +96,7 @@ An entity type groups different object classes as a single entity so that the se
 You can also customize the search base for any entity type to improve search times for the classes it contains.
 If you create custom object classes for users or groups, update your group and user filters to include the new classes.
 
-The following example shows entity types for users and groups, with custom search bases:
+The following example shows entity types for users and groups, with custom search bases.
 
 [source,xml]
 ----
@@ -92,12 +107,12 @@ The following example shows entity types for users and groups, with custom searc
 		<ldapEntityType name="PersonAccount">
 			<objectClass>inetorgperson</objectClass>
 			<objectClass>customuser</objectClass>
-			<searchBase>ou=users,o=acme.com</searchBase>
+			<searchBase>ou=users,o=acme.com,c=us</searchBase>
 		</ldapEntityType>
 		<ldapEntityType name="Group">
 			<objectClass>groupofnames</objectClass>
 			<objectClass>customgroup</objectClass>
-			<searchBase>ou=groups,o=acme.com</searchBase>
+			<searchBase>ou=groups,o=acme.com,c=us</searchBase>
 		</ldapEntityType>
 		<idsFilters
 			groupFilter="(&amp;(cn=%v)(|(objectclass=groupofnames)(objectclass=customgroup)))"
@@ -108,6 +123,21 @@ The following example shows entity types for users and groups, with custom searc
 
 The user and group filters include the custom object classes. Although this example shows the configuration for the IBM Tivoli Directory Server LDAP type, all LDAP types support the `userFilter` and `groupFilter` attributes.
 
+If the correct `ObjectClass` or `ObjectCategory` are not defined, a `ClassCastException` can occur.
+Examples of `ObjectClass` include `inetOrgPerson` or `groupOfNames`.
+In other cases, the user is not found or a request to `getSecurityName` returns an empty string.
+
+For example, `java.lang.ClassCastException: com.ibm.wsspi.security.wim.model.Entity` is not compatible with `com.ibm.wsspi.security.wim.model.LoginAccount`.
+
+A search base specifies the sub tree of the LDAP server for the search call of the given entity type, which overrides the base DN in search operations.
+For example, if the base DN is `o=acme.com`,`c=us` and the search base for the `PersonAccount` entity type is defined as `ou=users`,`o=acme.com`,`c=us`, then all search calls for `PersonAccount` are made under sub tree `ou=iUsers`,`o=ibm`,`c=us`.
+
+You can define a group `ldapEntityType` searchBase as `ou=groups`,`o=acme.com`,`c=us`.
+With this definition, entities in other sub trees, such as `ou=iThings`,`o=ibm`,`c=us`, are ignored.
+
+Multiple search bases should be used instead of creating multiple LDAP registries for the same LDAP server with different baseDNs.
+
+
 [#federate]
 === Federate LDAP user registries
 
@@ -116,40 +146,45 @@ If you configure more than one LDAP user registry in your `server.xml` file, the
 
 You can adjust the configuration when the the xref:reference:feature/federatedRegistry-1.0.adoc[Federated User Registry] feature is enabled and the `federatedRepository` element is configured. If you enable the LDAP User Registry feature version 3.0 or later, the Federated User Registry feature is enabled by default. Otherwise, you must manually enable the Federated User Registry feature and configure the `federatedRepository` element.
 
-You can also federate LDAP user registries with basic or custom user registries. The following example shows a basic user registry that is federated with an LDAP user registry, with the configuration specified in the `federatedRepository` element:
+You can also federate LDAP user registries with basic or custom user registries. The following example shows a basic user registry that is federated with an LDAP user registry, with the configuration specified in the `federatedRepository` element.
 
 [source,xml]
 ----
 <server description="Federation">
-    <featureManager>
-        <feature>appSecurity-3.0</feature>
-	      <feature>ldapRegistry-3.0</feature>
-    </featureManager>
+	 <featureManager>
+			 <feature>appSecurity-3.0</feature>
+			 <feature>ldapRegistry-3.0</feature>
+	 </featureManager>
 
-    <basicRegistry id="basic" realm="SampleBasicRealm">
-        <user name="admin" password="password" />
-        <user name="user1" password="password" />
-            <user name="user2" password="password" />
-        <group name="memberlessGroup" />
-        <group name="adminGroup">
-            <member name="admin"/>
-        </group>
-        <group name="users">
-            <member name="user1"/>
-            <member name="user2"/>
-        </group>
-    </basicRegistry>
+	 <basicRegistry id="basic" realm="SampleBasicRealm">
+			 <user name="admin" password="password" />
+			 <user name="user1" password="password" />
+					 <user name="user2" password="password" />
+			 <group name="memberlessGroup" />
+			 <group name="adminGroup">
+					 <member name="admin"/>
+			 </group>
+			 <group name="users">
+					 <member name="user1"/>
+					 <member name="user2"/>
+			 </group>
 
-    <ldapRegistry realm="LdapRealm" host="LDAPHOST1.ibm.com" port="389"
-	baseDN="o=ibm,c=us"
-	ldapType="IBM Security Directory Server"/>
+<administrator-role>
+	 <user>cn=admin,o=ibm,c=us</user>
+</administrator-role>
 
-    <federatedRepository>
-        <primaryRealm name="FederatedRealm" allowOpIfRepoDown="true">
-            <participatingBaseEntry name="o=SampleBasicRealm"/>
-            <participatingBaseEntry name="o=ibm,c=us"/>
-        </primaryRealm>
-   </federatedRepository>
+	 </basicRegistry>
+
+	 <ldapRegistry realm="LdapRealm" host="LDAPHOST1.ibm.com" port="389"
+ baseDN="o=ibm,c=us"
+ ldapType="IBM Security Directory Server"/>
+
+	 <federatedRepository>
+			 <primaryRealm name="FederatedRealm" allowOpIfRepoDown="true">
+					 <participatingBaseEntry name="o=SampleBasicRealm"/>
+					 <participatingBaseEntry name="o=ibm,c=us"/>
+			 </primaryRealm>
+	</federatedRepository>
 </server>
 ----
 
@@ -181,3 +216,126 @@ If the `krb5TicketCache` attribute is not specified, Open Liberty resolves crede
 The `krb5TicketCache` attribute can be optionally specified for any feature that uses Kerberos credentials. If specified, this attribute takes precedence over any `keytab` and `configFile` values, Java SDK defaults, or operating system defaults. You might specify this attribute to configure credentials for a specific feature that are different from the configured values in the `kerberos` element.
 
 To determine the causes of common problems and error messages that are associated with Kerberos authentication to LDAP servers, see xref:ROOT:troubleshooting-krb5-ldap.adoc[Troubleshooting Kerberos authentication to LDAP servers].
+
+[#Certfilter]
+=== Configure certificate filter mode for the LDAP server
+
+To use a specified certificate filter for the mapping, you can use the `certificateFilter` mapping mode.
+This filter is used to map attributes in the client certificate to entries in the LDAP registry.
+
+The following example shows an LDAP configuration with the certificate filter mode enabled.
+
+[source,xml]
+----
+<ldapRegistry id="LDAP" realm="SampleLdapIDSRealm"
+      host="myldap.ibm.com" port="389" ignoreCase="true"
+      baseDN="o=ibm,c=us"
+      ldapType="IBM Tivoli Directory Server" searchTimeout="8m"
+      certificateMapMode="CERTIFICATE_FILTER"
+      certificateFilter="uid=${SubjectCN}">
+      <idsFilters
+      userFilter="(&amp;(uid=%v)(objectclass=ePerson))"
+      groupFilter="(&amp;(cn=%v)(|(objectclass=groupOfNames)
+          (objectclass=groupOfUniqueNames)(objectclass=groupOfURLs)))"
+      userIdMap="*:uid"
+      groupIdMap="*:cn"
+      groupMemberIdMap="ibm-allGroups:member;ibm-allGroups:uniqueMember;
+          groupOfNames:member;groupOfUniqueNames:uniqueMember">
+</idsFilters>
+      </ldapRegistry>
+----
+For more information, see `certificateFilter` in xref:reference:config/ldapRegistry.adoc[LDAP User Registry]
+
+[#mapldapattributes]
+=== Define mapping between LDAP attributes and the user registry schema attributes
+
+After the mapping is configured, when you use the user registry attribute for any operation for which the mapping is defined, the user registry attribute value will be the value of the LDAP attribute.
+In the following example, you can see that the mapping is defined for the `userPassword` LDAP attribute with the `password` user registry property in the `server.xml` file.
+The `defaultValue` attribute is optional.
+
+[source,xml]
+----
+<ldapRegistry id="LDAP" realm="SampleLdapIDSRealm"
+      host="myldap.ibm.com" port="389" ignoreCase="true"
+      baseDN="o=ibm,c=us"
+      ldapType="IBM Tivoli Directory Server" searchTimeout="8m">
+      <attributeConfiguration>
+             <attribute name="userPassword" propertyName="password" entityType="PersonAccount" defaultValue="xyz123"/>
+      </attributeConfiguration>
+</ldapRegistry>
+----
+
+[#mapldapuserreg]
+=== Define mapping between LDAP attributes and the user registry `externalId` attribute
+
+You can define mapping between LDAP attributes and the `externalId` user registry attribute.
+After the mapping is configured, when you use the `externalId` user registry attribute for any operation, the value will be equivalent to the value of the LDAP attribute that is mapped.
+The following example code shows the mapping that is defined for the `externalId` user registry attribute with the `distinguishedName` LDAP attribute for the `PersonAccount` entity type.
+The `autoGenerate` attribute is optional, and the value is false by default.
+
+[source,xml]
+----
+<ldapRegistry id="LDAP" realm="SampleLdapIDSRealm"
+      host="myldap.ibm.com" port="389" ignoreCase="true"
+      baseDN="o=ibm,c=us"
+      ldapType="IBM Tivoli Directory Server" searchTimeout="8m">
+      <attributeConfiguration>
+             <externalIdAttribute name="distinguishedName" entityType="PersonAccount" autoGenerate="false"></externalIdAttribute>
+      </attributeConfiguration>
+</ldapRegistry>
+----
+
+[#configurefailover]
+=== Configure failover for multiple LDAP servers
+
+[source,xml]
+----
+<ldapRegistry id="LDAP" realm="SampleLdapIDSRealm"
+    	host="ldapserver1.mycity.mycompany.com" port="389" ignoreCase="true"
+     	baseDN="o=ibm,c=us" ldapType="IBM Tivoli Directory Server" idsFilters="ibm_dir_server">
+	<failoverServers name="failoverLdapServersGroup1">
+		<server host="ldapserver2.mycity.mycompany.com" port="389" />
+		<server host="ldapserver3.mycity.mycompany.com" port="389" />
+	</failoverServers>
+	<failoverServers name="failoverLdapServersGroup2">
+		<server host="ldapserver4.mycity.mycompany.com" port="389" />
+	</failoverServers>
+</ldapRegistry>
+
+<idsLdapFilterProperties id="ibm_dir_server"
+	    userFilter="(&amp;(uid=%v)(objectclass=ePerson))"
+	    groupFilter="(&amp;(cn=%v)(|(objectclass=groupOfNames)
+                 (objectclass=groupOfUniqueNames)(objectclass=groupOfURLs)))"
+	    userIdMap="*:uid" groupIdMap="*:cn"
+	    groupMemberIdMap="ibm-allGroups:member;ibm-allGroups:uniqueMember;
+                      groupOfNames:member;groupOfUniqueNames:uniqueMember">
+</idsLdapFilterProperties>
+----
+For more information, see `failoverServers` in xref:reference:config/ldapRegistry.adoc[LDAP User Registry]
+
+
+[#configuresslconfiguration]
+=== Configure SSL configuration to connect to the LDAP server
+
+The SSL configuration that is used to connect to the LDAP server can be determined in the SSL configuration rather than by being specified with the `sslRef` attribute.
+The `sslEnabled` attribute needs to be set to true.
+If  `sslRef` attribute is not specified the SSL code looks to see if an outbound filter that matches the LDAP host and port, or if the SSL outbound default should be used.
+
+[source,xml]
+----
+<ldapRegistry id="ldap" realm="SampleLdapIDSRealm"
+      host="ldapserver.mycity.mycompany.com" port="389" ignoreCase="true"
+      baseDN="o=mycompany,c=us"
+      ldapType="IBM Tivoli Directory Server"
+      sslEnabled="true" >
+      <idsFilters
+      userFilter="(&amp;(uid=%v)(objectclass=ePerson))"
+      groupFilter="(&amp;(cn=%v)(|(objectclass=groupOfNames)
+                   (objectclass=groupOfUniqueNames)(objectclass=groupOfURLs)))"
+      userIdMap="*:uid"
+      groupIdMap="*:cn"
+      groupMemberIdMap="ibm-allGroups:member;ibm-allGroups:uniqueMember;
+      groupOfNames:member;groupOfUniqueNames:uniqueMember">
+      </idsFilters>
+</ldapRegistry>
+----

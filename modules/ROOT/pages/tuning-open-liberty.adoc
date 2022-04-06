@@ -1,0 +1,147 @@
+:page-layout: general-reference
+:page-type: general
+= Performance tuning Open Liberty
+
+Open Liberty supports different attributes in the `server.xml` file to influence application performance.
+You can tune these parameters and attributes of Open Liberty to achieve better performance.
+
+The following sections provide more information about tuning parameters and attributes of Open Liberty:
+
+* <<#jvm, Tune the JVM>>
+* <<#transport_channel, Tune transport channel services>>
+* <<#tune_defaultexecutor, Tune the default executor>>
+* <<#decrease_responsetime, Decrease response time of servlets>>
+* <<#idle_cpu, Reduce idle server CPU time>>
+* <<#startup_time, Tuning startup time>>
+
+
+[#jvm]
+== Tune the JVM
+Tuning the JVM is the most important tuning step while configuring an environment.
+When you tune the JVM for Open Liberty, use the `jvm.options` file in the `${server.config.dir}` directory.
+You can specify each of the JVM arguments that you want to use, one option per line.
+
+Specify the JVM arguments, one option per line, as shown in the following example:
+[source,console]
+----
+-Xms50m
+-Xmx256m
+----
+Setting the minimum heap size and maximum heap size to the same value can provide the best performance by avoiding heap expansion and contraction.
+
+[#transport_channel]
+== Tune transport channel services
+The transport channel services manage client connections, I/O processing for HTTP, thread pools, and connection pools.
+For applications on Open Liberty, the following attributes are available for different elements that can be used to improve runtime performance, scalability, or both.
+In the following table, the The examples shows you how to code these options in the `server.xml` file:
+
+.Logging configuration settings
+[cols="d,d,l,d", options="header"]
+|===
+| Server configuration | Attribute | Example | Description
+
+|config:httpOptions[]
+|maxKeepAliveRequests
+|<httpOptions maxKeepAliveRequests="-1" />
+|This option specifies the maximum number of persistent requests that are allowed on a single HTTP connection if persistent connections are enabled.
+A value of -1 means unlimited. This option supports low latency or high throughput applications, and SSL connections for use in situations where building up a new connection can be costly.
+
+|config:connectionManager[]
+|maxPoolSize
+|<connectionManager ... maxPoolSize="40" />
+|This option specifies the maximum number of physical connections for the connection pool.
+The default value is 50. The optimal setting here depends on the application characteristics.
+For an application in which every thread obtains a connection to the database, you might start with a 1:1 mapping to the coreThreads attribute.
+
+|config:connectionManager[]
+|purgePolicy
+|<connectionManager ... purgePolicy="FailingConnectionOnly" />
+|This option specifies which connections to destroy when a stale connection is detected in a pool.
+The default value is the entire pool. It might be better to purge only the failing connection.
+
+|config:connectionManager[]
+|numConnectionsPerThreadLocal
+|<connectionManager ... numConnectionsPerThreadLocal="1" />
+|This option specifies the number of database connections to cache for each executor thread.
+This setting can provide a major improvement on large multi-core machines by reserving the specified number of database connections for each thread.
+Using thread local storage for connections can increase performance for applications on multi-threaded systems.
+When you set `numConnectionsPerThreadLocal` to 1 or more, these connections per thread are stored in thread local storage.
+When you use `numConnectionsPerThreadLocal`, consider two other values:
+* The number of application threads
+* The connection pool maximum connections
+For best performance, if you have **n** applications threads, you must set the maximum pool connections to at least **n** times the value of the `numConnectionsPerThreadLocal` attribute and you must use the same credentials for all connection requests.
+
+|config:dataSource[]
+|statementCacheSize
+|<dataSource ... statementCacheSize="60" >
+|This option specifies the maximum number of cached prepared statements per connection. To set this option, complete the following prerequisite:
+* Review the application code (or an SQL trace that you gather from the database or database driver) for all unique prepared statements.
+* Ensure that the cache size is larger than the number of statements.
+
+|config:dataSource[]
+|isolationLevel
+|<dataSource ... isolationLevel="TRANSACTION_READ_COMMITTED">
+|The data source isolation level specifies the degree of data integrity and concurrency, which in turns controls the level of database locking.
+Different options are available for the default transaction isolation level. For more information, see see config:dataSource[dataSource].
+
+|===
+
+[#tune_defaultexecutor]
+== Tune the default executor
+
+The Open Liberty default executor is self-tuning and adapts to the current workload by dynamically adding or removing threads.
+For most workloads, the executor does not require any tuning, and you are advised not to change any settings of the executor unless you encounter specific problems with thread creation.
+
+For more information, see see href:thread-pool-tuning.adoc[Thread pool tuning].
+
+
+[#decrease_responsetime]
+== Decrease response time of servlets
+
+To decrease response time of servlets, add the following attribute to the `server.xml` file:
+
+[source,sh]
+----
+<webContainer skipMetaInfResourcesProcessing="true"/>
+----
+
+
+[#idle_cpu]
+== Reduce idle server CPU time
+
+To reduce idle server CPU time, add the following attributes to the `server.xml` file:
+
+[source,sh]
+----
+<applicationMonitor dropinsEnabled="false" updateTrigger="disabled"/>
+<config updateTrigger="disabled"/>
+----
+
+When the attributes are added, your server no longer monitors for configuration or application updates.
+
+The `updateTrigger` attribute can also be set to the value of mbean for both the `applicationMonitor` element and the `config` element.
+This setting allows applications and configurations to be updated by an `MBean` method.
+However, some amount of CPU time is used.
+To reduce the amount of CPU time used, you can set the `pollingRate` attribute of the `applicationMonitor` element and the `monitorInterval` attribute of the `config` element to large values.
+
+The following example shows how to reduce the amount of CPU time that is used when you set the `updateTrigger` attribute to the value of mbean:
+
+[source,sh]
+----
+<applicationMonitor updateTrigger="mbean" pollingRate="60s"/>
+<config updateTrigger="mbean" monitorInterval="60s"/>
+----
+
+
+[#startup_time]
+== Tuning startup time
+
+By default, the Jakarta Contexts and Dependency Injection feature scans all application archives. This feature can increase startup time substantially and have the most effect on larger applications.
+Implicit archive scanning for annotations can be disabled by setting the `enableImplicitBeanArchives` value to `false`. This setting skips the scanning of archives unless they contain a `beans.xml` file.
+
+[source,sh]
+----
+<cdi12 enableImplicitBeanArchives="false"/>
+----
+
+The `Jakarta Contexts and Dependency Injection` feature might be included even if it is not in the features section of your `server.xml` file because other features, such as `microProfile-5.0` and `JakartaEE`, include the `Jakarta Contexts and Dependency Injection` feature.
