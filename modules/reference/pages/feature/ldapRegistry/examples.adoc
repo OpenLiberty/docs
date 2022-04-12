@@ -137,6 +137,19 @@ With this definition, entities in other sub trees, such as `ou=iThings`,`o=ibm`,
 
 Multiple search bases should be used instead of creating multiple LDAP registries for the same LDAP server with different baseDNs.
 
+When you use multiple federated LDAP repositories, each repository must define a unique baseDN.
+
+It is best practice, but not mandatory, to specify the `federatedRepository` element to federate multiple LDAP registries because they are federated automatically.
+If the `federatedRepository` element is specified to configure the `participatingBaseEntry` and `primaryRealm` elements, then the user registry operations are performed only on the repositories that are defined in the `primaryRealm` element.
+You can define the input and output property mappings for different user registry APIs under the `primaryRealm` element.
+
+The `name` attribute of the `participatingBaseEntry` element must be the same as the value of `baseDN` attribute that is specified in the `ldapRegistry` element.
+In the example follows, the `baseDN` and `name` attributes are configured for the LDAP registry on the host `ldapserver1.mycity1.mycompany.com`.
+The value of `baseDN` attribute must be the same as that of sub tree in your LDAP server and the value of `name` attribute must be the name of that sub tree in the federated user registry.
+It is optional to specify the `name` attribute. By default, the name attribute uses the same value as the `baseDN` attribute.
+If the `name` attribute is specified in the `ldapRegistry` element, then the name attribute in the `participatingBaseEntry` element must use the same value as the `name` attribute in the `ldapRegistry` element.
+
+
 
 [#federate]
 === Federate LDAP user registries
@@ -191,6 +204,48 @@ You can also federate LDAP user registries with basic or custom user registries.
 The participating base entry for a user registry is defined by the `participatingBaseEntry` element. The participating base entry value for a custom or basic user registry is the `o` organization attribute set to equal the realm name of that user registry. For an LDAP user registry, the realm name is the base distinguished name from the LDAP user registry configuration.
 
 To verify that a user is unique in the common user registry, every search request searches all federated user registries. By default, all federated user registries must return successfully or the request fails. To avoid failures if any user registry is unavailable, set the `allowOpIfRepoDown` attribute on the `primaryRealm` subelement to `true`, as shown in the previous example.
+
+If multiple LDAP registries are configured in the `server.xml` file, they are federated automatically.
+Ensure that the users are unique across all federated repositories, otherwise the user registry operations are not successful.
+When you use multiple federated LDAP repositories, each repository must define a unique `baseDN` attribute.
+
+The following example shows two LDAP registries that are federated using a `federatedRepository` element.
+The `name` attribute of the `participatingBaseEntry` element that is specified in the `federatedRepository` element must be the same as the value of `baseDN` attribute that is specified in the `ldapRegistry` element.
+The `baseDN` and `name` attributes are configured for the LDAP registry on the host `ldapserver1.mycity1.mycompany.com`.
+It is optional to specify the `name` attribute. By default, the `name` attribute in the `federatedRepository` element uses the same value as the `baseDN` attribute if the `name` attribute is not specified in the `ldapRegistry` element.
+If the `name` attribute is specified in the `ldapRegistry` element, then the `name` attribute in the `participatingBaseEntry` element must use the same value as the `name` attribute in the `ldapRegistry` element.
+
+[source,xml]
+----
+<ldapRegistry host="ldapserver1.mycity1.mycompany.com" baseDN="o=mycompany,ou=myou,c=us"
+    port="123" ldapType="IBM Tivoli Directory Server" name="o=mybaseentry">
+</ldapRegistry>
+
+<ldapRegistry host="ldapserver2.mycity2.mycompany.com"
+    baseDN="cn=users,dc=secfvt2,dc=mycity2,dc=mycompany,dc=com"
+    port="456"
+    ldapType="Microsoft Active Directory"
+    bindDN="cn=testuser,cn=users,dc=secfvt2,dc=mycity2,dc=mycompany,dc=com"
+    bindPassword="{xor}KzosKyosOi0vKDs=">
+</ldapRegistry>
+
+<federatedRepository>
+	 <primaryRealm name="RealmName" delimiter="@" allowOpIfRepoDown="true">
+	 	<participatingBaseEntry name="o=mybaseentry"/>
+		 <participatingBaseEntry name="cn=users,dc=secfvt2,dc=mycity2,dc=mycompany,dc=com"/>
+	 	 <uniqueUserIdMapping inputProperty="uniqueName" outputProperty="uniqueName"/>
+	 	 <userSecurityNameMapping inputProperty="principalName" outputProperty="principalName"/>
+        		 <userDisplayNameMapping inputProperty="principalName" outputProperty="principalName"/>
+		 <uniqueGroupIdMapping inputProperty="uniqueName" outputProperty="uniqueName"/>
+        		 <groupSecurityNameMapping inputProperty="cn" outputProperty="cn"/>
+        		 <groupDisplayNameMapping inputProperty="cn" outputProperty="cn"/>
+        	</primaryRealm>
+</federatedRepository>
+----
+
+It is best practice, but not mandatory, to specify the `federatedRepository` element to federate multiple LDAP registries because they are federated automatically.
+If the `federatedRepository` element is specified to configure the `participatingBaseEntry` and `primaryRealm` elements, then the user registry operations are performed only on the repositories that are defined in the `primaryRealm` element.
+You can define the input and output property mappings for different user registry APIs under the `primaryRealm` element.
 
 For more information, see xref:reference:config/federatedRepository.adoc[User Registry Federation].
 
