@@ -90,6 +90,7 @@ You can specify an LDAP entity type to configure support for custom or non-defau
 An entity type groups different object classes as a single entity so that the server recognizes them under the same entity name.
 You can also customize the search base for any entity type to improve search times for the classes it contains.
 If you create custom object classes for users or groups, update your group and user filters to include the new classes.
+Use LDAP entities to specify multiple search bases instead of creating multiple LDAP registries with different baseDNs for the same LDAP server.
 
 The following example shows entity types for users and groups, with custom search bases.
 
@@ -122,25 +123,16 @@ Although this example shows the configuration for the IBM Tivoli Directory Serve
 
 In the previous example, the values for `ObjectClass` include `inetorgperson` or `groupofnames`. If the correct `ObjectClass` or `ObjectCategory` value is not defined, a `ClassCastException` can occur, as shown in the following example.
 
-`java.lang.ClassCastException: com.ibm.wsspi.security.wim.model.Entity is not compatible with com.ibm.wsspi.security.wim.model.LoginAccount.`
+[source,xml]
+----
+java.lang.ClassCastException: com.ibm.wsspi.security.wim.model.Entity is not compatible with com.ibm.wsspi.security.wim.model.LoginAccount.
+----
 
 In other cases where the `ObjectClass` is not properly defined, the user might not be found or a request to `getSecurityName` might return an empty string.
 
 A `searchBase` specifies the sub tree of the LDAP server for the search call of the given entity type, which overrides the baseDN in search operations.
 For example, if the baseDN is `o=acme.com`,`c=us` and the search base for the `PersonAccount` entity type is defined as `ou=users`,`o=acme.com`,`c=us`, then all search calls for `PersonAccount` are made under `ou=users`,`o=ibm`,`c=us` sub tree.
 Calls to other sub trees, such as `ou=iThings`,`o=ibm`,`c=us`, are ignored.
-
-You can use multiple search bases instead of creating multiple LDAP registries for the same LDAP server with different baseDNs.
-
-It is best practice, but not mandatory, to specify the `federatedRepository` element to federate multiple LDAP registries because they are federated automatically.
-If the `federatedRepository` element is specified to configure the `participatingBaseEntry` and `primaryRealm` elements, then the user registry operations are performed only on the repositories that are defined in the `primaryRealm` element.
-You can define the input and output property mappings for different user registry APIs under the `primaryRealm` element.
-
-The `name` attribute of the `participatingBaseEntry` element must be the same as the value of the `baseDN` attribute that is specified in the `ldapRegistry` element.
-In the example follows, the `baseDN` and `name` attributes are configured for the LDAP registry on the host `ldapserver1.mycity1.mycompany.com`.
-The value of `baseDN` attribute must be the same as that of sub tree in your LDAP server and the value of `name` attribute must be the name of that sub tree in the federated user registry.
-It is optional to specify the `name` attribute. By default, the name attribute uses the same value as the `baseDN` attribute.
-If the `name` attribute is specified in the `ldapRegistry` element, then the name attribute in the `participatingBaseEntry` element must use the same value as the `name` attribute in the `ldapRegistry` element.
 
 
 [#federate]
@@ -157,7 +149,7 @@ If multiple LDAP registries are configured in the `server.xml` file, they are fe
 Ensure that the users are unique across all federated repositories, otherwise the user registry operations are not successful.
 When you use multiple federated LDAP repositories, each repository must define a unique `baseDN` attribute.
 
-It is best practice, but not mandatory, to specify the `federatedRepository` element to federate multiple LDAP registries because they are federated automatically.
+As a best practice, you can specify the `federatedRepository` element to federate multiple LDAP registries. Specifying the `federatedRepository` element is not mandatory, as they are federated automatically.
 If the `federatedRepository` element is specified to configure the `participatingBaseEntry` and `primaryRealm` elements, then the user registry operations are performed only on the repositories that are defined in the `primaryRealm` element.
 You can define the input and output property mappings for different user registry APIs under the `primaryRealm` element.
 
@@ -190,16 +182,11 @@ The following example shows two LDAP registries that are automatically federated
         	</primaryRealm>
 </federatedRepository>
 ----
-The `name` attribute of the `participatingBaseEntry` element that is specified in the `federatedRepository` element must be the same as the value of the `baseDN` attribute that is specified in the `ldapRegistry` element.
-The `baseDN` and `name` attributes are configured for the LDAP registry on the host `ldapserver1.mycity1.mycompany.com`.
-The `name` attribute for the `participatingBaseEntry` elementIt is optional. By default, the `name` attribute in the `federatedRepository` element uses the same value as the `baseDN` attribute if the `name` attribute is not specified in the `ldapRegistry` element.
 
 The `name` attribute for the `ldapRegistry` element is optional. If this attribute is specified, the value of the `name` attribute in the `participatingBaseEntry` element must match the value of the `name` attribute in the `ldapRegistry` element.
 If the `name` attribute in the `ldapRegistry` element is not specified, the value of the `name` attribute in the `participatingBaseEntry` element must match the value of the `baseDN` attribute in the `ldapRegistry` element.
+
 Each of these options is demonstrated on one of the `participatingBaseEntry` element configurations in the previous example.
-
-For more information, see config:federatedRepository[display=User Registry Federation].
-
 
 You can also federate LDAP user registries with basic or custom user registries.
 The participating base entry for a user registry is defined by the `participatingBaseEntry` element.
@@ -209,7 +196,7 @@ To verify that a user is unique in the common user registry, every search reques
 By default, all federated user registries must return successfully or the request fails.
 
 The following example shows a basic user registry that is federated with an LDAP user registry, with the configuration specified in the `federatedRepository` element.
-Set the `allowOpIfRepoDown` attribute on the `primaryRealm` subelement to `true`, to avoid failures if any user registry is unavailable.
+Set the `allowOpIfRepoDown` attribute on the `primaryRealm` subelement to `true` to avoid failures if any user registry is unavailable.
 
 [source,xml]
 ----
@@ -251,6 +238,8 @@ Set the `allowOpIfRepoDown` attribute on the `primaryRealm` subelement to `true`
 </server>
 ----
 
+For more information, see config:federatedRepository[display=User Registry Federation].
+
 
 [#krb5]
 === Configure Kerberos authentication for LDAP servers
@@ -284,7 +273,7 @@ To determine the causes of common problems and error messages that are associate
 To use a specified certificate filter for the mapping, you can specify the `CERTIFICATE_FILTER` mapping mode.
 This filter is used to map attributes in the client certificate to entries in the LDAP registry.
 
-The following example shows an LDAP configuration with the certificate filter mode enabled by the `certificateMapMode` attribute and a certificate filter that is specified by the `certificateFilter` attribute.
+The following example shows an LDAP configuration with the certificate filter mode that is enabled by the `certificateMapMode` attribute and a certificate filter that is specified by the `certificateFilter` attribute.
 
 [source,xml]
 ----
@@ -310,12 +299,12 @@ For more information, see `certificateFilter` in xref:reference:config/ldapRegis
 [#mapldapattributes]
 === Define mapping between LDAP attributes and the user registry schema attributes
 
-After the mapping is configured, when you use the user registry attribute for any operation, the user registry attribute value will be the value of the LDAP attribute.
-When you use the `externalId` user registry attribute for any operation, the value will be equivalent to the value of the LDAP attribute that is mapped.
+You can define mapping between LDAP attributes and the user registry attribute.
+After the mapping is configured, when you use the user registry attribute for any operation, the value will be equivalent to the value of the LDAP attribute that is mapped.
 
-In the following example, you can see that the mapping is defined for the `userPassword` LDAP attribute with the `password` user registry property in the `server.xml` file.
-The `defaultValue` attribute is optional. Also, the mapping that is defined for the `externalId` user registry attribute with the `distinguishedName` LDAP attribute for the `PersonAccount` entity type.
-The `autoGenerate` attribute is optional, and the value is false by default.
+In the following example, the mapping is defined for the `userPassword` LDAP attribute with the `password` user registry property in the `server.xml` file.
+The `defaultValue` attribute is optional.
+Mapping is defined for the `externalId` user registry attribute with the `distinguishedName` LDAP attribute for the `PersonAccount` entity type.
 
 [source,xml]
 ----
@@ -334,9 +323,9 @@ The `autoGenerate` attribute is optional, and the value is false by default.
 === Configure failover for multiple LDAP servers
 
 You can specify the configuration properties for LDAP failover servers.
-These are specified as backup servers that are prepared to switch automatically and seamlessly take over if the the primary LDAP servers go offline.
-The following example shows both the primary LDAP server that is specified in the `ldapRegistry` element. There are two sets of LDAP `failoverServers` elements specified.
-These `failoverServers` elements have multiple `server` elements defined within them. These `server` elemts act as the backup servers in case the primary LDAP servers go offline.
+These are specified as backup servers that are prepared to switch automatically and seamlessly take over if the primary LDAP servers go offline.
+The following example shows both the primary LDAP server that is specified in the `ldapRegistry` element. Two sets of LDAP `failoverServers` elements are specified.
+These `failoverServers` elements have multiple `server` elements that are defined within them. These `server` elements act as the backup servers in case the primary LDAP servers go offline.
 
 [source,xml]
 ----
