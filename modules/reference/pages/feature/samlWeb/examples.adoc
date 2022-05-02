@@ -2,28 +2,62 @@
 
 === Default configuration
 
-Open Liberty provides a default configuration of the SAML Web Single Sign-on feature after the feature is enabled.
+When the SAML Web Single Sign-on feature is enabled, Open Liberty provides a default SAML configuration with an ID value of `defaultSP`.
 The SAML Web Single Sign-on feature activates the following two endpoints:
 
-- `https://<hostname>:<sslport>/ibm/saml20/defaultSP/acs`
+- `\https://<hostname>:<sslport>/ibm/saml20/defaultSP/acs`
 +
-The AssertionConsumerService URL endpoint on the service provider point of contact server receives assertions from the identity provider.
+The AssertionConsumerService URL endpoint on the service provider point of contact server receives assertions from the identity provider (IdP).
 
-- `https://<hostname>:<sslport>/ibm/saml20/defaultSP/samlmetadata`
+- `\https://<hostname>:<sslport>/ibm/saml20/defaultSP/samlmetadata`
 +
 The service provider metadata URL endpoint provides configuration information for the service provider.
-You can download the metadata for the service provider on a browser with the service provider metadata URL.
-Further, you can provide the service provider metadata URL to the SAML identity provider to establish a federation between the service provider and identity provider.
+You can download the metadata for the service provider from a browser with the service provider metadata URL.
+You can also provide the service provider metadata URL to the SAML identity provider to establish a federation between the service provider and identity provider. The IdP metadata file must be named idpMetadata.xml and copied to the `resources/security` directory on the server.
 
-=== Custom configuration
+The issuer name for SAML assertion is used as the security realm, and the `NameID` value is used as the principal to create an authenticated subject from the SAML assertion.
+The SAML `AuthnRequest` instance is signed with a private key in the default keystore of the server if the `KeyStoreRef` attribute  is not specified. If the `keyAlias` attribute is not configured, then `samlsp` is the default key alias. If the `keyAlias` attribute is not configured and the keystore only contains one private key, the private key is used in the signature.
 
-You can disable the default service provider instance when you add the following code to the `server.xml` file:
+=== Customize the default configuration
 
-[source, xml]
+You can customize the `defaultSP` service provider by adding a `samlWebSso20` element to your `server.xml` file and specifying a custom attribute configuration, as shown in the following example.
+
+[source,xml]
+----
+<samlWebSso20  id="defaultSP"
+       spHostAndPort="https://<host>:<port>"
+       keyStoreRef="samlKeyStore"
+       ... />
+----
+
+For more information about the available configuration attributes, see config:samlWebSso20[].
+
+=== Specify a custom configuration instance
+
+If you create a new service provider instance and the `defaultSP` default instance is no longer required, you must explicitly disable the `defaultSP` instance. To disable the default service provider instance and specify a new instance, add code that is similar to the following example to your `server.xml` file:
+
+[source,xml]
 ----
 <samlWebSso20 id="defaultSP" enabled="false"/>
 
 <samlWebSso20 id="newSP" allowCustomCacheKey="false"/>
 ----
 
-Thus, you can disable the default `defaultSP` service provider instance, and configure the new `newSP` service provider instance.
+You must specify a URL-safe String that is not null as the ID value. If the `id` attribute is missing, then the configuration element is ignored.
+
+=== Create multiple service provider instances
+
+ You can create one or more  `samlWebSso20` elements with different ID values. For example, if you create a new element with `mySP` as the ID, you effectively create a new SAML SP instance that has the following `AssertionConsumerService` URL: `https://<hostname>:<sslport>/ibm/saml20/mySP/acs`
+
+=== Configure a PKIX trust engine
+
+The default trust engine for SAML on Open Liberty is the Metadata trust engine, which validates a signature against information that is provided in the configured IdP metadata. Alternatively, you can use a Public Key Infrastructure X.509 (PKIX) trust engine by specifying the `PKIXTrustEngine` element and defining the proper `trustAnchorRef` value, as shown in the following example.
+
+[source,xml]
+----
+<samlWebSso20  id="defaultSP">
+  <PKIXTrustEngine trustAnchorRef="samlKeyStore" />
+</samlWebSso20>
+----
+
+The `trustAnchorRef` attribute specifies a reference to top-level `keyStore` element for a keystore that contains the public key to verify the signature of the SAML response and assertion.
