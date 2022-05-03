@@ -121,7 +121,7 @@ All edits and updates to existing Open Liberty Docs must be documented and track
 
 10. When the build finishes, check to make sure the doc renders correctly on the [docs-staging site](https://docs-staging-openlibertyio.mybluemix.net/docs/) or [full staging site](https://staging-openlibertyio.mybluemix.net/docs/). If any changes are needed, make sure to add them to the `draft` branch and review on the [full draft site](https://draft-openlibertyio.mybluemix.net/docs/) or [docs-draft site](https://docs-draft-openlibertyio.mybluemix.net/docs/) before you make a new PR to `staging`.
 
-11. After you verify the doc, post a link to it on one of the staging sites in the Git issue and change the issue status to `Ready to publish`.  Open a PR from `staging` to `vNext` and Request a review of the PR from David Mueller (`dmuelle`) or one of [the doc maintainers](https://github.com/orgs/OpenLiberty/teams/docs-maintainers/members). After the PR is approved and merged to `vNext`, the changes publish with the next scheduled release.
+11. After you verify the doc, post a link to it on one of the staging sites in the Git issue and change the issue status to `Ready to publish`.  Open a PR from `staging` to `vNext`, add the issue number to the comment section of the PR (#issue_number), and Request a review of the PR from David Mueller (`dmuelle`) or one of [the doc maintainers](https://github.com/orgs/OpenLiberty/teams/docs-maintainers/members). After the PR is approved and merged to `vNext`, the changes publish with the next scheduled release.
 
 
 ## Editing the Docs navigation

@@ -1,0 +1,164 @@
+:page-layout: general-reference
+:page-type: general
+= Performance tuning for Open Liberty
+
+Open Liberty supports various parameters and configuration options to influence application performance.
+You can tune settings for the Java virtual machine (JVM), the transport channel services, and more to improve performance.
+
+The following sections provide more information about tuning parameters and attributes.
+
+* <<#jvm, Tune the JVM>>
+* <<#transport_channel, Tune transport channel services>>
+* <<#tune_defaultexecutor, Tune the default executor>>
+* <<#decrease_responsetime, Decrease response time of servlets>>
+* <<#idle_cpu, Reduce idle server CPU time>>
+* <<#startup_time, Tune startup time>>
+
+
+[#jvm]
+== Tune the JVM
+Tuning the Java virtual machine is the most important tuning step for configuring an environment.
+To tune the JVM for Open Liberty, you can specify JVM arguments, one option per line, in the `jvm.options` file in the `${server.config.dir}` directory.
+You can use `jvm.options` files at the runtime and server levels to specify more server startup options.
+
+The following example specifies one JVM option per line to set maximum heap size to `1024m`, set an example system property, and enable verbose garbage collection.
+
+[source,console]
+----
+-Xmx1024m
+-Dcom.ibm.example.system.property=ExampleValue
+-verbose:gc
+----
+
+For faster server startup in a development environment, consider setting the minimum heap size to a small value and the maximum heap size to whatever value is needed for your application.
+For a production environment, setting the minimum heap size and maximum heap size to the same value can provide the best performance by avoiding heap expansion and contraction.
+
+For more information on the Open Liberty `jvm.options` file, see https://openliberty.io/docs/latest/reference/config/server-configuration-overview.html#jvm-options[jvm.options].
+
+For more information on the JVM tuning options for IBM Java, see https://www.eclipse.org/openj9/docs/[Eclipse OpenJ9].
+
+[#transport_channel]
+== Tune transport channel services
+The transport channel services manage client connections, I/O processing for HTTP, thread pools, and connection pools.
+You can tune the following attributes to improve runtime performance, scalability, or both.
+In the following table, the examples show you how to code these options in the `server.xml` file.
+
+
+.Logging configuration settings
+[cols="d,d,l,d", options="header"]
+|===
+| Server configuration | Attribute | Example | Description
+
+|config:httpOptions[]
+|`maxKeepAliveRequests`
+|<httpOptions maxKeepAliveRequests="-1" />
+|This option specifies the maximum number of persistent requests that are allowed on a single HTTP connection if persistent connections are enabled.
+A value of -1 means unlimited. This option supports low latency or high throughput applications, and TLS connections for use in situations where building up a new connection can be costly.
+
+|config:connectionManager[]
+|`maxPoolSize`
+|<connectionManager ... maxPoolSize="40" />
+|This option specifies the maximum number of physical connections for the connection pool.
+The default value is 50. The optimal setting here depends on the application characteristics.
+For an application in which every thread obtains a connection to the database, you might start with a 1:1 mapping to the `coreThreads` attribute.
+
+|config:connectionManager[]
+|`purgePolicy`
+|<connectionManager ... purgePolicy="FailingConnectionOnly" />
+|This option specifies which connections to end when a stale connection is detected in a pool.
+The default value is the entire pool. In some cases, you might want to purge only the failing connection by specifying the `FailingConnectionOnly` value.
+For more information, see `purgePolicy` in config:connectionManager[connectionManager].
+
+|config:connectionManager[]
+|`numConnectionsPerThreadLocal`
+|<connectionManager ... numConnectionsPerThreadLocal="1" />
+|This option specifies the number of database connections to cache for each executor thread.
+This setting can provide a major improvement on large multi-core machines by reserving the specified number of database connections for each thread.
+Using thread-local storage for connections can increase performance for applications on multi-threaded systems.
+When you set `numConnectionsPerThreadLocal` to 1 or more, these connections per thread are stored in thread-local storage.
+When you use `numConnectionsPerThreadLocal`, consider the number of application threads and the maximum connections for the connection pool.
+For best performance, if you have **n** applications threads, you must set the maximum pool connections to at least **n** times the value of the `numConnectionsPerThreadLocal` attribute.
+Ensure to use the same credentials for all connection requests.
+
+|config:dataSource[]
+|`statementCacheSize`
+|<dataSource ... statementCacheSize="60" >
+|This option specifies the maximum number of cached prepared statements per connection.
+To set this option, review the application code (or an SQL trace that you gather from the database or database driver) for all unique prepared statements.
+Ensure that the cache size is larger than the number of statements.
+
+|config:dataSource[]
+|`isolationLevel`
+|<dataSource ... isolationLevel="TRANSACTION_READ_COMMITTED">
+|The data source isolation level specifies the degree of data integrity and concurrency, which in turn controls the level of database locking.
+Different options are available for the default transaction isolation level. For more information, see `isolationLevel` in config:dataSource[dataSource].
+
+|===
+
+[#tune_defaultexecutor]
+== Tune the default executor
+
+The Open Liberty default executor is self-tuning and adapts to the current workload by dynamically adding or removing threads.
+For most workloads, the executor does not require any tuning, and you are advised not to change any settings of the executor unless you encounter specific problems with thread creation.
+For more information, see xref:thread-pool-tuning.adoc[Thread pool tuning].
+
+
+[#decrease_responsetime]
+== Decrease response time of servlets
+
+To decrease response time of servlets, add the following attribute to the `server.xml` file.
+
+[source,sh]
+----
+<webContainer skipMetaInfResourcesProcessing="true"/>
+----
+
+This setting prevents the server from searching the meta-inf directory for application resources.
+
+[#idle_cpu]
+== Reduce idle server CPU time
+
+By default, Open Liberty monitors for configuration and application changes by periodically checking for file system updates in the relevant areas of the server installation.
+For more information on the default settings and functions for configuration and application monitoring, see the following configuration attributes.
+
+* https://openliberty.io/docs/latest/reference/config/config.html[Configuration Management (config)]
+* https://openliberty.io/docs/latest/reference/config/applicationMonitor.html[Application Monitoring (applicationMonitor)]
+
+To reduce idle server CPU time, add the following attributes to the `server.xml` file.
+
+[source,sh]
+----
+<applicationMonitor dropinsEnabled="false" updateTrigger="disabled"/>
+<config updateTrigger="disabled"/>
+----
+
+When the attributes are added, your server no longer monitors for configuration or application updates.
+
+You can also set the `updateTrigger` attribute to the `MBean` value for both the `applicationMonitor` element and the `config` element.
+This setting allows applications and configurations to be updated by an `MBean` method.
+However, some amount of CPU time is used.
+To reduce the amount of CPU time used, you can set the `pollingRate` attribute of the `applicationMonitor` element and the `monitorInterval` attribute of the `config` element to large values.
+
+The following example shows how to reduce the amount of CPU time that is used when you set the `updateTrigger` attribute to the value of `MBean`.
+
+[source,sh]
+----
+<applicationMonitor updateTrigger="mbean" pollingRate="60s"/>
+<config updateTrigger="mbean" monitorInterval="60s"/>
+----
+
+
+[#startup_time]
+== Tune startup time
+
+By default, the feature:cdi[display=Jakarta Contexts and Dependency Injection (CDI)] feature scans all application archives. This feature can increase startup time substantially, particularly in larger applications.
+You can disable implicit archive scanning by setting the `enableImplicitBeanArchives` attibute to `false`.
+This setting skips the scanning of archives unless they contain a `beans.xml` file.
+
+[source,sh]
+----
+<cdi12 enableImplicitBeanArchives="false"/>
+----
+
+The feature:cdi[display=CDI] feature might be included in your server configuration even if it is not explicitly specified in your `server.xml` file because other features might implicitly enable it.
+For example, the feature:microProfile[display=MicroProfile] feature and the feature:webProfile[display=Jakarta EE Web Profile] feature each enable the CDI feature by default.
