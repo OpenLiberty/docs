@@ -108,13 +108,17 @@ You can configure any JDBC driver with Open Liberty, which includes built-in con
 </dataSource>
 ----
 
-In this example, the `dataSource` element references the library that contains the JDBC driver JAR file and specifies several JDBC vendor properties with the `properties` attribute. Every JDBC driver provides a different collection of properties that can be configured on its `dataSource` implementation classes. If the JDBC driver data source has setter methods with a String or primitive parameter, you can configure these properties by specifying the `properties` attribute in the `dataSource` element.
+In this example, the `dataSource` element references the library that contains the JDBC driver JAR file and specifies several JDBC vendor properties with the `properties` attribute.
+
+Every JDBC driver provides a different collection of properties that can be configured on its `dataSource` implementation classes. If the JDBC driver data source has setter methods with a String or primitive parameter, you can configure these properties by specifying either a single `properties` or `properties.{_JDBC_VENDOR_TYPE_}` subelement under the `dataSource` element.
 
 The following example shows the basic configuration to specify JDBC vendor properties in the `dataSource` element:
 
 [source,xml]
 ----
-<properties someProperty="someValue" anotherProperty="5" />
+<dataSource jndiName="jdbc/myDB" jdbcDriverRef="myDriver"/>
+    <properties someProperty="someValue" anotherProperty="5" />
+</dataSource>
 ----
 
 For example, the following code shows the `currentLockTimeout` property on the IBM Db2 JDBC driver data source classes:
@@ -125,13 +129,14 @@ public void setCurrentLockTimeout(int lockTimeout);
 public int getCurrentLockTimeout();
 ----
 
-You can configure this setting with the following configuration in your `server.xml` file:
+You can configure this setting in your `server.xml` file by specifying the `properties.db2.jcc` subelement, as shown in the following example:
 
 [source,xml]
 ----
 <dataSource jndiName="jdbc/myDB">
     <jdbcDriver libraryRef="jdbcLib"/>
-    <properties serverName="localhost" portNumber="1234" databaseName="myDB"
+    <properties.db2.jcc
+                serverName="localhost" portNumber="50000" databaseName="myDB"
                 user="exampleUser" password="examplePassword"
                 currentLockTimeout="30s"/>
 </dataSource>
