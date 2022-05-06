@@ -1,0 +1,135 @@
+// Copyright (c) 2022 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description:
+:seo-description:  
+:page-layout: general-reference
+:page-type: general
+= Provide and consume gRPC services on Open Liberty
+
+gRPC is an open source remote procedural call (RPC) framework that connects clients and services in language-agnostic way. You can provide and consume gRPC services from your web applications that run on Open Liberty.
+
+== What is gRPC?
+
+The link:https://grpc.io/[gRPC framework] was designed to efficiently connect cloud-native applications. It enables services and clients that use different networks, platforms, and coding languages to call and implement functions through a common service definition contract. For example, you can create a gRPC service in Java with clients in Python and Go. Each application must worry only about calling or implementing functions in its own language because gRPC facilitates the transmission of the calls and generates the code in each language.
+
+Like other RPC frameworks, gRPC defines a service contract with explicit methods, parameters, and return types. On the server side, a server implements the service interface. The client is provided with stubs that define the same interfaces that are provided by the server, so the
+client application can invoke remote service methods as if they were local. gRPC uses HTTP/2 for transport, which supports high-performance bidirectional connections.
+
+gRPC uses link:https://developers.google.com/protocol-buffers/docs/reference/overview[protocol buffers] as its interface design language (IDL). Protocol buffers allow for simple service definitions and provide a language independent means to serialize structured data in remote procedural calls. They define messages that can be compiled into any link:https://grpc.io/docs/languages[supported programming language] so that you can transfer data structures between endpoints even when those endpoints are working in different programming languages.
+
+
+== gRPC and Open Liberty
+
+You can build and deploy gRPC-enabled applications on Open Liberty to provide new gRPC services or to consume external gRPC services. To enable support for gRPC, add the gRPC or gRPC Client feature to your `server.xml` file.
+
+
+=== gRPC services
+The feature:grpc[display=gRPC feature] enables web applications to define and provide gRPC services. It works by scanning web applications for gRPC service implementations, through implementors of the link:https://grpc.github.io/grpc-java/javadoc/io/grpc/BindableService.html[io.grpc.BindableService] class. The web application must include the protocol buffer compiler-generated code for the services it intends to provide. The service class must also provide a no-argument constructor. The web application does not need to include any core gRPC libraries; they are provided by the Open Liberty runtime. Any configurations that are specified in the config:grpc[display=grpc configuration element] in your `server.xml` file or on the services themselves by the link:https://www.ibm.com/docs/api/v1/content/SSD28V_liberty/com.ibm.websphere.javadoc.liberty.doc/io.openliberty.grpc.1.0_1.0-javadoc/io/openliberty/grpc/annotation/GrpcService.html[@GrpcService] annotation are applied to the service when it is started. After a gRPC service is scanned and started, it becomes accessible to remote gRPC clients on the configured HTTP ports.
+
+If you configure gRPC in your `server.xml` file, you must specify the `target` attribute for the config:grpc[display=grpc element]. This attribute configures a target filter so the runtime can map the configuration to the applicable gRPC service. Similarly, any `serverInterceptor` classes that are specified in the `serverInterceptors` attribute must be configured and packaged such that any targeted gRPC services can load the configured `ServerInterceptor` class.
+
+You can secure gRPC service connections with transport layer security (TLS). You can configure authorization by specifying the `@RolesAllowed`, `@DenyAll`, and `@PermitAll` annotations on service implementations. For more information about configuring role-based authorization, see xref:authorization.adoc[Authorization].
+
+=== gRPC Clients
+The feature:grpcClient[display=gRPC Client feature] enables web applications to consume gRPC services. It provides access to a link:https://netty.io[Netty] gRPC client and the related libraries. A web application must provide a client implementation and stubs, and can make outbound calls with a link:https://grpc.github.io/grpc-java/javadoc/io/grpc/ManagedChannel.html[io.grpc.ManagedChannel] class, without needing to provide the supporting gRPC client libraries.
+
+You can configure gRPC clients by enabling the gRPC Client feature and specifying the config:grpcClient[display=grpcClient element] in your `server.xml` file. This configuration requires you to specify the `host` attribute so Open Liberty can map the configuration to the applicable gRPC client call at run time. You can also optionally configure the `path` attribute to specify a remote gRPC service path, but this filter is only applicable to the values of the `headersToPropagate` attribute. Any values that are specified in the `clientInterceptors`  attribute must be configured and packaged such that any referenced gRPC clients can load the configured `ClientInterceptor` class.
+
+During application startup, Open Liberty scans for any `grpcClient` element configuration in the `server.xml` file. When the application code creates a `io.grpc.ManagedChannel` class, Open Liberty internally creates a wrapped `ManagedChannel` instance that applies the `grpcClient` element configuration and returns that wrapped `ManagedChannel` instance to the client. The client application then uses the `ManagedChannel` instance to invoke its gRPC stubs. Any Open Liberty-specific data that is needed, such as propagated headers, are passed along.
+
+You can also configure gRPC clients programmatically with the link:https://grpc.github.io/grpc-java/javadoc/io/grpc/ManagedChannelBuilder.html[io.grpc.ManagedChannelBuilder] API. For further programmatic configuration, applications can access the link:https://grpc.github.io/grpc-java/javadoc/io/grpc/netty/NettyChannelBuilder.html[io.grpc.netty.NettyChannelBuilder] class by xref:class-loader-library-config.adoc#3rd-party[opting in to third-party classloader visibility].
+
+gRPC client calls can be made with TLS. You can configure TLS either by mapping an `sslRef` attribute in the `grpcClient` configuration to an existing SSL configuration ID, or by link:/docs/latest/reference/feature/transportSecurity-1.0.html#_configure_outbound_tls[configuring an outbound TLS filter]. You can configure the  `headersToPropagate` attribute to propagate security tokens, for example, by specifying `headersToPropagate="authorization"` or `headersToPropagate="cookie"`.
+
+=== Try it out
+
+You can try gRPC with Open Liberty by adding the feature:grpc[display=gRPC feature] to your `server.xml` file and implementing this basic Hello World service.
+
+[source,java]
+----
+package com.ibm.ws.grpc;
+
+import com.ibm.ws.grpc.beans.GreetingBean;
+
+import io.grpc.examples.helloworld.GreeterGrpc;
+import io.grpc.examples.helloworld.HelloReply;
+import io.grpc.examples.helloworld.HelloRequest;
+import io.grpc.stub.StreamObserver;
+
+public class HelloWorldService extends GreeterGrpc.GreeterImplBase {
+
+    public HelloWorldService(){}
+
+    @Override
+    public void sayHello(HelloRequest req, StreamObserver<HelloReply> responseObserver) {
+        HelloReply reply = HelloReply.newBuilder().setMessage("Hello " + req.getName()).build();
+        responseObserver.onNext(reply);
+        responseObserver.onCompleted();
+    }
+}
+----
+
+In this example, the application must provide the link:https://github.com/grpc/grpc-java/blob/master/examples/src/main/proto/helloworld.proto[helloworld protobuf] definition along with the protobuf compiler output. You don't need to provide any other libraries with the application. After the `helloworld` greeter service is started, it is accessible on the server HTTP endpoints.
+
+For a client example, you can define a basic servlet that uses gRPC by adding the feature:grpcClient[display=gRPC Client feature] to your `server.xml` file and implementing the following code.
+
+[source,java]
+----
+package com.ibm.ws.grpc;
+
+import io.grpc.examples.helloworld.GreeterGrpc;
+import io.grpc.examples.helloworld.HelloReply;
+import io.grpc.examples.helloworld.HelloRequest;
+
+import io.grpc.ManagedChannel;
+import io.grpc.ManagedChannelBuilder;
+...
+@WebServlet(name = "grpcClient", urlPatterns = { "/grpcClient" }, loadOnStartup = 1)
+public class GrpcClientServlet extends HttpServlet {
+
+        ManagedChannel channel;
+        private GreeterGrpc.GreeterBlockingStub greetingService;
+
+        private void startService(String address, int port)
+        {
+            channel = ManagedChannelBuilder.forAddress(address , port).usePlaintext().build();
+            greetingService = GreeterGrpc.newBlockingStub(channel);
+        }
+
+        private void stopService()
+        {
+            channel.shutdownNow();
+        }
+
+        @Override
+        protected void doGet(HttpServletRequest reqest, HttpServletResponse response)
+            throws ServletException, IOException
+        {
+
+            // set user, address, port params
+        }
+
+        @Override
+        protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException
+        {
+
+        // grab user, address, port params
+        startService(address, port);
+        HelloRequest person = HelloRequest.newBuilder().setName(user).build();
+        HelloReply greeting = greetingService.sayHello(person);
+
+        // send the greeting in a response
+        stopService();
+        }
+    }
+}
+----
+
+Similar to the service example, the application must provide only the helloworld protobuf definition and the protobuf compiler output. All the required gRPC client libraries are provided by the gRPC Client feature.
