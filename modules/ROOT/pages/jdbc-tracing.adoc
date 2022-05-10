@@ -1,0 +1,246 @@
+// Copyright (c) 2022 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+// https://creativecommons.org/licenses/by-nd/4.0/
+//
+//
+// Contributors:
+// IBM Corporation
+//
+//
+//
+//
+:page-description: If you need to enable tracing for your third party JDBC driver for debugging purposes, or to submit a ticket.
+:projectName: Open Liberty
+:page-layout: general-reference
+:page-type: general
+
+= JDBC Tracing for Open Liberty
+
+JDBC tracing for Open Liberty enables tracing for your third-party JDBC driver for debugging purposes, or to submit a ticket.
+JDBC tracing is enabled either through a driver-specific custom trace setting, or by using the application server supplemental JDBC tracing option.
+
+If your JDBC driver does not provide its own custom tracing, logging facilities, or the facilities it provides are minimal, you can use supplemental JDBC tracing from the application server.
+
+You can use one of the following two options for driver-specific custom trace facilities.
+
+* Use the Java™ built-in logging mechanism, `java.util.logging`, if the driver supports it.
+* Configure a custom trace setting as a vendor property.
+
+
+If you enable tracing by using either a custom vendor property or supplemental JDBC tracing, you must add the logwriter name to the trace specification in the `bootstrap.properties` file.
+You can use any of the following logwriters.
+
+.Logwriters available for JDBC tracing
+|===
+| Logwriter | Attribute
+
+|**DB2®**
+|com.ibm.ws.db2.logwriter
+
+|**Derby**
+|com.ibm.ws.derby.logwriter
+
+|**Informix® JDBC**
+|com.ibm.ws.informix.logwriter
+
+|**Informix® JCC**
+|com.ibm.ws.informix.jcclogwriter
+
+|**Microsoft SQL Server JDBC and DataDirect**
+|com.ibm.ws.sqlserver.logwriter
+
+|**Oracle**
+|com.ibm.ws.oracle.logwriter
+
+|**PostreSQL**
+|com.ibm.ws.postgresql.logwriter
+
+|**Sybase**
+|com.ibm.ws.sybase.logwriter
+
+|**Other databases (for example MySQL)**
+|com.ibm.ws.database.logwriter
+
+|**All databases**
+|WAS.database
+|===
+
+Changes are made to the trace enablement by altering the `bootstrap.properties` file. However, you must restart the server for the changes to take effect.
+
+== JDBC trace methods
+
+* <<#java_util_logging, Use java.util.logging>>
+* <<#custom_trace, Use custom trace settings>>
+* <<#supplemental_jdbc_trace, Use supplemental JDBC tracing>>
+** <<#enable_supplemental_trace, Enable supplemental tracing>>
+** <<#disable_supplemental_trace, Disable supplemental tracing>>
+
+
+[#java_util_logging]
+=== Use java.util.logging
+
+You can enable JDBC tracing by appending the driver trace level to `com.ibm.ws.logging.trace.specification` in the `bootstrap.properties` file.
+
+The following example shows you how to append the driver trace level for the Microsoft SQL Server JDBC Driver.
+
+[source,sh]
+----
+com.ibm.ws.logging.trace.specification=*=audit:com.microsoft.sqlserver.jdbc=FINE
+----
+
+The following example shows you how to append the driver trace level for the Oracle JDBC or Oracle Universal Connection Pool (UCP).
+
+[source,sh]
+----
+com.ibm.ws.logging.trace.specification=*=audit:oracle=FINE
+----
+
+For Oracle, you must also enable tracing by setting the `oracle.jdbc.Trace` system property to true. You can use one of the following two options.
+
+* In the `bootstrap.properties` file, add the `oracle.jdbc.Trace=true` setting.
+* In a Java program, add the `System.setProperty("oracle.jdbc.Trace","true")` setting.
+
+
+[#custom_trace]
+=== Use custom trace settings
+
+If the driver you are using has custom trace settings, you set them as JDBC driver vendor properties in the `server.xml` file.
+You also add the logwriter name to the trace specification in the `bootstrap.properties` file.
+
+The following examples shows you how to use custom trace settings, using the `traceLevel` custom property.
+
+In the `server.xml` file.
+[source,sh]
+----
+<dataSource id="db2" jndiName="jdbc/db2" jdbcDriverRef="DB2Driver" >
+    <properties.db2.jcc databaseName="myDB" traceLevel="-1"/>
+</dataSource>
+----
+
+In the `bootstrap.properties` file:
+[source,sh]
+----
+com.ibm.ws.logging.trace.specification=*=audit:com.ibm.ws.db2.logwriter=all
+----
+
+
+The following examples show you how to use custom trace settings for Derby Network Client.
+
+In the `server.xml` file.
+[source,sh]
+----
+<dataSource id="derbyNC" jndiName="jdbc/derbyNC" jdbcDriverRef="DerbyNC" >
+    <properties.derby.client databaseName="myDB" createDatabase="create" traceLevel="1"/>
+</dataSource>
+----
+
+In the `bootstrap.properties` file:
+[source,sh]
+----
+com.ibm.ws.logging.trace.specification=*=audit:com.ibm.ws.derby.logwriter=all
+----
+
+
+The following examples show you how to use custom trace settings for Informix JCC. This database uses the DB2 drivers for JCC connectivity.
+
+In the `server.xml` file.
+[source,sh]
+----
+<dataSource id="informixJCC" jndiName="jdbc/informixJCC" jdbcDriverRef="InformixDriverJCC" >
+    <properties.informix.jcc databaseName="myDB" traceLevel="-1"/>
+</dataSource>
+----
+
+In the `bootstrap.properties` file:
+[source,sh]
+----
+com.ibm.ws.logging.trace.specification=*=audit:com.ibm.ws.db2.logwriter=all
+----
+
+[#supplemental_jdbc_trace]
+=== Use supplemental JDBC tracing
+
+You can use supplemental JDBC tracing from the application server, if your JDBC driver does not provide suitable tracing or logging facilities.
+The application server automatically determines whether to enable supplemental JDBC tracing, based on the JDBC driver used.
+
+To override automatic determination on enabling supplemental JDBC tracing, set the `supplementalJDBCTrace` data source property to true or false.
+
+
+[#enable_supplemental_trace]
+==== Enable supplemental tracing
+
+Supplemental JDBC tracing for an embedded Derby database is enabled by default. You need to set the logwriter in the `bootstrap.properties` file.
+
+The following examples show you how to enable supplemental tracing by specifying the logwriter in the `bootstrap.properties` file.
+[source,sh]
+----
+com.ibm.ws.logging.trace.specification=*=audit:com.ibm.ws.derby.logwriter=all
+----
+
+
+The following example shows you how to enable supplemental tracing with Informix JDBC. Supplemental JDBC tracing is enabled by default for this database.
+[source,sh]
+----
+com.ibm.ws.logging.trace.specification=*=audit:com.ibm.ws.informix.logwriter=all
+----
+
+
+The following example shows you how to enable supplemental tracing and `java.util.logging`, with Microsoft SQL Server JDBC Driver.
+[source,sh]
+----
+com.ibm.ws.logging.trace.specification=*=audit:com.ibm.ws.sqlserver.logwriter=all:
+com.microsoft.sqlserver.jdbc=all
+----
+
+
+The following example shows you how to enable supplemental tracing with DataDirect Connect for JDBC for Microsoft SQL Server.
+[source,sh]
+----
+com.ibm.ws.logging.trace.specification=*=audit:com.microsoft.sqlserver.jdbc=all
+----
+
+
+The following example shows you how to enable supplemental tracing with solidDB. Supplemental JDBC tracing is enabled by default for this database.
+[source,sh]
+----
+com.ibm.ws.logging.trace.specification=*=audit:com.ibm.ws.database.logwriter=all
+----
+
+
+The following example shows you how to enable supplemental tracing with Sybase. Supplemental JDBC tracing is enabled by default for this database.
+[source,sh]
+----
+com.ibm.ws.logging.trace.specification=*=audit:com.ibm.ws.sybase.logwriter=all
+----
+
+
+The following example shows you how to enable supplemental tracing with other databases.
+[source,sh]
+----
+com.ibm.ws.logging.trace.specification=*=audit:com.ibm.ws.database.logwriter=all
+----
+
+
+[#disable_supplemental_trace]
+==== Disable supplemental tracing
+
+You can disable supplemental JDBC tracing by setting the `supplementalJDBCTrace` data source property to false in the `server.xml` file,
+or by removing the logwriter name from the `com.ibm.ws.logging.trace.specification` property in the `bootstrap.properties` file.
+
+The following example shows the changes that are made to the `supplementalJDBCTrace` data source property in the `server.xml` file to disable supplemental JDBC tracing.
+
+[source,sh]
+----
+<dataSource id="soliddb" jndiName="jdbc/soliddb"
+ jdbcDriverRef="solidDBDriver" supplementalJDBCTrace="false">
+ <properties databaseName="dba" URL="jdbc:solid://localhost:2315/dba/dba" />
+</dataSource>
+----
+
+The following example shows the changes that are made to the `com.ibm.ws.logging.trace.specification` property in the `bootstrap.properties` file to disable supplemental JDBC tracing.
+
+[source,sh]
+----
+com.ibm.ws.logging.trace.specification=*=audit
+----
