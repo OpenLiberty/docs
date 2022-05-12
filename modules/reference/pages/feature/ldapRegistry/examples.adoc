@@ -7,7 +7,7 @@
 - <<#object,Specify custom LDAP object classes>>
 - <<#federate,Federate LDAP user registries>>
 - <<#krb5,Configure Kerberos authentication for LDAP servers>>
-- <<#Certfilter,Configure certificate filter mode for the LDAP server>>
+- <<#Certfilter,Define mapping between client certificate attributes and LDAP user registry attributes>>
 - <<#mapldapattributes,Define mapping between LDAP attributes and the user registry schema attributes>>
 - <<#configurefailover,Configure failover for multiple LDAP servers>>
 - <<#configuresslconfiguration,Configure SSL configuration to connect to the LDAP server>>
@@ -265,12 +265,34 @@ The `krb5TicketCache` attribute can be optionally specified for any feature that
 To determine the causes of common problems and error messages that are associated with Kerberos authentication to LDAP servers, see xref:ROOT:troubleshooting-krb5-ldap.adoc[Troubleshooting Kerberos authentication to LDAP servers].
 
 [#Certfilter]
-=== Configure certificate filter mode for the LDAP server
+=== Define mapping between client certificate attributes and LDAP user registry attributes
 
-To use a specified certificate filter for the mapping, you can specify the `CERTIFICATE_FILTER` mapping mode.
-This filter is used to map attributes in the client certificate to entries in the LDAP registry.
+To map attributes from a client X.509 certificate to attributes in your LDAP configuration, you can specify the `CERTIFICATE_FILTER` mapping mode.
 
-The following example shows an LDAP configuration with the certificate filter mode that is enabled by the `certificateMapMode` attribute and a certificate filter that is specified by the `certificateFilter` attribute.
+If more than one LDAP entry matches the filter specification at run time, authentication fails because the result is an ambiguous match.
+The syntax for this filter is: `LDAP attribute=${Client certificate attribute}`
+
+An example of a simple certificate filter is `uid=${SubjectCN}`.
+
+You can also specify multiple properties and values as part of a certificate filter. The LDAP attribute of the filter specification depends on the schema that your LDAP server is configured to use. The client certificate attribute is one of the public attributes in your client certificate. The client certificate attribute must begin with a dollar sign, $, and opening brace, {, and end with a closing brace, }. The attributes are case-sensitive.
+
+The following LDAP attributes are supported.
+* `uid`
+* `initials`
+* `sAMAccountName`
+* `displayName`
+* `distinguishedName`
+* `displayName`
+* `description`
+
+The following client certificate attributes are supported.
+* `${SubjectCN}`
+* `${SubjectDN}`
+* `${IssuerCN}`
+* `${IssuerDN}`
+* `${SerialNumber}`
+
+The following example shows an LDAP configuration with the certificate filter mode that is enabled by the `certificateMapMode` attribute and a certificate filter that is specified by the `certificateFilter` attribute. In this certificate filter configuration, the value for the `uid` LDAP attribute to the `${SubjectCN}` client certificate attribute.
 
 [source,xml]
 ----
@@ -291,7 +313,7 @@ The following example shows an LDAP configuration with the certificate filter mo
 </idsFilters>
       </ldapRegistry>
 ----
-For more information, see `certificateFilter` in xref:reference:config/ldapRegistry.adoc[LDAP User Registry]
+For more information, see `certificateFilter` and `certificateMapMode` in xref:reference:config/ldapRegistry.adoc[LDAP User Registry]
 
 [#mapldapattributes]
 === Define mapping between LDAP attributes and the user registry schema attributes
@@ -310,8 +332,8 @@ Mapping is defined for the `externalId` user registry attribute with the `distin
       baseDN="o=ibm,c=us"
       ldapType="IBM Tivoli Directory Server" searchTimeout="8m">
       <attributeConfiguration>
-				<attribute name="userPassword" propertyName="password" entityType="PersonAccount" defaultValue="xyz123"/>
-					<externalIdAttribute name="distinguishedName" entityType="PersonAccount"/>
+						<attribute name="userPassword" propertyName="password" entityType="PersonAccount" defaultValue="xyz123"/>
+						<externalIdAttribute name="distinguishedName" entityType="PersonAccount"/>
       </attributeConfiguration>
 </ldapRegistry>
 ----
