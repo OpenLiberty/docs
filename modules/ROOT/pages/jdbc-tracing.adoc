@@ -1,0 +1,290 @@
+// Copyright (c) 2022 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+// https://creativecommons.org/licenses/by-nd/4.0/
+//
+//
+// Contributors:
+// IBM Corporation
+//
+//
+//
+//
+:page-description: If you need to enable tracing for your third party JDBC driver for debugging purposes, or to submit a ticket.
+:projectName: Open Liberty
+:page-layout: general-reference
+:page-type: general
+
+= JDBC driver tracing for Open Liberty
+
+You can enable tracing for your third-party JDBC driver in Open Liberty for debugging and support purposes. To collect JDBC driver trace, you must specify your JDBC driver, set the logging level, and provide any required driver-specific configurations.
+
+
+== Understanding Open Liberty tracing
+
+For driver-specific custom trace facilities, you can use one of the following two options.
+
+* Use the Java built-in logging mechanism, `java.util.logging`.
+* Configure a custom trace setting as a vendor property.
+
+For more information on Open Liberty tracing, see https://openliberty.io/docs/latest/log-trace-configuration.html[Log and trace configuration].
+
+
+== Understanding your JDBC driver
+
+A third-party JDBC driver uses either the `java.util.logging` Java logging library or some other logging library, such as SLF4J or Log4J.
+If your JDBC driver uses the `java.util.logging` library, you can enable trace by providing a trace specification that corresponds to the package name for the driver.
+If your JDBC driver uses some other logging library, Open Liberty provides a log writer that generates logs based on JDBC specification methods such as `getConnection` and `executeQuery`.
+
+The following table lists the most common JDBC drivers, whether they support the `java.util.logging` library, and the package name or log writer to use in the trace specification.
+
+.Third-party JDBC drivers
+|===
+| JDBC driver | Support JUL | Trace specification
+
+|**DB2 JCC**
+|True
+|com.ibm.db2
+
+|**Derby**
+|False - Print writer
+|com.ibm.ws.derby.logwriter
+
+|**Informix using JDBC**
+|True
+|com.informix
+
+|**Informix using DB2 JCC**
+|True
+|com.ibm.db2
+
+|**Microsoft SQL Server JDBC**
+|True
+|com.microsoft.sqlserver.jdbc
+
+|**Microsoft SQL Server DataDirect**
+|False
+|com.ibm.ws.sqlserver.logwriter
+
+|**Oracle**
+|True
+|oracle
+
+|**PostreSQL**
+|False - SLF4J
+|com.ibm.ws.postgresql.logwriter
+
+|**Sybase**
+|False
+|com.ibm.ws.sybase.logwriter
+
+|**Other databases (for example MySQL)**
+|False - Unknown
+|com.ibm.ws.database.logwriter
+
+|===
+
+== Recommended trace configuration for support
+
+The following examples demonstrate driver-specific trace configuration for commonly used JDBC drivers.
+
+.bootstrap.properties
+[source, properties]
+----
+com.ibm.ws.logging.trace.specification=*=info:RRA=all
+com.ibm.ws.logging.max.files=10
+com.ibm.ws.logging.max.file.size=100
+----
+
+.server.xml
+[source, xml]
+----
+<logging traceSpecification="*=info:RRA=all" maxFiles=10 maxFileSize=100 />
+----
+
+== Trace configuration examples for common JDBC drivers
+
+If the JDBC driver that you are using has custom trace settings, you can set these custom trace settings as JDBC driver vendor properties in the `server.xml` file.
+You can also add the logwriter name to the trace specification in the `bootstrap.properties` file.
+
+The following sub sections contain JDBC driver specific configuration.
+
+- <<#DB2JCC,DB2 JCC>>
+- <<#Derby,Derby>>
+- <<#InformixJDBC,Informix using JDBC>>
+- <<#InformixDB2JCC,Informix using DB2 JCC>>
+- <<#SQLServerJDBCdriver,Microsoft SQL Server JDBC driver>>
+- <<#SQLServerDataDirectdriver,Microsoft SQL Server DataDirect driver>>
+- <<#Oracle,Oracle>>
+- <<#PostreSQL,PostreSQL>>
+- <<#Sybase,Sybase>>
+- <<##Otherdatabases,#Other databases>>
+
+
+[#DB2JCC]
+=== DB2 JCC
+
+.bootstrap.properties
+[source, properties]
+----
+com.ibm.ws.logging.trace.specification=*=info:RRA=all:com.ibm.db2=all
+----
+
+.server.xml
+[source, xml]
+----
+<logging traceSpecification="*=info:RRA=all:com.ibm.db2=all" ... />
+<datasource ...>
+  <!-- traceLevel -1 is equivalent to ALL -->
+  <propertes.db2.jcc traceLevel="-1"/>
+</datasource>
+----
+
+[#Derby]
+=== Derby
+
+.bootstrap.properties
+[source, properties]
+----
+com.ibm.ws.logging.trace.specification=*=info:RRA=all:com.ibm.ws.derby.logwriter=all
+----
+
+.server.xml
+[source, xml]
+----
+<logging traceSpecification="*=info:RRA=all:com.ibm.ws.derby.logwriter=all" />
+----
+
+[#InformixJDBC]
+=== Informix using JDBC
+
+.bootstrap.properties
+[source, properties]
+----
+com.ibm.ws.logging.trace.specification=*=info:RRA=all:com.informix=all
+----
+
+.server.xml
+[source, xml]
+----
+<logging traceSpecification="*=info:RRA=all:com.informix=all" />
+----
+
+[#InformixDB2JCC]
+=== Informix using DB2 JCC
+
+.bootstrap.properties
+[source, properties]
+----
+com.ibm.ws.logging.trace.specification=*=info:RRA=all:com.ibm.db2=all
+----
+
+.server.xml
+[source, xml]
+----
+<logging traceSpecification="*=info:RRA=all:com.ibm.db2=all" />
+
+<datasource ... >
+  <!-- traceLevel -1 is equivalent to ALL -->
+  <properties.informix.jcc traceLevel="-1"/>
+</datasource>
+----
+
+[#SQLServerJDBCdriver]
+=== Microsoft SQL Server JDBC driver
+
+.bootstrap.properties
+[source, properties]
+----
+com.ibm.ws.logging.trace.specification=*=info:RRA=all:com.microsoft.sqlserver.jdbc=all
+----
+
+.server.xml
+[source, xml]
+----
+<logging traceSpecification="*=info:RRA=all:com.microsoft.sqlserver.jdbc=all" />
+----
+
+[#SQLServerDataDirectdriver]
+=== Microsoft SQL Server DataDirect driver
+
+.bootstrap.properties
+[source, properties]
+----
+com.ibm.ws.logging.trace.specification=*=info:RRA=all:com.ibm.ws.sqlserver.logwriter=all
+----
+
+.server.xml
+[source, xml]
+----
+<logging traceSpecification="*=info:RRA=all:com.ibm.ws.sqlserver.logwriter=all" />
+----
+
+[#Oracle]
+=== Oracle
+
+.bootstrap.properties
+[source, properties]
+----
+com.ibm.ws.logging.trace.specification=*=info:RRA=all:oracle=all
+----
+
+.server.xml
+[source, xml]
+----
+<logging traceSpecification="*=info:RRA=all:oracle=all" />
+<library id="oracleDebug">
+    <file name="${path.to.oracle.dir}/ojdbcX_g.jar"/>
+</library>
+----
+
+.jvm.options
+[source, txt]
+----
+-Doracle.jdbc.Trace=true
+----
+
+[#PostreSQL]
+=== PostreSQL
+
+.bootstrap.properties
+[source, properties]
+----
+com.ibm.ws.logging.trace.specification=*=info:RRA=all:com.ibm.ws.postgresql.logwriter=all
+----
+
+.server.xml
+[source, xml]
+----
+<logging traceSpecification="*=info:RRA=all:com.ibm.ws.postgresql.logwriter=all" />
+----
+
+[#Sybase]
+=== Sybase
+
+.bootstrap.properties
+[source, properties]
+----
+com.ibm.ws.logging.trace.specification=*=info:RRA=all:com.ibm.ws.sybase.logwriter=all
+----
+
+.server.xml
+[source, xml]
+----
+<logging traceSpecification="*=info:RRA=all:com.ibm.ws.sybase.logwriter=all" />
+----
+
+[#Otherdatabases]
+=== Other databases
+
+.bootstrap.properties
+[source, properties]
+----
+com.ibm.ws.logging.trace.specification=*=info:RRA=all:com.ibm.ws.database.logwriter=all
+----
+
+.server.xml
+[source, xml]
+----
+<logging traceSpecification="*=info:RRA=all:com.ibm.ws.database.logwriter=all" />
+----
