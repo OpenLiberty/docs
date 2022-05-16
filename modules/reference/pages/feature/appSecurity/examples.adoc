@@ -81,3 +81,22 @@ LTPA cookies contain secure tokens that are used to verify user credentials and 
 ----
 <trustAssociation id="sample" disableLtpaCookie="true" />
 ----
+
+=== Track logged-out LTPA tokens
+
+When both the Application Security and feature:servlet[Jakarta Servlet] features are enabled, you can configure an Open Liberty server to track logged0-out LTPA tokens. The Application Security feature version 3.0 and later enables the Jakarta Servlet feature by default.
+
+When a user is logged out by using either form logout or programmatic logout, the LTPA token that is used for single sign-on is removed from the cookie. The LTPA token that is used for SSO is also removed from the local authentication cache and the session is invalidated. If the token was persisted and presented again, it is validated based on the expiration time and the LTPA encryption keys.
+
+However, you can configure the server to track logged-out LTPA tokens so that if they are presented again on the same server, the user must authenticate again.
+
+To track the tokens that are logged out on a particular Liberty server, you can add the following configuration to your `server.xml` file.
+
+[source,xml]
+----
+<webAppSecurity trackLoggedOutSSOCookies="true"/>
+----
+
+This configuration works only on the same server. The LTPA token is tracked only on the server where the user logged out. If that same unexpired LTPA token is presented to another server where the LTPA keys are shared, it is used until it is also logged out on that server.
+
+This configuration might affect your SSO scenarios. For example, when a user logs in from multiple browsers to the same server and logs out from one browser. If that user then tries to access the resource by using another browser, they must log in again.
