@@ -5,6 +5,7 @@
 - <<#custsp,Specify a custom service provider instance>>
 - <<#authfilter,Configure SAML authentication for a subset of requests>>
 - <<#pkix,Configure a PKIX trust engine>>
+- <<##inbound,Configure SAML Web inbound propagation>>
 - <<#sso,Configure service provider-initiated unsolicited single sign-on>>
 - <<#ltpa,Use an LTPA cookie to maintain an authenticated session>>
 -
@@ -112,6 +113,23 @@ The default trust engine for SAML on Open Liberty is the Metadata trust engine, 
 ----
 
 The `trustAnchorRef` attribute specifies a reference to top-level `keyStore` element for a keystore that contains the public key to verify the signature of the SAML response and assertion.
+
+[#inbound]
+=== Configure SAML Web inbound propagation
+
+You can configure an Open Liberty server to accept a SAML token in an HTTP header as an authentication token. This feature is commonly used for a proxy or RESTful client that uses SAML on behalf of an authenticated user. You must also <<#pkix,configure the PKIX trust engine>> to validate the trustworthiness of the certificate in the signature through PKIX validation. Certificates that pass this validation are assumed to be trusted.
+
+The following example configuration demonstrates how to configure inbound propagation for the `defaultSP` SAML configuration by specifying the `inboundPropagation` attribute and the `pkixTrustEngine` element.
+
+[source,xml]
+----
+<samlWebSso20 id="defaultSP"
+  inboundPropagation="required"
+  headerName="saml_token"
+  signatureMethodAlgorithm="SHA1">
+  <pkixTrustEngine trustAnchor="serverStore" />
+</samlWebSso20>
+----
 
 [#sso]
 === Configure service provider-initiated unsolicited single sign-on
