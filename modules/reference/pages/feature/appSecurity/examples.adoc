@@ -45,6 +45,30 @@ When you want to configure a basic user registry, you can use the `quickStartSec
 ----
 You can use QuickStart security configuration for test purposes.
 
+=== Configure the authentication cache
+
+Because the creation of a subject might affect performance, Open Liberty provides an authentication cache to store a subject after an authentication of a user is successful. The cache is initialized with a set number of entries, which are determined by the `initialSize` attribute. It has a maximum number of entries, which are determined by the `maxSize` attribute. If the maximum size is reached, then the earliest entries are removed from the cache. If a user is inactive for longer than period that is specified by the `timeout` attribute, then the entry for that user is removed from the cache. 
+
+By default, the cache size is initialized to 50 entries and a maximum of 25000 entries, with a timeout of 600 seconds. If you want to change the values for the authentication cache, you can configure the `authCache` element, as shown in the following example.
+
+[source,xml]
+----
+<authCache initialSize="100" maxSize="50000" timeout="15m"/>
+----
+
+Any change to the user registry configuration in the `server.xml` file clears the authentication cache. However, if changes are made to an external user registry, such as an LDAP user registry, the authentication cache is unaffected.
+Larger authentication cache timeout values can increase security risks. For example, a user who is revoked can still log in by using a credential that is cached in the authentication cache until the cache is refreshed.
+Smaller authentication cache timeout values can affect performance. When this value is smaller, the Liberty server accesses the user registry or repository more frequently.
+
+For more information, see the config:authCache[] element.
+
+Larger numbers of entries in the authentication cache, which is caused by an increased number of users, increases the memory usage of the authentication cache, which can affect performance. You can disable the authentication cache by setting the `cachEnabled` attribute to false in the `authentication` element, as shown in the following example.
+
+[source,xml]
+----
+<authCache initialSize="100" maxSize="50000" timeout="15m"/>
+----
+
 === Specify LTPA keys
 When the Application Security feature is enabled, Lightweight Third Party Authentication (LTPA) is enabled by default. You can override the default settings for the `ltpa` element by configuring the `ltpa` element in the `server.xml` file. The following example shows how to configure the `ltpa` element:
 [source,xml]
