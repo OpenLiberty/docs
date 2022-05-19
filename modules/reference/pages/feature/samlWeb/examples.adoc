@@ -6,7 +6,8 @@
 - <<#authfilter,Configure SAML authentication for a subset of requests>>
 - <<#pkix,Configure a PKIX trust engine>>
 - <<##inbound,Configure SAML Web inbound propagation>>
-- <<#sso,Configure service provider-initiated unsolicited single sign-on>>
+- <<#idpsso,Configure identity provider-initiated unsolicited single sign-on>>
+- <<#spsso,Configure service provider-initiated unsolicited single sign-on>>
 - <<#ltpa,Use an LTPA cookie to maintain a SAML-authenticated session>>
 - <<#slo,Configure the service provider for Single Logout>>
 
@@ -127,11 +128,29 @@ The following example configuration demonstrates how to configure inbound propag
   inboundPropagation="required"
   headerName="saml_token"
   signatureMethodAlgorithm="SHA1">
-  <pkixTrustEngine trustAnchor="serverStore" />
+  <pkixTrustEngine trustAnchorRef="serverStore" />
 </samlWebSso20>
 ----
 
-[#sso]
+[#idpsso]
+=== Configure identity provider-initiated unsolicited single sign-on
+Open Liberty SAML SP supports IdP-initiated unsolicited SSO with and without the requirement of IdP metadata on-premises. If you do not have IdP metadata, or if you intend to use unsolicited SSO to federate with multiple identity providers with one Liberty SP, you must add the following configurations:
+- Configure the `PKIXTrustEngine` subelement and import all the IdP signer certificates to the default truststore of the Liberty server, or to the trustAnchor of the PKIXTrustEngine.
+- Configure the `trustedIssuers` attribute to list the issuer name of the IdP as it appears in the SAML assertion. The issuer name is used as the EntityID in the metadata.
+
+The following example demonstrates the `server.xml` configuration to specify IdP-initiated SSO, where the IdP signer certificates are in a keystore file that is called `serverStore`.
+
+[source,xml]
+----
+<samlWebSso20 id="defaultSP"
+  ...
+  <pkixTrustEngine trustAnchorRef="serverStore" trustedIssuers="issuerName" />
+</samlWebSso20>
+----
+
+If you intend to support unsolicited SSO only, you can <<#spsso,configure SP-initiated unsolicited SSO>>. This scenario is useful if the user's security context in the SP that is associated with SAML becomes invalid, the SP can redirect the user back to the IdP to start unsolicited SSO again automatically.
+
+[#spsso]
 === Configure service provider-initiated unsolicited single sign-on
 
 The Open Liberty SAML SP uses the configured IdP metadata to service a solicited SAML `AuthnRequest` instance. An Open Liberty SP can also redirect unauthenticated requests to a preconfigured login application without using an `AuthnRequest` instance. This scenario is useful if an application performs pre-authentication processing before a user can authenticate to the SAML IdP, or if the SAML IdP must be hidden from the Open Liberty SP.
@@ -142,6 +161,7 @@ To configure this scenario, set the `loginPageURL` attribute to a URL that can i
 ----
 <samlWebSso20  id="defaultSP" loginPageURL="https://example.com"/>
 ----
+
 
 [#ltpa]
 === Use an LTPA cookie to maintain a SAML-authenticated session
