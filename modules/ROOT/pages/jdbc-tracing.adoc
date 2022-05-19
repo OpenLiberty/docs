@@ -10,7 +10,7 @@
 //
 //
 //
-:page-description: If you need to enable tracing for your third party JDBC driver for debugging purposes, or to submit a ticket.
+:page-description: You can enable tracing for your third-party JDBC driver in Open Liberty for debugging and support purposes.
 :projectName: Open Liberty
 :page-layout: general-reference
 :page-type: general
@@ -22,10 +22,9 @@ You can enable tracing for your third-party JDBC driver in Open Liberty for debu
 
 == Understanding Open Liberty tracing
 
-For driver-specific custom trace facilities, you can use one of the following two options.
+How you enable trace for your JDBC driver depends on whether the driver supports the `java.util.logging` library. In either case, you must identify your driver in the trace specification. Drivers that support the `java.util.logging` library are specified by the package name that the driver uses. Drivers that do not support the `java.util.logging` library are specified either by the log writer name for the driver or by the Open Liberty generic log writer name.
 
-* Use the Java built-in logging mechanism, `java.util.logging`.
-* Configure a custom trace setting as a vendor property.
+When trace is enabled for your driver, you can configure custom trace settings as vendor properties.
 
 For more information on Open Liberty tracing, see https://openliberty.io/docs/latest/log-trace-configuration.html[Log and trace configuration].
 
@@ -36,53 +35,6 @@ A third-party JDBC driver uses either the `java.util.logging` Java logging libra
 If your JDBC driver uses the `java.util.logging` library, you can enable trace by providing a trace specification that corresponds to the package name for the driver.
 If your JDBC driver uses some other logging library, Open Liberty provides a log writer that generates logs based on JDBC specification methods such as `getConnection` and `executeQuery`.
 
-The following table lists the most common JDBC drivers, whether they support the `java.util.logging` library, and the package name or log writer to use in the trace specification.
-
-.Third-party JDBC drivers
-|===
-| JDBC driver | Support JUL | Trace specification
-
-|**DB2 JCC**
-|True
-|com.ibm.db2
-
-|**Derby**
-|False - Print writer
-|com.ibm.ws.derby.logwriter
-
-|**Informix using JDBC**
-|True
-|com.informix
-
-|**Informix using DB2 JCC**
-|True
-|com.ibm.db2
-
-|**Microsoft SQL Server JDBC**
-|True
-|com.microsoft.sqlserver.jdbc
-
-|**Microsoft SQL Server DataDirect**
-|False
-|com.ibm.ws.sqlserver.logwriter
-
-|**Oracle**
-|True
-|oracle
-
-|**PostreSQL**
-|False - SLF4J
-|com.ibm.ws.postgresql.logwriter
-
-|**Sybase**
-|False
-|com.ibm.ws.sybase.logwriter
-
-|**Other databases (for example MySQL)**
-|False - Unknown
-|com.ibm.ws.database.logwriter
-
-|===
 
 == Recommended trace configuration for support
 
@@ -105,7 +57,9 @@ com.ibm.ws.logging.max.file.size=100
 == Trace configuration examples for common JDBC drivers
 
 If the JDBC driver that you are using has custom trace settings, you can set these custom trace settings as JDBC driver vendor properties in the `server.xml` file.
-You can also add the logwriter name to the trace specification in the `bootstrap.properties` file.
+
+Alternatively, you can also add the logwriter name to the trace specification in the `bootstrap.properties` file.
+
 
 The following sub sections contain JDBC driver specific configuration.
 
@@ -124,6 +78,8 @@ The following sub sections contain JDBC driver specific configuration.
 [#DB2JCC]
 === DB2 JCC
 
+The DB2 JCC driver supports the `java.util.logging` library. The driver uses the `com.ibm.db2` in the trace specification.
+
 .bootstrap.properties
 [source, properties]
 ----
@@ -140,8 +96,12 @@ com.ibm.ws.logging.trace.specification=*=info:RRA=all:com.ibm.db2=all
 </datasource>
 ----
 
+For more information on additional valid values for the traceLevel, see https://www.ibm.com/support/pages/collecting-data-tracing-ibm-data-server-driver-jdbc-and-sqlj[Table 1. DB2 JDBC trace constants].
+
 [#Derby]
 === Derby
+
+The Derby driver does not supports the `java.util.logging` library. Derby uses the Print writer and also uses the `com.ibm.ws.derby.logwriter` in the trace specification.
 
 .bootstrap.properties
 [source, properties]
@@ -158,6 +118,8 @@ com.ibm.ws.logging.trace.specification=*=info:RRA=all:com.ibm.ws.derby.logwriter
 [#InformixJDBC]
 === Informix using JDBC
 
+The Informix using JDBC driver supports the `java.util.logging` library. The driver uses the `com.informix` in the trace specification.
+
 .bootstrap.properties
 [source, properties]
 ----
@@ -172,6 +134,8 @@ com.ibm.ws.logging.trace.specification=*=info:RRA=all:com.informix=all
 
 [#InformixDB2JCC]
 === Informix using DB2 JCC
+
+The Informix using DB2 JCC driver supports the `java.util.logging` library. The driver uses the `com.ibm.db2` in the trace specification.
 
 .bootstrap.properties
 [source, properties]
@@ -190,8 +154,12 @@ com.ibm.ws.logging.trace.specification=*=info:RRA=all:com.ibm.db2=all
 </datasource>
 ----
 
+For more information on additional valid values for the traceLevel, see https://www.ibm.com/support/pages/collecting-data-tracing-ibm-data-server-driver-jdbc-and-sqlj[Table 1. DB2 JDBC trace constants].
+
 [#SQLServerJDBCdriver]
 === Microsoft SQL Server JDBC driver
+
+The Microsoft SQL Server JDBC driver supports the `java.util.logging` library. The driver uses the `com.microsoft.sqlserver.jdbc` in the trace specification.
 
 .bootstrap.properties
 [source, properties]
@@ -208,6 +176,8 @@ com.ibm.ws.logging.trace.specification=*=info:RRA=all:com.microsoft.sqlserver.jd
 [#SQLServerDataDirectdriver]
 === Microsoft SQL Server DataDirect driver
 
+The Microsoft SQL Server DataDirect driver does not supports the `java.util.logging` library. The driver uses the `com.ibm.ws.sqlserver.logwriter` in the trace specification.
+
 .bootstrap.properties
 [source, properties]
 ----
@@ -222,6 +192,12 @@ com.ibm.ws.logging.trace.specification=*=info:RRA=all:com.ibm.ws.sqlserver.logwr
 
 [#Oracle]
 === Oracle
+
+Oracle provides two different drivers one for production and another for debugging purposes. The production driver does not produce a trace, so you need to download and replace your production driver with the debugging driver. The debugging driver has `_g` in the driver name. For example, `ojdbc8.jar` is `ojdbc8_g.jar`.
+
+The debugging driver that produces the trace is conservative with the trace it produces. You can use the `-Doracle.jdbc.Trace=true` setting to ensure that all the trace is produced.
+
+The Oracle driver supports the `java.util.logging` library. The driver uses the `Oracle` in the trace specification.
 
 .bootstrap.properties
 [source, properties]
@@ -247,6 +223,8 @@ com.ibm.ws.logging.trace.specification=*=info:RRA=all:oracle=all
 [#PostreSQL]
 === PostreSQL
 
+The PostreSQL driver does not supports the `java.util.logging` library. Derby uses the SLF4J library and also uses the `com.ibm.ws.postgresql.logwriter` in the trace specification.
+
 .bootstrap.properties
 [source, properties]
 ----
@@ -262,6 +240,8 @@ com.ibm.ws.logging.trace.specification=*=info:RRA=all:com.ibm.ws.postgresql.logw
 [#Sybase]
 === Sybase
 
+The Sybase driver does not supports the `java.util.logging` library. The driver uses the `com.ibm.ws.sybase.logwriter` in the trace specification.
+
 .bootstrap.properties
 [source, properties]
 ----
@@ -276,6 +256,8 @@ com.ibm.ws.logging.trace.specification=*=info:RRA=all:com.ibm.ws.sybase.logwrite
 
 [#Otherdatabases]
 === Other databases
+
+Other database drivers do not supports the `java.util.logging` library. The drivers use the `com.ibm.ws.database.logwriter` in the trace specification.
 
 .bootstrap.properties
 [source, properties]
