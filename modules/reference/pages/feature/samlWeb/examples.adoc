@@ -25,7 +25,9 @@ This endpoint on the service provider (SP) point of contact server receives asse
 +
 This endpoint provides configuration information for the service provider.
 You can download the metadata for the service provider from a browser with the service provider metadata URL.
-You can also provide the service provider metadata URL to the SAML IdP to establish a federation between the SP and IdP. The IdP metadata file must be named `idpMetadata.xml` and copied to the `resources/security` directory on the server.
+You can also provide the service provider metadata URL to the SAML IdP to establish a federation between the SP and IdP.
+
+The IdP metadata file must be named `idpMetadata.xml` and copied to the `resources/security` directory on the server.
 
 The issuer name from the SAML assertion is used as the security realm. The `NameID` value is used as the principal to create an authenticated subject from the SAML assertion.
 
@@ -39,7 +41,7 @@ You can customize the `defaultSP` service provider by adding a `samlWebSso20` el
 [source,xml]
 ----
 <samlWebSso20  id="defaultSP"
-       spHostAndPort="https://<host>:<port>"
+       idpMetadata="${server.config.dir}/customizedidpMetadata.xml"
        keyStoreRef="samlKeyStore"
        keyAlias="samlKey"
        ... />
@@ -104,16 +106,16 @@ For more information, see xref:ROOT:authentication-filters.adoc[Authentication f
 [#pkix]
 === Configure a PKIX trust engine
 
-The default trust engine for SAML on Open Liberty is the Metadata trust engine, which validates a signature against information that is provided in the configured IdP metadata. Alternatively, you can use a Public Key Infrastructure X.509 (PKIX) trust engine by specifying the `PKIXTrustEngine` element and defining the proper `trustAnchorRef` value, as shown in the following example.
+The default trust engine for SAML on Open Liberty is the Metadata trust engine, which validates a signature against information that is provided in the configured IdP metadata. Alternatively, you can use a Public Key Infrastructure X.509 (PKIX) trust engine by specifying the `PKIXTrustEngine` element and defining the proper `trustAnchor` value, as shown in the following example.
 
 [source,xml]
 ----
 <samlWebSso20  id="defaultSP">
-  <PKIXTrustEngine trustAnchorRef="samlKeyStore" />
+  <PKIXTrustEngine trustAnchor="samlKeyStore" />
 </samlWebSso20>
 ----
 
-The `trustAnchorRef` attribute specifies a reference to top-level `keyStore` element for a keystore that contains the public key to verify the signature of the SAML response and assertion.
+The `trustAnchor` attribute specifies a reference to top-level `keyStore` element for a keystore that contains the public key to verify the signature of the SAML response and assertion.
 
 [#inbound]
 === Configure SAML Web inbound propagation
@@ -128,7 +130,7 @@ The following example configuration demonstrates how to configure inbound propag
    inboundPropagation="required"
    headerName="saml_token"
    signatureMethodAlgorithm="SHA1">
-   <pkixTrustEngine trustAnchorRef="serverStore" />
+   <pkixTrustEngine trustAnchor="serverStore" />
 </samlWebSso20>
 ----
 
@@ -138,14 +140,16 @@ Open Liberty SAML SP supports IdP-initiated unsolicited SSO with and without the
 - Configure the `PKIXTrustEngine` subelement and import all the IdP signer certificates to the default truststore of the Liberty server, or to the trustAnchor of the PKIXTrustEngine.
 - Configure the `trustedIssuers` attribute to list the issuer name of the IdP as it appears in the SAML assertion. The issuer name is used as the EntityID in the metadata.
 
-The following example demonstrates the `server.xml` configuration to specify IdP-initiated SSO, where the IdP signer certificates are in a keystore file that is called `serverStore`.
+The following example demonstrates the `server.xml` file configuration to specify IdP-initiated SSO, where the IdP signer certificates are in a file that is specified in the `serverStore` keystore configuration.
 
 [source,xml]
 ----
-<samlWebSso20 id="defaultSP"
+<samlWebSso20 id="libertysp"
   ...
-  <pkixTrustEngine trustAnchorRef="serverStore" trustedIssuers="issuerName" />
+  <pkixTrustEngine trustAnchor="serverStore" trustedIssuers="xyz" />
 </samlWebSso20>
+
+<keyStore id="serverStore" password="xxxxxxx" type="jks" location="${server.config.dir}/sslTrust.jks" />
 ----
 
 If you intend to support unsolicited SSO only, you can <<#spsso,configure SP-initiated unsolicited SSO>>. This scenario is useful if the user's security context in the SP that is associated with SAML becomes invalid, the SP can redirect the user back to the IdP to start unsolicited SSO again automatically.
@@ -164,9 +168,16 @@ To configure this scenario, set the `loginPageURL` attribute to a URL that can i
 
 
 [#ltpa]
-=== Use an LTPA cookie to maintain a SAML-authenticated session
+=== Configure an SP authentication session and session cookie
 
-After a SAML assertion is verified and processed, the Open Liberty SAML SP maintains an authenticated session between the browser and the SP without using an LTPA cookie.
+You can configure an SP authentication session and session cookie. After SAML assertion is verified and processed, the Liberty SAML SP maintains an authenticated session between the browser and the SP without using an LTPA cookie. The authenticated session timeout is set to `SessionNotOnOrAfter` value from  the  `saml:AuthnStatement` element, if one is presented, or to the `sessionNotOnOrAfter` attribute as configured in the server.xml file. The default value is 120 minutes.
+The session cookie name is automatically generated, and you can customize the cookie name by using the attribute `spCookieName`, as shown in the following example.
+
+[source,xml]
+----
+<samlWebSso20  id="defaultSP" sessionNotOnOrAfter="60m" spCookieName="samlCookie"/>
+----
+
 
 If you want the Open Liberty SP to create an LTPA cookie from the SAML assertion and use the LTPA cookie for subsequent authentication requests, set the  `disableLtpaCookie` attribute to `false`. If you want to share this LTPA cookie with other servers, you must also set the `allowCustomCacheKey` attribute to `false`, as shown in the following example.
 
