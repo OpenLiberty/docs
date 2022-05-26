@@ -10,7 +10,6 @@
 - <<#Certfilter,Define mapping between client certificate attributes and LDAP user registry attributes>>
 - <<#mapldapattributes,Define mapping between LDAP attributes and the user registry schema attributes>>
 - <<#configurefailover,Configure failover for multiple LDAP servers>>
-- <<#configuresslconfiguration,Configure SSL configuration to connect to the LDAP server>>
 
 
 [#simple]
@@ -82,6 +81,30 @@ For more information about TLS and SSL configurations, see xref:reference:config
 <keyStore id="LDAPKeyStore" location="server1/resources/security/key.p12" type="PKCS12" password="password" />
 <keyStore id="LDAPTrustStore" location="server1/resources/security/trust.p12" type="PKCS12" password="password" />
 ----
+
+You can specify the SSL configuration that is used to connect to the LDAP server in the SSL configuration instead of using the `sslRef` attribute.
+Set the `sslEnabled` attribute to true. If the `sslRef` attribute is not specified, the SSL code looks for an outbound filter that matches the LDAP host and port.
+If no matching filter exists, the SSL outbound default is used.
+
+[source,xml]
+----
+<ldapRegistry id="ldap" realm="SampleLdapIDSRealm"
+      host="ldapserver.mycity.mycompany.com" port="389" ignoreCase="true"
+      baseDN="o=mycompany,c=us"
+      ldapType="IBM Tivoli Directory Server"
+      sslEnabled="true" >
+      <idsFilters
+      userFilter="(&amp;(uid=%v)(objectclass=ePerson))"
+      groupFilter="(&amp;(cn=%v)(|(objectclass=groupOfNames)
+                   (objectclass=groupOfUniqueNames)(objectclass=groupOfURLs)))"
+      userIdMap="*:uid"
+      groupIdMap="*:cn"
+      groupMemberIdMap="ibm-allGroups:member;ibm-allGroups:uniqueMember;
+      groupOfNames:member;groupOfUniqueNames:uniqueMember">
+      </idsFilters>
+</ldapRegistry>
+----
+
 
 [#object]
 === Specify custom LDAP object classes
@@ -360,30 +383,3 @@ These `server` elements act as the backup servers in case the primary LDAP serve
 </idsLdapFilterProperties>
 ----
 For more information, see `failoverServers` in xref:reference:config/ldapRegistry.adoc[LDAP User Registry]
-
-
-[#configuresslconfiguration]
-=== Configure SSL configuration to connect to the LDAP server
-
-You can specify the SSL configuration that is used to connect to the LDAP server in the SSL configuration instead of using the `sslRef` attribute.
-Set the `sslEnabled` attribute to true. If the `sslRef` attribute is not specified, the SSL code looks for an outbound filter that matches the LDAP host and port.
-If no matching filter exists, the SSL outbound default is used.
-
-[source,xml]
-----
-<ldapRegistry id="ldap" realm="SampleLdapIDSRealm"
-      host="ldapserver.mycity.mycompany.com" port="389" ignoreCase="true"
-      baseDN="o=mycompany,c=us"
-      ldapType="IBM Tivoli Directory Server"
-      sslEnabled="true" >
-      <idsFilters
-      userFilter="(&amp;(uid=%v)(objectclass=ePerson))"
-      groupFilter="(&amp;(cn=%v)(|(objectclass=groupOfNames)
-                   (objectclass=groupOfUniqueNames)(objectclass=groupOfURLs)))"
-      userIdMap="*:uid"
-      groupIdMap="*:cn"
-      groupMemberIdMap="ibm-allGroups:member;ibm-allGroups:uniqueMember;
-      groupOfNames:member;groupOfUniqueNames:uniqueMember">
-      </idsFilters>
-</ldapRegistry>
-----
