@@ -26,7 +26,7 @@ How you enable trace for your JDBC driver depends on whether the driver supports
 
 Drivers that do not support the `java.util.logging` library are specified by the log writer name for the JDBC driver. Open Liberty provides log writers for common database vendors that generate logs based on JDBC specification methods such as `getConnection` and `executeQuery`. Open Liberty also provides a generic log writer for drivers that do not support the `java.util.logging` library and for which no driver-specific log writer exists.
 
-When trace is enabled for your driver, you can configure custom trace settings as vendor properties.
+When trace is enabled for your driver, you can <<#customsettings,configure custom trace settings as vendor properties>>.
 
 For more information on Open Liberty tracing, see xref:log-trace-configuration.adoc[Log and trace configuration].
 
@@ -63,7 +63,7 @@ com.ibm.ws.logging.max.file.size=100
 
 Drivers that support the `java.util.logging` library can also be configured in the `bootstrap.properties` file by specifying the package name for the driver instead of a log writer name.
 
-
+[#customsettings]
 == Configure custom settings
 
 If your JDBC driver has custom trace settings, you can set these custom trace settings as JDBC driver vendor properties in the `server.xml` file.
@@ -178,21 +178,21 @@ The Microsoft SQL Server DataDirect driver does not support the `java.util.loggi
 [#Oracle]
 === Oracle
 
-Oracle provides two different drivers, one for production and another for debugging purposes. The production driver does not produce any trace, so you need to download and replace your production driver with the debugging driver. The debugging driver has `_g` in the driver name. For example, `ojdbc8.jar` is `ojdbc8_g.jar`. The debugging driver needs to be configured as the `jdbcDriver` element in `server.xml`.
+Oracle provides two different drivers, one for production and another for debugging purposes. The production driver does not produce any trace, so you need to download and replace your production driver with the debugging driver. The debugging driver has `_g` in the driver name. For example, `ojdbc8.jar` is `ojdbc8_g.jar`. Configure the debugging driver by specifying the library subelement within the `jdbcDriver` element. The library defines the path to the debugging driver JAR file.
 
-The Oracle driver supports the `java.util.logging` library. The driver uses the `Oracle` package name in the trace specification. The following `server.xml` file example shows you the configuration to enable trace for the Oracle driver.
+The Oracle driver supports the `java.util.logging` library. The driver uses the `Oracle` package name in the trace specification. The following `server.xml` file example shows you how to configure the Oracle debugging driver and enable trace.
 
 [source, xml]
 ----
 <logging traceSpecification="*=info:RRA=all:oracle=all" />
 <jdbcDriver id="oracleDriver">
   <library id="oracleDebug">
-      <file name="${path.to.oracle.dir}/ojdbcX_g.jar"/>
+      <file name="path_to_oracle_driver/ojdbcX_g.jar"/>
   </library>
-</jdbcDriver
+</jdbcDriver>
 ----
 
-The trace produced by the debugging driver is limited. You can add the following option to the `jvm.options` file to ensure that all trace is produced.
+The trace that is produced by the debugging driver is limited. You can add the following option to the `jvm.options` file to ensure that all trace is produced.
 [source, txt]
 ----
 -Doracle.jdbc.Trace=true
