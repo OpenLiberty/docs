@@ -61,33 +61,29 @@ The following example shows custom and group filters that are specified for the 
 === Configure a secure connection with LDAPS
 
 To enable a secure connection to an LDAP server for encrypted communication by way of TLS or SSL protocols, configure the `ldapRegistry` element to enable Lightweight Directory Access Protocol Over Secure Socket Links (LDAPS).
-Set the `sslEnabled` attribute to `true` and the `sslRef` attribute to your `ssl id` value. To enable a secure TLS or SSL connection, you must configure these connections in the `ssl` element.
+Set the `sslEnabled` attribute to `true` and the `sslRef` attribute to your `ssl id` value. To enable a secure TLS or SSL connection, you must configure these connections in the `ssl` element. For more information about TLS and SSL configurations, see xref:reference:config/ssl.adoc[SSL Repertoire].
 
 The following example shows both the `ldapRegistry` element and the `ssl` element that the LDAP connection references.
 In the `ssl` element, the `id` parameter identifies the configuration so that it can be referenced by the `sslRef` parameter of the `ldapRegistry` element.
 The `keyStoreRef` and `trustStoreRef` parameters establish the data sources that are used in the TLS or SSL handshake, which enables a secure connection.
-For more information about TLS and SSL configurations, see xref:reference:config/ssl.adoc[SSL Repertoire].
 
 [source,xml]
 ----
-<ldapRegistry ... sslEnabled="true" sslRef="LDAPSSLSettings" >
-   ...
-</ldapRegistry>
+<ldapRegistry host="ldapserver.mycity.mycompany.com" port="389"
+                         sslEnabled="true" sslRef="LDAPSSLSettings"..../ >
 
 <ssl id="LDAPSSLSettings" keyStoreRef="LDAPKeyStore" trustStoreRef="LDAPTrustStore" />
 <keyStore id="LDAPKeyStore" location="server1/resources/security/key.p12" type="PKCS12" password="password" />
 <keyStore id="LDAPTrustStore" location="server1/resources/security/trust.p12" type="PKCS12" password="password" />
 ----
 
-You can specify the SSL configuration that is used to connect to the LDAP server in the SSL configuration instead of using the `sslRef` attribute.
-Set the `sslEnabled` attribute to true. If the `sslRef` attribute is not specified, the SSL code looks for an outbound filter that matches the LDAP host and port.
-If no matching filter exists, the SSL outbound default is used.
+Alternatively, you can enable the SSL configuration that is used to connect to the LDAP server without specifying the `sslRef` attribute. When the `sslEnabled` attribute is set to `true` and the `sslRef` attribute is not specified, the SSL code looks for an outbound filter that matches the LDAP host and port. If no matching filter exists, the SSL outbound default is used.
+
+In the following example, SSL is enabled but the `sslRef` attribute is not specified, so LDAP uses the `LdapSSLSettings` SSL configuration, which specifies the same host and port as the `ldapRegistry` configuration.
 
 [source,xml]
 ----
-<ldapRegistry ... host="ldapserver.mycity.mycompany.com" port="389" sslEnabled="true" >
-    ...
-</ldapRegistry>
+<ldapRegistry host="ldapserver.mycity.mycompany.com" port="389" sslEnabled="true"... / >
 
 <ssl id="LdapSSLSettings" keyStoreRef="LDAPKeyStore" trustStoreRef="LDAPTrustStore" >
     <outboundConnection host="ldapserver.mycity.mycompany.com" port="389" />
