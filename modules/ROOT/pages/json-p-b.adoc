@@ -1,4 +1,4 @@
-// Copyright (c) 2019 IBM Corporation and others.
+// Copyright (c) 2019, 2022 IBM Corporation and others.
 // Licensed under Creative Commons Attribution-NoDerivatives
 // 4.0 International (CC BY-ND 4.0)
 //   https://creativecommons.org/licenses/by-nd/4.0/
@@ -17,7 +17,7 @@ JavaScript Object Notation (JSON) is the go-to format for sharing data in micros
 
 JSON supports two standard data structures: objects and arrays. Objects are sets of key-value pairs that are usually surrounded by curly brackets. Arrays collect objects into larger sets. These objects and arrays are serialized and deserialized for transfer between different microservices. JSON-P provides a Java API for processing JSON-formatted data. JSON-B provides a binding layer on top of JSON-P, making it even easier to convert objects to and from JSON.
 
-In Open Liberty, you can use the JSON APIs by enabling either the feature:jsonp[display=JavaScript Object Notation Processing feature], for JSON-P, or the feature:jsonb[display=JavaScript Object Notation Binding feature], for JSON-B.
+In Open Liberty, you can use the JSON APIs by enabling either the feature:jsonp[display=Jakarta JSON Processing feature], for JSON-P, or the feature:jsonb[display=Jakarta JSON Binding feature], for JSON-B.
 
 
 == JSON-P: the original Java EE JSON API
@@ -149,8 +149,73 @@ public class UserService {
 }
 ----
 
+== Thrid-party JSON-P and JSON-B providers
+
+In Open Liberty, you can choose to use the reference implementations of JSON-P and JSON-B by using the feature:jsonp[display=Jakarta JSON Processing feature], for JSON-P, or the feature:jsonb[display=Jakarta JSON Binding feature], for JSON-B.
+
+If you perfer to use a thrid-party implementation for JSON-P and JSON-B, then you will want to instead use the feature:jsonpContainer[display=Jakarta JSON Processing Container feature], for JSON-P, or the feature:jsonbContainer[display=Jakarta JSON Binding Container feature], for JSON-B. Then, configure a library and a BELL (Basic Extension using Liberty Libraries) that provides an implementation of the JSON-P or JSON-B API.
+
+For example, Apache Johnzon is another JSON-B compliant implementation. 
+In this example, a server is configured to use Johnzon instead of the reference implementation Yasson:
+
+[source, xml]
+----
+<server>
+  <featureManager>
+    <feature>jsonbContainer-2.0</feature>
+  </featureManager>
+
+  <bell libraryRef="johnzon"/>
+
+  <library id="johnzon">
+    <fileset dir="${server.config.dir}/johnzon"includes="*.jar"/>
+  </library>
+</server>
+----
+
+You can also mix and match reference implementations and third-party implementations so long as both implmentations are written to support the same Jakarta EE version. 
+
+For example, Apache Johnzon is another JSON-P compliant implementation. 
+In this example, a server is configured to use Johnzon instead of Glassfish for JSON-P, but continues to use Yasson for JSON-B:
+
+[source, xml]
+----
+<server>
+  <featureManager>
+    <feature>jsonb-2.0</feature>
+    <feature>jsonpContainer-2.0</feature>
+  </featureManager>
+
+  <bell libraryRef="johnzon"/>
+
+  <library id="johnzon">
+    <fileset dir="${server.config.dir}/johnzon" includes="*.jar"/>
+  </library>
+</server>
+----
+
+=== Avoiding trouble
+There are other features, such as microProfile, that enable the jsonp and jsonb features.
+When you want to use one of these features, and still provide your own thrid-party implementation for the JSON-P or JSON-B API you can. 
+The jsonbContainer and jsonpContainer features will supersed the jsonb and jsonp features respectively. 
+
+If logging is enabled you will see the following information message to confirm this behavior: 
+
+[source, txt]
+----
+CWWKJ0350I: The jsonb and jsonbContainer features are both enabled. The jsonbContainer feature supersedes the jsonb feature.
+CWWKJ0351I: The jsonp and jsonpContainer features are both enabled. The jsonpContainer feature supersedes the jsonp feature.
+----
+
+If you fail to provide a BELL configuration element that provides an implementation of the JSON API used by your application, then you may see the following error when your application attempts to use the JSON API. 
+
+[source, txt]
+----
+CWWKJ0350I: jsonb and jsonbContainer features are both enabled. The jsonbContainer feature supersedes the jsonb feature.
+jakarta.json.bind.JsonbException: JSON Binding provider org.eclipse.yasson.JsonBindingProvider not found
+----
 
 == See also
 - Guides: link:/guides/#restful_service[RESTful service]
-- link:hhttps://jakarta.ee/specifications/jsonb/[JSON-B specification]
+- link:https://jakarta.ee/specifications/jsonb/[JSON-B specification]
 - link:https://jakarta.ee/specifications/jsonp/[JSON-P specification]
