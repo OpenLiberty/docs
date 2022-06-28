@@ -18,7 +18,7 @@ A server has the following three primary log files:
 
 - `console.log` - This file is created by the `server start` command. It contains the redirected standard output and standard error streams from the underlying JVM process. This console output is formatted for human readability and it lacks some information that is useful for automated log analysis. The `console.log` file is reset when the server is restarted.
 - `messages.log` - This file contains all messages that are written or captured by the logging component. All messages that are written to this file contain additional information such as the message timestamp and the ID of the thread that wrote the message. This file is suitable for automated log analysis. This file does not contain messages that are written directly by the JVM process.
-- `trace.log` - This file contains all messages that are written or captured by the logging component and any enabled trace. This file is created only if you enable trace. This file does not contain messages that are written directly by the JVM process.
+- `trace.log` - This file is created only if you enable trace. It contains all the content of the `messages.log` file plus any enabled trace. This file does not contain messages that are written directly by the JVM process.
 
 The following sections provide more information about configuring your Open Liberty logs:
 
@@ -42,7 +42,7 @@ The logging component can be controlled through the server configuration. The lo
 == Log file storage management
 The `console.log` file is created by redirecting the process `stdout` and `stderr` streams to a file. As a result, Open Liberty is unable to offer the same level of management, like log rollover, as it offers for the `messages.log` file. If you are concerned about the size of the `console.log` file, you can set the console log to `OFF` and use the `messages.log` file instead. All messages that are written or captured by the logging component are written to the `messages.log` file, and you can configure file rollover in the messages log.
 
-However, when you set the console log level to `OFF`, messages from the underlying JVM and any messages that are written to the native standard out and standard error streams are still written to the `console.log` file. The Open Liberty logging component is not capable of capturing messages that are written directly by the JVM process, such as `-verbose:gc` output, and these messages do not appear in the `messages.log` file.
+However, when you set the console log level to `OFF`, messages from the underlying JVM are still written to the `console.log` file. The same principle applies to any messages that are written to the native standard out and standard error streams. The Open Liberty logging component does not capture or control the destination of messages that are written directly by the JVM process, such as `-verbose:gc` output. These messages are routed to the file system according to the active JVM settings and they do not appear in the `messages.log` file.
 
 
 To prevent the logging component from writing to the console log and configure the `messages.log` file to roll over three times at 100 Mb, use the following configuration:
@@ -434,6 +434,11 @@ If you specify a value of `false`, the date and time are formatted according to 
 |com.ibm.ws.logging.max.file.size
 |
 |This setting specifies the  maximum size (in MB) that a log file can reach before it is rolled. Setting the value to `0` disables log rolling. The default value is `20`. The `console.log` does not roll so this setting does not apply.
+
+|stackTraceSingleEntry
+|com.ibm.ws.logging.stackTraceSingleEntry
+|WLP_LOGGING_STACK_TRACE_SINGLE_ENTRY
+| When this attribute is set to `true`, stack traces that are emitted to standard-out and standard-error are merged into a single log event. By default, this value is set to `false` and each individual line of the stack trace is emitted as an individual log event.
 
 |===
 
