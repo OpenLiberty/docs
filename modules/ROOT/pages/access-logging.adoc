@@ -142,3 +142,38 @@ Based on this setting, the NCSA access log includes the following information fo
 * The response size in bytes excluding headers
 * The elapsed time of the request in microseconds, end-to-end, including client and network time
 * The elapsed time in microseconds until the first bytes of the response are sent. This value is often a close approximation of application response time.
+
+
+== Time-based HTTP access log rollover
+
+You can enable time-based periodic rollover of your HTTP access log file by specifying a log rollover start time and a log rollover interval duration. The specified rollover start time is your desired time of day when the HTTP access log file should first roll over. The rollover interval duration is the time interval in between consecutive HTTP access log file rollovers.
+
+For example, a server with a rollover start time of midnight and a rollover interval of 1 day will roll over its HTTP access log once every day, at midnight.
+
+Enable time-based rollover of your HTTP access log file by using the `rolloverStartTime` and `rolloverInterval` attributes of the `httpAcccessLogging` or `accessLogging` elements in the `server.xml` file. The following table lists the two attributes, and their respective descriptions and permitted values.
+
+|===
+|Time-based log rollover attribute|Description
+
+|rolloverStartTime
+|Use this setting alone or with `rolloverInterval` to enable time-based log rollover for your HTTP access log file. This setting specifies the scheduled time of day for logs to first roll over. The `rolloverInterval` setting duration begins at `rolloverStartTime`. Valid values follow a 24-hour ISO-8601 datetime format of HH:MM, where 00:00 represents midnight. Padding zeros are required. If `rolloverInterval` is specified, the default value of `rolloverStartTime` is 00:00, midnight.
+
+|rolloverInterval
+| Use this setting alone or with `rolloverStartTime` to enable time-based log rollover for your HTTP access log file. This setting specifies the time interval in between log rollovers, in minutes if a unit of time is not specified. Specify a positive integer followed by a unit of time, which can be days (d), hours (h), or minutes (m). For example, specify 5 hours as 5h. You can include multiple values in a single entry. For example, 1d5h is equivalent to 1 day and 5 hours. If `rolloverStartTime` is specified, the default value of `rolloverInterval` is 1 day.
+
+|===
+
+The following examples have time-based periodic rollover enabled for the HTTP access log file in the `httpAcccessLogging` and `accessLogging` elements, with `rolloverStartTime` set to  midnight and `rolloverInterval` set to 1 day:
+
+----
+<httpAccessLogging rolloverStartTime="00:00" rolloverInterval="1d"/>
+----
+
+or
+
+----
+<httpEndpoint id="defaultHttpEndpoint" httpPort="9080" httpsPort="9443">
+   <accessLogging filepath="${server.output.dir}/logs/http_defaultEndpoint_access.log"
+                 rolloverStartTime="00:00" rolloverInterval="1d" />
+</httpEndpoint>
+----
