@@ -30,6 +30,7 @@ The following sections provide more information about configuring your Open Libe
   ** <<#http,Selectable HTTP access log JSON fields>>
 * <<#container,Container image logging configuration>>
 * <<#binary,Binary logging>>
+* <<#rollover,Time-based log rollover>>
 * <<#log_formats,Log formats>>
 * <<#settings,Configuration settings by source>>
 * <<#log_details,Trace log detail levels>>
@@ -300,6 +301,39 @@ You can use the `binaryLog` command to convert the binary log to a text file, as
 binaryLog view defaultServer
 ----
 
+[#rollover]
+== Time-based log rollover
+
+You can enable time-based periodic rollover of Liberty messages and trace logs by specifying a log rollover start time and a log rollover interval duration. The specified rollover start time is the time of day when logs first roll over. The rollover interval duration is the time interval in between consecutive log rollovers.
+
+For example, a server with a rollover start time of midnight and a rollover interval of 1 day rolls over the messages and trace logs once every day, at midnight.
+
+You can configure rollover for Open Liberty messages and trace logs by either editing the `bootstrap.properties` file, specifying environment variables, or by using server configuration attributes. The following examples show the configuration for each of these options, with a log rollover start time of midnight and a log rollover interval of 1 day.
+
+* The following example configures time-based log rollover in the `bootstrap.properties` file.
++
+[source,properties,linenums,role="code_column"]
+----
+com.ibm.ws.logging.rollover.start.time=00:00
+com.ibm.ws.logging.rollover.interval=1m
+----
++
+* The following example configures time-based log rollover with environment variables in the `server.env` file.
++
+[source,properties,linenums,role="code_column"]
+----
+WLP_LOGGING_ROLLOVER_START_TIME=00:00
+WLP_LOGGING_ROLLOVER_INTERVAL=1m
+----
++
+* The following example configures time-based log rollover with server configuration attributes in the `server.xml` file.
++
+[source,properties,linenums,role="code_column"]
+----
+<logging rolloverStartTime="00:00" rolloverInterval="1d"/>
+----
+
+
 
 [#settings]
 == Configuration settings by source
@@ -439,6 +473,16 @@ If you specify a value of `false`, the date and time are formatted according to 
 |com.ibm.ws.logging.stackTraceSingleEntry
 |WLP_LOGGING_STACK_TRACE_SINGLE_ENTRY
 | When this attribute is set to `true`, stack traces that are emitted to standard-out and standard-error are merged into a single log event. By default, this value is set to `false` and each individual line of the stack trace is emitted as an individual log event.
+
+|rolloverStartTime
+|com.ibm.ws.logging.rollover.start.time
+|WLP_LOGGING_ROLLOVER_START_TIME
+| Use this setting alone or with the `rolloverInterval` attribute to enable time-based log rollover for `messages.log` and `trace.log` files. This setting specifies the scheduled time of day for logs to first roll over. The `rolloverInterval` setting duration begins at the time that is specified by the  `rolloverStartTime` attribute. Valid values follow a 24-hour ISO-8601 date-time format of HH:MM, where 00:00 represents midnight. Padding zeros are required. If the `rolloverInterval` attribute is specified, the default value of the `rolloverStartTime` attribute is 00:00, midnight. The `console.log` does not roll so this setting does not apply.
+
+|rolloverInterval
+|com.ibm.ws.logging.rollover.interval
+|WLP_LOGGING_ROLLOVER_INTERVAL
+| Use this setting alone or with the `rolloverStartTime` attribute to enable time-based log rollover for `messages.log` and `trace.log` files. This setting specifies the time interval in between log rollovers, in minutes if a unit of time is not specified. Specify a positive integer followed by a unit of time, which can be days (d), hours (h), or minutes (m). For example, specify 5 hours as 5h. You can include multiple values in a single entry. For example, 1d5h is equivalent to 1 day and 5 hours. If the `rolloverStartTime` attribute is specified, the default value of the `rolloverInterval` attribute is 1 day. The `console.log` does not roll so this setting does not apply.
 
 |===
 
