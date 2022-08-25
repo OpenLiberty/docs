@@ -145,7 +145,7 @@ To add an item to the navigation or to edit an existing item, complete the follo
 
 3. Open a pull request from the `draft-nav` branch to the `draft` branch and request a review from a [doc maintainer](https://github.com/orgs/OpenLiberty/teams/docs-maintainers/members).
 
-4. After the PR is merged, wait for IBM Cloud to rebuild the [docs-draft site](https://docs-draft-openlibertyio.mqj6zf7jocq.us-south.codeengine.appdomain.cloud/docs/) or [full draft site](https://draft-openlibertyio.mqj6zf7jocq.us-south.codeengine.appdomain.cloud/docs/) and verify the changes. If you have access to [this Slack channel](https://app.slack.com/client/T15GKHBT4/C01GDRYT4UC), you can use it to track build/deploy progress.
+4. After the PR is merged, wait for IBM Cloud to rebuild the [docs-draft site](https://docs-draft-openlibertyio.mqj6zf7jocq.us-south.codeengine.appdomain.cloud/docs/) or [full draft site](https://draft-openlibertyio.mqj6zf7jocq.us-south.codeengine.appdomain.cloud/docs/) and verify the changes. If you have access to [this Slack channel](https://app.slack.com/client/T15GKHBT4/C01G7L68KAP), you can use it to track build/deploy progress.
 
 5. After you review and verify your navigation updates on one of the draft sites, and if everything looks correct, create a PR to the `staging` branch.
 
