@@ -1,0 +1,88 @@
+// Copyright (c) 2022 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description:
+:seo-title:
+:seo-description:
+:page-layout: general-reference
+:page-type: general
+= Distributed caching with JCache
+
+JCache is a standard Java API for caching data. Open Liberty supports the use of JCache for various application functions, including distributed session caching, distributed authentication caching, and distributed logged-out cookie caching.
+
+With Open Liberty, you can use of https://github.com/jsr107/jsr107spec[JCache] caches in place of local in-memory caches for several features. Numerous commercial and open-source JCache implementations are available. Implementations that allow the cache to be distributed and shared by multiple Java runtime environments (JRE) can be particularly useful for improving performance among groups of servers that share common data, such as a user registry.
+
+== Configure JCache
+
+The Open Liberty JCache configuration consists of three configuration elements and their associated attributes.
+
+cachingProvider::
+The `cachingProvider` element provides configuration for a single `javax.cache.spi.CachingProvider` instance, which provides mechanisms to create, request and later manage the life-cycle of configured `CacheManager` objects. The attributes for the `cachingProvider` element correspond to the parameters for the https://javadoc.io/static/javax.cache/cache-api/1.1.1/javax/cache/Caching.html#getCachingProvider-java.lang.String-java.lang.ClassLoader[javax.cache.Caching.getCachingProvider method]. The `ClassLoader` instance from the provided library is used. For more information, see config:cachingProvider[].
+
+cacheManager::
+The `cacheManager` element provides configuration for a single `javax.cache.CacheManager` instance, which provides a means of establishing, configuring, acquiring, closing, and destroying uniquely named caches. The attributes and child elements for the `cacheManager` element correspond to the parameters for the https://javadoc.io/static/javax.cache/cache-api/1.1.1/javax/cache/spi/CachingProvider.html#getCacheManager-java.net.URI-java.lang.ClassLoader-[java.util.Properties-javax.cache.spi.CachingProvider#getCacheManager method]. The `ClassLoader` instance from the library provided in the `cachingProvider` element is used. For more information, see config:cacheManager[].
+
+cache::
+The `cache` element provides configuration for a single `javax.cache.Cache` instance, which is a map-like data structure that provides temporary storage of application data. If no cache with the value of the `name` attribute exists for the given `javax.cache.CacheManager` instance, Liberty attempts to create one. For more information, see config:cacheManager[].
+
+
+The following example shows the minimum configuration for a a JCache cache in Open Liberty. This example demonstrates the minimum configuration that Open Liberty requires for a JCache cache. However, the minimum Open Liberty cvonfiguration might not be sufficient for all JCache providers.
+
+[source,xml]
+----
+<library id="JCacheLib">
+    <file name="${shared.resource.dir}/jcacheprovider.jar"/>
+</library>
+
+<cache id="SampleCache" name="SampleCache">
+    <cacheManager>
+        <cachingProvider jCacheLibraryRef="JCacheLib" />
+    </cacheManager>
+</cache>
+----
+
+
+In this example, the `library` element specifies the location of JCache provider file. The `cachingProvider` element references the configured library. The `cacheManager` element specifies the `cachingProvider` element, which references the configured library. The `cache` element encloses the `cacheManager` element and provides name and ID values that the configuration can be referenced by.
+
+
+Some providers and/or caching topologies require more complex configuration. In the example below, a ‘providerClass’ is defined on the ‘cachingProvider’ to explicitly choose which javax.cache.spi.CachingProvider implementation will be used. A ‘uri’ attribute is also defined on the ‘cacheManager’ element to pass in provider specific configuration in the form of a provider-defined URI. Additionally, provider specific ‘properties’ are defined in the ‘cacheManager’ element.
+
+NOTE: If ‘providerClass’ is not provided, the default javax.cache.spi.CachingProvider is used. The default javax.cache.spi.CachingProvider can be determined by checking the JCache provider JAR’s META-INF/services/javax.cache.spi.CachingProvider file.
+
+<library id="JCacheLib">
+    <file name="${shared.resource.dir}/jcacheprovider.jar"/>
+</library>
+
+<cache id="SampleCache" name="SampleCache">
+    <cacheManager
+        uri="file:///${shared.resource.dir}/jcacheconfig.xml" >
+
+        <properties
+            org.acme.jcache.prop1="value1"
+            org.acme.jcache.prop2="value2" />
+
+        <cachingProvider
+            providerClass="org.acme.CachingProvider"
+            jCacheLibrarybraryRef="JCacheLib" />
+    </cacheManager>
+</cache>
+
+When using multiple components that use JCache, it may require defining multiple JCache cache instances in the configuration. In this case, we will no longer nest the ‘cacheManager’ configuration within the ‘cache’ element. Instead, define an ‘id’ attribute in the ‘cacheManager’ configuration, and refer to that from the ‘cache’ elements’ ‘cacheManagerRef’ attribute.
+
+<library id="JCacheLib">
+    <file name="${shared.resource.dir}/jcacheprovider.jar"/>
+</library>
+
+<cache id="AuthCache" name="AuthCache"
+    cacheManagerRef="CacheManager" >
+<cache id="LoggedOutCookieCache" name="LoggedOutCookieCache"
+    cacheManagerRef="CacheManager" >
+
+<cacheManager id="CacheManager">
+    <cachingProvider jCacheLibraryRef="JCacheLib" />
+</cacheManager>
