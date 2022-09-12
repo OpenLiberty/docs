@@ -30,20 +30,20 @@ To write and publish content in Open Liberty Docs, you work with the following b
 Prior to publishing on the production site, Open Liberty content is reviewed on our draft and staging sites. We provide docs-only versions of both of these sites, which build faster than the full draft and staging sites, so that content updates are available for review sooner.  
 
 The following sites are available to review and publish docs content:
-* [full draft site](https://draft-openlibertyio.mybluemix.net/docs/)  
+* [full draft site](https://draft-openlibertyio.mqj6zf7jocq.us-south.codeengine.appdomain.cloud/docs/)
      Contains all draft content (`draft` branches) of the site  
 
-* [docs-draft site](https://docs-draft-openlibertyio.mybluemix.net/docs/)  
+* [docs-draft site](https://docs-draft-openlibertyio.mqj6zf7jocq.us-south.codeengine.appdomain.cloud/docs/)
      Contains only the docs portion of the draft content (`draft` branch) of the site  
 
-* [full staging site](https://staging-openlibertyio.mybluemix.net/docs/)  
+* [full staging site](https://staging-openlibertyio.mqj6zf7jocq.us-south.codeengine.appdomain.cloud/docs/)
      Contains all staging content (`staging` branches) of the site    
 
-* [docs-staging site](https://docs-staging-openlibertyio.mybluemix.net/docs/)  
+* [docs-staging site](https://docs-staging-openlibertyio.mqj6zf7jocq.us-south.codeengine.appdomain.cloud/docs/)
      Contains only the docs portion of the staging content (`staging` branch) of the site  
 
 * [production site](https://openliberty.io)
-     Contains all production content (`prod` branch) of the site   
+     Contains all production content (`prod` branch) of the site
 
 For a full breakdown of what branches and repos are used for each site, see the [table breakdown](https://github.com/OpenLiberty/openliberty.io/wiki/Websites-&-branch-breakdown).
 
@@ -58,13 +58,13 @@ The author of the doc must complete the following steps:
 
 4. Push the file to GitHub, then create a pull request (PR) into the `draft` branch. Link the PR to the issue you created in Step 1. Request a review of the PR from David Mueller (`dmuelle`) or one of [the doc members](https://github.com/orgs/OpenLiberty/teams/docs-members). Notify your reviewer that the doc is a new topic that needs to be added to the draft navigation. They can work with you to determine the best section of the navigation for your topic and [to update the nav.adoc file]((#Editing-the-docs-navigation)).
 
-5. All the builds and deployments of non-prod sites have been moved to IBM Cloud and now build automatically whenever the a PR is merged into their respective branch. These builds are private and, therefore, their detailed build/deploy progress can't be tracked. However, if you have access to the [Slack channel](https://app.slack.com/client/T15GKHBT4/C01GDRYT4UC), you can at least track when the builds start and finish.  
+5. All the builds and deployments of non-prod sites have been moved to IBM Cloud and now build automatically whenever the a PR is merged into their respective branch. These builds are private and, therefore, their detailed build/deploy progress can't be tracked. However, if you have access to the [Slack channel for draft site](https://app.slack.com/client/T15GKHBT4/C01G7L68KAP) or the [Slack channel for staging site](https://app.slack.com/client/T15GKHBT4/C01GX9P8YP2), you can at least track when the builds start and finish.
 
-6. When the build is finished, check that the doc looks correct on either the [docs-draft site](https://docs-draft-openlibertyio.mybluemix.net/docs/) or the [full draft site](https://draft-openlibertyio.mybluemix.net/docs/).  
+6. When the build is finished, check that the doc looks correct on either the [docs-draft site](https://docs-draft-openlibertyio.mqj6zf7jocq.us-south.codeengine.appdomain.cloud/docs/) or the [full draft site](https://draft-openlibertyio.mqj6zf7jocq.us-south.codeengine.appdomain.cloud/docs/).
 
-   In addition to the existing [full draft site](https://draft-openlibertyio.mybluemix.net/docs/) we have a [docs-draft site](https://docs-draft-openlibertyio.mybluemix.net/docs/), which contains only the docs content, allowing it to build and deploy much quicker. However, since this site contains only the doc content, any links to other parts of openliberty.io will not resolve. In general, use the doc-draft site to review content because it updates much quicker than the full site. However, if you need to review content that links to pages on openliberty.io that are not in the docs, use the full draft site.
+   In addition to the existing [full draft site](https://draft-openlibertyio.mqj6zf7jocq.us-south.codeengine.appdomain.cloud/docs/) we have a [docs-draft site](https://docs-draft-openlibertyio.mqj6zf7jocq.us-south.codeengine.appdomain.cloud/docs/), which contains only the docs content, allowing it to build and deploy much quicker. However, since this site contains only the doc content, any links to other parts of openliberty.io will not resolve. In general, use the doc-draft site to review content because it updates much quicker than the full site. However, if you need to review content that links to pages on openliberty.io that are not in the docs, use the full draft site.
 
-   If you see any problems, such as formatting issues or typos, resolve them first in your branch. Then, create another PR into `draft` branch, link the PR to the issue again,  and get the PR merged. Wait for IBM Cloud to rebuild [docs-draft site](https://docs-draft-openlibertyio.mybluemix.net/docs/) or [full draft site](https://draft-openlibertyio.mybluemix.net/docs/) and verify the change.
+   If you see any problems, such as formatting issues or typos, resolve them first in your branch. Then, create another PR into `draft` branch, link the PR to the issue again,  and get the PR merged. Wait for IBM Cloud to rebuild [docs-draft site](https://docs-draft-openlibertyio.mqj6zf7jocq.us-south.codeengine.appdomain.cloud/docs/) or [full draft site](https://draft-openlibertyio.mqj6zf7jocq.us-south.codeengine.appdomain.cloud/docs/) and verify the change.
 
 7. Submit your doc for technical, strategist, peer, and editorial reviews.
 
@@ -78,13 +78,13 @@ The author of the doc must complete the following steps:
 
     Link the PR to the issue. Request a review of the PR from David Mueller (`dmuelle`) or one of [the doc maintainers](https://github.com/orgs/OpenLiberty/teams/docs-maintainers/members). Work with your reviewer to update the staging nav.adoc file.
 
-    In the PR, provide a link to your post on the [full draft site](https://draft-openlibertyio.mybluemix.net/docs/) or [docs-draft site](https://docs-draft-openlibertyio.mybluemix.net/docs/).
+    In the PR, provide a link to your post on the [full draft site](https://draft-openlibertyio.mqj6zf7jocq.us-south.codeengine.appdomain.cloud/docs/) or [docs-draft site](https://docs-draft-openlibertyio.mqj6zf7jocq.us-south.codeengine.appdomain.cloud/docs/).
 
-9. If any changes are requested to the PR, make them in your branch and push them to `draft` branch first. Once the site rebuilds, check that everything is correct on the [docs-draft site](https://docs-draft-openlibertyio.mybluemix.net/docs/) or [full draft site](https://draft-openlibertyio.mybluemix.net/docs/).
+9. If any changes are requested to the PR, make them in your branch and push them to `draft` branch first. Once the site rebuilds, check that everything is correct on the [docs-draft site](https://docs-draft-openlibertyio.mqj6zf7jocq.us-south.codeengine.appdomain.cloud/docs/) or [full draft site](https://draft-openlibertyio.mqj6zf7jocq.us-south.codeengine.appdomain.cloud/docs/).
 
-10. After the PR to `staging` is approved and merged, IBM Cloud automatically rebuilds the [docs-staging site](https://docs-staging-openlibertyio.mybluemix.net/docs/) and [full staging site](https://staging-openlibertyio.mybluemix.net/docs/). If you have access, you can track the progress in the [Slack channel](https://app.slack.com/client/T15GKHBT4/C01GDRYT4UC).  
+10. After the PR to `staging` is approved and merged, IBM Cloud automatically rebuilds the [docs-staging site](https://docs-staging-openlibertyio.mqj6zf7jocq.us-south.codeengine.appdomain.cloud/docs/) and [full staging site](https://staging-openlibertyio.mqj6zf7jocq.us-south.codeengine.appdomain.cloud/docs//). If you have access, you can track the progress in the [Slack channel](https://app.slack.com/client/T15GKHBT4/C01GX9P8YP2).
 
-11. When the build finishes, check to make sure the doc renders correctly on the [docs-staging site](https://docs-staging-openlibertyio.mybluemix.net/docs/) or [full staging site](https://staging-openlibertyio.mybluemix.net/docs/). If any changes are needed, make sure to add them to the `draft` branch and review on the [full draft site](https://draft-openlibertyio.mybluemix.net/docs/) or [docs-draft site](https://docs-draft-openlibertyio.mybluemix.net/docs/) before you make a new PR to `staging`.
+11. When the build finishes, check to make sure the doc renders correctly on the [docs-staging site](https://docs-staging-openlibertyio.mqj6zf7jocq.us-south.codeengine.appdomain.cloud/docs/) or [full staging site](https://staging-openlibertyio.mqj6zf7jocq.us-south.codeengine.appdomain.cloud/docs/). If any changes are needed, make sure to add them to the `draft` branch and review on the [full draft site](https://draft-openlibertyio.mqj6zf7jocq.us-south.codeengine.appdomain.cloud/docs/) or [docs-draft site](https://docs-draft-openlibertyio.mqj6zf7jocq.us-south.codeengine.appdomain.cloud/docs/) before you make a new PR to `staging`.
 
 12. After you verify the doc, post a link to it on one of the staging sites in the Git issue and change the issue status to `Ready to publish`.  Open a PR from `staging` to `vNext`, add the issue number to the comment section of the PR (#issue_number), and request a review of the PR from David Mueller (`dmuelle`) or one of [the doc maintainers](https://github.com/orgs/OpenLiberty/teams/docs-maintainers/members). After the PR is approved and merged to `vNext`, the doc will publish with the next scheduled release.
 
@@ -97,7 +97,7 @@ All edits and updates to existing Open Liberty Docs must be documented and track
 
 3. Push the file to GitHub, then create a PR into the `draft` branch. Link the PR to the issue you created in Step 1. Request a review of the PR from David Mueller (`dmuelle`) or one of [the doc members](https://github.com/orgs/OpenLiberty/teams/docs-members). Notify your reviewer if any changes to the navigation are required. They can work with you to [update the nav.adoc file]((#Editing-the-docs-navigation)).
 
-4. After the PR is merged, wait for IBM Cloud to rebuild the [docs-draft site](https://docs-draft-openlibertyio.mybluemix.net/docs/) or [full draft site](https://draft-openlibertyio.mybluemix.net/docs/) and verify the changes. If you have access to [this Slack channel](https://app.slack.com/client/T15GKHBT4/C01GDRYT4UC), you can use it to track build/deploy progress.
+4. After the PR is merged, wait for IBM Cloud to rebuild the [docs-draft site](https://docs-draft-openlibertyio.mqj6zf7jocq.us-south.codeengine.appdomain.cloud/docs/) or [full draft site](https://draft-openlibertyio.mqj6zf7jocq.us-south.codeengine.appdomain.cloud/docs/) and verify the changes. If you have access to [this Slack channel](https://app.slack.com/client/T15GKHBT4/C01G7L68KAP), you can use it to track build/deploy progress.
 
    If you see any problems, make any changes in your personal branch first, then push to the `draft` branch again and verify the changes after rebuild.
 
@@ -113,13 +113,13 @@ All edits and updates to existing Open Liberty Docs must be documented and track
 
    Link the PR to the issue. Request a review of the PR from David Mueller (`dmuelle`) or one of [the doc maintainers](https://github.com/orgs/OpenLiberty/teams/docs-maintainers/members). Work with your reviewer to update the staging nav.adoc file.
 
-   In the PR, provide a link to your update on the [docs-draft site](https://docs-draft-openlibertyio.mybluemix.net/docs/) or [full draft site](https://draft-openlibertyio.mybluemix.net/docs/).
+   In the PR, provide a link to your update on the [docs-draft site](https://docs-draft-openlibertyio.mqj6zf7jocq.us-south.codeengine.appdomain.cloud/docs/) or [full draft site](https://draft-openlibertyio.mqj6zf7jocq.us-south.codeengine.appdomain.cloud/docs/).
 
-8. If any changes are requested to the PR, make them in your personal branch and push them to `draft` first. After the PR is merged, wait for IBM Cloud to rebuild the [docs-draft site](https://docs-draft-openlibertyio.mybluemix.net/docs/) or [full draft site](https://draft-openlibertyio.mybluemix.net/docs/) and verify the changes.  If you have access to [this Slack channel](https://app.slack.com/client/T15GKHBT4/C01GDRYT4UC), you can use it to track build/deploy progress.
+8. If any changes are requested to the PR, make them in your personal branch and push them to `draft` first. After the PR is merged, wait for IBM Cloud to rebuild the [docs-draft site](https://docs-draft-openlibertyio.mqj6zf7jocq.us-south.codeengine.appdomain.cloud/docs/) or [full draft site](https://draft-openlibertyio.mqj6zf7jocq.us-south.codeengine.appdomain.cloud/docs/) and verify the changes.  If you have access to [this Slack channel](https://app.slack.com/client/T15GKHBT4/C01G7L68KAP), you can use it to track build/deploy progress.
 
-9. After the PR to `staging` is approved and merged, IBM Cloud will automatically rebuild the [docs-staging site](https://docs-staging-openlibertyio.mybluemix.net/docs/) and [full staging site](https://staging-openlibertyio.mybluemix.net/docs/). If you have access, you can track the progress in the [Slack channel](https://app.slack.com/client/T15GKHBT4/C01GDRYT4UC).  
+9. After the PR to `staging` is approved and merged, IBM Cloud will automatically rebuild the [docs-staging site](https://docs-staging-openlibertyio.mqj6zf7jocq.us-south.codeengine.appdomain.cloud/docs/) and [full staging site](https://staging-openlibertyio.mqj6zf7jocq.us-south.codeengine.appdomain.cloud/docs/). If you have access, you can track the progress in the [Slack channel](https://app.slack.com/client/T15GKHBT4/C01GX9P8YP2).
 
-10. When the build finishes, check to make sure the doc renders correctly on the [docs-staging site](https://docs-staging-openlibertyio.mybluemix.net/docs/) or [full staging site](https://staging-openlibertyio.mybluemix.net/docs/). If any changes are needed, make sure to add them to the `draft` branch and review on the [full draft site](https://draft-openlibertyio.mybluemix.net/docs/) or [docs-draft site](https://docs-draft-openlibertyio.mybluemix.net/docs/) before you make a new PR to `staging`.
+10. When the build finishes, check to make sure the doc renders correctly on the [docs-staging site](https://docs-staging-openlibertyio.mqj6zf7jocq.us-south.codeengine.appdomain.cloud/docs/) or [full staging site](https://staging-openlibertyio.mqj6zf7jocq.us-south.codeengine.appdomain.cloud/docs/). If any changes are needed, make sure to add them to the `draft` branch and review on the [full draft site](https://draft-openlibertyio.mqj6zf7jocq.us-south.codeengine.appdomain.cloud/docs/) or [docs-draft site](https://docs-draft-openlibertyio.mqj6zf7jocq.us-south.codeengine.appdomain.cloud/docs/) before you make a new PR to `staging`.
 
 11. After you verify the doc, post a link to it on one of the staging sites in the Git issue and change the issue status to `Ready to publish`.  Open a PR from `staging` to `vNext`, add the issue number to the comment section of the PR (#issue_number), and Request a review of the PR from David Mueller (`dmuelle`) or one of [the doc maintainers](https://github.com/orgs/OpenLiberty/teams/docs-maintainers/members). After the PR is approved and merged to `vNext`, the changes publish with the next scheduled release.
 
@@ -131,7 +131,7 @@ _If you’re unsure of how to update the Open Liberty navigation or unfamiliar w
 
 [Site navigation in the Antora framework](https://docs.antora.org/antora/2.3/navigation/files-and-lists/) is controlled by a `nav.adoc` file. The Open Liberty Docs navigation is split between two `nav.adoc` files, one for the main Docs content and one for the reference topics. The content of each of these files is an [unordered Asciidoc list](https://docs.antora.org/antora/2.3/navigation/files-and-lists/#list-structure), which determines the order and hierarchy of the navigation entries.
 
-Since the Open Liberty [draft](https://draft-openlibertyio.mybluemix.net/), [staging](https://staging-openlibertyio.mybluemix.net/) and [production](https://www.openliberty.io/) sites each maintain unique navigation files, you must update them individually, otherwise, unwanted changes and merge conflicts can occur.
+Since the Open Liberty [draft](https://draft-openlibertyio.mqj6zf7jocq.us-south.codeengine.appdomain.cloud/), [staging](https://staging-openlibertyio.mqj6zf7jocq.us-south.codeengine.appdomain.cloud/docs/) and [production](https://www.openliberty.io/) sites each maintain unique navigation files, you must update them individually, otherwise, unwanted changes and merge conflicts can occur.
 
 The `draft` and `staging` branches each have a dedicated branch for editing the navigation. For the draft branch, this branch is called `draft-nav` and for the staging branch it’s called `staging-nav`. When you’re working in these branches, edit only the `nav.adoc` file and open pull requests only to the branch for which they are specified: `draft` for `draft-nav` and `staging` for `staging-nav`. The production navigation is automatically updated from `vNext` with each release. _You should never directly update the nav.adoc file in the `vNext` branch_. This file, along with everything else in `vNext` branch, is only updated through PRs from the `staging` branch.
 
@@ -145,12 +145,12 @@ To add an item to the navigation or to edit an existing item, complete the follo
 
 3. Open a pull request from the `draft-nav` branch to the `draft` branch and request a review from a [doc maintainer](https://github.com/orgs/OpenLiberty/teams/docs-maintainers/members).
 
-4. After the PR is merged, wait for IBM Cloud to rebuild the [docs-draft site](https://docs-draft-openlibertyio.mybluemix.net/docs/) or [full draft site](https://draft-openlibertyio.mybluemix.net/docs/) and verify the changes. If you have access to [this Slack channel](https://app.slack.com/client/T15GKHBT4/C01GDRYT4UC), you can use it to track build/deploy progress.
+4. After the PR is merged, wait for IBM Cloud to rebuild the [docs-draft site](https://docs-draft-openlibertyio.mqj6zf7jocq.us-south.codeengine.appdomain.cloud/docs/) or [full draft site](https://draft-openlibertyio.mqj6zf7jocq.us-south.codeengine.appdomain.cloud/docs/) and verify the changes. If you have access to [this Slack channel](https://app.slack.com/client/T15GKHBT4/C01G7L68KAP), you can use it to track build/deploy progress.
 
 5. After you review and verify your navigation updates on one of the draft sites, and if everything looks correct, create a PR to the `staging` branch.
 
     _Don’t open a PR from `draft-nav` to `staging`_. Since `draft` and `staging` have separate navigation files with different content, you must re-create your changes on the `staging-nav` branch and PR that branch to `staging`. Follow the same process that you used in steps 1 - 4, but instead of working in the`draft-nav` and `draft` branches, make your changes in `staging-nav` and PR them to `staging`.
 
-6. After the PR to `staging` is reviewed, approved and merged, IBM Cloud will automatically rebuild the [docs-staging site](https://docs-staging-openlibertyio.mybluemix.net/docs/) and [full staging site](https://staging-openlibertyio.mybluemix.net/docs/). If you have access, you can track the progress in the [Slack channel](https://app.slack.com/client/T15GKHBT4/C01GDRYT4UC).  
+6. After the PR to `staging` is reviewed, approved and merged, IBM Cloud will automatically rebuild the [docs-staging site](https://docs-staging-openlibertyio.mqj6zf7jocq.us-south.codeengine.appdomain.cloud/docs/) and [full staging site](https://staging-openlibertyio.mqj6zf7jocq.us-south.codeengine.appdomain.cloud/docs/). If you have access, you can track the progress in the [Slack channel](https://app.slack.com/client/T15GKHBT4/C01GX9P8YP2).
 
-7. After you verify your changes on [docs-staging site](https://docs-staging-openlibertyio.mybluemix.net/docs/) or [full staging site](https://staging-openlibertyio.mybluemix.net/docs/), ask a docs maintainer to open a PR from `staging` to `vNext`. Your updates can publish with the next scheduled release.
+7. After you verify your changes on [docs-staging site](https://docs-staging-openlibertyio.mqj6zf7jocq.us-south.codeengine.appdomain.cloud/docs/) or [full staging site](https://staging-openlibertyio.mqj6zf7jocq.us-south.codeengine.appdomain.cloud/docs/), ask a docs maintainer to open a PR from `staging` to `vNext`. Your updates can publish with the next scheduled release.
