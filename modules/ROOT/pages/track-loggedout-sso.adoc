@@ -1,0 +1,128 @@
+// Copyright (c) 2022 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description: You can configure the server to track logged-out SSO cookies so that if they are presented again, the user must authenticate again.
+:seo-title: Track logged out SSO cookies
+:seo-description: You can configure the server to track logged-out SSO cookies so that if they are presented again, the user must authenticate again.
+:page-layout: general-reference
+:page-type: general
+= Track logged out SSO cookies
+
+If a single sign-on (SSO) cookie for a user that is logged out is persisted and presented to the server again, it is validated based on the expiration time and the LTPA encryption keys. However, you can configure the server to track logged-out SSO cookies so that if they are presented again, the user must authenticate again.
+
+When a user is logged out by using either form or programmatic logout, the cookie that is used for single sign-on is removed from the local authentication cache and the session is invalidated. However, if that cookie is persisted and presented to the server again, it is validated based on the expiration time and the LTPA encryption keys. To secure protected resources, you can configure the server to track logged-out LTPA cookies so that they require re-authentication. You can also configure a distributed logged out cookie cache to ensure that LTPA and JWT cookies that are logged off in one server cannot be replayed on another server to gain access after the logout.
+
+== Track logged out cookies on a single server
+
+To configure this option, both the Application Security and feature:servlet[display=Jakarta Servlet] features must be enabled. The Application Security feature version 3.0 and later enables the Jakarta Servlet feature by default.
+
+To track the cookies that are logged out on a particular Liberty server, you can add the following configuration to your `server.xml` file.
+
+[source,xml]
+----
+<webAppSecurity trackLoggedOutSSOCookies="true"/>
+----
+This configuration might affect your SSO scenarios. For example, when a user logs in from multiple browsers to the same server and logs out from one browser. If that user then tries to access the resource by using another browser, they must log in again.
+
+This configuration works only on the same server. The LTPA cookie is tracked only on the server where the user logged out. If that same unexpired LTPA cookie is presented to another server where the LTPA keys are shared, it is used until it is also logged out on that server. To protect multiple servers that share SSO data or configuration, configure a distributed logged out cookie cache.
+
+== Track logged out cookies across multiple servers
+
+You can enable a distibuted logged out cookie cache to ensure that LTPA and JWT cookies that are logged off in one server cannot be replayed on another server to gain access after the logout. Open Liberty supports distributed logged out cookie caching with https://github.com/jsr107/jsr107spec[JCache]. For more information about using JCache with Open Liberty, see xref:distributed-caching-jcache.adoc[Distributed caching with JCache].
+
+=== Prerequisites
+The security configuration must be compatible between all Open Liberty servers that share a distributed logged out cookie cache. This compatibility includes, but is not limited to, user registries and any LTPA or JWT configuration.
+
+=== Configure a distributed logged out cookie cache
+To configure a distributed logged out cookie cache, you must first configure your JCache caching provider, cache manager and cache. Enable any version of the  the feature:appSecurity[display=Application Security (Jakarta Security)] feature in your `server.xml` file and  To configure this option, both the Application Security and feature:servlet[display=Jakarta Servlet] features must be enabled. The Application Security feature version 3.0 and later enables the Jakarta Servlet feature by default. The following `server.xml` file example demonstrates the configuration to set up the JCache cache and use it to track logged out SSO cookies.
+
+[source,xml]
+----
+<featureManager>
+    <feature>appSecurity-2.0</feature>
+</featureManager>
+
+<library id="JCacheProviderLib">
+	<file name="${shared.resource.dir}/libs/jcacheprovider.jar" />
+</library>
+
+<cacheManager id="CacheManager" uri="<PROVIDER_SPECIFIC_URI>">
+    <properties property1="value1" property2="value2" />
+    <cachingProvider providerClass="org.acme.CachingProvider"
+              jCacheLibraryRef="JCacheProviderLib" />
+</cacheManager>
+
+<cache id="LoggedOutCookieCache" name="LoggedOutCookieCache"
+    cacheManagerRef="CacheManager" />
+
+<webAppSecurity loggedOutCookieCacheRef="LoggedOutCookieCache" />
+----
+
+In this example, the `library` element specifies the location of JCache provider file. The `cachingProvider` element references the configured library. The `cacheManager` element specifies the `cachingProvider` element, which references the configured JCache library, and defines custom properties that are sent to the `CacheManager` instance. The `cache` element references the `cacheManager` element and provides name and ID values that the configuration can be referenced by. The `webAppSecurity loggedOutCookieCacheRef` attribute references the configured cache to use as the distributed logged out cookie cache.
+
+The `webAppSecurity trackLoggedOutSSOCookies` attribute value is ignored and effectively set to `true` when the `webAppSecurity loggedOutCookieCacheRef` attribute is set.
+
+[#size]
+=== Cache sizing, eviction, and performance
+
+To replicate the default behavior of the Open Liberty in-memory logged out cookie cache, configure the cache  with a size of 2000 entries for LTPA cookies or 10,000 entries for JWT cookies. You can configure it either with no expiration policy or an expiration policy with a expiration of the greater of the LTPA or JWT cookie expiration. You can find the expiration for LTPA  in the `ltpa expiration` attribute, with a default of 120 minutes. You can find the expiration for a JWT cookie in the  `jwtBuilder expiry` attribute, with a default of 2 hours, or in the `jwtBuilder expiresInSeconds` attribute, which has no default value.
+
+Distributed cache size limits are usually only approximate because partitioning of the data across servers can result in decreased realized capacity. To verify the maximum capacity, thoroughly test your configuration.
+Carefully choose and test your cache size and expiration policy. The previously specified sizes are references only to the in-memory cache. The goal is that no cookie is evicted prior to expiration of its valid lifetime. If logged out cookies are evicted before they expire, that logged out cookie might again be used to access protected resources.
+
+=== Securing the cache
+Because the logged out cookie cache cache contains security-sensitive information, the JCache cache contents must be secured.  Treat the cache contents as you would credentials that are used to access the server. Proper security provisions include, but are not limited to the following precautions. For more information, see the documentation for your JCache provider.
+
+- Enable security for data in motion. Enable TLS for transactions between the Liberty server and the JCache server.
+- Enable security for data at rest. Enable encryption for contents that are stored in the JCache server.
+- Enable authentication and authorization on the JCache server.
+- Follow any JCache provider security recommendations.
+
+=== Clearing the cache
+Open Liberty does not provide a mechanism to clear the distributed logged out cookie cache. To clear the cache, use caching provider utilities.
+
+=== Distributed authentication cache configuration examples
+
+When your Open Liberty servers use a JCache distributed logged out cookie cache, you can configure the behavior of that JCache cache by using the relevant configuration files for your provider. In the following examples for Infinispan and Hazelcast caches, the cache size in the configuration matches the size of the in-memory cache for JWT cookies. The expiry policy does not match the in-memory cache, but instead is the maximum age for a JWT or LTPA cookie.. However, you must test your configuration in the target environment to determine the optimal sizing. For more information, see the <<#size,Cache sizing, eviction, and performance>> section.
+
+Sample Infinispan cache configuration::
+
+The following `infinispan.xml` file example shows an Infinispan logged out cookie cache configuration. The cache does not have to specify the  `distributed-cache` mode. It can be whatever mode that best supports your needs. For more information, see link:https://infinispan.org/docs/stable/titles/configuring/configuring.html[Configuring Infinispan caches] in the Infinispan documentation.
+
+[source,xml]
+----
+<infinispan>
+ <distributed-cache name="LoggedOutCookieCache"">
+	 <memory max-count="10000" when-full="REMOVE" />
+	 <expiration max-idle="-1" lifespan="720000" />
+	 <encoding media-type="application/x-java-serialized-object" />
+   ....
+ </distributed-cache>
+</infinispan>
+----
+
+Sample Hazelcast cache configuration::
+
+The following `hazelcast.xml` file example shows a Hazelcast authentication cache configuration. For more information, see link:https://docs.hazelcast.com/imdg/latest/jcache/setup[JCache Setup and Configuration] in the Hazelcast documentation.
+
+[source,xml]
+----
+<cache name="LoggedOutCookieCache">
+	<key-type class-name="java.lang.Object" />
+	<value-type class-name="java.lang.Object" />
+
+	<eviction size="10000" max-size-policy="ENTRY_COUNT"
+		eviction-policy="LRU" />
+
+	<timed-expiry-policy-factory
+		expiry-policy-type="CREATED"
+		duration-amount="7200"
+		time-unit="SECONDS" />
+	</expiry-policy-factory>
+</cache>
+----
