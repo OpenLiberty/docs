@@ -31,6 +31,7 @@ This configuration might affect your SSO scenarios. For example, when a user log
 
 This configuration works only on the same server. The LTPA cookie is tracked only on the server where the user logged out. If that same unexpired LTPA cookie is presented to another server where the LTPA keys are shared, it is used until it is also logged-out on that server. To protect multiple servers that share SSO data or configuration, configure a distributed logged-out cookie cache.
 
+[#dist]
 == Track logged-out cookies across multiple servers
 You can configure a distributed logged-out cookie cache to ensure that LTPA and JWT cookies that are logged off in one server cannot be reused on another server after the logout. Open Liberty supports distributed logged-out cookie caching with https://github.com/jsr107/jsr107spec[JCache]. For more information about using JCache with Open Liberty, see xref:distributed-caching-jcache.adoc[Distributed caching with JCache].
 
@@ -59,7 +60,7 @@ To configure a distributed logged-out cookie cache, you must first configure you
 <webAppSecurity loggedOutCookieCacheRef="LoggedOutCookieCache" />
 ----
 
-In this example, the `library` element specifies the location of JCache provider file. The `cachingProvider` element references the configured library. The `cacheManager` element specifies the `cachingProvider` element, which references the configured JCache library, and defines custom properties that are sent to the `CacheManager` instance. The `cache` element references the `cacheManager` element and provides name and ID values that the configuration can be referenced by. The `webAppSecurity loggedOutCookieCacheRef` attribute references the configured cache to use as the distributed logged-out cookie cache.
+In this example, the `library` element specifies the location of JCache provider file. The `cachingProvider` element references the configured library. The `cacheManager` element specifies the `cachingProvider` element, which references the configured JCache library, and defines custom properties that are sent to the `CacheManager` instance. The `cache` element references the `cacheManager` element and provides name and ID values that the configuration can be referenced by. The `webAppSecurity loggedOutCookieCacheRef` attribute references the configured cache to use it as the distributed logged-out cookie cache.
 
 The `webAppSecurity trackLoggedOutSSOCookies` attribute value is ignored and effectively set to `true` when the `webAppSecurity loggedOutCookieCacheRef` attribute is set.
 
@@ -87,7 +88,7 @@ The security configuration must be compatible between all Open Liberty servers t
 === Clearing the cache
 Open Liberty does not provide a mechanism to clear the distributed logged-out cookie cache. To clear the cache, use caching provider utilities.
 
-=== JCache configuration examples for the distributed logged-out cookie cache 
+=== JCache configuration examples for the distributed logged-out cookie cache
 When your Open Liberty servers use a JCache distributed logged-out cookie cache, you can configure the behavior of that JCache cache by using the relevant configuration files for your provider. In the following examples for Infinispan and Hazelcast caches, the cache size in the configuration matches the size of the in-memory cache for JWT cookies. The expiry policy does not match the in-memory cache, but instead is the maximum age for a JWT or LTPA cookie. However, you must test your configuration in the target environment to determine the optimal sizing. For more information, see the <<#size,Cache sizing, eviction, and performance>> section.
 
 Sample Infinispan cache configuration::
@@ -97,9 +98,9 @@ The following `infinispan.xml` file example shows an Infinispan logged-out cooki
 ----
 <infinispan>
   <distributed-cache name="LoggedOutCookieCache"">
-	  <memory max-count="10000" when-full="REMOVE" />
-	  <expiration max-idle="-1" lifespan="720000" />
-	  <encoding media-type="application/x-java-serialized-object" />
+    <memory max-count="10000" when-full="REMOVE" />
+    <expiration max-idle="-1" lifespan="720000" />
+    <encoding media-type="application/x-java-serialized-object" />
     ....
   </distributed-cache>
 </infinispan>
@@ -113,17 +114,14 @@ The following `hazelcast.xml` file example shows a Hazelcast logged-out cookie c
 <hazelcast>
   ...
   <cache name="LoggedOutCookieCache">
-	  <key-type class-name="java.lang.Object" />
-  	<value-type class-name="java.lang.Object" />
-
-	  <eviction size="10000" max-size-policy="ENTRY_COUNT"
-		  eviction-policy="LRU" />
-
-	  <timed-expiry-policy-factory
-	  	expiry-policy-type="CREATED"
-	  	duration-amount="7200"
-		  time-unit="SECONDS" />
-	  </expiry-policy-factory>
+    <key-type class-name="java.lang.Object" />
+    <value-type class-name="java.lang.Object" />
+    <eviction size="10000" max-size-policy="ENTRY_COUNT" eviction-policy="LRU" />
+    <timed-expiry-policy-factory
+      expiry-policy-type="CREATED"
+      duration-amount="7200"
+      time-unit="SECONDS" />
+    </timedexpiry-policy-factory>
     ...
   </cache>
   ...
