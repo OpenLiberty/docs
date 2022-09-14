@@ -13,10 +13,10 @@
 :page-type: general
 = Configure the authentication cache
 
-To improve server performance during single sign-on authentication, Open Liberty provides an authentication cache to store a subject after an authentication of a user is successful. You can also use JCache to configure a distributed authentication cache that is shared among a group of Open Liberty servers that use the same set of users and groups.
+To improve server performance during single sign-on authentication, Open Liberty provides an authentication cache to store a subject after a user authentication is successful. You can also use JCache to configure a distributed authentication cache that is shared among a group of Open Liberty servers that use the same set of users and groups.
 
-The authentication cache is available by default when the feature:appSecurity[display=Application Security (Jakarta Security)] feature is enabled in your `server.xml` file.
-It is initialized with a set number of entries, which are determined by the `initialSize` attribute. It has a maximum number of entries, which is determined by the `maxSize` attribute. If the maximum size is reached, then the earliest entries are removed from the cache. If a user is inactive for longer than period that is specified by the `timeout` attribute, then the entry for that user is removed from the cache.
+The authentication cache is available by default when any version of the feature:appSecurity[display=Application Security (Jakarta Security)] feature is enabled in your `server.xml` file.
+The cache is initialized with a set number of entries, which can be configured with the `initialSize` attribute. It has a maximum number of entries, which can be configured with the `maxSize` attribute. If the maximum size is reached, the earliest entries are removed from the cache. If a user is inactive for longer than the period that is specified by the `timeout` attribute, the entry for that user is removed from the cache.
 
 By default, the cache size is initialized to 50 entries and a maximum of 25000 entries, with a timeout of 600 seconds. To change the values for the authentication cache, configure the `authCache` element, as shown in the following example.
 
@@ -40,10 +40,11 @@ You can disable the authentication cache by setting the `cachEnabled` attribute 
 
 Any change to the user registry configuration in the `server.xml` file clears the authentication cache. However, if changes are made to an external user registry, such as an LDAP user registry, the authentication cache is unaffected.
 
+[#dist]
 == Configure a distributed authentication cache
 When a group of servers uses the same set of users and groups, you can configure a distributed authentication cache to be shared across the servers.
 
-Since the distributed cache is shared among Open Liberty servers that use the same user registries, the work of populating the cache is not replicated on each server. In cloud environments, where Open Liberty servers might need to be scaled up or down, each server can start with an already populated cache,  which can improve overall server performance.
+When the distributed cache is shared among Open Liberty servers that use the same user registries, the work of populating the cache is not replicated on each server. In cloud environments, where Open Liberty servers might need to be scaled up or down, each server can start with an already populated cache, which can improve overall server performance.
 
 === Supported SSO mechanisms
 The Open Liberty distributed authentication cache supports caching the subject credentials for the following SSO mechanisms and configurations.
@@ -59,7 +60,7 @@ Subjects that are authenticated by unsupported mechanisms are stored in the loca
 === Configure JCache for the distributed authentication cache
 Open Liberty supports distributed authentication caching by using a https://github.com/jsr107/jsr107spec[JCache] cache. To configure it, you must first configure your JCache caching provider, cache manager, and cache. For more information about using JCache with Open Liberty, see xref:distributed-caching-jcache.adoc[Distributed caching with JCache].
 
-You must enable any version of the feature:appSecurity[display=Application Security (Jakarta Security)] feature in your `server.xml` file. Configure the ‘authCache: cacheRef’ attribute to refer to the ID of the ‘cache’ instance that you create, as shown in the following example.
+You must enable any version of the feature:appSecurity[display=Application Security (Jakarta Security)] feature in your `server.xml` file. Configure the `authCache: cacheRef` attribute to refer to the ID of the `cache` instance that you create, as shown in the following example.
 
 [source,xml]
 ----
@@ -85,7 +86,7 @@ You must enable any version of the feature:appSecurity[display=Application Secur
 In this example, the config:library[] element specifies the location of the JCache provider JAR file. The config:cacheManager[] element references the library to configure the `CachingProvider` and `CacheManager` instances. The config:cache[] element references the `cacheManager` element to configure the JCache instance. The config:authCache[] element references that JCache instance to specify it as the authentication cache for the server. This element also specifies maximum size and timeout values for the authentication cache that replicate the behavior of the local in-memory cache.
 
 === Caching custom classes in your subject
-When you use the distributed authentication cache, you might need to store subjects that contain custom classes. Such classes include principals or credentials that were inserted into the subject in a custom JAAS `LoginModule` or in a Trust Association Interceptor (TAI). In such cases, all classes that are inserted into the subject must be serializable. If any of the object classes that are stored in the subject are not serializable, the subject is not stored into the distributed authentication cache. In this case, the subject is stored in the local in-memory authentication cache instead. These subjects cannot be stored in the JaCache cache and are not accessible by other Open Liberty servers. A warning is output to the server logs the first time that a class is encountered that prevents the subject from being serialized and stored to the distributed authentication cache.
+When you use the distributed authentication cache, you might need to store subjects that contain custom classes. Such classes include principals or credentials that were inserted into the subject in a custom JAAS `LoginModule` or in a Trust Association Interceptor (TAI). In such cases, all classes that are inserted into the subject must be serializable. If any of the object classes that are stored in the subject are not serializable, the subject is not stored into the distributed authentication cache. In this case, the subject is stored in the local in-memory authentication cache instead. These subjects cannot be stored in the JCache cache and are not accessible by other Open Liberty servers. A warning is output to the server logs the first time that a class is encountered that prevents the subject from being serialized and stored to the distributed authentication cache.
 
 Additionally, the same library reference must be used for the caching provider, JAAS LoginModule, the TAI, and any applications that access the class. Otherwise, you might encounter `ClassCastExceptions` exceptions when the custom classes are accessed in an application.
 
@@ -129,9 +130,9 @@ This example specifies the `appSecurity-2.0` feature but you can use any version
 
 [#size]
 === Cache sizing, eviction and performance
-To replicate the default behavior of the local in-memory authentication cache, configure a maximum size of 25,000 entries, with an access-based expiration policy of 10 minutes from the last access time. The previous example demonstrates how to configure these values inn the `authCache` element.
+To replicate the default behavior of the local in-memory authentication cache, configure a maximum size of 25,000 entries, with an access-based expiration policy of 10 minutes from the last access time. The previous example demonstrates how to configure these values in the `authCache` element.
 
-Distributed cache size limits are usually only approximate because partitioning of the data across servers can result in decreased realized capacity. To verify the maximum capacity, thoroughly test your configuration.
+Distributed cache size limits are only approximate because partitioning of the data across servers can result in decreased realized capacity. To verify the maximum capacity, thoroughly test your configuration.
 
 You can realize further performance gains by configuring a near cache for your JCache provider, if your provider supports it. A near cache allows the JCache provider to store and access selected cache entries on Open Liberty instead of needing to go out to the remote cache to retrieve those entries. Enabling the JCache provider near cache might increase the amount of memory that is required by the Open Liberty server as those cache entries are stored within the JVM for that server.
 
@@ -166,8 +167,8 @@ The following `infinispan.xml` file example shows an Infinispan authentication c
 ----
 <infinispan>
  <distributed-cache name="AuthCache">
-	 <memory max-count="25000" when-full="REMOVE" />
-	 <expiration max-idle="600000" lifespan="-1" />
+   <memory max-count="25000" when-full="REMOVE" />
+   <expiration max-idle="600000" lifespan="-1" />
 	 <encoding media-type="application/x-java-serialized-object" />
    ....
  </distributed-cache>
@@ -186,12 +187,12 @@ The following `hazelcast.xml` file example shows a Hazelcast authentication cach
 	  <value-type class-name="java.lang.Object" />
 	  <eviction size="25000"
 	  	max-size-policy="ENTRY_COUNT" eviction-policy="LRU" />
-  	<expiry-policy-factory>
+    <expiry-policy-factory>
 		  <timed-expiry-policy-factory
 		  	expiry-policy-type="ACCESSED"
 			  duration-amount="600"
 			  time-unit="SECONDS" />
-   	</expiry-policy-factory>
+   	 </expiry-policy-factory>
     ...
   </cache>
   ...
