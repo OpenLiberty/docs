@@ -1,0 +1,128 @@
+// Copyright (c) 2022 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description: When session persistence is configured for Open Liberty, the server automatically creates tables to persist the data. However, If you want to customize a table to make it more appropriate for your needs, you can create the table externally by using the data definition language (DDL) for your chosen database.
+:seo-title: Create a table for session persistence
+:seo-description: When session persistence is configured for Open Liberty, the server automatically creates tables to persist the data. However, If you want to customize a table to make it more appropriate for your needs, you can create the table externally by using the data definition language (DDL) for your chosen database.
+:page-layout: general-reference
+:page-type: general
+= Create a database table for session persistence
+
+When session persistence is configured for Open Liberty, the server automatically creates tables to persist the data. However, if you want to customize a table to your needs, you can create one externally by using the data definition language (DDL) for your chosen database.
+
+In most cases, the automatically created table is sufficient to persist session data. If you want to customize the table specifications, for example to expand the column size limits, you can create the table externally. If you are using an externally created database table for session persistence, you must create and define a database table and reference it from your configuration.
+
+== Reference an externally created table in your configuration
+
+When you enable the feature:sessionDatabase[display=Database Session Persistence] feature, you can reference an externally created database table by configuring the `tableName` attribute for the config:httpSessionDatabase[] element. The following `server.xml` file example shows a data source configuration for a Db2 database. The `httpSessionDatabase` element references the configured data source and specifies the `sessionTable` table to store session data.
+
+[source,xml]
+----
+<dataSource id="SessionDS" jdbcDriverRef="Db2Driver">
+    <properties.db2.jcc user="user1" password="password1"
+                        databaseName="${shared.resource.dir}/databases/SessionDB"/>
+    ....
+</dataSource>
+
+<httpSessionDatabase id="SessionDB" dataSourceRef="SessionDS" tableName="sessionTable"/>
+<httpSession storageRef="SessionDB" cloneId="${cloneId}"/>
+----
+
+== DDL examples for common database vendors
+
+Your administrator can externally create a database table to store your session data by using the following DDL examples for common database vendors.
+
+=== Db2
+
+----
+CREATE TABLE <SchemaName>.sessions  (
+  ID               VARCHAR(128) NOT NULL ,
+  PROPID           VARCHAR(128) NOT NULL ,
+  APPNAME          VARCHAR(128) NOT NULL,
+  LISTENERCNT      SMALLINT ,
+  LASTACCESS       BIGINT,
+  CREATIONTIME     BIGINT,
+  MAXINACTIVETIME  INTEGER ,
+  USERNAME         VARCHAR(256) ,
+  SMALL            VARCHAR(3122)  FOR BIT DATA ,
+  MEDIUM           LONG VARCHAR FOR BIT DATA ,
+  LARGE            BLOB(2M)
+  )
+----
+
+=== Oracle
+
+----
+CREATE TABLE SESSIONS  (
+  ID               VARCHAR(128) NOT NULL ,
+  PROPID           VARCHAR(128) NOT NULL ,
+  APPNAME          VARCHAR(128) NOT NULL,
+  LISTENERCNT      SMALLINT ,
+  LASTACCESS       INTEGER,
+  CREATIONTIME     INTEGER,
+  MAXINACTIVETIME  INTEGER ,
+  USERNAME         VARCHAR(256) ,
+  SMALL            RAW(2000),
+  MEDIUM           LONG RAW ,
+  LARGE            RAW(1)
+  )
+----
+
+If the `useOracleBLOB` attribute for the config:httpSessionDatabase[] element is set to `true` in your Oracle data source configuration, use the following DDL configuration.
+
+----
+CREATE TABLE SESSIONS  (
+  ID               VARCHAR(128) NOT NULL ,
+  PROPID           VARCHAR(128) NOT NULL ,
+  APPNAME          VARCHAR(128) NOT NULL,
+  LISTENERCNT      SMALLINT ,
+  LASTACCESS       INTEGER,
+  CREATIONTIME     INTEGER,
+  MAXINACTIVETIME  INTEGER ,
+  USERNAME         VARCHAR(256) ,
+  SMALL            RAW(2000),
+  MEDIUM           BLOB,
+  LARGE            RAW(1)
+  )
+----
+
+=== Microsoft SQL
+
+----
+CREATE TABLE SESSIONS (
+  ID               VARCHAR(128) NOT NULL,
+  PROPID           VARCHAR(128) NOT NULL,
+  APPNAME          VARCHAR(128) NOT NULL,
+  LISTENERCNT      SMALLINT NULL,
+  LASTACCESS       DECIMAL(21,0) NULL,
+  CREATIONTIME     DECIMAL(21,0) NULL,
+  MAXINACTIVETIME  INTEGER NULL,
+  USERNAME         VARCHAR(255) NULL,
+  SMALL            IMAGE NULL,
+  MEDIUM           IMAGE NULL,
+  LARGE            IMAGE NULL
+  )
+----
+
+=== PostgreSQL
+
+----
+CREATE TABLE sessions (
+  ID VARCHAR(128) NOT NULL,
+  PROPID VARCHAR(128) NOT NULL,
+  APPNAME VARCHAR(128) NOT NULL,
+  LISTENERCNT SMALLINT,
+  LASTACCESS BIGINT,
+  CREATIONTIME BIGINT,
+  MAXINACTIVETIME INTEGER,
+  USERNAME VARCHAR(255),
+  SMALL BYTEA,
+  MEDIUM BYTEA,
+  LARGE BYTEA
+  )
+----

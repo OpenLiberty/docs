@@ -1,0 +1,82 @@
+// Copyright (c) 2022 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description: MicroProfile GraphQl is an API for building services that exercise fine-grained control over the data that they request and receive. A GraphQL service can simplify data retrieval by collating data from multiple sources into a single object.
+:seo-description: MicroProfile GraphQl is an API for building services that exercise fine-grained control over the data that they request and receive. A GraphQL service can simplify data retrieval by collating data from multiple sources into a single object.
+:page-layout: general-reference
+:page-type: general
+= Build GraphQL applications with MicroProfile GraphQL
+
+MicroProfile GraphQL is an API for building services that exercise fine-grained control over the data that they request and receive. A GraphQL service can simplify data retrieval by collating data from multiple sources into a single object.
+
+== What is GraphQL?
+
+https://graphql.org/[GraphQL] is an open source data query and manipulation language for APIs and a runtime that fulfills queries with existing data. You can use a GraphQL service to obtain data from multiple sources, such as APIs, databases, and other services. The GraphQL service can then collate this data into a single object, which simplifies the data retrieval. You make only a single request to the GraphQL service, instead of multiple requests to the individual data sources. GraphQL services require less data fetching than REST services, which results in faster application load times and lower data transfer costs. GraphQL also enables clients to better customize requests to the server.
+
+GraphQL uses a schema to define operations that are called resolvers, which can be either a query type or a  mutation type. Queries are read-only and fetch data. Mutations can create, delete, or modify data. The GraphQL schema describes all the data types and operations that are used in a GraphQL service. You can also document your service by adding names and text descriptions to the various object types and operations in the schema.
+
+Many enterprise companies use GraphQL, including Atlassian, Coursera, Facebook, GitHub, PayPal, and Twitter.
+
+=== GraphQL and REST
+
+GraphQL provides a code-first approach to development that is an alternative to, though not necessarily a replacement for, REST architecture.
+Unlike REST APIs, each HTTP request that is sent to a GraphQL service goes to a single HTTP endpoint. Create, read, update, and delete operations and their details are differentiated by the contents of the request. If the operation returns data, you specify the properties of the data that you want returned in the request. For read operations, a JSON object is returned that contains only the data and properties that you specified. For other operations, a JSON object might be returned that contains information such as a success message. Returning only the specified properties in a read operation reduces both the size of responses and the overall processing time because GraphQL calculates these properties only if they are requested.
+
+This efficiency in GraphQL services addresses issues like under-fetching and over-fetching that are inherent in most RESTful applications. For example, you might query a GraphQL service that returns the current temperature in 10 cities across the world. In a REST model, you might have to query a different endpoint for each city, an example of under-fetching that results in multiple round trips to get the data you need. Also, each of those endpoints might return data that you didn't ask for, such as the wind conditions or barometric pressure. These responses are an example of over-fetching, and the processing cost of filtering the extra data falls to the service that makes the request. With GraphQL, the differentiation is contained in the request so that you can query only a single endpoint and receive exactly the data that you are looking for.
+
+Another benefit of GraphQL is the ability to update the data model for your service with minimal impact to existing client applications. In a RESTful application, when you add an entity to your data model, all client calls fetch it, whether they want it or not, and they must be able to tolerate it. This limitation might require clients to upgrade whenever you change your data model. With GraphQL, you have more flexibility to update your data model because clients  receive an entity only if they specifically request it. Clients can also understand these updates by looking at your GraphQL schema and decide what to fetch.
+
+Despite these advantages, GraphQL is not a replacement for REST and the benefits come with tradeoffs that might not be worthwhile in some environments. GraphQL offers relief from over and under-fetching, but needs filtering on the server side that requires more CPU cycles. Particularly, environments with robust network capability but where CPU cycles are expensive might prefer REST over GraphQL.
+
+== GraphQL and Open Liberty
+
+You can implement GraphQL support for applications that run on Open Liberty by enabling the feature:mpGraphQL[display=MicroProfile GraphQL] feature. When this feature is enabled, you can define GraphQL endpoints by using annotations, similar to how you create RESTful Web Services (formerly JAX-RS)  resources.
+
+The feature:mpGraphQL-1.0[display=MicroProfile GraphQL 1.0] feature uses the `javax` namespace. The feature:mpGraphQL-2.0[display=MicroProfile GraphQL 2.0] feature uses the `jakarta` namespace.
+
+Most GraphQL programming models require you to maintain both your schema and the application code that supports it. https://download.eclipse.org/microprofile/microprofile-graphql-1.0/microprofile-graphql.html[MicroProfile GraphQL] takes a code-first approach, so you write Java code by using annotations to mark GraphQL schema elements and then the MicroProfile GraphQL implementation generates the schema at run time.
+After the application is deployed, the Open Liberty MP GraphQL implementation scans the application and creates a schema within the context root of the application. Clients can then read the schema and invoke queries and mutations that are provided by the application.
+
+Open Liberty also supports link:https://graphql-dotnet.github.io/docs/getting-started/graphiql[GraphiQL], which is a web-based UI that helps you write and run GraphQL queries and mutations, with editing features like command completion, query history, and schema introspection. You can configure GraphiQL in your `server.xml` file and access the UI by using a web browser.
+
+=== Application security and GraphQL
+
+You might need to restrict access to certain queries and mutations to certain authenticated users. Open Liberty enables these authorization checks by using the `@DenyAll`, `@PermitAll`, and `@RolesAllowed` annotations. These annotations are placed on the class or method of classes that are annotated with the `@GraphQLApi` annotation. To implement authorization with MicroProfile GraphQL, you need to enable the feature:appSecurity[display=Application Security] feature in your `server.xml` file. You also need to set up the user registry and web container metadata for authentication and authorization.
+
+For more information about role-based access to Open Liberty resources, see xref:authorization.adoc[Authorization].
+
+=== Observability and GraphQL
+
+Metrics are available for GraphQL queries and mutations when you enable both the MicroProfile GraphQL and feature:mpMetrics[display=MicroProfile Metrics] features. Open Liberty tracks the number of times a particular query or mutation method is invoked ​and the cumulative time that is spent in that method. These metrics can help determine what data is being accessed, how often, and where time is spent in execution. The feature:mpGraphQL-1.0[display=MicroProfile GraphQL 1.0] feature integrates with the feature:mpMetrics-2.3[display=MicroProfile Metrics 2.3] and feature:mpMetrics-3.0[display=3.0] features.
+
+The feature:mpGraphQL-2.0[display=MicroProfile GraphQL 2.0] feature integrates with the feature:mpMetrics-4.0[display=MicroProfile Metrics 4.0] feature.
+
+Metrics for GraphQL applications are collected and reported under the `vendor` category of metrics. To see these metrics, you can go to the metrics endpoint URL at `http://<host>:<port>/metrics/vendor`, where `<host>:<port>` is replaced by the host computer and port that are configured for your metrics implementation.
+
+The metrics are prefixed with `vendor_mp_graphql_` and are similar to the following example.
+
+[source,console]
+----
+# TYPE vendor_mp_graphql_Query_currentConditions_total counter
+vendor_mp_graphql_Query_currentConditions_total 27
+# TYPE vendor_mp_graphql_Query_currentConditions_elapsedTime_seconds gauge
+vendor_mp_graphql_Query_currentConditions_elapsedTime_seconds 0.10273818800000001
+# TYPE vendor_mp_graphql_Conditions_wetBulbTempF_total counter
+vendor_mp_graphql_Conditions_wetBulbTempF_total 4
+# TYPE vendor_mp_graphql_Conditions_wetBulbTempF_elapsedTime_seconds gauge
+vendor_mp_graphql_Conditions_wetBulbTempF_elapsedTime_seconds 0.031866015000000004
+# TYPE vendor_mp_graphql_Mutation_reset_total counter
+vendor_mp_graphql_Mutation_reset_total 3
+# TYPE vendor_mp_graphql_Mutation_reset_elapsedTime_seconds gauge
+vendor_mp_graphql_Mutation_reset_elapsedTime_seconds 0.007540145000000001
+----
+For more information about vendor metrics, see the xref:metrics-list.adoc[Metrics reference list].
+
+=== Getting started with MicroProfile GraphQL and Open Liberty
+
+You can learn how to build and use a simple GraphQL service with MicroProfile GraphQL and Open Liberty in the link:/guides/microprofile-graphql.html[Optimizing REST queries for microservices with GraphQL] guide.
