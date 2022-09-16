@@ -1,4 +1,4 @@
-// Copyright (c) 2013, 2019 IBM Corporation and others.
+// Copyright (c) 2013, 2022 IBM Corporation and others.
 // Licensed under Creative Commons Attribution-NoDerivatives
 // 4.0 International (CC BY-ND 4.0)
 //   https://creativecommons.org/licenses/by-nd/4.0/
@@ -16,9 +16,9 @@ Open Liberty has a unified logging component that handles messages that are writ
 
 A server has the following three primary log files:
 
-- `console.log` - This file is created by the `server start` command. It contains the redirected standard output and standard error streams from the JVM process. This console output is formatted for human readability and it lacks some information that is useful for automated log analysis.
+- `console.log` - This file is created by the `server start` command. It contains the redirected standard output and standard error streams from the underlying JVM process. This console output is formatted for human readability and it lacks some information that is useful for automated log analysis. The `console.log` file is reset when the server is restarted.
 - `messages.log` - This file contains all messages that are written or captured by the logging component. All messages that are written to this file contain additional information such as the message timestamp and the ID of the thread that wrote the message. This file is suitable for automated log analysis. This file does not contain messages that are written directly by the JVM process.
-- `trace.log` - This file contains all messages that are written or captured by the logging component and any enabled trace. This file is created only if you enable trace. This file does not contain messages that are written directly by the JVM process.
+- `trace.log` - This file is created only if you enable trace. It contains all the content of the `messages.log` file plus any enabled trace. This file does not contain messages that are written directly by the JVM process.
 
 The following sections provide more information about configuring your Open Liberty logs:
 
@@ -28,20 +28,25 @@ The following sections provide more information about configuring your Open Libe
   ** <<#names,Configurable JSON field names>>
   ** <<#fields,Custom message and trace JSON fields>>
   ** <<#http,Selectable HTTP access log JSON fields>>
-* <<#docker,Docker image logging configuration>>
+* <<#container,Container image logging configuration>>
 * <<#binary,Binary logging>>
+* <<#rollover,Time-based log rollover>>
 * <<#log_formats,Log formats>>
 * <<#settings,Configuration settings by source>>
+* <<#log_details,Trace log detail levels>>
 
 [#configuaration]
 == Logging configuration
-The logging component can be controlled through the server configuration. The logging component can be fully configured in your `server.xml` file by the `logging` element. However, logging is initialized before the `server.xml` file is processed so configuring logging through the `server.xml` file can result in early log entries that use a different log configuration from later ones. To avoid this problem, you can provide much of the logging configuration in the `boostrap.properties` file and in some cases by using environment variables.
+The logging component can be controlled through the server configuration. The logging component can be fully configured in your `server.xml` file by the `logging` element. However, logging is initialized before the `server.xml` file is processed so configuring logging through the `server.xml` file can result in early log entries that use a different log configuration from later ones. To avoid this problem, you can provide much of the logging configuration in the `boostrap.properties` file and in some cases by using environment variables. Avoid specifying different values for the same configuration property in both the bootstrap.properties and the server.xml file. For more information about logging configuration settings, see the <<#settings,Configuration settings by source>> table.
 
 [#storage]
 == Log file storage management
-The `console.log` file is created by redirecting the process `stdout` and `stderr` streams to a file. As a result, Open Liberty is unable to offer the same level of management, like log rollover, as it offers for the `messages.log` file. If you are concerned about the size of the `console.log` file, you can disable the `console.log` file and use the `messages.log` file instead. All the log messages that are sent to the `console.log` file are written to the `messages.log` file, and you can configure file rollover in the messages log.
+The `console.log` file is created by redirecting the process `stdout` and `stderr` streams to a file. As a result, Open Liberty is unable to offer the same level of management, like log rollover, as it offers for the `messages.log` file. If you are concerned about the size of the `console.log` file, you can set the console log to `OFF` and use the `messages.log` file instead. All messages that are written or captured by the logging component are written to the `messages.log` file, and you can configure file rollover in the messages log.
 
-To disable the console log, and configure the `messages.log` file to roll over three times at 100 Mb, you can use the following configuration:
+However, when you set the console log level to `OFF`, messages from the underlying JVM are still written to the `console.log` file. The same principle applies to any messages that are written to the native standard out and standard error streams. The Open Liberty logging component does not capture or control the destination of messages that are written directly by the JVM process, such as `-verbose:gc` output. These messages are routed to the file system according to the active JVM settings and they do not appear in the `messages.log` file.
+
+
+To prevent the logging component from writing to the console log and configure the `messages.log` file to roll over three times at 100 Mb, use the following configuration:
 
 [source,properties,linenums,role="code_column"]
 ----
@@ -237,10 +242,10 @@ The following example shows a configuration in the `server.xml` file to replace 
 ----
 
 
-[#docker]
-== Docker image logging configuration
+[#container]
+== Container image logging configuration
 
-In Docker environments, you can disable the messages log and format the console output as JSON by using environment variables, as shown in the following example:
+In containerized environments, you can disable the messages log and format the console output as JSON by using environment variables, as shown in the following example:
 
 [source,properties,linenums,role="code_column"]
 ----
@@ -253,19 +258,30 @@ WLP_LOGGING_CONSOLE_SOURCE=message,trace,accessLog,ffdc,audit
 
 You can specify this configuration when you run the `docker run` command by using the `-e` flag to set the environment variables:
 
-[role='command']
-```
+[source,sh]
+----
 docker run -e "WLP_LOGGING_CONSOLE_SOURCE=message,trace,accessLog,ffdc"
            -e "WLP_LOGGING_CONSOLE_FORMAT=json"
            -e "WLP_LOGGING_CONSOLE_LOGLEVEL=info"
            -e "WLP_LOGGING_MESSAGE_FORMAT=json"
            -e "WLP_LOGGING_MESSAGE_SOURCE=" open-liberty
-```
+----
+
+If you use https://docs.podman.io/en/latest[Podman] to manage your containers, run the following command:
+
+[source,sh]
+----
+podman run -e "WLP_LOGGING_CONSOLE_SOURCE=message,trace,accessLog,ffdc"
+           -e "WLP_LOGGING_CONSOLE_FORMAT=json"
+           -e "WLP_LOGGING_CONSOLE_LOGLEVEL=info"
+           -e "WLP_LOGGING_MESSAGE_FORMAT=json"
+           -e "WLP_LOGGING_MESSAGE_SOURCE=" open-liberty
+----
 
 [#binary]
 == Binary logging
 
-Liberty has a high-performance binary log format option that reduces the resources that are needed to write trace files. Generally, when you configure binary logging, the `console.log` is disabled for best performance. You can configure binary logging in the `bootstrap.properties` file, as shown in the following example:
+Liberty has a high-performance binary log format option that reduces the resources that are needed to write trace files. For best performance, when you configure binary logging, set the console log level to `OFF` and <<#storage,use the messages log instead>>. You can configure binary logging in the `bootstrap.properties` file, as shown in the following example:
 
 [source,properties,linenums,role="code_column"]
 ----
@@ -273,40 +289,61 @@ websphere.log.provider=binaryLogging-1.0
 com.ibm.ws.logging.console.log.level=OFF
 com.ibm.ws.logging.copy.system.streams=false
 ----
+However, when you set the console log level to `OFF`, messages from the underlying JVM other other messages that are written to the native standard out and standard error streams are still written to the `console.log` file.
 
-The `binaryLog` command-line tool can be used to convert the binary log to a text file:
+
+You can use the `binaryLog` command to convert the binary log to a text file, as shown in the following example for a server that is called `defaultServer`:
 
 [role='command']
 ----
 binaryLog view defaultServer
 ----
 
+[#rollover]
+== Time-based log rollover
+
+You can enable time-based periodic rollover of Liberty messages and trace logs by specifying a log rollover start time and a log rollover interval duration. The specified rollover start time is the time of day when logs first roll over. The rollover interval duration is the time interval in between consecutive log rollovers.
+
+For example, a server with a rollover start time of midnight and a rollover interval of 1 day rolls over the messages and trace logs once every day, at midnight.
+
+You can configure rollover for Open Liberty messages and trace logs by either editing the `bootstrap.properties` file, specifying environment variables, or by using server configuration attributes. The following examples show the configuration for each of these options, with a log rollover start time of midnight and a log rollover interval of 1 day.
+
+* The following example configures time-based log rollover in the `bootstrap.properties` file.
++
+[source,properties,linenums,role="code_column"]
+----
+com.ibm.ws.logging.rollover.start.time=00:00
+com.ibm.ws.logging.rollover.interval=1m
+----
++
+* The following example configures time-based log rollover with environment variables in the `server.env` file.
++
+[source,properties,linenums,role="code_column"]
+----
+WLP_LOGGING_ROLLOVER_START_TIME=00:00
+WLP_LOGGING_ROLLOVER_INTERVAL=1m
+----
++
+* The following example configures time-based log rollover with server configuration attributes in the `server.xml` file.
++
+[source,properties,linenums,role="code_column"]
+----
+<logging rolloverStartTime="00:00" rolloverInterval="1d"/>
+----
+
+
 
 [#settings]
 == Configuration settings by source
 
-The following table shows the equivalent `server.xml` file, `bootstrap.properties` file, and environment variable configurations along with brief descriptions. For more information, see the xref:reference:config/logging.adoc[logging element].
+The following table shows the equivalent `server.xml` file, `bootstrap.properties` file, and environment variable configurations along with brief descriptions. Settings that apply to the console log appear first, followed by settings that apply to the messages log, and then the trace log. Settings that apply either globally or to more than one log type appear last in the table. For more information, see the xref:reference:config/logging.adoc[logging element].
+
+// keep the rows in this table sorted according to the table description: console, message, trace, multiple/global. Rows within each category should be sorted alphabetically, with the execption of any settijngs that relate to JSON, which are sorted together in the final group under "j", regardless of the attribute name
 
 .Logging configuration settings
 [%header,cols="6,9,9,9"]
 |===
 | Server XML Attribute|bootstrap property|Env var|Description
-
-|hideMessage
-|com.ibm.ws.logging.hideMessage
-|
-|You can use this setting to configure the messages keys that you want to hide from the `console.log` and `messages.log` files. When the messages are hidden, they are redirected to the `trace.log` file.
-
-|jsonFieldMappings
-|com.ibm.ws.logging.json.field.mappings
-|WLP_LOGGING_JSON_FIELD_MAPPINGS
-|When logs are in JSON format, use this setting to replace default field names with new field names or to omit fields from the logs. For more information, see <<#names,Configurable JSON field names>>
-
-
-|logDirectory
-|com.ibm.ws.logging.log.directory
-|LOG_DIR
-|You can use this setting to set a directory for all log files, excluding the `console.log` file, but including FFDC. The default is `WLP_OUTPUT_DIR/serverName/logs`. It is not recommended to set the `logDirectory` in the `server.xml` file since it can result in some log data being written to the default location prior to when the `server.xml` file is read.
 
 |consoleFormat
 |com.ibm.ws.logging.console.format
@@ -327,30 +364,6 @@ The following table shows the equivalent `server.xml` file, `bootstrap.propertie
 |com.ibm.ws.logging.copy.system.streams
 |
 |If this setting is set to `true`, messages that are written to the System.out and System.err streams are copied to process `stdout` and `stderr` streams and so appear in the `console.log` file. If this setting is set to `false`, those messages are written to configured logs such as the `messages.log` file or `trace.log` file, but they are not copied to `stdout` and `stderr` and do not appear in `console.log`. The default value is true.
-
-|
-|com.ibm.ws.logging.newLogsOnStart
-|
-|If this setting is set to true when Open Liberty starts, any existing `messages.log` or `trace.log` files are rolled over and logging writes to a new `messages.log` or `trace.log` file. If this setting is set to false, `messages.log` or `trace.log` files only refresh when they hit the size that is specified by the `maxFileSize` attribute. The default value is `true`. This setting cannot be provided using the `logging` element in the `server.xml` file because it is only processed during server bootstrap.
-
-|isoDateFormat
-|com.ibm.ws.logging.isoDateFormat
-|
-|This setting specifies whether to use ISO-8601 formatted dates in log files. The default value is false.
-
-If this setting is set to true, the ISO-8601 format is used in the `messages.log` file, the `trace.log` file, and the FFDC logs. The format is `yyyy-MM-dd'T'HH:mm:ss.SSSZ`.
-
-If you specify a value of `false`, the date and time are formatted according to the default locale set in the system. If the default locale is not found, the format is `dd/MMM/yyyy HH:mm:ss:SSS z`.
-
-|maxFiles
-|com.ibm.ws.logging.max.files
-|
-|This setting specifies how many of each of the logs files are kept. This setting also applies to the number of exception summary logs for FFDC. So if this number is `10`, you might have 10 message logs, 10 trace logs, and 10 exception summaries in the `ffdc/` directory. By default, the value is `2`. The console log does not roll so this setting does not apply to the `console.log` file.
-
-|maxFileSize
-|com.ibm.ws.logging.max.file.size
-|
-|This setting specifies the  maximum size (in MB) that a log file can reach before it is rolled. Setting the value to `0` disables log rolling. The default value is `20`. The `console.log` does not roll so this setting does not apply.
 
 |messageFileName
 |com.ibm.ws.logging.message.file.name
@@ -403,6 +416,27 @@ An asterisk pass:[*] acts as a wildcard to match multiple components based on a 
 
 - `com.ibm.ws.classloading.AppClassLoader` Specifies the AppClassLoader class only.
 
+For more information on logging levels, see <<#logging_levels,Valid log detail levels for the trace log>>.
+
+|
+|com.ibm.ws.logging.newLogsOnStart
+|
+|If this setting is set to true when Open Liberty starts, any existing `messages.log` or `trace.log` files are rolled over and logging writes to a new `messages.log` or `trace.log` file. If this setting is set to false, `messages.log` or `trace.log` files only refresh when they hit the size that is specified by the `maxFileSize` attribute. The default value is `true`. This setting cannot be provided using the `logging` element in the `server.xml` file because it is only processed during server bootstrap.
+
+|hideMessage
+|com.ibm.ws.logging.hideMessage
+|
+|You can use this setting to configure the messages keys that you want to hide from the `console.log` and `messages.log` files. When the messages are hidden, they are redirected to the `trace.log` file.
+
+|isoDateFormat
+|com.ibm.ws.logging.isoDateFormat
+|
+|This setting specifies whether to use ISO-8601 formatted dates in log files. The default value is false.
+
+If this setting is set to true, the ISO-8601 format is used in the `messages.log` file, the `trace.log` file, and the FFDC logs. The format is `yyyy-MM-dd'T'HH:mm:ss.SSSZ`.
+
+If you specify a value of `false`, the date and time are formatted according to the default locale set in the system. If the default locale is not found, the format is `dd/MMM/yyyy HH:mm:ss:SSS z`.
+
 |appsWriteJson
 |com.ibm.ws.logging.apps.write.json
 |WLP_LOGGING_APPS_WRITE_JSON
@@ -413,4 +447,102 @@ An asterisk pass:[*] acts as a wildcard to match multiple components based on a 
 |WLP_LOGGING_JSON_ACCESS_LOG_FIELDS
 |When logs are in JSON format, you can use this setting to replace the default HTTP access log JSON fields with fields that are specified by the `logFormat` attribute of the `accesLogging` element.
 
+|jsonFieldMappings
+|com.ibm.ws.logging.json.field.mappings
+|WLP_LOGGING_JSON_FIELD_MAPPINGS
+|When logs are in JSON format, use this setting to replace default field names with new field names or to omit fields from the logs. For more information, see <<#names,Configurable JSON field names>>
+
+|logDirectory
+|com.ibm.ws.logging.log.directory
+|LOG_DIR
+|You can use this setting to set a directory for all log files, excluding the `console.log` file, but including FFDC. The default is `WLP_OUTPUT_DIR/serverName/logs`. It is not recommended to set the `logDirectory` in the `server.xml` file since it can result in some log data being written to the default location prior to when the `server.xml` file is read.
+
+|maxFiles
+|com.ibm.ws.logging.max.files
+|
+|This setting specifies how many of each of the logs files are kept. This setting also applies to the number of exception summary logs for FFDC. So if this number is `10`, you might have 10 message logs, 10 trace logs, and 10 exception summaries in the `ffdc/` directory. By default, the value is `2`. The console log does not roll so this setting does not apply to the `console.log` file.
+
+|maxFileSize
+|com.ibm.ws.logging.max.file.size
+|
+|This setting specifies the  maximum size (in MB) that a log file can reach before it is rolled. Setting the value to `0` disables log rolling. The default value is `20`. The `console.log` does not roll so this setting does not apply.
+
+|stackTraceSingleEntry
+|com.ibm.ws.logging.stackTraceSingleEntry
+|WLP_LOGGING_STACK_TRACE_SINGLE_ENTRY
+| When this attribute is set to `true`, stack traces that are emitted to standard-out and standard-error are merged into a single log event. By default, this value is set to `false` and each individual line of the stack trace is emitted as an individual log event.
+
+|rolloverStartTime
+|com.ibm.ws.logging.rollover.start.time
+|WLP_LOGGING_ROLLOVER_START_TIME
+| Use this setting alone or with the `rolloverInterval` attribute to enable time-based log rollover for `messages.log` and `trace.log` files. This setting specifies the scheduled time of day for logs to first roll over. The `rolloverInterval` setting duration begins at the time that is specified by the  `rolloverStartTime` attribute. Valid values follow a 24-hour ISO-8601 date-time format of HH:MM, where 00:00 represents midnight. Padding zeros are required. If the `rolloverInterval` attribute is specified, the default value of the `rolloverStartTime` attribute is 00:00, midnight. The `console.log` does not roll so this setting does not apply.
+
+|rolloverInterval
+|com.ibm.ws.logging.rollover.interval
+|WLP_LOGGING_ROLLOVER_INTERVAL
+| Use this setting alone or with the `rolloverStartTime` attribute to enable time-based log rollover for `messages.log` and `trace.log` files. This setting specifies the time interval in between log rollovers, in minutes if a unit of time is not specified. Specify a positive integer followed by a unit of time, which can be days (d), hours (h), or minutes (m). For example, specify 5 hours as 5h. You can include multiple values in a single entry. For example, 1d5h is equivalent to 1 day and 5 hours. If the `rolloverStartTime` attribute is specified, the default value of the `rolloverInterval` attribute is 1 day. The `console.log` does not roll so this setting does not apply.
+
+|===
+
+[#log_details]
+== Trace log detail levels
+
+You can specify the `traceSpecification` attribute for the logging element in your `server.xml` file to selectively enable trace and set the trace log detail level for specific components in your server configuration.
+The following example specifies the `audit` detail level for all code that is running on the server and the `finest` detail level for an example package.
+
+[source,sh]
+----
+<logging traceSpecification="*=audit:com.myco.mypackage.*=finest"/>
+----
+
+In this example, the two detail level specifications are separated by a colon (`:`).
+The wildcard value `pass:[*]=audit` applies to all traceable code that is running on the server.
+The `com.myco.mypackage.pass:[*]=finest` value applies to all classes with the package name that begins with `com.myco.mypackage.`.
+
+The following table lists the valid log detail levels that you can specify in the `traceSpecification` attribute.
+You can specify an empty value for any component to disable all trace for that component.
+Any component that is not specified is initialized to a default state of `pass:[*]=info`.
+
+
+[#logging_levels]
+.Valid log detail levels for the trace log
+[%header,cols="6,9"]
+|===
+| Logging level|Content or Significance
+
+|off
+|Logging is turned off.
+
+|fatal
+|Task cannot continue and component, application, and server cannot function.
+
+|severe
+|Task cannot continue but component, application, and server can still function. This level can also indicate an impending unrecoverable error.
+
+|warning
+|Potential error or impending error. This level can also indicate a progressive failure. For example, the potential leaking of resources.
+
+|audit
+|Significant event that affects server state or resources
+
+|info
+|General information that outlines overall task progress
+
+|config
+|Configuration change or status
+
+|detail
+|General information that details subtask progress
+
+|fine
+|General trace that includes method entry, exit, and return values
+
+|finer
+|Detailed trace
+
+|finest
+|A more detailed trace that includes all the detail that is needed to debug problems
+
+|all
+|All events are logged. If you create custom levels, `all` includes those levels, and can provide a more detailed trace than finest.
 |===

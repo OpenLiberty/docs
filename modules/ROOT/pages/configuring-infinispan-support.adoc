@@ -92,22 +92,24 @@ When you configure Infinispan in client-server mode on link:https://www.openshif
         <feature>servlet-4.0</feature>
         <feature>sessionCache-1.0</feature>
     </featureManager>
-    <httpEndpoint host="*"
-                  id="defaultHttpEndpoint"
-                  httpPort="9080"
-                  httpsPort="9443" />
-  <httpSessionCache libraryRef="InfinispanLib">
-    <properties infinispan.client.hotrod.server_list="infinispan-server:11222"/>
-    <properties infinispan.client.hotrod.auth_username="sampleUser"/>
-    <properties infinispan.client.hotrod.auth_password="samplePassword"/>
-    <properties infinispan.client.hotrod.auth_realm="default"/>
-    <properties infinispan.client.hotrod.sasl_mechanism="PLAIN"/>
-    <properties infinispan.client.hotrod.java_serial_whitelist=".*"/>
-    <properties infinispan.client.hotrod.marshaller="org.infinispan.commons.marshall.JavaSerializationMarshaller"/>
-  </httpSessionCache>
+    <httpEndpoint host="*" id="defaultHttpEndpoint" httpPort="9080"
+        httpsPort="9443" />
+    <httpSessionCache cacheManagerRef="CacheManager"/>
     <library id="InfinispanLib">
         <fileset dir="${shared.resource.dir}/infinispan" includes="*.jar"/>
     </library>
+    <cacheManager id="CacheManager">
+        <properties
+            infinispan.client.hotrod.server_list="infinispan-server:11222"
+            infinispan.client.hotrod.auth_username="sampleUser"
+            infinispan.client.hotrod.auth_password="samplePassword"
+            infinispan.client.hotrod.auth_realm="default"
+            infinispan.client.hotrod.sasl_mechanism="PLAIN"
+            infinispan.client.hotrod.java_serial_whitelist=".*"
+            infinispan.client.hotrod.marshaller=
+             "org.infinispan.commons.marshall.JavaSerializationMarshaller"/>
+        <cachingProvider jCacheLibraryRef="InfinispanLib" />
+    </cacheManager>
 </server>
 ----
 
@@ -134,11 +136,13 @@ Before you configure Infinispan in embedded mode on OpenShift, you need to enabl
         <feature>mpReactiveStreams-1.0</feature>
         <feature>sessionCache-1.0</feature>
     </featureManager>
-    <httpEndpoint host="*"
-                  id="defaultHttpEndpoint"
-                  httpPort="9080"
-                  httpsPort="9443" />
-    <httpSessionCache libraryRef="InfinispanLib" uri="file:${shared.resource.dir}/infinispan/infinispan.xml"/>
+    <httpEndpoint host="*" id="defaultHttpEndpoint" httpPort="9080"
+        httpsPort="9443" />
+    <httpSessionCache cacheManagerRef="CacheManager"/>
+    <cacheManager id="CacheManager"
+        uri="file:${shared.resource.dir}/infinispan/infinispan.xml">
+        <cachingProvider jCacheLibraryRef="InfinispanLib" />
+    </cacheManager>
     <library id="InfinispanLib">
         <fileset dir="${shared.resource.dir}/infinispan" includes="*.jar"/>
     </library>
@@ -203,7 +207,10 @@ The `Djgroups.dns.query` option specifies the DNS record that returns all of the
 You can also configure Infinispan in embedded mode without OpenShift by configuring the `httpSessionCache` element in the `server.xml` file, as shown in the following example:
 [source,xml]
 ----
-<httpSessionCache libraryRef="InfinispanLib”/>
+<httpSessionCache cacheManagerRef="CacheManager"/>
+<cacheManager id="CacheManager" >
+    <cachingProvider jCacheLibraryRef="InfinispanLib" />
+</cacheManager>
 ----
 If you configure Infinispan in embedded mode without OpenShift, you don't need to create a `service.yaml`, `jvm.options`, or an `infinispan.xml` file.
 

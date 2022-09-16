@@ -1,0 +1,142 @@
+// Copyright (c) 2022 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description: Application bindings and extensions provide ways to define application resources and control various application behaviors. Application bindings can apply to enterprise applications, web applications, or EJB applications.
+:seo-title: Application bindings
+:page-layout: general-reference
+:page-type: general
+
+= Application bindings
+
+You can use application bindings and extensions to define application resources and control various application behaviors. Application bindings can apply to enterprise applications, web applications, or EJB applications.
+
+All enterprise bean (EJB) references and resource references that are defined in the application must be bound to the actual enterprise beans or resources that are defined in the application server. Traditionally, these bindings and extensions are specified in XML files inside the application archive. For example, web application bindings can be defined in the `ibm-web-bnd.xml` file. In Open Liberty, you can also specify bindings and extensions as part of the application configuration in the `server.xml` file.
+
+Open Liberty does not use some elements that are specified in the bindings and extensions files. For example, in the web application extensions, the value of the `reload interval` attribute is ignored because in Open Liberty reload behavior is controlled by the `applicationMonitor` configuration. However, no errors result from specifying these elements in the `server.xml` configuration.
+
+
+== Binding precedence
+
+Open Liberty supports the traditional method of defining the bindings and extensions as part of the application. If information is specified in both the `server.xml` file and the application, the two sources are merged to create the effective set of bindings or extensions.
+
+Information that is specified in the `server.xml` file takes precedence over the same information that is specified in an application artifact. For example, if both the `ibm-web-bnd.xml` and the `server.xml` file specify a virtual host for a web application, the value that is specified in the `server.xml` file is used. If the information that is being specified can have multiple values, the values from the `server.xml` file are added to the values from the application. For example, if the `ibm-application-bnd.xml` file defines two security roles and the `server.xml` file defines one, all three security roles are used. If a security role in the `server.xml` file matches a security role in the `ibm-application-bnd.xml` file, the role from the `server.xml` file overwrites the role from the application.
+
+
+== Bindings for specific modules in an application
+
+For bindings and extensions that apply to a specific module within an application, you might need to specify a `moduleName` attribute in the configuration. This specification applies to information that would traditionally be specified in the `ibm-web-ext.xml` file, the `ibm-web-bnd.xml` file, the `ibm-ejb-jar-bnd.xml`, and the `ibm-ejb-jar-ext.xml` file. The `moduleName` attribute is the name of the module without a file extension.
+
+In the following example, an enterprise application is defined in the `stockPrices.ear` file and contains a web module in the `stockDisplay.war` archive. The configuration sets the default error page for the web module.
+
+[source,xml]
+----
+
+<application location="stockPrices.ear">
+   <web-ext moduleName="stockDisplay" default-error-page="error.html"/>
+</application>
+
+----
+
+Similarly, the following `server.xml` configuration specifies a data source binding for an EJB application that is defined in the `stockData.jar` file.
+
+[source,xml]
+----
+
+<application location="stockPrices.ear">
+   <ejb-jar-bnd moduleName="stockData">
+	<session name="StockBean">
+		<data-source name="jdbc/stockDS" binding-name="stockDataSource"/>
+ 	</session>
+   </ejb-jar>
+</application>
+
+----
+
+The module name parameter is not necessary if the application is in a stand-alone `WAR` or `JAR` file and defined in the `server.xml` file by using a `webApplication` or `ejbApplication` element.
+
+The following example shows the configuration when the `stockDisplay.war` and `stockData.jar` files from the previous example are stand-alone applications, instead of modules for the `stockPrices.ear` application.
+
+[source,xml]
+----
+
+<webApplication location="stockPrices.ear">
+   <web-ext default-error-page="error.html"/>
+</webApplication>
+
+<ejbApplication location="stockPrices.jar">
+   <ejb-jar-bnd>
+	<session name="StockBean">
+		<data-source name="jdbc/stockDS" binding-name="stockDataSource"/>
+ 	</session>
+   </ejb-jar>
+</ejbApplication>
+
+----
+
+
+== Child element configuration in the server.xml file
+
+In some cases, the configuration that was specified in the bindings and extensions files as a child element must be specified as an attribute in the `server.xml` file. Some child elements in these files have only one possible attribute value, such as `shared-session-context` in the application extensions file or `context-root` in the web extensions file. If a child element has only one possible attribute value, the child element name in the extensions file becomes the attribute name in `server.xml` file. The value of the child element’s single attribute becomes the attribute value in `server.xml` file.
+
+The following example shows the configuration of the `context-root` child element in the web extensions file.
+
+[source,xml]
+----
+<web-ext>
+   <context-root uri="stockPrices"/>
+</web-ext>
+----
+
+The following example shows the corresponding configuration in the `server.xml` file.
+
+[source,xml]
+----
+<web-ext context-root="stockPrices"/>
+----
+
+For more information about the bindings and extensions that you can specify in the `server.xml` file, see the following configuration elements.
+
+* config:application[]
+* config:webApplication[]
+* config:ejbApplication[]
+
+
+== Server.xml binding examples
+
+The following example demonstrates binding configurations in the `server.xml` file for a resource reference for a managed bean inside an EJB application.
+
+[source,xml]
+----
+<ejbApplication location="someBean.jar">
+<managed-bean-bnd>
+	<managed-bean class="com.ibm.MyBean">
+		<resource-ref name="jdbc/myBinding" binding-name="jdbc/TestDataSource" />
+	</managed-bean>
+</managed-bean-bnd>
+</ejbApplication>
+----
+
+The following example demonstrates binding configurations in the `server.xml` file for setting the shared session context attribute for an application to `false`.
+
+[source,xml]
+----
+<application location="myApplication.ear">
+	<application-ext shared-session-context="false" />
+</application>
+----
+
+The following example demonstrates binding configurations in the `server.xml` file for setting the virtual host for a web application.
+
+[source,xml]
+----
+<application location="myApplication.ear">
+	<web-bnd moduleName="myWebModule">
+		<virtual-host name="default_host" />
+	</web-bnd>
+</application>
+----
