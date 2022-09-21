@@ -16,9 +16,9 @@ FIPS enablement is important for many users, particularly if you work for or wit
 
 For more information about enabling FIPS for Liberty with the IBM SDK, Java Technology Edition, see link:https://www.ibm.com/docs/en/was-liberty/nd?topic=liberty-setting-up-fips-compliance[Setting up Liberty for FIPS compliance] in the WebSphere Liberty documentation. The configuration is the same for both WebSphere Liberty and Open Liberty.
 
-== Enable FIPS on Open Liberty on IBM Semeru Runtimes
+== Enable FIPS for Open Liberty on IBM Semeru Runtimes
 
-You can enable both IBM Semeru Runtime Certified Edition and IBM Semeru Runtime Open Edition in FIPS mode in version 11.0.16 and later for Java 11 and version 17.0.4 and later for Java 17. Java 11 and 17 support for FIPS with Semeru Runtimes is available only on RHEL 8 on x86 platforms. The RHEL 8 operating system must be running in FIPS mode because the IBM Semeru Runtimes rely on the operating system’s underlying Network Security Services (NSS) FIPS 140-2 certification. To run Open Liberty on IBM Semeru Runtimes in FIPS mode, Open Liberty version 22.0.0.8 or later is recommended.
+You can enable either IBM Semeru Runtime Certified Edition or Open Edition in FIPS mode in version 11.0.16 and later for Java 11 and version 17.0.4 and later for Java 17. Java 11 and 17 support for FIPS with Semeru Runtimes is available only on RHEL 8 on x86 platforms. The RHEL 8 operating system must be running in FIPS mode because the IBM Semeru Runtimes rely on the operating system’s underlying Network Security Services (NSS) FIPS 140-2 certification. To run Open Liberty on IBM Semeru Runtimes in FIPS mode, Open Liberty version 22.0.0.8 or later is recommended.
 In FIPS mode, Semeru Runtimes does not support file-based keystores like JKS and PKCS#12. Certificates in your file-based keystores must be imported into the NSS database.
 
 Complete the following steps to configure your Open Liberty server to run on Semeru Runtimes in FIPS mode and to add your keys and certificates to the NSS database.
@@ -49,7 +49,7 @@ This file is referenced by the keystore `location` configuration attribute in st
 
 4. Import your keys and certificates to the NSS database. +
 In FIPS mode, Semeru Runtimes does not support file-based keystores like JKS and PKCS#12. Certificates in your file-based keystores must be imported into the NSS database. +
-You can import and manage your keys and certificates in the NSS database by using the NSS link:https://firefox-source-docs.mozilla.org/security/nss/legacy/reference/nss_tools__colon__pk12util/index.html[pk12util] and link:https://firefox-source-docs.mozilla.org/security/nss/legacy/reference/nss_tools__colon__certutil/index.html[certutil] commands.
+You can import and manage your keys and certificates in the NSS database by using the NSS https://firefox-source-docs.mozilla.org/security/nss/legacy/reference/nss_tools__colon__pk12util/index.html[pk12util] and https://firefox-source-docs.mozilla.org/security/nss/legacy/reference/nss_tools__colon__certutil/index.html[certutil] commands.
 ** To import keys from your keystore to the NSS database, use the `pk12util` command.  In the following example, `key.p12` is the keystore file and `Liberty` is the keystore password.
 +
 ----
@@ -60,7 +60,7 @@ pk12util -I key.p12 -W Liberty -d /etc/pki/nssdb
 ----
 pk12util -I trust.p12 -W Liberty -d /etc/pki/nssdb
 ----
-** Trusted certificates must be marked trusted certificate authority (CA). You apply the CA by running the `certutil` command, as shown in the following example.
+** Trusted certificates must be marked as a trusted certificate authority (CA), with complete trust for both client and server certificates. You apply the CA by running the `certutil` command, as shown in the following example, where the `-t` argument specifies complete trust with the `CT` value.
 +
 ----
 certutil -M -n trustCert -t “CT, CT, CT” -d /etc/pki/nssdb
