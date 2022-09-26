@@ -102,6 +102,28 @@ In the following example, the default TLS configuration includes the JWK endpoin
 ----
 The Open Liberty server expects each request to provide a valid JWT token and does not create or use single-sign-on (SSO) cookies for JWT authentication. If you want the Open Liberty server to create SSO cookies, set the `authnSessionDisabled` attribute on the `openidConnectClient` element to `false`.
 
+Open Liberty can use the issuer claim from a JWT or JSON web signature (JWS) access token to select a `openidConnectClient` configuration in the `server.xml` file with a matching issuer attribute.
+
+The following `server.xml` file example shows two Open ID connect client configurations, with an config:authFilter[Authentication Filter] configured to route requests to the `RP2` configuration. If a request with an issuer claim value of `https://hostname/op1` is presented, the `RP1` configuration is selected unless the `rp2filter` applies to the request.
+
+[source,xml]
+----
+<openidConnectClient id="RP1" issuer="https://hostname/op1"  ... />
+<openidConnectClient id="RP2" issuer="https://hostname/op2" authFilterRef="rp2filter" .../>
+
+<authFilter id="rp2filter">
+  ...
+</authFilter>
+----
+
+
+Open Liberty selects the `openidConnectClient` configuration to use for a JWT request according to the following algorithm.
+
+1. If the authentication filter for a `openidConnectClient` configuration matches the request, choose that configuration.
+2. If the issuer claim from the JWT matches the `issuer` attribute in only one `openidConnectClient` configuration element, choose that configuration.
+3. If the issuer claim from the JWT matches the `issuer` attribute in multiple `openidConnectClient` configuration elements, choose the first configuration that matches.
+4. If the issuer claim from the JWT does not match the `issuer` attribute in any `openidConnectClient` configuration elements, choose between all of the configuration elements in a nondeterministic manner.
+
 Claim to subject mapping::
 If you do not define claim-to-subject mapping, the following default rules apply.
 +

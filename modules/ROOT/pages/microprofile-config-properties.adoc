@@ -1,0 +1,458 @@
+// Copyright (c) 2022 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description: MicroProfile Config is an API that externalizes the configuration from microservices, keeping it separate from the source code. MicroProfile Config can be used by applications as a single API that can retrieve configuration information from different sources.
+:seo-description: MicroProfile Config is an API that externalizes the configuration from microservices, keeping it separate from the source code. MicroProfile Config can be used by applications as a single API that can retrieve configuration information from different sources.
+:page-layout: general-reference
+:page-type: general
+:seo-title: MicroProfile Config properties
+
+= MicroProfile Config properties
+
+MicroProfile Config is an API that uses context and dependency injection (CDI) to inject configuration property values directly into an application without the need for application code to retrieve them. You can use MicroProfile Config properties to provide configuration values for other MicroProfile APIs.
+
+For more information about MicroProfile Config, see xref:external-configuration.adoc[External configuration of microservices] and the Open Liberty https://openliberty.io/guides/#configuration[MicroProfile Config guides].
+
+The following sections provide tables that list and describe MicroProfile Config properties that are available for different MicroProfile APIs.
+
+- <<#context,MicroProfile Context Propagation>>
+- <<#ft,MicroProfile Fault Tolerance>>
+- <<#gql,MicroProfile GraphQL>>
+- <<#health,MicroProfile Health>>
+- <<#jwt,MicroProfile JSON Web Token>>
+- <<#metrics,MicroProfile Metrics>>
+- <<#openapi,MicroProfile OpenAPI>>
+- <<#react,MicroProfile Reactive Messaging>>
+- <<#rest,MicroProfile Rest Client>>
+
+
+[#context]
+== MicroProfile Context Propagation
+
+The following MicroProfile Config properties can be specified when MicroProfile Context Propagation is enabled. For more information, see the https://download.eclipse.org/microprofile/microprofile-context-propagation-1.3-RC1/microprofile-context-propagation-spec-1.3-RC1.html#mpconfig[MicroProfile Context Propagation specification].
+
+.MicroProfile Config properties for MicroProfile Context Propagation
+[options="header"]
+|===
+|Name |Description |When the runtime reads the property |Example
+
+|`mp.context.ManagedExecutor.cleared`
+|Specifies the default value for the `cleared` parameter for the `ManagedExecutor` class.
+|When the `ManagerExecutor.builder()` class is used to build a `ManagedExecutor` instance and the builder does not specify the set of cleared context types.
+|`mp.context.ManagedExecutor.cleared=Remaining`
+
+|`mp.context.ManagedExecutor.maxAsync`
+|Specifies the default value for the `maxAsync` parameter for the `ManagedExecutor` class.
+|When the `ManagerExecutor.builder()` class is used to build a `ManagedExecutor` instance and the builder does not specify the `maxAsync` attribute.
+|`mp.context.ManagedExecutor.maxAsync=10`
+
+|`mp.context.ManagedExecutor.maxQueued`
+|Specifies the default value for the `maxQueued` parameter for the `ManagedExecutor` class.
+|When the `ManagerExecutor.builder()` class is used to build a `ManagedExecutor` instance and the builder does not specify the `maxQueued` attribute.
+|`mp.context.ManagedExecutor.maxQueued=1`
+
+|`mp.context.ManagedExecutor.propagated`
+|Specifies the default value for the `propagated` parameter for the `ManagedExecutor` class.
+|When the `ManagerExecutor.builder()` class is used to build a `ManagedExecutor` instance and the builder does not specify the set of propagated context types.
+|`mp.context.ManagedExecutor.propagated=Security,Application`
+
+|`mp.context.ThreadContext.cleared`
+|Specifies the default value for the `cleared` parameter for the `ThreadContext` class.
+|When the `ThreadContext.builder()` class is used to build a `ThreadContext` instance and the builder does not specify the set of cleared context types.
+|`mp.context.ManagedExecutor.cleared=Security,Transaction`
+
+|`mp.context.ThreadContext.propagated`
+|Specifies the default value for the `propagated` parameter for the `ThreadContext` class.
+|When the `ThreadContext.builder()` class is used to build a `ThreadContext` instance and the builder does not specify the set of propagated context types.
+|`mp.context.ThreadContext.propagated=None`
+
+|`mp.context.ThreadContext.unchanged`
+|Specifies the default value for the `unchanged` parameter for the `ThreadContext` class.
+|When the `ThreadContext.unchanged()` class is used to build a `ThreadContext` instance and the builder does not specify the set of cleared unchanged types.
+|`mp.context.ManagedExecutor.unchanged=Remaining`
+
+|===
+
+[#ft]
+== MicroProfile Fault Tolerance
+
+The following MicroProfile Config properties can be specified when MicroProfile Fault Tolerance is enabled. For more information, see the https://download.eclipse.org/microprofile/microprofile-fault-tolerance-4.0/microprofile-fault-tolerance-spec-4.0.html#configuration[MicroProfile Fault Tolerance specification].
+
+.MicroProfile Config properties for MicroProfile Fault Tolerance
+[options="header"]
+|===
+|Name |Description |When the runtime reads the property |Example
+
+|`_classname_/_methodname_/_annotationname_/_parametername_=_newvalue_`
+|Overrides a value that is set in a fault tolerance annotation at the method level.
+|In MicroProfile Fault Tolerance version 3.0 and later, this property is read once per method per bean class, on the first execution of the method.
+In MicroProfile Fault Tolerance version 2.1 and earlier, it is read once per method per bean instance, on the first execution of the method.
+|`com.acme.ClassA/methodB/Retry/maxRetries=5`
+
+|`_classname_/_annotationname_/_parametername_=_newvalue_`
+|Overrides a value that is set in a fault tolerance annotation at the annotation level.
+|In MicroProfile Fault Tolerance version 3.0 and later, this property is read once per method per bean class, on the first execution of the method.
+In MicroProfile Fault Tolerance version 2.1 and earlier, it is read once per method per bean instance, on the first execution of the method.
+|`com.acme.ClassA/Retry/maxRetries=5`
+
+|`mp.fault.tolerance.interceptor.priority`
+|Configures the Fault Tolerance interceptor base priority. This property is available in MicroProfile Fault Tolerance version 2.0 and later.
+|Application startup
+|`mp.fault.tolerance.interceptor.priority=1000`
+
+|`MP_Fault_Tolerance_Metrics_Enabled`
+|Disables or enables all metrics that are produced by Fault Tolerance. The default is `true`. This property is available in MicroProfile Fault Tolerance version 1.1 and later.
+|Application startup
+|`MP_Fault_Tolerance_Metrics_Enabled=false`
+
+|`MP_Fault_Tolerance_NonFallback_Enabled`
+|Disables or enables all Fault Tolerance annotations except `@Fallback`. The default is `true`.
+|In MicroProfile Fault Tolerance version 3.0 and later, this property is read once per method per bean class, on the first execution of the method.
+In MicroProfile Fault Tolerance version 2.1 and earlier, it is read once per method per bean instance, on the first execution of the method.
+|`MP_Fault_Tolerance_NonFallback_Enabled=false`
+
+|===
+
+[#gql]
+== MicroProfile GraphQL
+
+The following MicroProfile Config properties can be specified when MicroProfile GraphQL is enabled. For more information, see the https://download.eclipse.org/microprofile/microprofile-graphql-2.0/microprofile-graphql-spec-2.0.html[MicroProfile GraphQL specification].
+
+.MicroProfile Config properties for MicroProfile GraphQL
+[options="header"]
+|===
+|Name |Description |When the runtime reads the property |Example
+
+|`mp.graphql.defaultErrorMessage`
+|Sets the default error message.
+|When an application throws an unchecked exception.
+|`mp.graphql.defaultErrorMessage=Unexpected failure in the system. Jarvis is working to fix it.`
+
+|`mp.graphql.exceptionsWhiteList`
+|Specifies a comma-separated allowlist of unchecked exception messages to be included. By default, all unchecked exceptions are on the blocklist.
+|When an application throws an unchecked exception.
+|`mp.graphql.exceptionsWhiteList=org.eclipse.microprofile.graphql.tck.apps.superhero.api.WeaknessNotFoundException`
+
+|`mp.graphql.exceptionsBlackList`
+|Hides a message for a checked exception. By default, all checked exceptions are on the allowlist.
+|When an application throws a checked exception.
+|`mp.graphql.exceptionsBlackList=java.io.IOException,java.util.concurrent.TimeoutException`
+
+|===
+
+[#health]
+== MicroProfile Health
+
+The following MicroProfile Config properties can be specified when MicroProfile Health is enabled. For more information, see the https://download.eclipse.org/microprofile/microprofile-health-4.0/microprofile-health-spec-4.0.html[MicroProfile Health specification].
+
+.MicroProfile Config properties for MicroProfile Health
+[options="header"]
+|===
+|Name |Description |When the runtime reads the property |Example
+
+|`mp.health.default.readiness.empty.response`
+|Set this property to `UP` to change the overall default readiness status to UP while deployed applications are starting up. This property is available in MicroProfile Health 3.0 and later.
+|Application startup
+|`mp.health.default.readiness.empty.response=UP`
+
+|`mp.health.default.startup.empty.response`
+|Set this property to `UP` to change the overall default startup status to UP while deployed applications are starting up. This property is available in MicroProfile Health 3.1 and later.
+|Application startup
+|`mp.health.default.startup.empty.response=UP`
+
+|===
+
+[#jwt]
+== MicroProfile JSON Web Token
+
+The following MicroProfile Config properties can be specified when MicroProfile JSON Web Token (JWT) is enabled. For more information, see the https://download.eclipse.org/microprofile/microprofile-jwt-auth-2.0/microprofile-jwt-auth-spec-2.0.html[MicroProfile JSON Web Token specification].
+
+.MicroProfile Config properties for MicroProfile JSON Web Token
+[options="header"]
+|===
+|Name |Description |When the runtime reads the property |Example
+
+|`mp.jwt.decrypt.key.location`
+|Specifies the location of the Key Management Key, which is the private key that is used to decrypt the Content Encryption Key. The Content Encryption Key is then used to decrypt the JSON Web Encryption (JWE) ciphertext. This private key must correspond to the public key that is used to encrypt the Content Encryption Key. This property is available in MicroProfile JSON Web Token 1.2 and later.
+|On each request to a protected resource.
+|`mp.jwt.decrypt.key.location=privateKey.pem`
+
+|`mp.jwt.token.cookie`
+|Specifies the name of the cookie that is expected to contain a JWT token. The default value is `Bearer`. This property is available in MicroProfile JSON Web Token 1.2 and later.
+|On each request to a protected resource.
+|`mp.jwt.token.cookie=myToken`
+
+|`mp.jwt.token.header`
+| Controls the HTTP request header that is expected to contain a JWT token. Valid values are either `Authorization`, which is the default, or `Cookie`. This property is available in MicroProfile JSON Web Token 1.2 and later.
+|On each request to a protected resource.
+|`mp.jwt.token.header=Cookie`
+
+|`mp.jwt.verify.audiences`
+|Specifies a list of allowable `aud` values. At least one of these values must be found in the claim. This property is available in MicroProfile JSON Web Token 1.2 and later.
+|On each request to a protected resource.
+|`mp.jwt.verify.audiences=conferenceService`
+
+|`mp.jwt.verify.issuer`
+|Specifies the expected `iss` claim value to validate against an MicroProfile JWT. This property is available in MicroProfile JSON Web Token 1.1 and later.
+|On each request to a protected resource.
+|`mp.jwt.verify.issuer=https://example.com/issuer`
+
+|`mp.jwt.verify.publickey`
+|Specifies the embedded key material of the public key for the MicroProfile JWT signer, in PKCS8, PEM, or JWK(S)
+format. If no value is found, the `mp.jwt.verify.publickey.location`  value is checked. This property is available in MicroProfile JSON Web Token 1.1 and later.
+|On each request to a protected resource.
+|`mp.jwt.verify.publickey=MIIEvgIBADANBgkqh...`
+
+|`mp.jwt.verify.publickey.algorithm`
+|Specifies the public key signature algorithm that is supported by the MicroProfile JWT endpoint. The default value is `RSA256`. This property is available in MicroProfile JSON Web Token 1.2 and later.
+|On each request to a protected resource.
+|`mp.jwt.verify.publickey.algorithm=ES256`
+
+|`mp.jwt.verify.publickey.location`
+|Specifies the relative path or full URL of the public key. All relative paths are resolved within the
+archive that uses the `ClassLoader.getResource` method. If the value is a URL, it is resolved by using  a new
+`URL(“…”).openStream()` method. This property is available in MicroProfile JSON Web Token 1.1 and later.
+|On each request to a protected resource.
+|`mp.jwt.verify.publickey.location=publicKey.pem`
+
+|===
+
+[#metrics]
+== MicroProfile Metrics
+
+The following MicroProfile Config properties can be specified when MicroProfile Metrics is enabled. For more information, see the https://download.eclipse.org/microprofile/microprofile-metrics-4.0/microprofile-metrics-spec-4.0.html[MicroProfile Metrics specification].
+
+.MicroProfile Config properties for MicroProfile Metrics
+[options="header"]
+|===
+|Name |Description |When the runtime reads the property |Example
+
+|`mp.metrics.appName`
+|Passes the value of the  `_app` tag from the application server to the application. This property is used to avoid metric name collisions when multiple applications are deployed to the runtime. It is defined through a `microprofile-config.properties` file in the `META-INF` directory of the application. The value of this tag is appended to the output of each metric that originates from that application.
+|This value is read and evaluated during run time.
+|`mp.metrics.appName=myApp`
+
+|`mp.metrics.tags`
+|Specifies tags for a metric. Tag values that are set through this property must escape equal signs (`=`) and commas (`,`) with a backslash (`\`). The values of these tags are appended to the output of each metric.
+|Server startup
+|`mp.metrics.tags=app=shop,tier=integration,special=deli\=ver\,y`
+
+|===
+
+[#openapi]
+== MicroProfile OpenAPI
+
+The following MicroProfile Config properties can be specified when MicroProfile OpenAPI is enabled. For more information, see the https://download.eclipse.org/microprofile/microprofile-open-api-3.0/microprofile-openapi-spec-3.0.html[MicroProfile OpenAPI specification].
+
+.MicroProfile Config properties for MicroProfile OpenAPI
+[options="header"]
+|===
+|Name |Description |When the runtime reads the property |Example
+
+|`mp.openapi.extensions.liberty.merged.exclude`
+|Overrides the `mp.openapi.extensions.liberty.merged.include` property to specify which applications or web modules are excluded from the generated OpenAPI documentation. The default value is `none`. This property is available in MicroProfile OpenAPI 2.0 and later. For more information, see xref:documentation-openapi.adoc#multi-module[Multiple application and multi-module application support with MicroProfile OpenAPI].
+|Server startup
+|`mp.openapi.extensions.liberty.merged.exclude=app1,app2`
+
+|`mp.openapi.extensions.liberty.merged.include`
+|Specifies which modules or applications are included in the generated OpenAPI documentation. The default value is `first`. This property is available in MicroProfile OpenAPI 2.0 and later. For more information, see xref:documentation-openapi.adoc#multi-module[Multiple application and multi-module application support with MicroProfile OpenAPI].
+|Server startup
+|`mp.openapi.extensions.liberty.merged.exclude=app1/module2,app2`
+
+|`mp.openapi.extensions.liberty.merged.info`
+|Sets the `info` section of the final Open API document. If this property is set, the `info` section in the final OpenAPI document is replaced with the value of the property. This replacement is made after any merging is completed. The value must be a https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#infoObject[valid OpenAPI info section] in JSON format. This property is available in MicroProfile OpenAPI 2.0 and later. For more information, see xref:documentation-openapi.adoc#multi-module[Multiple application and multi-module application support with MicroProfile OpenAPI].
+|On each request to the `/openapi` endpoint.
+|`mp.openapi.extensions.liberty.merged.info= _valid OpenAPI info section in JSON format_`
+
+|`mp.openapi.filter`
+| Specifies the fully qualified name of the https://github.com/eclipse/microprofile-open-api/blob/master/spec/src/main/asciidoc/microprofile-openapi-spec.asciidoc#oasfilter[OASFilter] implementation.
+|Application startup
+|`mp.openapi.filter=com.mypackage.MyFilter`
+
+|`mp.openapi.model.reader`
+|Specifies the fully qualified name of the https://github.com/eclipse/microprofile-open-api/blob/master/spec/src/main/asciidoc/microprofile-openapi-spec.asciidoc#oasmodelreader[OASModelReader] implementation.
+|Application startup
+|`mp.openapi.model.reader=com.mypackage.MyModelReader`
+
+// commenting out until 3.1 release, see #5678 |`mp.openapi.scan.beanvalidation`
+// |Enables or disables the scanning and processing of Jakarta Bean Validation annotations. The default value is `true`. This property is available in MicroProfile OpenAPI 3.1 and later.
+// |Application startup
+// |`mp.openapi.scan.beanvalidation=false`
+
+|`mp.openapi.scan.classes`
+|Specifies a list of classes to scan.
+|Application startup
+|`mp.openapi.scan.classes=com.xyz.MyClassA,com.xyz.MyClassB`
+
+|`mp.openapi.scan.exclude.classes`
+|Specifies a list of classes to exclude from scans.
+|Application startup
+|`mp.openapi.scan.exclude.classes=com.xyz.MyClassC,com.xyz.MyClassD`
+
+|`mp.openapi.scan.exclude.packages`
+|Specifies a list of packages to exclude from scans. Classes within the package and any subpackages are excluded from scans.
+|Application startup
+|`mp.openapi.scan.exclude.packages=com.xyz.packageC,com.xyz.packageD`
+
+|`mp.openapi.scan.packages`
+|Specifies a list of packages to scan. Classes within the package and any subpackages are scanned for annotations.
+|Application startup
+|`mp.openapi.scan.packages=com.xyz.packageA,com.xyz.packageB`
+
+|`mp.openapi.schema`
+|Specifies a schema for a specific class, in JSON format. The remainder of the property key must be the fully qualified class name. The value must be a valid OpenAPI schema object that is specified in JSON format. This property is functionally equivalent to the @Schema annotation on a Java class. However, it can be used in cases where the application developer does not have access to the source code of a class. This property is available in MicroProfile OpenAPI 2.0 and later.
+|Application startup
+|`mp.openapi.schema.java.util.Date= _valid OpenAPI schema in JSON format_`
+
+|`mp.openapi.servers`
+|Specifies a list of global servers that provide connectivity information.
+|Application startup
+|`mp.openapi.servers=https://xyz.com/v1,https://abc.com/v1`
+
+|`mp.openapi.servers.operation._operationID_`
+|Specifies an alternative list of servers to service an operation. Operations that specify an alternative list of servers must define an `operationId`, which is a unique string that identifies the operation.
+|Application startup
+|`mp.openapi.servers.operation.getBooking=https://abc.io/v1`
+
+|`mp.openapi.servers.path._some_/_path_`
+|Specifies an alternative list of servers to service all operations in a path.
+|Application startup
+|`mp.openapi.servers.path./airlines/bookings/{id}=https://xyz.io/v1`
+
+|===
+
+[#react]
+== MicroProfile Reactive Messaging
+
+The following MicroProfile Config properties can be specified when MicroProfile Reactive Messaging is enabled. For more information, see the https://download.eclipse.org/microprofile/microprofile-reactive-messaging-1.0/microprofile-reactive-messaging-spec.html[MicroProfile Reactive Messaging specification].
+
+.MicroProfile Config properties for MicroProfile Reactive Messaging
+[options="header"]
+|===
+|Name |Description |When the runtime reads the property |Example
+
+|`mp.messaging.incoming._channel-name_._attribute_`
+|Specifies an incoming channel attribute value.
+|Application startup
+|`mp.messaging.incoming.my-channel.topic=my-topic`
+
+|`mp.messaging.outgoing._channel-name_._attribute_`
+|Specifies an outgoing channel attribute value.
+|Application startup
+|`mp.messaging.outgoing.my-channel.connector=io.openliberty.kafka`
+
+|`mp.messaging.connector._connector-id_._attributename_`
+|Specifies a connector attribute value.
+|Application startup
+|`mp.messaging.connector.io.openliberty.kafka.bootstrap.servers=mybrokerhostname`
+
+|===
+
+[#rest]
+== MicroProfile Rest Client
+
+The following MicroProfile Config properties can be specified when MicroProfile Rest Client is enabled. For more information, see the https://download.eclipse.org/microprofile/microprofile-rest-client-3.0/microprofile-rest-client-spec-3.0.html[MicroProfile Rest Client specification].
+
+.MicroProfile Config properties for MicroProfile Rest Client
+[options="header"]
+|===
+|Name |Description |When the runtime reads the property |Example
+
+|`_client interface name_/mp-rest/connectTimeout`
+|Specifies a timeout value in milliseconds to wait to connect to the remote endpoint.
+|On the processing of a method invocation when the `RestClient` bean is created.
+|`myClient/mp-rest/connectTimeout=25`
+
+|`_client interface name_/mp-rest/hostnameVerifier`
+|Specifies a custom `HostnameVerifier` instance to determine if an SSL connection that fails on a URL hostname and server identification hostname mismatch is allowed. The class must have a public no-argument constructor.
+|On the processing of a method invocation when the `RestClient` bean is created.
+|`myClient/mp-rest/hostnameVerifier=myVerifierClass`
+
+|`_client interface name_/mp-rest/followRedirects`
+|Specifies a boolean value that determines whether the client follows HTTP redirect responses. Any value other than `true` is interpreted as `false`.
+|On the processing of a method invocation when the `RestClient` bean is created.
+|`myClient/mp-rest/followRedirects=true`
+
+|`_client interface name_/mp-rest/keyStore`
+|Specifies a keystore location, which can be either a classpath or a file.
+|On the processing of a method invocation when the `RestClient` bean is created.
+|`myClient/mp-rest/keyStore=file:/home/user/client-keystore.p12`
+
+|`_client interface name_/mp-rest/keyStorePassword`
+|Specifies the password for the keystore.
+|On the processing of a method invocation when the `RestClient` bean is created.
+|`myClient/mp-rest/keyStorePassword=myPassword`
+
+|`_client interface name_/mp-rest/keyStoreType`
+|Specifies the keystore type. The default value is `JKS`.
+|On the processing of a method invocation when the `RestClient` bean is created.
+|`myClient/mp-rest/keyStoreType=pcks12`
+
+|`_client interface name_/mp-rest/providers`
+|Specifies a comma separated list of fully qualified provider class names to include in the client, the equivalent of the `register` method or the `@RegisterProvider` annotation.
+|On the processing of a method invocation when the `RestClient` bean is created.
+|`myClient/mp-rest/providers=myClass1,myClass2`
+
+|`_client interface name_/mprest/providers/_interface name_/priority`
+|Overrides the priority of the provider for the specified interface.
+|On the processing of a method invocation when the `RestClient` bean is created.
+|`myClient/mp-rest/providers/com.mycompany.MyProvider/priority=3`
+
+|``_client interface name_/mp-rest/proxyAddress`
+|Specifies a string value in the form of _proxy_ : _port_ that defines the HTTP proxy server hostname or IP address and port for requests to this client to use.
+|On the processing of a method invocation when the `RestClient` bean is created.
+|`myClient/mp-rest/proxyAddress=http://exampleproxy:9041`
+
+|`_client interface name_/mp-rest/queryParamStyle`
+|Specifies an enumerated type 23 string value that determines the format in which multiple values for the same query parameter are used. Possible values are `MULTI_PAIRS`  `COMMA_SEPARATED`, or `ARRAY_PAIRS`. The default value is `MULTI_PAIRS`.
+|On the processing of a method invocation when the `RestClient` bean is created.
+|`myClient/mp-rest/queryParamStyle=ARRAY_PAIRS`
+
+|`_client interface name_/mp-rest/readTimeout`
+|Specifies a timeout value in milliseconds to wait for a response from the remote endpoint.
+|On the processing of a method invocation when the `RestClient` bean is created.
+|`myClient/mp-rest/readTimeout=25`
+
+|`_client interface name_/mp-rest/scope`
+|Specifies the fully qualified class name of a CDI scope to use for injection. The  default value is `jakarta.enterprise.context.Dependent`.
+|On the processing of a method invocation when the `RestClient` bean is created.
+|`myClient/mp-rest/scope=jakarta.inject.Singleton`
+
+|`_client interface name_/mp-rest/trustStore`
+|Specifies a truststore location, which can be either a classpath or a file.
+|On the processing of a method invocation when the `RestClient` bean is created.
+|`myClient/mp-rest/trustStore=file:/home/user/client-truststore.p12`
+
+|`_client interface name_/mp-rest/trustStorePassword`
+|Specifies the password for the truststore.
+|On the processing of a method invocation when the `RestClient` bean is created.
+|`myClient/mp-rest/trustStorePassword=myPassword`
+
+|`_client interface name_/mp-rest/trustStoreType`
+|Specifies the truststore type. The default value is `JKS`.
+|On the processing of a method invocation when the `RestClient` bean is created.
+|`myClient/mp-rest/trustStoreType=pcks12`
+
+|`_client interface name_/mp-rest/url`
+|Specifies the base URL to use for this service.
+This property or `*/mp-rest/uri` is considered required. However, some implementations might have other ways to define these URLs/URIs.
+|On the processing of a method invocation when the `RestClient` bean is created.
+|`myClient/mp-rest/url=http://example.com`
+
+|`_client interface name_/mp-rest/uri`
+|Specifies the base URL to use for this service.
+This property or `*/mp-rest/url` is considered required. However, some implementations might have other ways to define these URLs/URIs. This property overrides any `baseUri` value that is specified in the `@RegisterRestClient` annotation.
+|On the processing of a method invocation when the `RestClient` bean is created.
+|`myClient/mp-rest/uri=http://somehost:9080/someContextRoot`
+
+|`org.eclipse.microprofile.rest.client.propagateHeaders`
+|Specifies which headers to propagate from the inbound JAX-RS request to the outbound MicroProfile Rest Client request. The value must be a comma-separated list of headers.
+|On the processing of a method invocation when the `RestClient` bean is created.
+|`org.eclipse.microprofile.rest.client.propagateHeaders==Authorization,Cookie`
+
+|===
