@@ -1,0 +1,148 @@
+// Copyright (c) 2022 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description: A container image is a layered executable software package that contains everything you need to build and run a containerized application. Open Liberty offers a collection of container image tags, which you can choose from to obtain a container image that meets your development needs.
+:seo-title: Open Liberty container images
+:seo-description: A container image is a layered executable software package that contains everything you need to build and run a containerized application. Open Liberty offers a collection of container image tags, which you can choose from to obtain a container image that meets your development needs.
+:page-layout: general-reference
+:page-type: general
+= Open Liberty container images
+
+A container image is a layered executable software package that contains everything you need to build and run a containerized application. You can use Open Liberty container image tags to obtain a container image that meets your development needs.
+
+Open Liberty container images are available from link:https://www.ibm.com/cloud/container-registry[IBM Container Registry] (ICR) and https://hub.docker.com/_/open-liberty[Docker Hub]. One advantage of using ICR instead of Docker Hub is that ICR doesn't impose rate limits on image pulls.
+
+== Container image tags
+
+You can append an Open Liberty container image tag to the `icr.io/appcafe/open-liberty:` source to specify the details of the container image that you pull from ICR. These tags use the following naming convention.
+[subs=+quotes]
+----
+_<optional fix pack version->_ _<liberty image type>_-_<java version>_-_<java type>_-ubi
+----
+
+The following tag values determine the resources that are included in a container image.
+
+Fixpack version::
+This value is optional. If you do not specify a fix pack version, your container image includes the latest release of Open Liberty. In addition to the latest release, the two most recent quarterly fix pack releases are always maintained for the `kernel-slim` and `full` image types. The `beta` images are available only for the latest beta release. For more information, see the <<#tags,Supported container image tags>> section.
+
+Liberty image type::
+Three different image types are available: `kernel-slim`, `full`, or `beta`. The `full` type provides a server with all Open Liberty features and packages installed. The `kernel-slim` type provides just the bare minimum server, which you can customize by adding only the features that your application needs. The `beta` type provides the most recent beta release, which includes all the features and capabilities from the most recent release, plus new and updated features that are currently in development.
+
+Java version::
+This option determines the version of Java SE that the runtime uses.
+
+Java type::
+This option determines the type of Java SE distribution that the runtime uses. Current options are Open J9 and, for Java SE 8 only, the IBM SDK, Java Technology Edition.
+
+[#tags]
+=== Supported container image tags
+
+Open Liberty provides the following container image tags.
+
+----
+kernel-slim-java8-openj9-ubi
+kernel-slim-java8-ibmjava-ubi
+kernel-slim-java11-openj9-ubi
+kernel-slim-java17-openj9-ubi
+
+full-java8-openj9-ubi
+full-java8-ibmjava-ubi
+full-java11-openj9-ubi
+full-java17-openj9-ubi
+
+beta-ubi
+beta-java11-ubi
+beta-java17-ubi
+----
+If you specify any image tag without including a version number, the latest version of Open Liberty is included in the container image that you pull. In addition to the latest version, images for the two most recent quarterly releases are always available in ICR and are refreshed regularly.
+
+Open Liberty quarterly release versions end in `3`, `6`, `9`, or `12`. For example, if the latest Open Liberty release is `22.0.0.10`, then the `22.0.0.9` and `22.0.0.6` releases are also maintained in ICR. To pull one of these release versions instead of the latest, add your chosen release version to the beginning of any of the `kernel-slim` or `full` image tags in the previous list. The `beta` images are available only for the latest beta release.
+
+////
+[#pull]
+== Pull a container image from ICR
+
+You can pull Open Liberty container images from ICR without authentication by using a tool of your choice, such as link:https://podman.io[Podman]. For more information about pulling images from ICR, see link:https://cloud.ibm.com/docs/Registry?topic=Registry-getting-started[Getting started with Container Registry].
+
+To pull a container image that includes the latest version of Open Liberty, append one of the previously listed tags to the `icr.io/appcafe/open-liberty:` source.
+
+For example, to use Podman to pull an image of the latest release with all features and packages that uses the OpenJ9 distribution of Java 17, run the following command.
+----
+podman pull icr.io/appcafe/open-liberty:full-java17-openj9-ubi
+----
+
+You can pull an image that uses a previous release by adding the version number to the beginning of the image tag.
+For example, to use Podman to pull an image of the 22.0.0.9 release in the same configuration as the previous example, use the following command.
+
+----
+podman pull icr.io/appcafe/open-liberty:22.0.0.9-full-java17-openj9-ubi
+----
+////
+
+If you have an IBM Cloud ID, you can generate a list of the currently available images in ICR by using the link:https://cloud.ibm.com/docs/cli?topic=cli-getting-started[IBM Cloud CLI] with the link:https://cloud.ibm.com/docs/cli?topic=cli-install-devtools-manually#idt-install-container-registry-cli-plugin[IBM Cloud Container Registry CLI plug-in] installed. Authentication is required only to list the images. You can pull images from ICR without authentication. To list the images, run the following commands.
+
+----
+ibmcloud login
+ibmcloud cr region-set global
+ibmcloud cr images --restrict appcafe/open-liberty
+----
+
+== Build an application image
+
+You can use container image tags in a Dockerfile to build an application image that adds a single application and its corresponding configuration. Do not configure the container manually after it is started, except for debugging purposes, because these changes are not reflected in new containers that are created from the image.
+
+You can choose from two container image sets. The first uses the Red Hat Universal Base Image as the operating system. It is available from ICR and Docker Hub and is rebuilt daily. The second uses Ubuntu as the operating system. It is available on Docker Hub and is rebuilt automatically whenever a change is made.
+
+Set up your image template similar to the following example, which uses the `kernel-slim-java17-openj9-ubi` to build an image that uses the latest Open Liberty release with the OpenJ9 distribution of Java 17.
+
+[source,dockerfile]
+----
+FROM icr.io/appcafe/open-liberty:kernel-slim-java17-openj9-ubi
+
+# Add a Liberty server configuration including all necessary features
+COPY --chown=1001:0  server.xml /config/
+
+# This script adds the requested XML snippets to enable Liberty features and grow the image to be fit-for-purpose.
+# This option is available only in the 'kernel-slim' image type. The 'full' tag already includes all features.
+RUN features.sh
+
+# Add interim fixes (optional)
+COPY --chown=1001:0  interim-fixes /opt/ol/fixes/
+
+# Add an application
+COPY --chown=1001:0  Sample1.war /config/dropins/
+
+# This script adds the requested server configuration, applies any interim fixes, and populates caches to optimize the runtime
+RUN configure.sh
+----
+
+A template like this example results in a container image that has your application and configuration pre-loaded, which means you can spawn new fully-configured containers at any time.
+
+////
+=== Optional enterprise functions
+
+You can enable optional enterprise functions in your Dockerfile during build time. Set one of the following values as an argument (ARG) or environment variable (ENV) and call RUN configure.sh.
+
+TLS::
+This option enables Transport Security in Open Liberty by adding the feature:transportSecurity[display=Transport Security] feature, which includes support for SSL.
++
+XML snippet location:  `keystore.xml`
+
+HZ_SESSION_CACHE::
+This option enables the persistence of HTTP sessions with JCache by adding the feature:sessionCache[display=JCache Session Persistence
+] feature.
++
+XML snippet location: `hazelcast-sessioncache.xml`
+
+VERBOSE::
+When this option is set to true, the server outputs the commands and results to `stdout` from the `configure.sh` script.  When this option is set to false which is the default, the `configure.sh` script is silenced.
+
+=== Configure security for containerized applications
+////
+
+For more information, see the link:https://github.com/OpenLiberty/ci.docker#readme[Open Liberty container image GitHub documentation].
