@@ -15,6 +15,7 @@
 
 To improve server performance during single sign-on authentication, Open Liberty provides an authentication cache to store a subject after a user authentication is successful. You can also use JCache to configure a distributed authentication cache that is shared among a group of Open Liberty servers that use the same set of users and groups.
 
+== Configure an in-memory authentication cache
 The authentication cache is available by default when any version of the feature:appSecurity[display=Application Security (Jakarta Security)] feature is enabled in your `server.xml` file.
 The cache is initialized with a set number of entries, which can be configured with the `initialSize` attribute. It has a maximum number of entries, which can be configured with the `maxSize` attribute. If the maximum size is reached, the earliest entries are removed from the cache. If a user is inactive for longer than the period that is specified by the `timeout` attribute, the entry for that user is removed from the cache.
 
@@ -78,9 +79,9 @@ You must enable any version of the feature:appSecurity[display=Application Secur
          jCacheLibraryRef="JCacheProviderLib" />
 </cacheManager>
 
-<cache id="AuthCache" name="AuthCache" cacheManagerRef="CacheManager" />
+<cache id="io.openliberty.cache.authentication" name="io.openliberty.cache.authentication" cacheManagerRef="CacheManager" />
 
-<authCache cacheRef="AuthCache" maxSize="25000" timeout="10m" />
+<authCache cacheRef="io.openliberty.cache.authentication" maxSize="25000" timeout="10m" />
 ----
 
 In this example, the config:library[] element specifies the location of the JCache provider JAR file. The config:cacheManager[] element references the library to configure the `CachingProvider` and `CacheManager` instances. The config:cache[] element references the `cacheManager` element to configure the JCache instance. The config:authCache[] element references that JCache instance to specify it as the authentication cache for the server. This element also specifies maximum size and timeout values for the authentication cache that replicate the behavior of the local in-memory cache.
@@ -111,18 +112,18 @@ In the following example configuration, the `JCacheProviderLib` library contains
     jCacheLibraryRef="JCacheProviderLib”
     commonLibraryRef="CustomLib" />
 
-<cacheManager id="CacheManager" uri="<PROVIDER_SPECIFIC_URI>"... />
+<cacheManager id="CacheManager" uri="<PROVIDER_SPECIFIC_URI>" />
 
-<cache id="AuthCache" name="AuthCache" cacheManagerRef="CacheManager" />
+<cache id="io.openliberty.cache.authentication" name="io.openliberty.cache.authentication" cacheManagerRef="CacheManager" />
 
-<application ... >
+<application>
     <classloader commonLibraryRef="CustomLib" />
 </application>
 
-<jaasLoginModule ... libraryRef="CustomLib" />
+<jaasLoginModule libraryRef="CustomLib" />
 
-<trustAssociation ...>
-    <interceptors ... libraryRef="CustomLib" />
+<trustAssociation>
+    <interceptors libraryRef="CustomLib" />
 </trustAssociation>
 ----
 
@@ -166,11 +167,10 @@ The following `infinispan.xml` file example shows an Infinispan authentication c
 [source,xml]
 ----
 <infinispan>
-    <distributed-cache name="AuthCache">
+    <distributed-cache name="io.openliberty.cache.authentication">
         <memory max-count="25000" when-full="REMOVE" />
         <expiration max-idle="600000" lifespan="-1" />
 	      <encoding media-type="application/x-java-serialized-object" />
-        ....
     </distributed-cache>
 </infinispan>
 ----
@@ -181,8 +181,8 @@ The following `hazelcast.xml` file example shows a Hazelcast authentication cach
 [source,xml]
 ----
 <hazelcast>
-    ...
-    <cache name="AuthCache">
+
+    <cache name="io.openliberty.cache.authentication">
         <key-type class-name="java.lang.Object" />
         <value-type class-name="java.lang.Object" />
 	      <eviction size="25000"
@@ -193,8 +193,6 @@ The following `hazelcast.xml` file example shows a Hazelcast authentication cach
 	               duration-amount="600"
 	               time-unit="SECONDS" />
         </expiry-policy-factory>
-            ...
     </cache>
-      ...
 </hazelcast>
 ----
