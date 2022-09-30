@@ -6,9 +6,9 @@
 // Contributors:
 //     IBM Corporation
 //
-:page-description: A container image is a layered executable software package that contains everything you need to build and run a containerized application. Open Liberty offers a collection of container image tags, which you can choose from to obtain a container image that meets your development needs.
+:page-description: A container image is a layered executable software package that contains everything you need to build and run a containerized application. You can use Open Liberty container image tags to obtain a container image that meets your development needs.
 :seo-title: Open Liberty container images
-:seo-description: A container image is a layered executable software package that contains everything you need to build and run a containerized application. Open Liberty offers a collection of container image tags, which you can choose from to obtain a container image that meets your development needs.
+:seo-description: A container image is a layered executable software package that contains everything you need to build and run a containerized application. You can use Open Liberty container image tags to obtain a container image that meets your development needs.
 :page-layout: general-reference
 :page-type: general
 = Open Liberty container images
@@ -31,7 +31,7 @@ Fixpack version::
 This value is optional. If you do not specify a fix pack version, your container image includes the latest release of Open Liberty. In addition to the latest release, the two most recent quarterly fix pack releases are always maintained for the `kernel-slim` and `full` image types. The `beta` images are available only for the latest beta release. For more information, see the <<#tags,Supported container image tags>> section.
 
 Liberty image type::
-Four different image types are available: `kernel-slim`, `full`,`beta`, or `beta-instanton`. The `full` type provides a server with all Open Liberty features and packages installed. The `kernel-slim` type provides just the bare minimum server, which you can customize by adding only the features that your application needs. The `beta` type provides the most recent beta release, which includes all the features and capabilities from the most recent release, plus new and updated features that are currently in development. The `beta-instanton` is the same as the `beta` type except it also includes all the prerequisites for the Open Liberty InstantOn checkpoint and restore feature.
+Four different image types are available: `kernel-slim`, `full`,`beta`, or `beta-instanton`. The `full` type provides a server with all Open Liberty features and packages installed. The `kernel-slim` type provides just the bare minimum server, which you can customize by adding only the features that your application needs. The `beta` type provides the most recent beta release, which includes all the features and capabilities from the most recent release, plus new and updated features that are currently in development. The `beta-instanton` type is the same as the `beta` type, except it also includes prerequisites for the link:blog/2022/09/29/instant-on-beta.html[Open Liberty InstantOn] beta feature.
 
 Java version::
 This option determines the version of Java SE that the runtime uses.
@@ -55,10 +55,8 @@ full-java8-ibmjava-ubi
 full-java11-openj9-ubi
 full-java17-openj9-ubi
 
-beta-ubi
-beta-java11-ubi
-beta-java17-ubi
-beta-instanton-java17-openj9-ubi
+beta
+beta-instanton
 ----
 If you specify any image tag without including a version number, the latest version of Open Liberty is included in the container image that you pull. In addition to the latest version, images for the two most recent quarterly releases are always available in ICR and are refreshed regularly.
 
@@ -95,11 +93,11 @@ ibmcloud cr images --restrict appcafe/open-liberty
 
 == Build an application image
 
-You can use container image tags in a Dockerfile to build an application image that adds a single application and its corresponding configuration. Do not configure the container manually after it is started, except for debugging purposes, because these changes are not reflected in new containers that are created from the image.
+You can use container image tags in a `Dockerfile` or `Containerfile` to build an application image that adds a single application and its corresponding configuration. Do not configure the container manually after it is started, except for debugging purposes, because these changes are not reflected in new containers that are created from the image.
 
 You can choose from two container image sets. The first uses the Red Hat Universal Base Image as the operating system. It is available from ICR and Docker Hub and is rebuilt daily. The second uses Ubuntu as the operating system. It is available on Docker Hub and is rebuilt automatically whenever a change is made.
 
-Set up your image template similar to the following example, which uses the `kernel-slim-java17-openj9-ubi` to build an image that uses the latest Open Liberty release with the OpenJ9 distribution of Java 17.
+Set up your image template similar to the following example, which uses the `kernel-slim-java17-openj9-ubi` tag to build an image that uses the latest Open Liberty release with the OpenJ9 distribution of Java 17.
 
 [source,dockerfile]
 ----
@@ -109,7 +107,7 @@ FROM icr.io/appcafe/open-liberty:kernel-slim-java17-openj9-ubi
 COPY --chown=1001:0  server.xml /config/
 
 # This script adds the requested XML snippets to enable Liberty features and grow the image to be fit-for-purpose.
-# This option is available only in the 'kernel-slim' image type. The 'full' tag already includes all features.
+# This option is available only in the 'kernel-slim' image type. The 'full', 'beta' and 'beta-instanton' tags already include all features.
 RUN features.sh
 
 # Add interim fixes (optional)
@@ -118,7 +116,7 @@ COPY --chown=1001:0  interim-fixes /opt/ol/fixes/
 # Add an application
 COPY --chown=1001:0  Sample1.war /config/dropins/
 
-# This script adds the requested server configuration, applies any interim fixes, and populates caches to optimize the runtime
+# This script adds the requested server configuration, applies any interim fixes, and populates caches to optimize the runtime.
 RUN configure.sh
 ----
 
