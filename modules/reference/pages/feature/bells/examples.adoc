@@ -103,7 +103,7 @@ To register the `ServletContainerInitializer` interface that adds the servlet fi
 
 Open Liberty extenders use the https://www.ibm.com/docs/en/was-liberty/nd?topic=SSAW57_liberty/com.ibm.websphere.javadoc.liberty.doc/spi_liberty_core.html[REST Handler framework] SPI to expose REST endpoints (REST APIs) for custom resources. You can use the BELL feature to expose a REST endpoint by providing a service that implements the `com.ibm.wsspi.rest.handler.RESTHandler` REST Handler SPI interface.
 
-In the following example, a library provides an implementation of the `RestHandler` interface. The library also provides s service resource that enables the REST Handler framework to register the service as a listener at a specified subroot of the `/ibm/api` URL path. The minimal service implementation class that is shown in this example also defines a single-argument constructor to receive BELL configuration properties at service creation.
+In the following example, a library provides an implementation of the `RestHandler` interface. The library also provides a service resource called `BellEndpoint` that enables the REST Handler framework to register the service as a listener at a specified subroot of the `/ibm/api` URL path. This minimal service implementation class also defines a single-argument constructor to receive BELL configuration properties at service creation.
 
 [source,java]
 ----
@@ -118,7 +118,7 @@ public class BellEndpoint implements RESTHandler {
 }
 ----
 
-The `META-INF/services/com.ibm.wsspi.rest.handler.RESTHandler` service resource contains the name of the service implementation class and the `com.ibm.wsspi.rest.handler.root` OSGi service property. The OSGI service property is required by the `RESTHandler` SPI to register the service as a listener for the specified subroot of the `/ibm/api` URL path.
+To enable the endpoint, the `META-INF/services/com.ibm.wsspi.rest.handler.RESTHandler` service resource file must contain the name of the service implementation class and the `com.ibm.wsspi.rest.handler.root` OSGi service property. This OSGI service property is required by the `RESTHandler` SPI to register the service as a listener for the specified subroot of the `/ibm/api` URL path. Set the property to euall th name of the enpoint that you want to expose on the `/ibm/api/` URL path.
 
 You can configure OSGi properties that are specific to a service implementation class by adding one or more properties, prefixed by the `#` character, to the service resource. Add the properties immediately before the name of the service implementation class to which they apply. The BELL feature registers the service interface with the implementation class and the specific OSGi properties.
 
@@ -130,12 +130,10 @@ The OSGi property in the following example enables an endpoint with the `/ibm/ap
 your.org.rest.example.BellEndpoint
 ----
 
-The service resource and implementation class files are packaged in the `RestEpLib.jar` file, similar to the following example.
+For this example, the following service resource and implementation class files are packaged in the `RestEpLib.jar` file, which is available to the Open Liberty server configuration
 
-----
-META-INF/services/com.ibm.wsspi.rest.handler.RESTHandler
-your/org/rest/example/BellEndpoint.class
-----
+- `META-INF/services/com.ibm.wsspi.rest.handler.RESTHandler`
+- `your/org/rest/example/BellEndpoint.class`
 
 The following example shows the BELL configuration in the `server.xml` to support the endpoint. The BELL configuration specifies the `spiVisibility="true"` attribute to enable the `RestEpLib` library to see the REST Handler SPI packages. The `RestEpLib.jar` library JAR is deployed at to the `${server.config.dir}/sharedlib` directory and the configuration declares one BELL property, `hello`.
 
