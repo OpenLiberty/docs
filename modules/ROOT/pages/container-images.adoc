@@ -22,29 +22,35 @@ Open Liberty container images are available from link:https://www.ibm.com/cloud/
 You can append an Open Liberty container image tag to the `icr.io/appcafe/open-liberty:` source to specify the details of the container image that you pull from ICR. These tags use the following naming convention.
 [subs=+quotes]
 ----
-_<optional fix pack version->_ _<liberty image type>_-_<java version>_-_<java type>_-ubi
+_optional fix pack version-liberty image type-java version-java type_-ubi
 ----
 
 The following tag values determine the resources that are included in a container image.
 
 Fixpack version::
-This value is optional. If you do not specify a fix pack version, your container image includes the latest release of Open Liberty. In addition to the latest release, the two most recent quarterly fix pack releases are always maintained for the `kernel-slim` and `full` image types. The `beta` images are available only for the latest beta release. For more information, see the <<#tags,Supported container image tags>> section.
+This value is optional. If you do not specify a fix pack version, your container image includes the latest release of Open Liberty. In addition to the latest release, the two most recent quarterly fix pack releases are always maintained for the `kernel-slim` and `full` image types. The beta images are available only for the latest beta release. For more information, see the <<#tags,Supported container image tags>> section.
 
 Liberty image type::
-Four different image types are available: `kernel-slim`, `full`,`beta`, or `beta-instanton`. The `full` type provides a server with all Open Liberty features and packages installed. The `kernel-slim` type provides just the bare minimum server, which you can customize by adding only the features that your application needs.
+Two different image types are available: `kernel-slim` or `full`. The `full` type provides a server with all Open Liberty features and packages installed.
 +
-The `beta` type provides the most recent beta release, which includes all the features and capabilities from the most recent release, plus new and updated features that are currently in development. The `beta-instanton` type is the same as the `beta` type, except it also includes prerequisites for the link:blog/2022/09/29/instant-on-beta.html[Open Liberty InstantOn] beta feature. Both the beta images are UBI 8-based images with IBM Semeru 17 for x86-64/amd64 architectures.
+The `kernel-slim` type provides just the bare minimum server, which you can customize by adding only the features that your application needs. This image type supports the best practice for production images because you end up with a more lightweight image that packages only what is essential for your application. For more information, see the <<#build,Build an application image>> section.
 
 Java version::
-This option determines the version of Java SE that the runtime uses.
+This value determines the version of Java SE that the runtime uses. Tags are available for all Java long term support (LTS) releases that are listed on the xref:java-se.adoc[Java SE Support page].
 
 Java type::
-This option determines the type of Java SE distribution that the runtime uses. Current options are Open J9 and, for Java SE 8 only, the IBM SDK, Java Technology Edition.
+This value determines the type of Java SE distribution that the runtime uses. Current options are Open J9 and, for Java SE 8 only, the IBM SDK, Java Technology Edition.
+
+In addition to the tags that follow this naming convention, Open Liberty offers three preformatted tags that pull particular images: `latest`, `beta`, and `beta-instanton`.
+
+The `latest` simplifies pulling the full latest Open Liberty release with Java 8. It is an alias for the `full-java8-openj9-ubi` tag.
+
+The `beta` tag provides the most recent beta release, which includes all the features and capabilities from the most recent release, plus new and updated features that are currently in development. The `beta-instanton` tag is the same as the `beta` tag, except it also includes prerequisites for the Open Liberty https://openliberty.io/blog/2022/09/29/instant-on-beta.html[InstantOn beta feature]. Both the beta images are UBI 8-based images with IBM Semeru 17 for x86-64/amd64 architectures.
 
 [#tags]
 === Supported container image tags
 
-Open Liberty provides the following container image tags.
+The latest Open Liberty release is available by using the following container image tags.
 
 ----
 kernel-slim-java8-openj9-ubi
@@ -59,10 +65,13 @@ full-java17-openj9-ubi
 
 beta
 beta-instanton
+
+latest
 ----
+
 If you specify any image tag without including a version number, the latest version of Open Liberty is included in the container image that you pull. In addition to the latest version, `full` and `kernel-slim` images for the two most recent quarterly releases are always available in ICR and are refreshed regularly.
 
-Open Liberty quarterly release versions end in `3`, `6`, `9`, or `12`. For example, if the latest Open Liberty release is `22.0.0.10`, then the `22.0.0.9` and `22.0.0.6` releases are also maintained in ICR. To pull one of these release versions instead of the latest, add your chosen release version to the beginning of any of the `kernel-slim` or `full` image tags in the previous list. The `beta` and `beta-instanton` images are available only for the latest beta release.
+Open Liberty quarterly release versions end in `.3`, `.6`, `.9`, or `.12`. For example, if the latest Open Liberty release is `22.0.0.10`, then the `22.0.0.9` and `22.0.0.6` releases are also maintained in ICR. To pull one of these release versions instead of the latest, add your chosen release version to the beginning of any of the `kernel-slim` or `full` image tags in the previous list. The `beta` and `beta-instanton` images are available only for the latest beta release.
 
 ////
 [#pull]
@@ -93,6 +102,7 @@ ibmcloud cr region-set global
 ibmcloud cr images --restrict appcafe/open-liberty
 ----
 
+[#build]
 == Build an application image
 
 You can use container image tags in a `Dockerfile` or `Containerfile` to build an application image that adds a single application and its corresponding configuration. Do not configure the container manually after it is started, except for debugging purposes, because these changes are not reflected in new containers that are created from the image.
