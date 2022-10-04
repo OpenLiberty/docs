@@ -23,11 +23,11 @@ For any BELL configuration, the BELL feature discovers all services in the `META
 
 For all services that are discovered or specified, the BELL feature registers the service interface and implementation class as an OSGi service, which makes the service available to the Open Liberty runtime.
 
-Be sure to enable the Open Liberty features that provide the API or SPI packages that are required by the library. For example, the feature configuration must enable the featurte:servlet[display=Jakarta Servlet] feature for a library that provides an implementation of interface `jakarta.servlet.ServletContainerInitializer`, because the Jakarta Servlet feature provides the `jakarta.servlet` API package.
+Be sure to enable the Open Liberty features that provide the API or SPI packages that are required by the library. For example, you must enable the feature:servlet[display=Jakarta Servlet] feature for a library that provides an implementation of the `jakarta.servlet.ServletContainerInitializer` interface because this feature provides the `jakarta.servlet` API package.
 
 === Implement an SPI with BELL services
 
-Shared libraries do not support visibility for SPI packages like they do for config:library[display=API packages]. When you deploy BELL services that implement interfaces in SPI packages, you must set the `spiVisibility` attribute to `true` in the BELL configuration. This attribute enables the referenced library to see SPI packages,
+Shared libraries do not support visibility for SPI packages like they do for config:library[display=API packages]. When you deploy BELL services that implement interfaces in SPI packages, you must set the `spiVisibility` attribute to `true` in the BELL configuration. This attribute enables the referenced library to see SPI packages.
 
 [source,xml]
 ----
@@ -36,7 +36,7 @@ Shared libraries do not support visibility for SPI packages like they do for con
 
 SPI visibility is disabled by default and applies only to the library that is referenced in the BELL configuration. SPI visibility is not supported for the Open Liberty `global` shared library.
 
-For more information, see <<expose,Expose a REST endpoint for custom resources>>
+For more information, see <<expose,Expose a REST endpoint for custom resources>>.
 
 === Specify configuration properties in BELL services
 
@@ -49,7 +49,7 @@ Service implementation classes can receive properties that are declared in the B
 </bell>
 ----
 
-To enable property injection for a service, define a public constructor or a public method that is named `updateBell` with a single parameter of the `java.util.Map<String,String>` type within the service implementation class. The following example shows a single-argument constructor to receive properties from the BELL configuration.
+To enable property injection for a service, define either a public method that is named `updateBell` or a public constructor. Set a single parameter of the `java.util.Map<String,String>` type within the service implementation class. The following example shows a single-argument constructor to receive properties from the BELL configuration.
 
 [source,java]
 ----
@@ -65,14 +65,14 @@ At service creation, the BELL feature invokes the `updateBell` constructor or me
 
 The BELL feature does not support nondestructive updates. When you update a BELL configuration while the server is running, the feature does not inject updated `properties` into existing service instances. However, it affords this future enhancement by allowing users to define the `updateBell` method within the service implementation class. If you define the `updateBell` method to receive properties, ensure that the class can tolerate multiple calls to the `updateBell` method on the same instance.
 
-For more information, see <<expose,Expose a REST endpoint for custom resources>>
+For more information, see <<expose,Expose a REST endpoint for custom resources>>.
 
 
 === Configure a servlet filter for applications
 
 In certain scenarios, a servlet filter implementation must be applied to all applications that are deployed to Open Liberty. For example, a servlet filter might be used to add new headers to each request. The `jakarta.servlet.ServletContainerInitializer` interface provides an `onStartup` method that you can use to add a servlet filter implementation class to all applications.
 
-You can use the BELL feature to configure a library that provides a `ServletContainerInitializer` implementation as a service. The `ServletContainerInitializer` service `onStartup` method is called by Open Liberty for each application that starts. In the following example, a `ServletContainerInitializer` implementation is configured to add a servlet filter implementation with each `ServletContext` object that is in a Java file. The `ServletContext.addFilter(String, Filter)` method is used by the `onStartup` method to add the servlet filter implementation
+You can use the BELL feature to configure a library that provides a `ServletContainerInitializer` implementation as a service. The `ServletContainerInitializer` service `onStartup` method is called by Open Liberty for each application that starts. In the following example, a `ServletContainerInitializer` implementation is configured to add a servlet filter implementation with each `ServletContext` object that is in a Java file. The `ServletContext.addFilter(String, Filter)` method is used by the `onStartup` method to add the servlet filter implementation.
 
 [source,java]
 ----
@@ -85,7 +85,7 @@ public class SCI implements ServletContainerInitializer {
 }
 ----
 
-To register the `ServletContainerInitializer` interface that adds the servlet filter for an application, a class name is specified in the library JAR file. The library JAR file contains a `META-INF/services/jakarta.servlet.ServletContainerInitializer` file that specifies the fully qualified `ServletContainerInitializer` implementation class name that is contained in the library. The following example uses the `file` element to specify a a path to the JAR file and add it to the library. It also specifies the service that the BELL feature looks up and registers.
+To register the `ServletContainerInitializer` interface that adds the servlet filter for an application, a class name is specified in the library JAR file. The library JAR file contains a `META-INF/services/jakarta.servlet.ServletContainerInitializer` file that specifies the fully qualified `ServletContainerInitializer` implementation class name that is contained in the library. The following example uses the `file` element to specify a path to the JAR file and add it to the library. It also specifies the service that the BELL feature looks up and registers.
 
 
 [source,xml,subs="verbatim,quotes"]
@@ -101,9 +101,9 @@ To register the `ServletContainerInitializer` interface that adds the servlet fi
 [#expose]
 === Expose a REST endpoint for custom resources
 
-Open Liberty extenders use the https://www.ibm.com/docs/en/was-liberty/nd?topic=SSAW57_liberty/com.ibm.websphere.javadoc.liberty.doc/spi_liberty_core.html[REST Handler framework] SPI to expose REST endpoints (REST APIs) for custom resources. You can use the BELL feature to expose a REST endpoint by providing a service that implements the `com.ibm.wsspi.rest.handler.RESTHandler` REST Handler SPI interface.
+When you develop an extension to the Open Liberty runtime, you can use the https://www.ibm.com/docs/en/was-liberty/nd?topic=SSAW57_liberty/com.ibm.websphere.javadoc.liberty.doc/spi_liberty_core.html[REST Handler framework] SPI to expose REST endpoints (REST APIs) for custom resources. You can use the BELL feature to expose a REST endpoint by providing a service that implements the `com.ibm.wsspi.rest.handler.RESTHandler` REST Handler SPI interface.
 
-In the following  service implementation class example, a library provides an implementation of the `RestHandler` interface. The library also provides a service resource called `BellEndpoint` that enables the REST Handler framework to register the service as a listener at a specified subroot of the `/ibm/api` URL path. This minimal service implementation class also defines a single-argument constructor to receive BELL configuration properties at service creation.
+In the following  service implementation class example, a library provides an implementation of the `RestHandler` interface. The library also provides a service resource that is called `BellEndpoint`.  This resource enables the REST Handler framework to register the service as a listener at a specified subroot of the `/ibm/api` URL path. This minimal service implementation class also defines a single-argument constructor to receive BELL configuration properties at service creation.
 
 [source,java]
 ----
@@ -135,7 +135,7 @@ The `com.ibm.wsspi.rest.handler.root` OSGi property in the following example ena
 your.org.rest.example.BellEndpoint
 ----
 
-The following example shows the BELL configuration in the `server.xml` to support the endpoint. The BELL configuration specifies the `spiVisibility="true"` attribute to enable the `RestEpLib` library to see the REST Handler SPI packages. The `RestEpLib.jar` library JAR is deployed at to the `${server.config.dir}/sharedlib` directory and the configuration declares one BELL property, `hello`.
+The following example shows the BELL configuration in the `server.xml` to support the endpoint. The BELL configuration specifies the `spiVisibility="true"` attribute to enable the `RestEpLib` library to see the REST Handler SPI packages. The `RestEpLib.jar` library JAR is deployed at to the `${server.config.dir}/sharedlib` directory and the configuration declares one BELL property that is named `hello`.
 
 [source,xml]
 ----
