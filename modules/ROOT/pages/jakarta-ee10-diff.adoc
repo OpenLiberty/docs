@@ -1,0 +1,133 @@
+// Copyright (c) 2022 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+// https://creativecommons.org/licenses/by-nd/4.0/
+//
+//
+// Contributors:
+// IBM Corporation
+//
+//
+//
+//
+:page-description: If you are updating your application from using Jakarta EE 9.1 features to using Jakarta EE 10.1 features, certain changes in API behavior might require you to update your application code.
+:projectName: Open Liberty
+:page-layout: general-reference
+:page-type: general
+= Differences between Jakarta EE 10.0 and 9.1
+
+If you are updating your application from using Jakarta EE 9.1 features to using Jakarta EE 10.0 features, changes in API behavior might require you to update your application code. These changes apply to the Jakarta Contexts and Dependency Injection (CDI) and Jakarta RESTful Web Services APIs and the Open Liberty features that support them.
+
+[#cdi]
+== Differences between Jakarta Contexts and Dependency Injection 4.0 and 3.0
+Highlights of CDI 4.0 include support for build compatible extensions and observable container state events. This update also brings in new Jakarta EE 10 versions of the Jakarta Annotations and Jakarta Interceptors APIs. Although Open Liberty xref:zero-migration.adoc[zero migration] architecture simplifies migrating your server configuration between versions, the following changes might require updates to relevant application code.
+
+=== Build compatible extensions
+
+In previous versions of CDI, you could provide portable extensions to customize the CDI application initialization lifecycle. In CDI 4.0, build compatible extensions make implementing extensions amenable to build-time processing. To implement a build compatible extension, provide an implementation of the `BuildCompatibleExtension` interface that is declared in the  `META-INF/services` directory. The implementation can provide methods that are annotated with one of the extension annotations, each of which corresponds to the extension execution phases:
+
+* `@Discovery`
+* `@Enhancement`
+* `@Registration`
+* `@Synthesis`
+* `@Validation`
+
+For example, as part of the `Enhancement` phase, this implementation adds an additional `MyQualifier` annotation to the `MyService` type.
+
+[source,java]
+----
+public class MyExtension implements BuildCompatibleExtension {
+    @Enhancement(type=MyService.class)
+    public void addMyQualifier(ClassConfig clazz) {
+        clazz.addAnnotation(MyQualifier.class)
+    }
+}
+----
+
+
+=== Startup and Shutdown events
+
+Two new observable container state events are now available: `Startup` and `Shutdown`. Applications can listen for these events to be notified when the CDI container is starting up and being shut down. The following example listens for `Startup` and `Shutdown` events and prints a notification for each to the console when it receives the event.
+
+[source,java]
+----
+@ApplicationScoped
+public class MyObserver {
+    public void observeStartup(@Observes Startup startupEvent) { {
+        System.out.println("CDI Container is starting");
+    }
+
+    public void observeShutdown(@Observes Shutdown shutdownEvent) { {
+        System.out.println("CDI Container is stopping");
+    }
+}
+----
+
+You can control the order of multiple observer methods by using the `@Priority` annotation.
+
+=== Empty beans.xml files
+
+In previous versions of CDI, an empty `beans.xml` file indicated that an archive is treated as an explicit bean archive, the equivalent of setting the `bean-discovery-mode="all"` attribute. In CDI 4.0, an empty `beans.xml` file causes an archive to be treated as an implicit bean archive, the equivalent of setting the `bean-discovery-mode="annotated"` attribute. If necessary, you can <<cdiConfiguration, set the `emptyBeansXmlCDI3Compatibility` attribute>> to enable compatibility with previous versions. Setting this attribute to `true` in CDI 4.0 causes an empty `beans.xml` file to be treated as an explicit beans archive.
+
+=== Unversioned beans.xml files
+
+In previous versions of CDI, a nonempty `beans.xml` file that did not include a version attribute defaulted to the `bean-discovery-mode="all"` attribute. In CDI 4.0, it defaults to the `bean-discovery-mode="annotated"` attribute. Therefore, by default, only objects with CDI bean-defining annotations are discovered as CDI beans. However, always properly specify a version for all `beans.xml` files, as shown in the following example.
+
+[source,xml]
+----
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns="https://jakarta.ee/xml/ns/jakartaee"
+    xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/beans_4_0.xsd"
+    version="4.0"
+    bean-discovery-mode="annotated">
+</beans>
+----
+
+=== Programmatic lookup of beans and instances
+
+In CDI 4.0, a new Handle API is available to simplify programmatic inspection of bean metadata. This API avoids the need to create instances before they are required. You can obtain a `Handle`  instance by using the Instance API.
+
+[source,java]
+----
+public interface Handle<T> extends AutoCloseable {
+        T get();
+        Bean<T> getBean();
+        void destroy();
+        void close();
+}
+----
+
+=== Removed APIs
+The following previously deprecated CDI APIs are removed in CDI 4.0.
+
+* `@New` qualifier, which replaced by @Dependent beans.
+* `Bean#isNullable()`, not used by the implementation since CDI 1.1.
+* `BeanManager#createInjectionTarget(AnnotatedType)`, replaced by `BeanManager#getInjectionTargetFactory(AnnotatedType)`
+* `BeforeBeanDiscovery#addAnnotatedType(AnnotatedType)`, replaced by `BeforeBeanDiscovery#addAnnotatedType(AnnotatedType, String)`
+
+[#cdiConfiguration]
+=== Configuration
+In the Liberty feature:cdi-4.0[Jakarta Contexts and Dependency Injection 4.0] feature, the config:cdi12 configuration element is superseded by the config:cdi[] element, which applies to CDI versions 1.2 and later. The following `server.xml` file example shows the element with two attributes that are specified.
+
+[source,xml]
+----
+<cdi enableImplicitBeanArchives="false" emptyBeansXmlCDI3Compatibility="true"/>
+----
+
+The `enableImplicitBeanArchives` attribute is the same as it was in previous versions.
+If this attribute is set to `true`, which is the default, then archives that do not contain a `beans.xml` file are treated as implicit bean archives and scanned for classes that have bean defining annotations.
+If this attribute is set to `false`, then archives that do not contain a `beans.xml` file are not scanned for annotated classes.
+
+The `emptyBeansXmlCDI3Compatibility` attribute applies only to CDI 4.0.
+
+If this attribute is set to `true`, an archive that contains an empty `beans.xml` file is treated as an explicit bean archive, as it was in CDI 3.0 and earlier.
+If this attribute set to `false`, which is the default, then an archive that contains an empty `beans.xml` file is treated as an implicit bean archive. This setting is equivalent to setting the `bean-discovery-mode="annotated"` attribute.
+
+[#restfulws]
+== Differences between Jakarta RESTful Web Services 3.1 and 3.0
+
+
+== See also
+
+* xref:jakarta-ee.adoc[Jakarta EE overview]
