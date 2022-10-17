@@ -22,6 +22,7 @@ The following sections describe updates for different Jakarta EE 10.0 features
 
 * <<cdi,Jakarta Contexts and Dependency Injection 4.0>>
 * <<restfulws,Jakarta RESTful Web Services 3.1>>
+* <<servlet,Jakarta Servlet 6.0>>
 * <<appAuthz,Jakarta Authorization 2.1>>
 * <<appAuthn,Jakarta Authentication 3.0>>
 
@@ -134,10 +135,138 @@ If this attribute set to `false`, which is the default, then an archive that con
 [#restfulws]
 == Differences between Jakarta RESTful Web Services 3.1 and 3.0
 
+[#servlet]
+== Differences between Jakarta Servlet 6.0 and 5.0
+
+The feature:servlet-6.0[display=Jakarta Servlet 6.0] feature provides new APIs and new configurations to set any attribute on a response cookie.
+
+=== New ways to configure cookie attributes
+
+In Jakarta Servlet 6.0, you can set attributes on a response cookie either a deployment descriptor file, programmatically with the `jakarta.servlet.ServletContainerInitializer` API, or at request time.
+
+You can set cookie attributes in a `web.xml` deployment descriptior file by specifying the `attribute` element within the `cookie-config` element, as shown in the following example.
+
+[source,xml]
+----
+<session-config>
+   <cookie-config>
+     <name>SampleCookieName</name>
+     <domain>my.domain.com</domain>
+     <path>/</path>
+     <http-only>true</http-only>
+     <secure>true</secure>
+     <attribute>
+        <attribute-name>MyAttributeName</attribute-name>
+        <attribute-value>valueExample</attribute-value>
+     </attribute>
+     <attribute>
+        <attribute-name>MyOtherAttribute</attribute-name>
+        <attribute-value>OtherValue</attribute-value>
+     </attribute>
+   </cookie-config>
+</session-config>
+----
+
+You can also set cookie attributes dynamically from an application during pplication startup by using the `jakarta.servlet.ServletContainerInitializer`, as shown in the following example.
+
+[source,java]
+----
+@Override
+public void onStartup(Set<Class<?>> setOfClasses, ServletContext context) throws ServletException {
+      SessionCookieConfig scc = context.getSessionCookieConfig();
+      scc.setName("MyDynaCookieName");
+      scc.setAttribute("MyDynamicAttribute", "DynamicValue");
+      ..........
+}
+----
+
+Alternatively, you can set attributes from the application at request time, as shown in the following example.
+
+[source,java]
+----
+SessionCookieConfig scc = getServletContext().getSessionCookieConfig();
+scc.setName("MyRequestCookieName");
+scc.setAttribute("MyRequestAttribute", "RequestValue");
+----
+
+If conflicts arise among different sources for the cookie configuration, the following precedence order applies, from lowest to highest precedence, to resolve the conflict.
+
+. Attributes that are set by the application at request time
+. Attributes that are set by the application by using the `ServletContainerInitializer` API
+. Attributes that are set in the `web.xml` deployment descriptor file
+
+
+=== Changes to the request cookie header
+
+Servlet 6.0 implements the HTTP request cookie behavior by following the https://www.rfc-editor.org/rfc/[rfc6265] standard, which states that HTTP client agents such as browsers do not send back cookie attributes to the application server.
+
+Previously, you could include request cookie attributes by adding the dollar sign (`$`) as a prefix to a valid attribute name. For example, `$Domain=myDomain.com` was treated as the `Domain` attribute for the request cookie. Starting in Servlet 6.0, `$Domain` is treated as a new cookie that is named `$Domain`. The dollar sign is also part of the cookie name. The only exception to this rule is `$Version`.
+
+For example, consider the following HTTP request that includes a cookie header.
+
+----
+Cookie: $Version=1; name1=value1; $Path=/Dollar_Path; $Domain=localhost; $NAME2=DollarNameValue;Domain=DomainValue
+----
+
+Before Servlet 6.0, the server creates the following three request cookies.
+
+----
+cookie1: name1 with the associated attributes: Path=/Dollar_Path; Domain=localhost
+cookie2: NAME2
+cookie3: Domain
+----
+
+In Servlet 6.0 and later, the server creates the following five request cookies from the same HTTP request.
+
+----
+cookie1: name1
+cookie2: $Path
+cookie3: $Domain
+cookie4: $NAME2
+cookie5: Domain
+-----
+
+=== Application debug enhancements
+
+New `jakarta.servlet.ServletRequest` APIs and new a new `jakarta.servlet.ServletConnection` class are available to help you debug requests to your application. With the enhancement, you can track or refer to a request or obtain details of the network connection that is used by the request by using the request ID.
+
+The following `Jakarta.servlet.ServletRequest` APIs are available in Servlet 6.0.
+
+* `String getRequestId()`
+* `String getProtocolRequestId()`
+* `ServletConnection getServletConnection()`
+
+A new `jakarta.servlet.ServletConnection` object is retrieved from the `getServletConnection()` servlet request. It includes the following APIs.
+
+* `String getConnectionId()`
+* `String getProtocol()`
+* `String getProtocolConnectionId()`
+* `boolean isSecure()`
+
+=== Removed APIs and classes
+
+The following previously deprecated APIs are removed.
+
+* `jakarta.servlet.ServletContext` - `Servlet getServlet(String)`, `Enumeration<Servlet> getServlets()`, `Enumeration<String> getServletNames()`, `void log(Exception, String)`
+* `jakarta.servlet.ServletRequest` - `String getRealPath(String)`
+* `jakarta.servlet.ServletRequestWrapper` - `String getRealPath(String)`
+* `jakarta.servlet.UnavailableException` - `UnavailableException(Servlet, String)`, `Servlet getServlet()`
+* `jakarta.servlet.http.HttpServletRequest` - `boolean isRequestedSessionIdFromUrl()`
+* `jakarta.servlet.http.HttpServletRequestWrapper` - `boolean isRequestedSessionIdFromUrl()`
+* `jakarta.servlet.http.HttpServletResponse` - `String encodeUrl(String)`, `String encodeRedirectUrl(String)`, `void setStatus(int, String)`
+* `jakarta.servlet.http.HttpServletResponseWrapper` -  `String encodeUrl(String)`, `String encodeRedirectUrl(String)`, v`oid setStatus(int, String)`
+* `jakarta.servlet.http.HttpSession` - `HttpSessionContext getSessionContext()`, `Object getValue(String)`, `String[] getValueNames()`, `void putValue(String, Object)`, `void removeValue(String)`
+
+The following previously deprecated classes are removed.
+
+* `jakarta.servlet.SingleThreadModel`
+* `jakarta.servlet.http.HttpSessionContext`
+* `jakarta.servlet.http.HttpUtils`
+
 [#appAuthz]
 == Differences between Jakarta Authorization 2.1 and 2.0
 
-The feature:appAuthorization-2.1[display=Jakarta Authorization 2.1] feature (`appAuthorization-2.1`) feature introduces the following changes.
+The feature:appAuthorization-2.1[display=Jakarta Authorization 2.1] feature (`appAuthorization-2.1`) feature introduces the following new methods.
 
 === New methods for the jakarta.security.jacc.PolicyConfigurationFactory abstract class
 
