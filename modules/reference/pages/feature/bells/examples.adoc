@@ -23,11 +23,12 @@ The BELL feature discovers all services in the `META-INF/services` folder of the
 
 For every service that is discovered or specified, the BELL feature registers the service interface and implementation class as an OSGi service, which makes the service available to the Open Liberty runtime.
 
-Be sure to enable the Open Liberty features that provide the API or SPI packages that are required by the library. 
+Be sure to enable the Open Liberty features that provide the API or SPI packages that are required by the library.
 
-=== Implement an SPI with BELL services
+=== Enable SPI access for libraries
 
-Shared libraries do not support visibility for SPI packages like they do for config:library[display=API packages]. When you deploy BELL services that implement interfaces in SPI packages, you must set the `spiVisibility` attribute to `true` in the BELL configuration. This attribute enables the referenced library to see SPI packages.
+Shared libraries do not support access for SPI packages. When a library provides an implementation
+of an SPI interface, set the `spiVisibility` attribute to `true` in the BELL configuration. This attribute enables the library classloader to access SPI packages that are provided by Open Liberty.
 
 [source,xml]
 ----
@@ -36,11 +37,11 @@ Shared libraries do not support visibility for SPI packages like they do for con
 
 SPI visibility is disabled by default and applies only to the library that is referenced in the BELL configuration. SPI visibility is not supported for the Open Liberty `global` shared library.
 
-For more information, see <<expose,Expose a REST endpoint for custom resources>>.
+For more information, see <<expose,Expose a new REST endpoint>>.
 
-=== Specify configuration properties in BELL services
+=== Enable services to receive configuration properties
 
-Service implementation classes can receive properties that are declared in the BELL configuration. To configure properties, add a `properties` element to your BELL configuration and declare one or more `name="value"` attributes. Properties are `String` type and apply to any services that are provided by the referenced library that are enabled for property injection. The following example declares the `hello` and `serverHome` properties.
+Services can receive properties that are declared in the BELL configuration. To configure properties, add a `properties` element to your BELL configuration and declare one or more `name="value"` attributes. Properties are String type and inject into all services that are enabled to receive them. The following example declares the `hello` and `serverHome` properties.
 
 [source,xml]
 ----
@@ -49,15 +50,14 @@ Service implementation classes can receive properties that are declared in the B
 </bell>
 ----
 
-To enable property injection for a service, define either a public method that is named `updateBell` or a public constructor. Set a single parameter of the `java.util.Map<String,String>` type within the service implementation class. The following example shows a single-argument constructor to receive properties from the BELL configuration.
+To enable a service to receive configuration properties, define a public method that is named named `updateBell` or a public constructor in the service implementation class. The method signature must declare a single parameter of the `java.util.Map<String,String>` type. The following example defines both methods to receive properties in a BELL configuration.
 
 [source,java]
 ----
 public class YourServiceImpl implements api.or.spi.Interface {
- java.util.Map props;
- public YourServiceImpl(Map<String,String> bellProps) {props=bellProps;}
+ public YourServiceImpl(Map<String,String> bellProps) {...}
  // OR
- public void updateBell(Map<String,String> bellProps) {props=bellProps;}
+ public void updateBell(Map<String,String> bellProps) {...}
 }
 ----
 
@@ -65,7 +65,7 @@ At service creation, the BELL feature invokes the `updateBell` constructor or me
 
 The BELL feature does not support nondestructive updates. When you update a BELL configuration while the server is running, the feature does not inject updated `properties` into existing service instances. However, it affords this future enhancement by allowing users to define the `updateBell` method within the service implementation class. If you define the `updateBell` method to receive properties, ensure that the class can tolerate multiple calls to the `updateBell` method on the same instance.
 
-For more information, see <<expose,Expose a REST endpoint for custom resources>>.
+For more information, see <<expose,Expose a new REST endpoint>>.
 
 
 === Configure a servlet filter for applications
@@ -99,11 +99,11 @@ To register the `ServletContainerInitializer` interface that adds the servlet fi
 ----
 
 [#expose]
-=== Expose a REST endpoint for custom resources
+=== Expose a new REST endpoint
 
-When you develop an extension to the Open Liberty runtime, you can use the REST Handler framework SPI to expose REST endpoints (REST APIs) for custom resources. You can use the BELL feature to expose a REST endpoint by providing a service that implements the `com.ibm.wsspi.rest.handler.RESTHandler` REST Handler SPI interface.
+The REST Handler framework provides the `com.ibm.wsspi.rest.handler.RESTHandler` interface, which Open Liberty extension developers use to expose new REST endpoints. You can use the BELL feature to configure a library that provides a `RESTHandler` implementation as a service and enables the REST Handler framework to register the service as a listener for a new specified endpoint URL.
 
-In the following  service implementation class example, a library provides an implementation of the `RestHandler` interface. The library also provides a service resource that is called `BellEndpoint`.  This resource enables the REST Handler framework to register the service as a listener at a specified subroot of the `/ibm/api` URL path. This minimal service implementation class also defines a single-argument constructor to receive BELL configuration properties at service creation.
+ In the following service implementation example, the `BellEndpoint` class overrides the `handleRequest` method and defines a single-argument constructor to receive BELL configuration properties at service creation.
 
 [source,java]
 ----
@@ -118,14 +118,16 @@ public class BellEndpoint implements RESTHandler {
 }
 ----
 
-For this example, the following service resource and implementation class files are packaged in the `RestEpLib.jar` file, which is available to the Open Liberty server configuration.
+For this example, the following service resource and implementation class files are packaged in the `RestEpLib.jar` file.
 
-- `META-INF/services/com.ibm.wsspi.rest.handler.RESTHandler`
-- `your/org/rest/example/BellEndpoint.class`
+----
+META-INF/services/com.ibm.wsspi.rest.handler.RESTHandler
+your/org/rest/example/BellEndpoint.class
+----
 
-To enable the endpoint, the `META-INF/services/com.ibm.wsspi.rest.handler.RESTHandler` service resource file must contain the name of the service implementation class and the `com.ibm.wsspi.rest.handler.root` OSGi service property. This OSGI service property is required by the `RESTHandler` SPI to register the service as a listener for the specified subroot of the `/ibm/api` URL path. Set the property to equal the name of the endpoint that you want to expose on the `/ibm/api/` URL path.
+To enable the endpoint, the `/META-INF/services/com.ibm.wsspi.rest.handler.RESTHandler` service resource must declare both the `com.ibm.wsspi.rest.handler.root` OSGi service property in addition to the fully-qualified name of the service implementation class. This OSGI service property is required by the `RESTHandler` SPI to register the service as a listener for the specified subroot of the `/ibm/api` URL path. Set the property to equal the name of the endpoint that you want to expose on the `/ibm/api/` URL path.
 
-You can configure OSGi properties that are specific to a service implementation class by adding one or more properties, prefixed by the `#` character, to the service resource. Add the properties immediately before the name of the service implementation class to which they apply. The BELL feature registers the service interface with the implementation class and the specific OSGi properties.
+Note: You can configure OSGi properties that are specific to a service implementation class by adding one or more properties, prefixed by the `#` character, to the service resource. Add the properties immediately before the name of the service implementation class to which they apply. The BELL feature registers the service interface with the implementation class and the specific OSGi properties.
 
 The `com.ibm.wsspi.rest.handler.root` OSGi property in the following example enables an endpoint with the `/ibm/api/bellEP` URL path.
 
@@ -135,7 +137,7 @@ The `com.ibm.wsspi.rest.handler.root` OSGi property in the following example ena
 your.org.rest.example.BellEndpoint
 ----
 
-The following example shows the BELL configuration in the `server.xml` to support the endpoint. The BELL configuration specifies the `spiVisibility="true"` attribute to enable the `RestEpLib` library to see the REST Handler SPI packages. The `RestEpLib.jar` library JAR is deployed at to the `${server.config.dir}/sharedlib` directory and the configuration declares one BELL property that is named `hello`.
+The following example shows the BELL configuration in `server.xml` file that references the `RestEpLib` library. The configuration specifies the `spiVisibility="true"` attribute to enable the `RestEpLib` library to access the REST Handler SPI packages. It also declares one BELL property. Notice that the `RestEpLib.jar` library JAR is copied to the `${server.config.dir}/sharedlib` directory.
 
 [source,xml]
 ----
@@ -148,7 +150,7 @@ The following example shows the BELL configuration in the `server.xml` to suppor
 </bell>
 ----
 
-The `server.xml` file requires more configuration than just the BELL to expose the endpoint. In addition to the BELL feature, you must enable the feature:restConnector[display=Admin REST Connector] (`restConnector-2.0`) and feature:transportSecurity[display=Transport Security] (`transportSecurity-1.0`) features. The Admin REST Connector feature exports the REST Handler framework SPI. Endpoint access requires secure transport and a user who is mapped to the administrator role. The Transport Security feature and the related `keyStore`, `basicRegistry` and `adminstrator-role` configurations support secure access to the endpoint. The following `server.xml` file example shows a possible configuration, including the BELL configuration from the previous example.
+The `server.xml` file requires more configuration than just the BELL to expose the endpoint. In addition to the BELL feature, you must enable the feature:restConnector[display=Admin REST Connector] (`restConnector-2.0`) and feature:transportSecurity[display=Transport Security] (`transportSecurity-1.0`) features. The Admin REST Connector feature provides the REST Handler framework SPI. Endpoint access requires secure transport and a user who is mapped to the administrator role. The Transport Security feature and the related `keyStore`, `basicRegistry` and `adminstrator-role` configurations support secure access to the endpoint. The following `server.xml` file example shows a possible configuration, including the BELL configuration from the previous example.
 
 [source,xml]
 ----
