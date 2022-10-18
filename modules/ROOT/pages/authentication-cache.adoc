@@ -52,13 +52,13 @@ The Open Liberty distributed authentication cache supports caching the subject c
 
 - LTPA
 - JWT, when the feature:jwtSso[display=JSON Web Token Single Sign-On] feature is enabled.
-- SPNEGO, when the feature:spnego[display=Simple and Protected GSSAPI Negotiation Mechanism] feature is enabled and the config:spnego[]: `includeClientGSSCredentialInsubject` attribute is set to `false`.
+- SPNEGO, when the feature:spnego[display=Simple and Protected GSSAPI Negotiation Mechanism] feature is enabled and the config:spnego[]: `includeClientGSSCredentialInSubject` attribute is set to `false`.
 - SAML, when the feature:samlWeb[display=SAML Web Single Sign-On] feature is enabled. The config:samlWebSso20[]: `spCookieName` attribute must be explicitly set and must match on all servers that share the authentication cache.
 - OAuth, when the feature:socialLogin[display=Social Media Login] feature is enabled and the config:oauth2Login[] element is configured.
 - OIDC, when the feature:socialLogin[display=Social Media Login] feature is enabled and the config:oidcLogin[] element is configured.
 - OIDC, when the feature:openidConnectClient[display=OpenID Connect Client] feature is enabled. The config:webAppSecurity[]: `ssoCookieName` must be explicitly set and must match on all servers that share the authentication cache.
 
-Subjects that are authenticated by unsupported mechanisms are stored in the local cache instead.
+Subjects that are authenticated by unsupported mechanisms might be stored in the local cache instead.
 
 === Configure JCache for the distributed authentication cache
 Open Liberty supports distributed authentication caching by using a https://github.com/jsr107/jsr107spec[JCache] cache. To configure it, you must first configure your JCache caching provider, cache manager, and cache. For more information about using JCache with Open Liberty, see xref:distributed-caching-jcache.adoc[Distributed caching with JCache].
@@ -164,7 +164,7 @@ To clear the cache, use the Liberty `DeleteAuthCache` MBean and call the `remove
 When your Open Liberty servers use a JCache distributed authentication cache, you can configure the behavior of that JCache cache by using the relevant configuration files for your provider. In the following examples for Infinispan and Hazelcast authentication caches, the cache size and expiration values are set to replicate the behavior of the Open Liberty in-memory cache defaults. However, you must test your configuration in the target environment to determine the optimal sizing. For more information, see the <<#size,Cache sizing, eviction, and performance>> section.
 
 Sample Infinispan cache configuration::
-The following `infinispan.xml` file example shows an Infinispan authentication cache configuration, with the cache size (`max-count`) and expiration (`max-idle`) values set to replicate the behavior of the Open Liberty in-memory cache defaults. The cache does not have to specify the  `distributed-cache` mode. It can be whatever mode that best supports your needs. For more information, see link:https://infinispan.org/docs/stable/titles/configuring/configuring.html[Configuring Infinispan caches] in the Infinispan documentation.
+The following `infinispan.xml` file example shows an Infinispan authentication cache configuration, with the cache size (`max-count`) and expiration (`max-idle`) values set to replicate the behavior of the Open Liberty in-memory cache defaults. The cache does not have to specify the  `distributed-cache` mode. It can be whatever mode that best supports your needs. For more information, see link:https://infinispan.org/docs/stable/titles/configuring/configuring.html[Configuring Infinispan caches] in the Infinispan documentation. This example was tested with Infinispan `13.0.10.Final`.
 
 [source,xml]
 ----
@@ -172,13 +172,13 @@ The following `infinispan.xml` file example shows an Infinispan authentication c
     <distributed-cache name="io.openliberty.cache.authentication">
         <memory max-count="25000" when-full="REMOVE" />
         <expiration max-idle="600000" lifespan="-1" />
-	      <encoding media-type="application/x-java-serialized-object" />
+	            <encoding media-type="application/x-java-serialized-object" />
     </distributed-cache>
 </infinispan>
 ----
 
 Sample Hazelcast cache configuration::
-The following `hazelcast.xml` file example shows a Hazelcast authentication cache configuration. The cache size (`eviction size`) and expiration (`duration-amount`) values are set to replicate the behavior of the Open Liberty in-memory cache defaults. For more information, see link:https://docs.hazelcast.com/imdg/latest/jcache/setup[JCache Setup and Configuration] in the Hazelcast documentation.
+The following `hazelcast.xml` file example shows a Hazelcast authentication cache configuration. The cache size (`eviction size`) and expiration (`duration-amount`) values are set to replicate the behavior of the Open Liberty in-memory cache defaults. For more information, see link:https://docs.hazelcast.com/imdg/latest/jcache/setup[JCache Setup and Configuration] in the Hazelcast documentation. This example was tested with Hazelcast `5.1.3`.
 
 [source,xml]
 ----
@@ -187,8 +187,8 @@ The following `hazelcast.xml` file example shows a Hazelcast authentication cach
     <cache name="io.openliberty.cache.authentication">
         <key-type class-name="java.lang.Object" />
         <value-type class-name="java.lang.Object" />
-	      <eviction size="25000"
-	           max-size-policy="ENTRY_COUNT" eviction-policy="LRU" />
+	            <eviction size="25000"
+	                 max-size-policy="ENTRY_COUNT" eviction-policy="LRU" />
         <expiry-policy-factory>
             <timed-expiry-policy-factory
 	               expiry-policy-type="ACCESSED"
