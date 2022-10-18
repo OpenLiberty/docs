@@ -36,7 +36,7 @@ This configuration works only on the same server. The LTPA cookie is tracked onl
 You can configure a distributed logged-out cookie cache to ensure that LTPA and JWT cookies that are logged off in one server cannot be reused on another server after the logout. Open Liberty supports distributed logged-out cookie caching with https://github.com/jsr107/jsr107spec[JCache]. For more information about using JCache with Open Liberty, see xref:distributed-caching-jcache.adoc[Distributed caching with JCache].
 
 === Configure a distributed logged-out cookie cache
-To configure a distributed logged-out cookie cache, you must first configure your JCache caching provider, cache manager, and cache. Enable any version of the feature:appSecurity[display=Application Security (Jakarta Security)] feature in your `server.xml` file and  To configure this option, both the Application Security and feature:servlet[display=Jakarta Servlet] features must be enabled. The Application Security feature version 3.0 and later enables the Jakarta Servlet feature by default. The following `server.xml` file example demonstrates the configuration to set up the JCache cache and use it to track logged-out SSO cookies.
+To configure a distributed logged-out cookie cache, you must first configure your JCache caching provider, cache manager, and cache. Enable any version of the feature:appSecurity[display=Application Security (Jakarta Security)] feature in your `server.xml` file. To configure this option, both the Application Security and feature:servlet[display=Jakarta Servlet] features must be enabled. The Application Security feature version 3.0 and later enables the Jakarta Servlet feature by default. The following `server.xml` file example demonstrates the configuration to set up the JCache cache and use it to track logged-out SSO cookies.
 
 [source,xml]
 ----
@@ -62,7 +62,7 @@ To configure a distributed logged-out cookie cache, you must first configure you
 
 In this example, the `library` element specifies the location of JCache provider file. The `cachingProvider` element references the configured library. The `cacheManager` element specifies the `cachingProvider` element, which references the configured JCache library, and defines custom properties that are sent to the `CacheManager` instance. The `cache` element references the `cacheManager` element and provides name and ID values that the configuration can be referenced by. The `webAppSecurity loggedOutCookieCacheRef` attribute references the configured cache to use it as the distributed logged-out cookie cache.
 
-The `webAppSecurity trackLoggedOutSSOCookies` attribute value is ignored and effectively set to `true` when the `webAppSecurity loggedOutCookieCacheRef` attribute is set.
+The config:webAppSecurity[]: `trackLoggedOutSSOCookies` attribute value is ignored and effectively set to `true` when the config:webAppSecurity[]: `loggedOutCookieCacheRef` attribute is set.
 
 [#size]
 === Cache sizing, eviction, and performance
@@ -92,7 +92,7 @@ Open Liberty does not provide a mechanism to clear the distributed logged-out co
 When your Open Liberty servers use a JCache distributed logged-out cookie cache, you can configure the behavior of that JCache cache by using the relevant configuration files for your provider. In the following examples for Infinispan and Hazelcast caches, the cache size in the configuration matches the size of the in-memory cache for JWT cookies. The expiry policy does not match the in-memory cache, but instead is the maximum age for a JWT or LTPA cookie. However, you must test your configuration in the target environment to determine the optimal sizing. For more information, see the <<#size,Cache sizing, eviction, and performance>> section.
 
 Sample Infinispan cache configuration::
-The following `infinispan.xml` file example shows an Infinispan logged-out cookie cache configuration. The cache does not have to specify the  `distributed-cache` mode. It can be whatever mode that best supports your needs. For more information, see link:https://infinispan.org/docs/stable/titles/configuring/configuring.html[Configuring Infinispan caches] in the Infinispan documentation.
+The following `infinispan.xml` file example shows an Infinispan logged-out cookie cache configuration. The cache does not have to specify the  `distributed-cache` mode. It can be whatever mode that best supports your needs. For more information, see link:https://infinispan.org/docs/stable/titles/configuring/configuring.html[Configuring Infinispan caches] in the Infinispan documentation. This example was tested with Infinispan `13.0.10.Final`.
 
 [source,xml]
 ----
@@ -106,7 +106,7 @@ The following `infinispan.xml` file example shows an Infinispan logged-out cooki
 ----
 
 Sample Hazelcast cache configuration::
-The following `hazelcast.xml` file example shows a Hazelcast logged-out cookie cache cache configuration. For more information, see link:https://docs.hazelcast.com/imdg/latest/jcache/setup[JCache Setup and Configuration] in the Hazelcast documentation.
+The following `hazelcast.xml` file example shows a Hazelcast logged-out cookie cache cache configuration. For more information, see link:https://docs.hazelcast.com/imdg/latest/jcache/setup[JCache Setup and Configuration] in the Hazelcast documentation. This example was tested with Hazelcast `5.1.3`.
 
 [source,xml]
 ----
@@ -115,11 +115,13 @@ The following `hazelcast.xml` file example shows a Hazelcast logged-out cookie c
          <key-type class-name="java.lang.Object" />
          <value-type class-name="java.lang.Object" />
          <eviction size="10000" max-size-policy="ENTRY_COUNT" eviction-policy="LRU" />
-         <timed-expiry-policy-factory
-              expiry-policy-type="CREATED"
-              duration-amount="7200"
-              time-unit="SECONDS" />
-         </timedexpiry-policy-factory>
+         <expiry-policy-factory>
+             <timed-expiry-policy-factory
+                  expiry-policy-type="CREATED"
+                  duration-amount="7200"
+                  time-unit="SECONDS" />
+             </timedexpiry-policy-factory>
+         </expiry-policy-factory>
       </cache>
 </hazelcast>
 ----
