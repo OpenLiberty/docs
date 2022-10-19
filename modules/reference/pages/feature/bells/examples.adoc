@@ -41,7 +41,7 @@ For more information, see <<expose,Expose a new REST endpoint>>.
 
 === Enable services to receive configuration properties
 
-Services can receive properties that are declared in the BELL configuration. To configure properties, add a `properties` element to your BELL configuration and declare one or more `name="value"` attributes. Properties are String type and inject into all services that are enabled to receive them. The following example declares the `hello` and `serverHome` properties.
+Services can receive properties that are declared in the BELL configuration. To configure properties, add a `properties` element to your BELL configuration and declare one or more `name="value"` attributes. Properties are `String` type and inject into all services that are enabled to receive them. The following example declares the `hello` and `serverHome` properties.
 
 [source,xml]
 ----
@@ -50,18 +50,18 @@ Services can receive properties that are declared in the BELL configuration. To 
 </bell>
 ----
 
-To enable a service to receive configuration properties, define a public method that is named named `updateBell` or a public constructor in the service implementation class. The method signature must declare a single parameter of the `java.util.Map<String,String>` type. The following example defines both methods to receive properties in a BELL configuration.
+To enable a service to receive configuration properties, define an `updateBell` public method or a public constructor in the service implementation class. The method signature must declare a single parameter of the `java.util.Map<String,String>` type. The following example defines both methods to receive properties in a BELL configuration.
 
 [source,java]
 ----
 public class YourServiceImpl implements api.or.spi.Interface {
- public YourServiceImpl(Map<String,String> bellProps) {...}
+ public YourServiceImpl(java.util.Map<String,String> bellProperties) {...}
  // OR
- public void updateBell(Map<String,String> bellProps) {...}
+ public void updateBell(java.util.Map<String,String> bellProperties) {...}
 }
 ----
 
-At service creation, the BELL feature invokes the `updateBell` constructor or methods to inject an unmodifiable map that contains a `key/value` pair for each property. For the previous examples, the resulting map contains the pairs `"hello"/"WORLD"` and `"serverHome"/"<resolved value of ${server.out.dir}>"`
+At service creation, the BELL feature invokes the `updateBell` or constructor methods to inject an unmodifiable map that contains a `key/value` pair for each property. For the previous examples, the resulting map contains the pairs `"hello"/"WORLD"` and `"serverHome"/"<resolved value of ${server.out.dir}>"`
 
 The BELL feature does not support nondestructive updates. When you update a BELL configuration while the server is running, the feature does not inject updated `properties` into existing service instances. However, it affords this future enhancement by allowing users to define the `updateBell` method within the service implementation class. If you define the `updateBell` method to receive properties, ensure that the class can tolerate multiple calls to the `updateBell` method on the same instance.
 
@@ -179,6 +179,6 @@ The `server.xml` file requires more configuration than just the BELL to expose t
 </bell>
 ----
 
-When this server starts, the BELL feature uses the `RestEpLib` library to register the `RESTHandler` interface with the `BellEndpoint` class and the `com.ibm.wsspi.rest.handler.root=/bellEP` OSGi service property into the OSGi framework. The REST Handler framework then registers the service and makes the endpoint available at the `\https://<host>:8020/ibm/api/bellEP` URL.
+When this server starts, the BELL feature registers the `RESTHandler` interface with the `BellEndpoint` class and the `com.ibm.wsspi.rest.handler.root=/bellEP` OSGi service property into the OSGi framework. The REST Handler framework then registers the service and makes the endpoint available at the `\https://<host>:8020/ibm/api/bellEP` URL.
 
 When you make calls to the endpoint, the REST Handler framework handles the initial request by getting an instance of the service. The BELL feature creates an instance of the `BellEndpoint` class that is injected with an unmodifiable map that contains the `"hello"/"WORLD"` key/value pair. The framework then services the initial and subsequent requests by calling the `handleRequest` method on the `BellEnpoint` instance.
