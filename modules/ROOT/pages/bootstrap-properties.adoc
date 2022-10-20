@@ -1,0 +1,132 @@
+//
+// Copyright (c) 2022 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description: Bootstrap properties initialize the runtime environment for a particular server. Bootstrap properties are attributes that affect the configuration and initialization of the runtime core.
+:seo-title: Open Liberty bootstrap properties
+:seo-description: Bootstrap properties initialize the runtime environment for a particular server. Bootstrap properties are attributes that affect the configuration and initialization of the runtime core.
+:page-layout: general-reference
+:page-type: general
+
+= Open Liberty bootstrap properties
+
+Bootstrap properties initialize the runtime environment for a particular server. Bootstrap properties are attributes that affect the configuration and initialization of the runtime core.
+
+Bootstrap properties are set in a text file named `bootstrap.properties`. This file is not required, so it does not exist unless you create it. You must create this file in the server directory, which also contains the configuration root file `server.xml`. By default, the server directory is `usr/servers/server_name`.
+
+If you update the `bootstrap.properties` file, you must restart the server for the changes to take effect.
+
+The `bootstrap.properties` file contains two types of properties:
+
+- A small, predefined set of initialization properties.
+- Any custom properties that you choose to define. You can then use these custom properties as variables in other configuration files such as `server.xml` and included files.
+
+== Predefined properties to configure trace and logging
+
+To change the name of your trace file, specify the `com.ibm.ws.logging.trace.file.name` property with a file name of your choice, as shown in the following example.
+
+----
+com.ibm.ws.logging.trace.file.name = trace.log
+----
+
+To enable binary logging, specify the `websphere.log.provider` property as shown in the following example.
+
+----
+websphere.log.provider = binaryLogging-1.0
+----
+
+== Custom properties to define the default ports for web applications
+
+You can share `server.xml` and use XML configuration files across various development environments that allow machine-specific or environment-specific customization as shown in the following example.
+
+1. Specify the `default.http.port` and `default.https.port` properties in the `bootstrap.properties` file.
+
+----
+default.http.port = 9081
+default.https.port = 9444
+----
+
+If you do not specify the properties, the default HTTP port is `9080` and the default HTTPS ports is `9443`. To override the default HTTP endpoint definition, set the `id` attribute of the `httpEndpoint` element to `defaultHttpEndpoint` in the server configuration.
+
+2. Use the following properties in the `server.xml` configuration file.
+
+----
+<httpEndpoint id="defaultHttpEndpoint"
+host="*"
+httpPort="${default.http.port}"
+httpsPort="${default.https.port}" />
+----
+
+The `host="*"` means to listen on all adapters. By default, the server is listening only on address `127.0.0.1/localhost`. You can also use the `host` property to specify a single IP address, and then the system listens only on the specified adapter.
+
+== Custom properties to set the command port
+
+Set the command port to enable the server script to communicate with the running Open Liberty server and request certain operations, such as stopping the Open Liberty server or issuing a Java dump. For security, the command port cannot be accessed remotely, and clients must have read/write access to the server output directory to be authorized to issue commands.
+
+By default, the Open Liberty server acquires an ephemeral port to be used by the command listener.
+
+You can override the default behavior of the Open Liberty server by using the `command.port` property.
+
+.Command port values
+[%header,cols="2,9"]
+|===
+
+|Valid values
+|Description
+
+|-1
+|Command port is disabled.
+
+|0
+|Ephemeral port is chosen at run time.
+
+|1-65535
+|User-specified port.
+
+|===
+
+[%header,cols="2,9"]
+|===
+
+|Default value
+|Description
+
+|0
+|Ephemeral port is chosen at run time.
+
+|===
+
+You are discouraged from disabling the command port. If you disable the command port, you cannot use the server script to request some operations, for example, stopping the Open Liberty server or issuing a Java dump.
+
+== Custom properties to configure server start wait time
+
+You can increase the server start wait time beyond the product default setting by adding the `server.start.wait.time` property to the `boostrap.properties` file. The `server.start.wait.time` property is specified in seconds.
+
+Specify the `server.start.wait.time` property in the `bootstrap.properties` file. The following example sets the server start time to `25` seconds.
+
+----
+server.start.wait.time = 25
+----
+
+This property defines how much time the start process can wait for the initiation of the main server process.
+
+If you do not add the `server.start.wait.time` property to the `bootstrap.properties` file, the default server start wait time is internally set to `30` seconds.
+
+This property does not apply when the server is started with the `server run` command.
+
+== Predefined properties for OSGi framework diagnostics
+
+Set the port for the OSGi console as shown in the following example.
+
+----
+osgi.console = 5678
+----
+
+== Predefined properties for OSGi framework extensions
+
+Specify the `org.osgi.framework.bootdelegation` property, if this is required by external monitoring tools. The value is a comma-delimited list of packages.
