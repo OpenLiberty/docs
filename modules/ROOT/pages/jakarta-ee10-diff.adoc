@@ -25,11 +25,12 @@ The following sections describe updates for different Jakarta EE 10.0 features
 * <<servlet,Jakarta Servlet 6.0>>
 * <<appAuthz,Jakarta Authorization 2.1>>
 * <<appAuthn,Jakarta Authentication 3.0>>
+* <<el,Jakarta Expression Language 5.0>>
 
 [#cdi]
 == Differences between Jakarta Contexts and Dependency Injection 4.0 and 3.0
 
-Although Open Liberty xref:zero-migration-architecture.adoc[zero migration] architecture simplifies migrating your server configuration between versions, the following changes might require updates to relevant application code. CDI 4.0 introduces Build Compatible Extensions, observable container state events, and changes how empty and unversioned `beans.xml` files are handled. Several previously deprecated APIs are removed in this release.
+The feature:cdi-4.0[display=Jakarta Contexts and Dependency Injection 4.0] feature (`cid-4.0`) introduces Build Compatible Extensions, observable container state events, and changes how empty and unversioned `beans.xml` files are handled. Several previously deprecated APIs are removed in this release.
 
 === Build Compatible Extensions
 
@@ -140,13 +141,13 @@ For more information, see the https://jakarta.ee/specifications/cdi/4.0/apidocs/
 [#servlet]
 == Differences between Jakarta Servlet 6.0 and 5.0
 
-The feature:servlet-6.0[display=Jakarta Servlet 6.0] feature provides new APIs and new configurations to set any attribute on a response cookie.
+The feature:servlet-6.0[display=Jakarta Servlet 6.0] feature (`servlet-6.0`) provides new APIs and new configurations to set any attribute on a response cookie.
 
 === New ways to configure cookie attributes
 
-In Jakarta Servlet 6.0, you can set attributes on a response cookie either in deployment descriptor file, programmatically with the `jakarta.servlet.ServletContainerInitializer` API, or at request time.
+In Jakarta Servlet 6.0, you can set attributes on a response cookie either from a deployment descriptor file, at application startup with the `jakarta.servlet.ServletContainerInitializer` API, or at request time.
 
-You can set cookie attributes in a `web.xml` deployment descriptior file by specifying the `attribute` element within the `cookie-config` element, as shown in the following example.
+To set cookie attributes in a `web.xml` deployment descriptor file, specify the `attribute` element within the `cookie-config` element, as shown in the following example.
 
 [source,xml]
 ----
@@ -178,7 +179,7 @@ public void onStartup(Set<Class<?>> setOfClasses, ServletContext context) throws
       SessionCookieConfig scc = context.getSessionCookieConfig();
       scc.setName("MyDynaCookieName");
       scc.setAttribute("MyDynamicAttribute", "DynamicValue");
-      ..........
+      ...
 }
 ----
 
@@ -200,17 +201,17 @@ If conflicts arise among different sources for the cookie configuration, the fol
 
 === Changes to the request cookie header
 
-Servlet 6.0 implements the HTTP request cookie behavior by following the https://www.rfc-editor.org/rfc/[rfc6265] standard, which states that HTTP client agents such as browsers do not send back cookie attributes to the application server.
+Servlet 6.0 implements the HTTP request cookie behavior by following the https://www.rfc-editor.org/rfc/rfc6265[rfc6265] standard, which states that HTTP client agents such as browsers do not send back cookie attributes to the application server.
 
 Previously, you could include request cookie attributes by adding the dollar sign (`$`) as a prefix to a valid attribute name. For example, `$Domain=myDomain.com` was treated as the `Domain` attribute for the request cookie. Starting in Servlet 6.0, `$Domain` is treated as a new cookie that is named `$Domain`. The dollar sign is also part of the cookie name. The only exception to this rule is the  `$Version` value.
 
-For example, consider the following HTTP request that includes a cookie header.
+For example, consider the following HTTP request, which includes a cookie header.
 
 ----
 Cookie: $Version=1; name1=value1; $Path=/Dollar_Path; $Domain=localhost; $NAME2=DollarNameValue;Domain=DomainValue
 ----
 
-Before Servlet 6.0, the server creates the following three request cookies.
+Before Servlet 6.0, the server creates the following three request cookies from this request.
 
 ----
 cookie1: name1 with the associated attributes: Path=/Dollar_Path; Domain=localhost
@@ -247,7 +248,7 @@ A new `jakarta.servlet.ServletConnection` object is retrieved from the `getServl
 
 === Removed APIs and classes
 
-The following previously deprecated APIs are removed.
+The following previously deprecated APIs and their corresponding constructors and methods are removed.
 
 * `jakarta.servlet.ServletContext` - `Servlet getServlet(String)`, `Enumeration<Servlet> getServlets()`, `Enumeration<String> getServletNames()`, `void log(Exception, String)`
 * `jakarta.servlet.ServletRequest` - `String getRealPath(String)`
@@ -280,11 +281,11 @@ new methods to  retrieve the Policy Configuration interface (`PolicyConfiguratio
 * `public abstract PolicyConfiguration getPolicyConfiguration();`
 * `public abstract PolicyConfiguration getPolicyConfiguration(String contextID);`
 
-The methods are available in addition to the following method that was available in previous versions.
+These methods are available in addition to the following `getPolicyConfiguration` method that was available in previous versions.
 
 `public abstract PolicyConfiguration getPolicyConfiguration(String contextID, boolean remove);`
 
-=== New methods for the `jakarta.security.jacc.PolicyConfiguration` interface
+=== New methods for the jakarta.security.jacc.PolicyConfiguration interface
 
 The `jakarta.security.jacc.PolicyConfiguration` interface defines three new methods to read
 permissions.
@@ -301,9 +302,39 @@ For more information, see the https://jakarta.ee/specifications/authorization/2.
 The feature:appAuthentication-2.1[display=Jakarta Authentication 3.0] feature (`appAuthentication-3.0`) feature introduces changes to the`jakarta.security.auth.message.config.AuthConfigFactory` abstract class. This class implements two new methods to register and remove a server authentication module. Before this version of the feature, support was available only to register and remove a configuration provider.
 
 * `public abstract String registerServerAuthModule(ServerAuthModule serverAuthModule, Object context);`
-* `public abstract void removeServerAuthModule(Ojbect context);`
+* `public abstract void removeServerAuthModule(Object context);`
 
 For more information, see the https://jakarta.ee/specifications/authentication/3.0/apidocs/jakarta.security.auth.message/module-summary.html[Jakarta Authentication Javadoc].
+
+[#el]
+== Differences between Jakarta Expression Language 5.0 and 4.0
+
+The feature:expressionLanguage-5.0[Jakarta Expression Language 5.0] feature adds support for Java Generics and includes updates to Type coercion, the Expression Language resolver, and more.
+
+=== Support for Java Generics
+
+The 5.0 release adds support for Java Generics throughout the API, wherever they are appropriate. This update removes the need to cast from  from an `Object` instance to a specific object type in many API calls.
+
+=== Type coercion
+
+The 5.0 release implements support for https://jakarta.ee/specifications/expression-language/5.0/jakarta-expression-language-spec-5.0.html#coerce-a-to-an-array-of-type-t[coercing arrays] and for https://jakarta.ee/specifications/expression-language/5.0/jakarta-expression-language-spec-5.0.html#coerce-a-to-functional-interface-method-invocation[coercing Lambda Expressions to a functional interface method invocation].
+
+=== Expression Language resolver
+
+The https://jakarta.ee/specifications/expression-language/5.0/apidocs/jakarta.el/jakarta/el/beanelresolver[BeanELResolver class] is updated to also consider default method implementations when it looks for property getters, property setters, and methods.
+The documented behavior of the https://jakarta.ee/specifications/expression-language/5.0/apidocs/jakarta.el/jakarta/el/staticfieldelresolver[StaticFieldELResolver] class is updated to explicitly document that the `ELResolver.getType()` method must return null if either the `ELResolver` class or the resolved property is read-only.
+
+
+=== Method annotation access
+
+A new `MethodReference` class provides access to details of the method to which a `MethodExpression` instance resolves, including any annotations that are present on the method.
+
+=== Deprecations and removals
+
+The `ELResolver ` `getFeatureDescriptors()` method is deprecated in Expression Language 5.0, with remvoal planned for Expression Language 6.0. A new default implementation that returns null is added. This update ensures that custom `ELResolver` implementations do not need to implement the method.
+
+The deprecated and misspelled `MethodExpression.isParmetersProvided()` method is removed from the API.
+
 
 == See also
 
