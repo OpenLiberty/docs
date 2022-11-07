@@ -6,9 +6,9 @@
 // Contributors:
 //     IBM Corporation
 //
-:page-description: A container image is a layered executable software package that contains everything you need to build and run a containerized application. You can use Open Liberty container image tags to obtain a container image that meets your development needs.
+:page-description: A container image is a layered executable software package that contains everything you need to build and run a containerized application. You can use an Open Liberty container image to build an application image that meets your development needs.
 :seo-title: Open Liberty container images
-:seo-description: A container image is a layered executable software package that contains everything you need to build and run a containerized application. You can use Open Liberty container image tags to obtain a container image that meets your development needs.
+:seo-description: A container image is a layered executable software package that contains everything you need to build and run a containerized application. You can use an Open Liberty container image to build an application image that meets your development needs.
 :page-layout: general-reference
 :page-type: general
 = Open Liberty container images
@@ -18,7 +18,7 @@ A container image is a layered executable software package that contains everyth
 Open Liberty container images are available from link:https://www.ibm.com/cloud/container-registry[IBM Container Registry] (ICR) and https://hub.docker.com/_/open-liberty[Docker Hub]. One advantage of using ICR instead of Docker Hub is that ICR doesn't impose rate limits on image pulls. You can pull images from ICR without authentication.
 
 == Container image tags
-You can append an Open Liberty container image tag to the `icr.io/appcafe/open-liberty:` source to specify the details of the container image that you pull from ICR.
+You can append an Open Liberty container image tag to the `icr.io/appcafe/open-liberty:` source to specify the details of the container image that you pull from ICR. For more information, see <<#build, Build an application image>>
 
 The latest Open Liberty release is available by using the following container image tags.
 
@@ -38,6 +38,8 @@ If you specify any image tag without including a version number, the latest vers
 
 Open Liberty quarterly release versions end in `.3`, `.6`, `.9`, or `.12`. For example, if the latest Open Liberty release is `22.0.0.10`, then the `22.0.0.9` and `22.0.0.6` releases are also maintained in ICR. To pull one of these release versions instead of the latest, add your chosen release version to the beginning of any of the `kernel-slim` or `full` image tags in the previous list. For example, if `22.0.0.9` is a recent quarterly release, you can pull an image that includes the `22.0.0.9` release with an OpenJ9 distribution of Java 8 by specifying the `22.0.0.9-full-java8-openj9-ubi` tag.  The `beta` and `beta-instanton` images are available only for the latest beta release.
 
+For more information about these tag values, see <<#tags,Container image tags naming conventions>>.
+
 If you have an IBM Cloud ID, you can generate a list of the currently available images in ICR by using the link:https://cloud.ibm.com/docs/cli?topic=cli-getting-started[IBM Cloud CLI] with the link:https://cloud.ibm.com/docs/cli?topic=cli-install-devtools-manually#idt-install-container-registry-cli-plugin[IBM Cloud Container Registry CLI plug-in] installed. Authentication is required only to list the images. You can pull images from ICR without authentication. To list the images, run the following commands.
 
 ----
@@ -45,39 +47,6 @@ ibmcloud login
 ibmcloud cr region-set global
 ibmcloud cr images --restrict appcafe/open-liberty
 ----
-
-[#build]
-== Build an application image
-
-You can use an Open Liberty container image in a `Dockerfile` or `Containerfile` file to build an application image that adds a single application and its corresponding configuration. Do not configure the container manually after it is started, except for debugging purposes, because these changes are not reflected in new containers that are created from the image.
-
-You can choose from two container image sets. The first uses the Red Hat Universal Base Image as the operating system. It is available from ICR and Docker Hub. The second uses Ubuntu as the operating system. It is available on Docker Hub and is rebuilt automatically whenever a change is made.
-
-Set your image template similar to the following example, which uses the `kernel-slim-java17-openj9-ubi` tag to build an image that uses the latest Open Liberty release with the OpenJ9 distribution of Java 17.
-
-[source,dockerfile]
-----
-FROM icr.io/appcafe/open-liberty:kernel-slim-java17-openj9-ubi
-
-# Add a Liberty server configuration including all necessary features
-COPY --chown=1001:0  server.xml /config/
-
-# This script adds the requested XML snippets to enable Liberty features and grow the image to be fit-for-purpose.
-# This option is available only in the 'kernel-slim' image type. The 'full', 'beta' and 'beta-instanton' tags already include all features.
-RUN features.sh
-
-# Add interim fixes (optional)
-COPY --chown=1001:0  interim-fixes /opt/ol/fixes/
-
-# Add an application
-COPY --chown=1001:0  Sample1.war /config/dropins/
-
-# This script adds the requested server configuration, applies any interim fixes, and populates caches to optimize the runtime.
-RUN configure.sh
-----
-
-A template like this example results in a container image that has your application and configuration preinstalled, which means you can create new fully configured containers at any time. For more information about the different arguments and environment variables that you can specify to customize your application image, see the link:https://github.com/OpenLiberty/ci.docker#readme[Open Liberty container image GitHub documentation].
-
 [#tags]
 === Container image tags naming conventions
 
@@ -110,5 +79,37 @@ In addition to the tags that follow this naming convention, Open Liberty offers 
 * `beta-instanton`: This tag is the same as the `beta` tag, except it also includes prerequisites for the Open Liberty https://openliberty.io/blog/2022/09/29/instant-on-beta.html[InstantOn beta feature].
 
 Both the beta images are UBI 8-based images with IBM Semeru 17 for x86-64/amd64 architectures.
+
+[#build]
+== Build an application image
+
+You can use an Open Liberty container image tag in a `Dockerfile` or `Containerfile` file to build an application image that adds a single application and its corresponding configuration. Do not configure the container manually after it is started, except for debugging purposes, because these changes are not reflected in new containers that are created from the image.
+
+Set your image template similar to the following example, which uses the `kernel-slim-java17-openj9-ubi` tag to build an image that uses the latest Open Liberty release with the OpenJ9 distribution of Java 17.
+
+[source,dockerfile]
+----
+FROM icr.io/appcafe/open-liberty:kernel-slim-java17-openj9-ubi
+
+# Add a Liberty server configuration including all necessary features
+COPY --chown=1001:0  server.xml /config/
+
+# This script adds the requested XML snippets to enable Liberty features and grow the image to be fit-for-purpose.
+# This option is available only in the 'kernel-slim' image type. The 'full', 'beta' and 'beta-instanton' tags already include all features.
+RUN features.sh
+
+# Add interim fixes (optional)
+COPY --chown=1001:0  interim-fixes /opt/ol/fixes/
+
+# Add an application
+COPY --chown=1001:0  Sample1.war /config/dropins/
+
+# This script adds the requested server configuration, applies any interim fixes, and populates caches to optimize the runtime.
+RUN configure.sh
+----
+
+A template like this example results in a container image that has your application and configuration preinstalled, which means you can create new fully configured containers at any time. For more information about the different arguments and environment variables that you can specify to customize your application image, see the link:https://github.com/OpenLiberty/ci.docker#readme[Open Liberty container image GitHub documentation].
+
+
 
 
