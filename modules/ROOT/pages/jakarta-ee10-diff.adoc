@@ -28,6 +28,7 @@ The following sections describe updates for different Jakarta EE 10.0 features
 * <<el,Jakarta Expression Language 5.0>>
 * <<pages,Jakarta Server Pages 3.1>>
 * <<batch,Jakarta Batch 2.1>>
+* <<#bind,Jakarta XML Binding 4.0>>
 
 [#cdi]
 == Differences between Jakarta Contexts and Dependency Injection 4.0 and 3.0
@@ -428,6 +429,30 @@ Previously, the default `JobOperator` interface was made available only from the
 ----
 @Inject JobOperator jobOperator;
 ----
+
+[#bind]
+== Differences between Jakarta XML Binding 4.0 and 3.0
+
+The feature:xmlBinding-4.0[display=Jakarta XML Binding 4.0] feature gives you the option to switch to a third-party implementation and removes support for the Validator API.
+
+=== Switch to a third-party implementation
+
+In Jakarta XML Binding 4.0, you can specify the `jakarta.xml.bind.JAXBContextFactory` property  to switch to a preferred third-party implementation. The `xmlBinding-4.0` feature then uses the specified implementation instead of the reference implementation. Consider the following notes when you choose a third-party implementation.
+
+If you set the `jakarta.xml.bind.JAXBContextFactory` property, you must ensure that your application has the specified third-party implementation added to the application class path. Otherwise, a `java.lang.ClassNotFoundException` exception occurs. Furthermore, the third-party implementation must be shared between all applications that are running on the JVM. Any application that is running on the JVM that does not have the implementation added to its classpath encounters a `java.lang.ClassNotFoundException` exception.
+
+=== Removal of the Validator API
+
+The `xmlBinding-4.0` feature does not support the `jakarta.xml.bind.Validator` APIs. Any application that uses this API must either remove it or replace its functionality with a `SchemaValidation` instance. The following examples demonstrate how to use a `SchemaValidation` instance as a replacement for a Validator API.
+
+[source,java]
+----
+SchemaFactoryschemaFactory= SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI); 
+Schema dataObjectSchema= schemaFactory.newSchema(new File("dataObjectSchema.xml")); jaxbUnmarshaller.setSchema(dataObjectSchema)
+----
+
+
+
 
 == See also
 
