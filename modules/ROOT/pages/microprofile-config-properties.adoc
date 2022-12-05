@@ -29,6 +29,7 @@ The following sections provide tables that list and describe MicroProfile Config
 - <<#openapi,MicroProfile OpenAPI>>
 - <<#react,MicroProfile Reactive Messaging>>
 - <<#rest,MicroProfile Rest Client>>
+- <<#telemetry, MicroProfile Telemetry>>
 
 
 [#context]
@@ -177,6 +178,11 @@ The following MicroProfile Config properties can be specified when MicroProfile 
 |===
 |Name |Description |When the runtime reads the property |Example
 
+|`mp.jwt.decrypt.key.algorithm`
+|Specifies the Key Management Algorithm for decrypting the Content Encryption Key (CEK) on receiving JWE tokens. This property has no default value. The `alg` header parameter must be present in the JWE and must be the same value as the `mp.jwt.decrypt.key.algorithm` property. If it is not the same value, then the request is rejected with an unauthorized (401) response. This property is available in MicroProfile JSON Web Token 2.1 and later.
+|On each request to a protected resource.
+|`mp.jwt.decrypt.key.algorithm=RSA-OAEP`
+
 |`mp.jwt.decrypt.key.location`
 |Specifies the location of the Key Management Key, which is the private key that is used to decrypt the Content Encryption Key. The Content Encryption Key is then used to decrypt the JSON Web Encryption (JWE) ciphertext. This private key must correspond to the public key that is used to encrypt the Content Encryption Key. This property is available in MicroProfile JSON Web Token 1.2 and later.
 |On each request to a protected resource.
@@ -196,6 +202,11 @@ The following MicroProfile Config properties can be specified when MicroProfile 
 |Specifies a list of allowable `aud` values. At least one of these values must be found in the claim. This property is available in MicroProfile JSON Web Token 1.2 and later.
 |On each request to a protected resource.
 |`mp.jwt.verify.audiences=conferenceService`
+
+|`mp.jwt.verify.clock.skew`
+|Specifies the clock skew in seconds used during the token expiry and age verification. The default value is `0` seconds. The `mpJwt` element already has a default value of `5` minutes for the `clockSkew` attribute. To use this new property, set a negative value for the `clockSkew` attribute of the `mpJwt` element. This property is available in MicroProfile JSON Web Token 2.1 and later.
+|On each request to a protected resource.
+|`mp.jwt.verify.clock.skew=60`
 
 |`mp.jwt.verify.issuer`
 |Specifies the expected `iss` claim value to validate against an MicroProfile JWT. This property is available in MicroProfile JSON Web Token 1.1 and later.
@@ -219,6 +230,11 @@ archive that uses the `ClassLoader.getResource` method. If the value is a URL, i
 `URL(“…”).openStream()` method. This property is available in MicroProfile JSON Web Token 1.1 and later.
 |On each request to a protected resource.
 |`mp.jwt.verify.publickey.location=publicKey.pem`
+
+|`mp.jwt.verify.token.age`
+|Specifies the number of seconds since the JWT token was issued. The `iat` claim must be present in the JWT and the configured number of seconds since `iat` must not elapse. If the configured number of seconds since `iat` elapses, then the request is rejected with an unauthorized (401) response. This property is available in MicroProfile JSON Web Token 2.1 and later.
+|On each request to a protected resource.
+|`mp.jwt.verify.token.age=3600`
 
 |===
 
@@ -454,5 +470,52 @@ This property or `*/mp-rest/url` is considered required. However, some implement
 |Specifies which headers to propagate from the inbound JAX-RS request to the outbound MicroProfile Rest Client request. The value must be a comma-separated list of headers.
 |On the processing of a method invocation when the `RestClient` bean is created.
 |`org.eclipse.microprofile.rest.client.propagateHeaders==Authorization,Cookie`
+
+|===
+
+[#telemetry]
+== MicroProfile Telemetry
+
+The following MicroProfile Config properties can be specified when MicroProfile Telemetry is enabled. For more information, see the https://download.eclipse.org/microprofile/microprofile-telemetry-1.0-RC1/tracing/microprofile-telemetry-tracing-spec-1.0-RC1.html[MicroProfile Telemetry specification].
+
+.MicroProfile Config properties for MicroProfile Telemetry
+[options="header"]
+|===
+|Name |Description |When the runtime reads the property |Example
+
+|`otel.experimental.sdk.enabled`
+|Enables tracing by MicroProfile Telemetry. The default is `false`.
+|Application startup
+|`otel.experimental.sdk.enabled=true`
+
+|`otel.exporter.jaeger.endpoint`
+|Sets the endpoint for the Jaeger exporter. The default is \http://localhost:14250.
+|Application startup
+|`otel.exporter.jaeger.endpoint=http://localhost:14250`
+
+|`otel.exporter.jaeger.timeout`
+|Sets the maximum time, in milliseconds, that the Jaeger exporter waits for each batch export. The default is `10000`.
+|Application startup
+|`otel.exporter.jaeger.timeout=10000`
+
+|`otel.exporter.otlp.endpoint`
+|Sets the endpoint for the OpenTelemetry Protocol (otlp) exporter. The default is \http://localhost:4317
+|Application startup
+|`otel.exporter.jaeger.endpoint=http://localhost:4317`
+
+|`otel.exporter.zipkin.endpoint`
+|Sets the endpoint for the Zipkin exporter. The default is \http://localhost:9411/api/v2/spans.
+|Application startup
+|`otel.exporter.zipkin.endpoint=http://localhost:9411/api/v2/spans`
+
+|`otel.service.name`
+|Sets of the name of the service that MicroProfile Telemetry is tracing.
+|Application startup
+|`otel.service.name=system`
+
+|`otel.traces.exporter`
+|Sets the exporter that is used to collect traces. Possible values are `otlp`, `zipkin`, or `jaeger`.
+|Application startup
+|`otel.traces.exporter=jaeger`
 
 |===
