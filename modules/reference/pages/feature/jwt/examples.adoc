@@ -1,15 +1,67 @@
-== Examples
 
-The following example shows how to configure the server to construct a JSON Web Token (JWT) for an application:
+== Example
+
+=== Construct JWT for an application
+The following example shows how to configure the server for constructing a JSON Web Token (JWT) for an application.
 
 [source, xml]
 ----
 <keyStore id="defaultKeyStore" password="keyspass"/>
 
 <jwtBuilder expiresInSeconds="600" id="myBuilder" issuer="https://example.com" keyAlias="default"/>
-
 ----
 
 The `ID` attribute for the `jwtBuilder` element  named `myBuilder` identifies the JWT builder, and uses the default `keyAlias` attribute to locate the private key.
-The `issuer` attribute in the example is the  URL `http://example.com` that identifies who issued the JSON Web Token.
+The `issuer` attribute in the example is the  URL \`http://example.com` that identifies who issued the JSON Web Token.
+
 The `expiry` attribute indicates the token expiration time, which is 600 seconds.
+
+=== Configure the JWT consumer
+
+When you add the `jwt-1.0` feature and save your changes, Open Liberty adds the following default `jwtConsumer` element.
+[source, xml]
+----
+<jwtConsumer id="defaultJWTConsumer">
+</jwtConsumer>
+----
+
+For information about `jwtConsumer` attributes that you can configure, see config:jwtConsumer[display=JWT consumer].
+
+In this default configuration, the following values are assumed.
+- The `alg` header of the consumed JWT is RS256. You can configure this value on the `signatureAlgorithm` attribute.
+- A JWT is considered to be valid within 5 minutes of the `exp`, `nbf`, and `iat` claims. You can configure this value on the `clockSkew` attribute.
+You can reconfigure this default `jwtConsumer` element, or create one or more other `jwtConsumer` elements. Each `jwtConsumer` element must have a unique, URL-safe string specified as the `id` attribute. If the ID is missing, the `jwtConsumer` is not processed.
+
+For JWT tokens that are signed with RS256 and an X.509 certificate, you must configure the `trustStoreRef` and `trustAliasName` attributes so that you can locate the signature verification key.
+-Import the JWT issuer's X.509 certificate into the truststore. 
+-In the `jwtConsumer` element, specify the truststore ID and the certificate alias.
+
+[source, xml]
+----
+<jwtConsumer id="defaultJWTConsumer" trustStoreRef="truststore_id" trustAliasName="certificate_alias">
+</jwtConsumer>
+----
+
+=== Verify and parse JWT tokens in your application
+The following example shows how to programmatically verify and parse JWT tokens by implementing the `com.ibm.websphere.security.jwt.JwtConsumer` and `com.ibm.websphere.security.jwt.JwtToken` APIs in your application.
+
+- Create a `JwtConsumer` object. If you do not specify a configuration ID, the object is tied to the default `jwtConsumer` configuration.
+
+[source, java]
+----
+com.ibm.websphere.security.jwt.JwtConsumer jwtConsumer = JwtConsumer.create();
+----
+
+If you specify a configuration ID, the object is tied to the `jwtConsumer` configuration with the specified ID.
+
+[source, java]
+----
+com.ibm.websphere.security.jwt.JwtConsumer jwtConsumer = JwtConsumer.create("jwtConsumer_configuration_id");
+----
+
+- Verify and parse a JWT token by implementing the `com.ibm.websphere.security.jwt.JwtToken` API.
+
+[source, java]
+----
+JwtToken jwtToken = jwtConsumer.createJwt("Base64_encoded_JWT_token>");
+----
