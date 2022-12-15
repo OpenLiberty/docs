@@ -225,8 +225,6 @@ LogRecordContext.removeExtension(extensionName);
 
 After you remove an extension, JSON output for subsequent logs and trace that are made on the same thread do not include that field.
 
-
-
 [#http]
 === Selectable HTTP access log JSON fields
 When logs are in JSON format and the `accessLog` source is specified, you can replace the default HTTP access log JSON fields with a different set of fields. You can use the `jsonAccessLogFields` attribute to specify whether your access logs use the default fields or a set of fields that is specified by the `logFormat` attribute. You specify the replacement fields in the `logFormat` attribute of the `accessLogging` element within the `httpEndpoint` element.
@@ -407,6 +405,7 @@ The following table shows the equivalent `server.xml` file, `bootstrap.propertie
 The component specifies what log sources the level is set for. A component can be a logger name, trace group, or class name. The level specifies what level of trace to output for that component by using one of the following levels:
 
 `off`, `fatal`, `severe`, `warning`, `audit`, `info`, `config`, `detail`, `fine`, `finer`, `finest`, `all`.
+Setting a trace component to `off`, `fatal`, `severe`, `warning`, `audit`, or `info` level has the same effect as setting it to the `info` level as `info` and higher levels cannot be disabled.
 
 You can provide multiple log detail level specifications that are separated by colons.
 
@@ -418,6 +417,7 @@ An asterisk pass:[*] acts as a wildcard to match multiple components based on a 
 
 - `com.ibm.ws.classloading.AppClassLoader` Specifies the AppClassLoader class only.
 
+The `trace.log` file is created and logs are written to it only if one or more trace components are set to `config` level or lower.
 For more information on logging levels, see <<#logging_levels,Valid log detail levels for the trace log>>.
 
 |
@@ -495,22 +495,25 @@ If you specify a value of `false`, the date and time are formatted according to 
 == Trace log detail levels
 
 You can specify the `traceSpecification` attribute for the logging element in your `server.xml` file to selectively enable trace and set the trace log detail level for specific components in your server configuration.
-The following example specifies the `audit` detail level for all code that is running on the server and the `finest` detail level for an example package.
+The following example specifies the `info` detail level for all code that is running on the server and the `finest` detail level for an example package.
 
-[source,sh]
+[source,xml]
 ----
-<logging traceSpecification="*=audit:com.myco.mypackage.*=finest"/>
+<logging traceSpecification="com.myco.mypackage1.*=fine:com.myco.mypackage2.*=finest"/>
 ----
 
 In this example, the two detail level specifications are separated by a colon (`:`).
-The wildcard value `pass:[*]=audit` applies to all traceable code that is running on the server.
-The `com.myco.mypackage.pass:[*]=finest` value applies to all classes with the package name that begins with `com.myco.mypackage.`.
+
+The `com.myco.mypackage1.pass:[*]=fine` value applies to all classes with the package name that begins with `com.myco.mypackage1`.
+
+The `com.myco.mypackage2.pass:[*]=finest` value applies to all classes with the package name that begins with `com.myco.mypackage2`.
 
 The following table lists the valid log detail levels that you can specify in the `traceSpecification` attribute.
 You can specify an empty value for any component to disable all trace for that component.
 Any component that is not specified is initialized to a default state of `pass:[*]=info`.
 
-
+Setting a trace component to `off`, `fatal`, `severe`, `warning`, `audit`, or `info` level has the same effect as setting it to the `info` level as `info` and higher levels cannot be disabled.
+The `trace.log` file is created and logs are written to it only if one or more trace components are set to `config` level or lower.
 [#logging_levels]
 .Valid log detail levels for the trace log
 [%header,cols="6,9"]
