@@ -17,7 +17,7 @@
 :mp-2-3: feature:mpMetrics-2.3[display=MicroProfile Metrics 2.3]
 :mp-3-0: feature:mpMetrics-3.0[display=MicroProfile Metrics 3.0]
 :mp-4-0: feature:mpMetrics-4.0[display=MicroProfile Metrics 4.0]
-:mp-5-0: feature:mpMetrics-4.0[display=MicroProfile Metrics 5.0]
+:mp-5-0: feature:mpMetrics-5.0[display=MicroProfile Metrics 5.0]
 :mp-ft-3-0: feature:mpFaultTolerance-3.0[display=MicroProfile Fault Tolerance 3.0]
 :base-metric-features: feature:mpMetrics[display=MicroProfile Metrics]
 :vendor-metric-features: feature:mpMetrics[display=MicroProfile Metrics]
@@ -968,10 +968,7 @@ This metric is a gauge.
 |{mp-ft-3-0}
 
 |ft.bulkhead.runningDuration{method="<name>"} / (nanoseconds)
-|ft_bulkhead_runningDuration_min_seconds{method="<name>",mp_scope="base"}
-ft_bulkhead_runningDuration_max_seconds{method="<name>",mp_scope="base"}
-ft_bulkhead_runningDuration_mean_seconds{method="<name>",mp_scope="base"}
-ft_bulkhead_runningDuration_stddev_seconds{method="<name>",mp_scope="base"}
+ft_bulkhead_runningDuration_seconds_max{method="<name>",mp_scope="base"}
 ft_bulkhead_runningDuration_seconds_count{method="<name>",mp_scope="base"}
 ft_bulkhead_runningDuration_seconds_sum{method="<name>",mp_scope="base"}
 ft_bulkhead_runningDuration_seconds{
@@ -985,10 +982,7 @@ ft_bulkhead_runningDuration_seconds{
 |{mp-ft-3-0}
 
 |ft.bulkhead.waitingDuration{method="<name>"} / (nanoseconds)
-|ft_bulkhead_waitingDuration_min_seconds{method="<name>",mp_scope="base"}
-ft_bulkhead_waitingDuration_max_seconds{method="<name>",mp_scope="base"}
-ft_bulkhead_waitingDuration_mean_seconds{method="<name>",mp_scope="base"}
-ft_bulkhead_waitingDuration_stddev_seconds{method="<name>",mp_scope="base"}
+ft_bulkhead_waitingDuration_seconds_max{method="<name>",mp_scope="base"}
 ft_bulkhead_waitingDuration_seconds_count{method="<name>",mp_scope="base"}
 ft_bulkhead_waitingDuration_seconds_sum{method="<name>",mp_scope="base"}
 ft_bulkhead_waitingDuration_seconds{
@@ -1103,10 +1097,8 @@ This metric is a counter.
 |{mp-ft-3-0}
 
 |ft.timeout.executionDuration{method="<name>"} / (nanoseconds)
-|ft_timeout_executionDuration_mean_seconds{method="<name>",mp_scope="base"}
-ft_timeout_executionDuration_max_seconds{method="<name>",mp_scope="base"}
-ft_timeout_executionDuration_min_seconds{method="<name>",mp_scope="base"}
-ft_timeout_executionDuration_stddev_seconds{method="<name>",mp_scope="base"}
+ft_timeout_executionDuration_seconds_max{method="<name>",mp_scope="base"}
+ft_timeout_executionDuration_seconds_sum{method="<name>",mp_scope="base"}
 ft_timeout_executionDuration_seconds_count{method="<name>",mp_scope="base"}
 ft_timeout_executionDuration_seconds{
     method="<name>",
@@ -1374,15 +1366,25 @@ This metric is a gauge.
 |{mp-2-0} or later and feature:requestTiming[display=Request timing]
 |{mp-2-0}
 
-|REST.request
-|REST_request_total{class="<fully_qualified_class_name>",method="<method_signature>",mp_scope="base"} {empty}+
+|REST.request / nanoseconds
+|REST_request_seconds_max{class="<fully_qualified_class_name>",method="<method_signature>",mp_scope="base"} {empty}+
  {empty}+
- REST_request_elapsedTime_seconds{class="<fully_qualified_class_name>",method="<method_signature>",mp_scope="base"} / (seconds)
-|The number of invocations and total response time of this RESTful resource method since the server started. The metric doesn't record the count of invocations nor the elapsed time if an unmapped exception occurs. This metric also tracks the highest recorded time duration within the previous completed full minute and lowest recorded time duration within the previous completed full minute.
-This metric is a simple timer.
+REST_request_seconds_sum{class="<fully_qualified_class_name>",method="<method_signature>",mp_scope="base"} {empty}+
+ {empty}+
+REST_request_seconds_count{class="<fully_qualified_class_name>",method="<method_signature>",mp_scope="base"} {empty}+
+ {empty}+
+REST_request_seconds{
+ class="<fully_qualified_class_name>",
+ method="<method_signature>",
+ mp_scope="base",
+ quantile=["0.5"\|"0.75"\|"0.95"\|"0.98"\|"0.99"\|"0.999"]
+ } / nanoseconds
+|The number of invocations and total response time of this RESTful resource method since the start of the server. The metric will not record the elapsed time nor count of a REST request if it resulted in an unmapped exception. Also tracks the highest recorded time duration and the 50th, 75th, 95th, 98th, 99th and 99.9th percentile.
+This metric is a timer.
 |`REST`
 |{base-metric-features}
-|{mp-2-3}
+|{mp-5-0} +
+ *Note: This metric was changed from a Simple Timer metric to a Timer metric in MicroProfile Metrics 5.0*
 
 |REST.request.unmappedException.total
 |REST_request_unmappedException_total{class="<fully_qualified_class_name>",method="<method_signature>",mp_scope="base"}
