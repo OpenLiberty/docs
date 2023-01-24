@@ -18,9 +18,9 @@ MicroProfile Metrics provides a `/metrics` endpoint from which you can access al
 
 You can write an application to produce metrics that operations teams use when the application is running in production.
 When an application is running, you can view your metric data from any browser by accessing a `/metrics` endpoint, for example, `https://localhost:9443/metrics`, where `9443` is the port number for your application.
-You can narrow down the scope of the metrics by using the "scope" query parameter with the `/metrics` endpoint to specify the metric registry scope. For example, to view the metric data for the `base` metric registry, use the `/metrics?scope=base` endpoint. This pattern is used to access all runtime provided scopes (i.e. `base`,`application` and `vendor`) and any <<customscope,  user-defined metric registry scopes>>. +
+You can narrow down the scope of the metrics by using the `scope` query parameter with the `/metrics` endpoint to specify the metric registry scope. For example, to view the metric data for the `base` metric registry, use the `/metrics?scope=base` endpoint. This pattern is used to access all runtime-provided scopes,  (`base`,`application`, and `vendor`) and any <<customscope, user-defined metric registry scopes>>. +
 
-**For MicroProfile Metrics 4.0 and earlier**, only runtime provided scopes are available and path parameters are used to narrow down metric data. The endpoints are `/metrics?scope=base`, `/metrics?scope=application`, and `/metrics?scope=vendor`.
+For MicroProfile Metrics 4.0 and earlier, only runtime-provided scopes are available and path parameters are used to narrow down metric data. The endpoints are `/metrics?scope=base`, `/metrics?scope=application`, and `/metrics?scope=vendor`.
 
 
 Metric data is emitted in https://prometheus.io/docs/instrumenting/exposition_formats/[Prometheus format].
@@ -28,7 +28,7 @@ Operations teams can gather the metrics and store them in a database by using to
 They can then visualize the metric data for analysis in dashboards such as https://grafana.com/[Grafana].
 For a list of metrics that are available in Open Liberty, see the xref:metrics-list.adoc[metrics reference list].
 
-**MicroProfile Metrics runtimes that are version 4.0 and earlier** can also export metric data in JSON format through the `/metrics` endpoints. JSON formatted metric data can be obtained by confiuring the `Accept` header of your request to the `application/json` value.
+MicroProfile Metrics runtimes version 4.0 and earlier can also export metric data in JSON format through the `/metrics` endpoints. JSON-formatted metric data can be obtained by configuring the `Accept` header of your request to the `application/json` value.
 A `GET` request returns a list of metrics, and an `OPTIONS` request returns a list of metrics with their metadata.
 
 
@@ -43,9 +43,9 @@ These metrics ultimately provide transparency for operations teams into how serv
 [#customscope]
 == User-defined metric registry scopes
 
-Starting in MicroProfile Metrics 5.0, in addition to the default `application` metric registry scope, you are now able to define your own metric registry scope to register metrics to. This can be achieved by specifying the `scope` parameter for metric annotations or by injecting a `MetricRegistry` with the `RegistryScope` annotation and specifying the `scope` parameter. Not defining a value for the `scope` parameter in the metric annotation or `RegistryScope` annotation will default to the `application` scope.
+Starting in MicroProfile Metrics 5.0, in addition to the default `application` metric registry scope, you can define your own metric registry scope to register metrics to. You can define your own scope by specifying the `scope` parameter for metric annotations or by injecting a `MetricRegistry` with the `RegistryScope` annotation and specifying the `scope` parameter. If you don't define a value for the `scope` parameter in the metric annotation or `RegistryScope` annotation, the default scope is `application`.
 
-Example using the `@Counted` metric annotation to define a user-defined scope
+The following example uses the `@Counted` metric annotation to define a user-defined scope.
 ----
 @Counted(name="customCounter" description="This counter will preside in a user-defined metric registry", scope="customScope")
 public String countingThings() {
@@ -54,7 +54,7 @@ public String countingThings() {
 ----
 
 
-Example injecting a `MetricRegistry` for instrumenting metrics with the Java API.
+The following example injects a `MetricRegistry` for instrumenting metrics with the Java API.
 ----
 @Inject
 @RegistryScope(scope="customScope")
@@ -63,7 +63,7 @@ MetricRegistry customMetricRegistry;
 
 == Metrics and annotations
 The following sections describe metric types that are available and how their corresponding annotations are used.
-The following list lists metric types available in the **latest** MicroProfile Metrics feature.
+The following metric types are available when the MicroProfile Metrics  5.0 feature is enabled.
 
 * <<counter,Counter>>
 * <<gauge,Gauge>>
@@ -72,7 +72,7 @@ The following list lists metric types available in the **latest** MicroProfile M
 * <<histogram,Histogram>>
 
 Throughout the many releases of MicroProfile Metrics different metric types were introduced, removed or have had their behavior changed.
-The following list lists metric types available in previous MicroProfile Metrics releases. Metric types that are found both lists indicates that its behavior and/or capability has changed.
+The following list describes metric types that are available in previous MicroProfile Metrics releases. Metrics that are listed in both MicroProfile Metrics 5.0 and earlier releases behave differently before version 5.0.
 
 * <<concurrentgauge,Concurrent gauge [MicroProfile Metrics 2.0-4.0]>>
 * <<meter,Meter [MicroProfile Metrics 1.0-4.0]>>
@@ -123,7 +123,7 @@ public Long getTotalDonations(){
 A timer metric aggregates timing durations in nanoseconds and provides duration statistics.
 
 Use the `@Timed` annotation to mark a constructor or method as a timer.
-The timer tracks how frequently the annotated object is started and how long the invocations take to complete:
+The timer tracks how frequently the annotated object is started and how long the invocations take to complete, as shown in the following example.
 
 [source,java]
 ----
@@ -149,11 +149,11 @@ A histogram is a metric that calculates the distribution of a value. It provides
 - The value at the 50th, 75th, 95th, 98th, 99th, 99.9th percentile
 - A count of the number of values
 
-Note: When viewing the Prometheus formatted metric data for a histogram, the mean value is not included.
+Note: When you view the Prometheus-formatted metric data for a histogram, the mean value is not included.
 
-The histogram metric does not have an annotation. To record a value in the histogram, you must call the `histogram.update(long value)` method with the value that you want to record. The current state, or snapshot, of the histogram can be retrieved by using the `getSnapshot()` method. Histograms in MicroProfile Metrics only support integer or long values.
+The histogram metric does not have an annotation. To record a value in the histogram, you must call the `histogram.update(long value)` method with the value that you want to record. The current state, or snapshot, of the histogram can be retrieved by using the `getSnapshot()` method. Histograms in MicroProfile Metrics support only integer or long values.
 
-Examples of histograms include the distribution of payload sizes that are retrieved or for an onboarding survey that collects the distribution of household income.
+An example of a histogram is the distribution of payload sizes that are retrieved for an onboarding survey that collects the distribution of household income.
 
 The following example illustrates a histogram that is used to store the value of donations. This example provides the administrator with an idea of the distribution of donation amounts:
 
@@ -210,7 +210,7 @@ public void donationLiveStream() {
 ----
 
 [#meter]
-=== Meter [MicroProfile Metrics 1.0-4.0]
+=== Meter (available only in MicroProfile Metrics 1.0-4.0)
 A meter metric tracks throughput.
 This metric provides the following information:
 
@@ -232,7 +232,7 @@ public void addDonation(Long amount) {
 ----
 
 [#simpletimer]
-=== Simple timer [MicroProfile Metrics 3.0-4.0]
+=== Simple timer (available only in MicroProfile Metrics 3.0-4.0)
 A simple timer metric tracks the elapsed timing duration and invocation counts.
 This type of metric is available link:/blog/2020/04/09/microprofile-3-3-open-liberty-20004.html#mra[beginning in MicroProfile Metrics 2.3].
 The simple timer is a lightweight alternative to the performance-heavy timer metric.
@@ -253,7 +253,7 @@ public JSON getWeatherData() {
 ----
 
 [#timerOld]
-=== Timer [MicroProfile Metrics 1.0-4.0]
+=== Timer (available only in MicroProfile Metrics 1.0-4.0)
 A timer metric aggregates timing durations in nanoseconds, and provides duration and throughput statistics.
 
 Use the `@Timed` annotation to mark a constructor or method as a timer.
@@ -277,7 +277,7 @@ public String donateAmountViaCreditCard(@FormParam("amount") Long amount, @FormP
 ----
 
 [#histogramOld]
-=== Histogram [MicroProfile Metrics 1.0-4.0]
+=== Histogram (available only in MicroProfile Metrics 1.0-4.0)
 A histogram is a metric that calculates the distribution of a value. It provides the following information:
 
 - Maximum, minimum, median and mean values
@@ -342,7 +342,7 @@ If you're interested in learning more about using MicroProfile Metrics to build 
 
 Metrics instrumented with MicroProfile Metrics can be instrumented with key-value tags. The key is the tag name and the value can be referred to as the tag value. This allows for the instrumentation of multiple metrics, of the same type, using the same metric name as long as the set of tags have matching tag names, but with different values. If the metric types used or if the set of tag names do not match, then an `IllegalArgumentException` will be thrown. This is useful for logically grouping metrics that track similar statistics by using the same name and are then identified by their tags.
 
-For example, using counters, we can create multiple counters named "methodCounter" which returns the count of the method identified by the tag.
+For example, when you use counters, you can create multiple counters named `methodCounter` that return the count of the method that is identified by the tag.
 
 ----
 
