@@ -1,0 +1,103 @@
+// Copyright (c) 2023 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description:
+:seo-description: 
+:page-layout: general-reference
+:page-type: general
+= Send bidirectional messages between services with WebSocket
+
+The WebSocket protocol supports real-time bidrectional messaging between a client and server. The Open Liberty Jakarta WebSocket feature supports applications that use this protocol.
+
+== What is WebSocket?
+
+The WebSocket protocol enables two-way communication between client and server endpoints on top of a Transmission Control Protocol (TCP) connection. The channel between client and server is bidirectional and duplex, which means that both client and server can send and receive messages simultaneously, without having to wait for a response. Furthermore, the connection remains open until it is explicitly closed, so messaging can occur in real time without interruptions. Websocket is particularly beneficial to applications that need to frequently send and receive messages with minimal latency, such as applications for chat, gaming, or virtual collaboration.
+
+For example, the server for an online multiplayer racing game might use the WebSocket protocol to receive each player's position from the browser clients while sending the location of the other players back out from the server to each browser client.
+
+A WebSocket connection is initiated by a client that sends a WebSocket handshake request to a server over HTTP. This request includes an HTTP upgrade request which, when the server accepts the request, upgrades the HTTP connection to a TCP connection where WebSocket communication occurs. Once the TCP connection is established, the server can send and receive messages among 1 or more clients simultaneously until the connection is closed.
+
+=== WebSocket, REST, and server sent events
+
+The WebSocket protocol can be an alternative to REST frameworks for some application needs, though the comparison is not one-to-one. Depending on the context, REST communication is still a preferred choice for many web applications, while others might benefit from server sent events (SSE), another alternative to WebSocket.
+==== rest
+
+// It is important to note that while we can directly compare HTTP and WebSocket as they are both application layer protocols, it's not natural to compare REST against WebSocket. As we saw earlier REST is an architectural style which leverages HTTP for communication. Hence our comparison to WebSocket will mostly be regarding the capabilities, or lack thereof, in HTTP.
+
+// In case of WebSocket, the client initiates a Protocol Handshake request in HTTP and then waits until the server responds accepting an upgrade to WebSocket from HTTP. Of course, since Protocol Handshake happens over HTTP, it follows the sequence from the previous diagram. But once the connection is established, from there on client and server switches over to WebSocket for further communication.
+
+// As we saw in the previous subsection, one stark difference between WebSocket and HTTP is that WebSocket works on a persistent TCP connection while HTTP creates a new TCP connection for every request. Now obviously creating new TCP connection for every request is not very performant and HTTP has not been unaware of this. In fact, as part of HTTP/1.1, persistent connections were introduced to alleviate this shortcoming of HTTP. Nevertheless, WebSocket has been designed from the ground up to work with persistent TCP connections.
+
+//With WebSocket, working over persistent TCP communication, it's possible for server and client both to send data independent of each other, and in fact, to many communicating parties! This is referred to as bi-directional communication.
+
+// Another interesting feature of WebSocket communication is that it's full-duplex. Now while this term may sound esoteric; it simply means that both server and client can send data simultaneously. Compare this with what happens in HTTP where the server has to wait until it receives the request in full before it can respond with data.
+
+// While the benefit of bi-directional and full-duplex communication may not be apparent immediately. we'll see some of the use-cases where they unlock some real power.
+
+// Since communication over WebSocket happens over a reusable TCP connection, the overhead per message is lower compared to HTTP. Hence it can reach higher throughput per server. But there is a limit to which a single server can scale and that is where WebSocket has issues. It's not easy to horizontally scale applications with WebSockets. This is where HTTP shines. With HTTP each new request can potentially land on any server. This implies that to increase overall throughput we can easily add more servers. This should potentially have no impact on the application running with HTTP.
+
+////
+It's important to remember that while WebSocket has emerged out of shortcomings in HTTP, it's not, in fact, a replacement of HTTP. So they both have their place and their uses. Let's quickly understand how can we make a decision.
+
+For the bulk of the scenario where occasional communication is required with the server like getting the record of an employee, it's still sensible to use REST service over HTTP/S. But for newer client-side applications like a stock-price application which requires real-time updates from the server, it's much convenient to leverage WebSocket.
+
+Generalizing, WebSocket is more suitable for cases where a push-based and real-time communication defines the requirement more appropriately. Additionally, WebSocket works well for scenarios where a message needs to be pushed to multiple clients simultaneously. These are the cases where client and server communication over RESTful services will find it difficult if not prohibitive.
+
+WebSockets have a low overhead per message. They’re ideal for use cases that require low-latency, high-frequency communication.	REST APIs have a higher message overhead compared to WebSockets. They’re best suited for use cases where you want to create, retrieve, delete, or update resources.
+
+WebSocket uses HTTP only during the initial request/response handshake (connection establishment).	REST uses HTTP to enable client-server communication.
+
+We can broadly group Web Sockets use cases into two distinct categories:
+
+Realtime updates, where the communication is unidirectional, and the server is streaming low-latency (and often frequent) updates to the client. Think of live score updates or alerts and notifications, to name just a few use cases.
+
+Bidirectional communication, where both the client and the server send and receive messages. Examples include chat, virtual events, and virtual classrooms (the last two usually involve features like live polls, quizzes, and Q&As). WebSockets can also be used to underpin multi-user synchronized collaboration functionality, such as multiple people editing the same document simultaneously.
+
+For example, let’s say you’ve developed a food delivery app. You can use REST APIs to handle account management operations (e.g., create an account, sign in, reset password), order food, and retrieve your order history for browsing. WebSockets help you embed realtime functionality into your food delivery app, such as live asset tracking, so customers are always aware of where their order is, and when it will arrive.
+
+A football fan wants to check the result of a game. If the game were from last week, the game result would be stable and additional updates very unlikely. In that case, HTTP would be a sound choice. Not so, however, if the game were currently in progress. For a game in progress, the score will change constantly and updates will be frequent. In that case, a WebSocket would likely be the better choice.
+
+WebSocket connections enable streaming of text strings and binary data via messages. WebSocket messages include a frame, payload, and data portion. Very little non-payload data gets sent across the existing network connection this way, which helps to reduce latency and overhead, especially when compared to HTTP request and streaming models.
+////
+
+
+
+==== SSE
+
+// Obviously, the major difference between WebSockets and Server-Sent Events is that WebSockets are bidirectional (allowing communication between the client and the server) while SSEs are mono-directional (only allowing the client to receive data from the server).
+
+// As a result, if you are only interested in implementing server push functionalities in your application, they are both good choices to consider. However, if you’re more interested in a bi-directional communication system, WebSockets will serve your needs better.
+
+// WebSockets have the ability to detect a dropped client connection, unlike in SSEs where messages will have to be sent first before detecting the same issue.
+
+// Compared to SSEs, WebSockets are a lot more complex and task-demanding to set up. This has its pitfalls, as it requires a lot of upfront work. Be that as it may, it also makes for a very stable and extensible application setting. SSE is a simpler and faster solution, but it isn’t extensible. If, for instance, your web application requirements were to change, it would need to be refactored using WebSockets, which are more versatile with the ability to handle complex projects.
+
+// Like we mentioned earlier, WebSockets provide bidirectional client-server communication between clients and servers. This kind of functionality is vastly applied and appreciated in technologies like real-time polling applications, chat applications, media players and the like.
+
+//  From a server load point of view, we achieved better performance with SSE than WebSockets (a higher number of final users handled by one server).
+
+////
+
+Server-Sent Events enable the server to send low-latency push events to the client, at any time. They use a very simple protocol that is part of the HTML Standard and supported by every browser.
+
+Unlike WebSockets, Server-sent Events flow only one way: from the server to the client. This makes them unsuitable for a very specific set of applications, that is, those that require a communication channel that is both two-way and low latency, like real-time games. However, this trade-off is also their major advantage over WebSockets, because being one-way, Server-Sent Events work seamlessly on top of HTTP, without requiring a custom protocol. This gives them automatic access to all of HTTP’s features, such as compression or HTTP/2 multiplexing, making them a very convenient choice for the majority of real-time applications, where the bulk of the data is sent from the server, and where a little overhead in requests, due to HTTP headers, is acceptable.
+
+WebSocket differs from Server-Sent Events in that SSE is unidirectional from server to client, whereas WebSocket is bidirectional. WebSocket also enables real-time updates over a smaller bandwidth than SSE. The connection isn’t closed meaning that the client can continue to send and receive messages with the server, without having to poll the server to receive any replies.
+
+//// 
+
+
+
+
+
+== WebSockets and Open Liberty
+
+
+=== Getting started with MicroProfile GraphQL and WebSockets
+
+You can learn how to build and use a simple GraphQL service with MicroProfile GraphQL and Open Liberty in the link:/guides/microprofile-graphql.html[Optimizing REST queries for microservices with GraphQL] guide.
