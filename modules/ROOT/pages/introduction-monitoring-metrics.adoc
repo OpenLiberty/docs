@@ -1,4 +1,4 @@
-// Copyright (c) 2020 IBM Corporation and others.
+// Copyright (c) 2020, 2023 IBM Corporation and others.
 // Licensed under Creative Commons Attribution-NoDerivatives
 // 4.0 International (CC BY-ND 4.0)
 //   https://creativecommons.org/licenses/by-nd/4.0/
@@ -23,19 +23,21 @@ The MicroProfile Metrics feature provides a `/metrics` REST interface that confo
 Open Liberty uses MicroProfile Metrics to expose metrics that describe the internal state of many Open Liberty components.
 Developers can also use the MicroProfile Metrics API to expose metrics from their applications.
 
-Metrics come in various forms that include counters, gauges, timers, histograms, and meters.
+Metrics come in various forms, including counters, gauges, timers, and histograms. Depending on the version of MicroProfile Metrics that you use, meters, simple timers, and concurrent gauges might also be available.
 
 You can access MicroProfile Metrics by feature:mpMetrics[display=enabling the MicroProfile Metrics feature].
 Real-time values of all metrics are available by calling the `/metrics` endpoint.
 For more information about adding these metrics to your applications, see xref:microservice-observability-metrics.adoc[Microservice observability with metrics].
 For a list of all REST endpoint-style metrics that are available for Open Liberty, see the xref:metrics-list.adoc[metrics reference list].
 
-The `/metrics` endpoint provides two output formats.
+The `/metrics` endpoint provides formatted metric data that can be consumed as time-series data by external monitoring  tools. By default, MicroProfile Metrics provides metrics data in Prometheus format. Prometheus format is a representation of the metrics that is compatible with the https://prometheus.io/[Prometheus monitoring tool], which is an open source metrics scraper, data store, and basic visualization tool. Depending on the version of MicroProfile Metrics that is enabled, JSON format might also be available. +
+
 The format that each response uses depends on the HTTP accept header of the corresponding request.
-Prometheus format is a representation of the metrics that is compatible with the https://prometheus.io/[Prometheus monitoring tool], which is an open source metrics scraper, data store, and basic visualization tool.
-This format is returned for requests with a `text/plain` accept header.
+Prometheus format is returned for requests with a `text/plain` accept header.
 JSON format is a JSON representation of the metrics.
 This format is returned for requests with an `application/json` accept header.
+
+=== Metrics endpoints in MicroProfile Metrics 4.0 and earlier 
 
 The following table displays the different endpoints that can be accessed to provide metrics in Prometheus or JSON format with a GET request:
 
@@ -54,9 +56,36 @@ The following table displays the different endpoints that can be accessed to pro
 |Prometheus, JSON
 |Returns metrics that are registered for the specified scope.
 
-|`/metrics/<scope>/<metric name>`
+|`/metrics/<scope>/<metric_name>`
 |GET
 |Prometheus, JSON
+|Returns metrics that match the metric name for the specified scope.
+|===
+
+=== Metrics endpoints in MicroProfile Metrics 5.0 
+
+MicroProfile Metrics 5.0 no longer supports JSON-formatted output. Furthermore, syntax for the endpoints URLs  uses query string parameters for the scope and metric name values. 
+
+The following table displays the different endpoints that can be accessed to provide metrics in Prometheus with a GET request.
+
+.Metrics endpoints that are accessible by GET request
+[%header,cols="6,3,3,6"]
+|===
+|Endpoint |Request type |Supported formats |Description
+
+|`/metrics`
+|GET
+|Prometheus
+|Returns all registered metrics.
+
+|`/metrics?scope=<scope>`
+|GET
+|Prometheus
+|Returns metrics that are registered for the specified scope.
+
+|`/metrics?scope=<scope>&name=<metric_name>`
+|GET
+|Prometheus
 |Returns metrics that match the metric name for the specified scope.
 |===
 
@@ -77,3 +106,53 @@ However, the MicroProfile Metrics feature doesn't provide metrics about Open Lib
 If you enable both the MicroProfile Metrics and Performance Monitoring features, then the MXBeans for monitoring and the `/metrics` REST endpoint are activated.
 In this case, metrics for Open Liberty server components are exposed through both interfaces.
 The MicroProfile Metrics feature version 2.3 and later automatically enables the Performance Monitoring feature.
+
+==  Integration with Micrometer
+
+The feature:mpMetrics-5.0[display=MicroProfile Metrics 5.0] feature integrates with the Micrometer metrics technology to transfer metric data to multiple third-party monitoring systems. Micrometer enables you to instrument your code in a standardized way to visualize metrics results in the monitoring system of your choice. Micrometer can connect to 18 different third-party metric monitoring systems. For a full list of metric monitoring systems, see the https://micrometer.io/docs[Micrometer metrics documentation].  
+
+You can integrate Open Liberty with Micrometer by providing the Micrometer core library, Micrometer registry implementations, and the related dependencies to the Open Liberty runtime. This configuration strategy does not provide access to the Micrometer metrics API in the application.
+
+By default, the MicroProfile Metrics 5.0 feature provides metric data only to the Prometheus monitoring tool through the `/metrics` endpoint. To customize the monitoring systems that the feature can transfer metric data to, provide the Micrometer core libraries, Micrometer registry implementations, and all necessary dependencies by defining a config:library[display=shared library] in your `server.xml` file. You can then reference the specified shared library with the `libraryRef` attribute of the config:mpMetrics[ ] configuration element. If you use this configuration, the `/metrics` endpoint is available only if you provide the Micrometer Prometheus registry library as part of the shared library.
+
+The user-provided Micrometer registry implementations must be enabled by setting a corresponding `mp.metrics.<registry>.enabled`  MicroProfile Config property to `true` before metric data can be sent to the associated  metric monitoring tool. For example, if  you provide the Elastic Micrometer registry library and its dependencies, you must set the `mp.metrics.elastic.enabled` property  to `true` to render it active. You can set these properties in your `server.xml` file by using the config:variable[ ] configuration element. For more information about setting MicroProfile Config properties, see xref:external-configuration.adoc[External configuration of microservices].
+
+This configuration applies to all Micrometer registry implementations except for the Prometheus registry implementation, which is enabled by default when the Prometheus registry library and its dependencies are available. The `<registry>` value is an identifying value that is designated for each individual Micrometer registry. For the respective values for each Micrometer registry, see  the https://micrometer.io/docs[Micrometer metrics documentation].
+
+MicroProfile Config properties are available for each Micrometer registry to configure the connection to the associated monitoring tool. These properties are documented in xref:microprofile-config-properties.adoc#metrics[MicroProfile Config properties: MicroProfile Metrics]. They properties use the following the syntax: `mp.metrics.<registry>.<property>`,  where `<registry>` is the identifying value that is defined for that registry by Micrometer. For example, properties for the Elastic registry follow the  `mp.metrics.elastic.<property>` syntax. For information about the properties that are available for each registry, see the Micrometer documentation.
+
+The following configuration example shows how to configure the MicroProfile Metrics 5.0 feature to use the Elastic and Prometheus Micrometer registries.
+
+In this example, a directory for the Micrometer libraries and dependencies at `/path/to/directory/with/micrometer/libraries` contains the following files:
+
+1. Micrometer core
+    - micrometer-core-1.9.3.jar
+2. Micrometer Prometheus registry
+    - micrometer-registry-prometheus-1.9.3.jar
+3. Micrometer Prometheus registry's dependencies
+    - HdrHistogram-2.1.12.jar
+    - LatencyUtils-2.0.3.jar
+    - simpleclient-0.15.0.jar
+    - simpleclient_common-0.15.0.jar
+    - simpleclient_tracer_common-0.15.0.jar
+    - simpleclient_tracer_otel-0.15.0.jar
+    - simpleclient_tracer_otel_agent-0.15.0.jar
+4. Micrometer Elastic registry
+    - micrometer-registry-elastic-1.9.3.jar
+5. Micrometer Elastic registry's dependencies
+    - slf4j-api-1.7.36.jar
+
+The following example shows the corresponding `server.xml` file configuration to specify the enabling Micrometer properties and provide the shared library.
+----
+    <mpMetrics authentication="false" libraryRef="micrometerLibrary"/>
+
+    <variable name="mp.metrics.prometheus.enabled" value="true" /> <!-- redundant as default is true -->
+
+    <variable name="mp.metrics.elastic.enabled" value="true" />
+    <variable name="mp.metrics.elastic.index" value="micrometer-metrics" />
+
+	<library id="micrometerLibrary">
+		<fileset dir="/path/to/directory/with/micrometer/libraries" includes="*.jar" />
+	</library>
+    
+----
