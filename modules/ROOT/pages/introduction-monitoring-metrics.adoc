@@ -40,7 +40,7 @@ Prometheus format is returned for requests with a `text/plain` accept header.
 JSON format is a  representation of the metrics.
 In MIcroProfile metrics 4.0 and earlier, JSON format is returned for requests with an `application/json` accept header.
 
-Metrics endpoints differ in syntax and output between MicroProfile Metrics 5.0 and MicroProfile Metrics 4.0 and earlier. MicroProfile Metrics 5.0 also <<#micrometer,integrates with Micrometer>> to enable third-party monitoring systems. For more information, see xref:mp-50-60-diff.adoc#metrics[Differences between MicroProfile Metrics 5.0 and 4.0]
+Metrics endpoints differ in syntax and output between MicroProfile Metrics 5.0 and MicroProfile Metrics 4.0 and earlier. MicroProfile Metrics 5.0 also xref:micrometer-metrics.adoc[integrates with Micrometer] to enable third-party monitoring systems. For more information, see xref:mp-50-60-diff.adoc#metrics[Differences between MicroProfile Metrics 5.0 and 4.0]
 
 === Metrics endpoints in MicroProfile Metrics 5.0 
 
@@ -94,67 +94,6 @@ The following table displays the different endpoints that can be accessed in Mic
 |Returns metrics that match the metric name for the specified scope.
 |===
 
-[#micrometer]
-== Integration with Micrometer
-
-The feature:mpMetrics-5.0[display=MicroProfile Metrics 5.0] feature integrates with the Micrometer metrics technology to transfer metric data to multiple third-party monitoring systems. Micrometer enables you to instrument your code in a standardized way to visualize metrics results in the monitoring system of your choice. Micrometer can connect to 18 different third-party metric monitoring systems. For a full list of metric monitoring systems, see the https://micrometer.io/docs[Micrometer metrics documentation].  
-
-You can integrate Open Liberty with Micrometer by completing the following steps.
-
-1. Provide the Micrometer core library, Micrometer registry implementations, and the related dependencies to the Open Liberty runtime. 
-+
-  - By default, the MicroProfile Metrics 5.0 feature provides metric data only to the Prometheus monitoring tool through the `/metrics` endpoint. To customize the monitoring systems that the feature can transfer metric data to, provide the Micrometer core libraries, Micrometer registry implementations, and all necessary dependencies in a shared library. 
-  - Define a config:library[display=shared library] in your `server.xml` file and reference it with the `libraryRef` attribute of the config:mpMetrics[ ] configuration element. If you use this configuration, the `/metrics` endpoint is available only if you provide the Micrometer Prometheus registry library as part of the shared library. This configuration strategy does not provide access to the Micrometer metrics API in the application.
-
-2. Enable the user-provided Micrometer registry implementations by setting a corresponding `mp.metrics.<registry>.enabled` MicroProfile Config property to `true`.
-+
-  - For example, if you provide the Elastic Micrometer registry library and its dependencies, you must set the `mp.metrics.elastic.enabled` property  to `true` to render it active. You can set these properties in your `server.xml` file by using the config:variable[ ] configuration element. For more information about setting MicroProfile Config properties, see xref:external-configuration.adoc[External configuration of microservices]. 
-  - This configuration applies to all Micrometer registry implementations except for the Prometheus registry implementation, which is enabled by default when the Prometheus registry library and its dependencies are available. The `<registry>` value is an identifying value that is designated for each individual Micrometer registry. For the respective values for each Micrometer registry, see the https://micrometer.io/docs[Micrometer metrics documentation].
-
-3. Use MicroProfile Config properties for each Micrometer registry to configure the connection to the associated monitoring tool. 
-+
-  - These properties are documented in xref:microprofile-config-properties.adoc#metrics[MicroProfile Config properties: MicroProfile Metrics]. They properties use the following the syntax: `mp.metrics.<registry>.<property>`,  where `<registry>` is the identifying value that is defined for that registry by Micrometer. For example, properties for the Elastic registry follow the  `mp.metrics.elastic.<property>` syntax. For information about the properties that are available for each registry, see the Micrometer documentation.
-
-=== Micrometer configuration example for MicroProfile Metrics 5.0
-
-The following configuration example shows how to configure the MicroProfile Metrics 5.0 feature to use the Elastic and Prometheus Micrometer registries.
-
-In this example, a directory for the Micrometer libraries and dependencies at `/path/to/directory/with/micrometer/libraries` contains the following files:
-
-----
-// Micrometer core
-    - micrometer-core-1.9.3.jar
-// Micrometer Prometheus registry
-    - micrometer-registry-prometheus-1.9.3.jar
-// Micrometer Prometheus registry's dependencies
-    - HdrHistogram-2.1.12.jar
-    - LatencyUtils-2.0.3.jar
-    - simpleclient-0.15.0.jar
-    - simpleclient_common-0.15.0.jar
-    - simpleclient_tracer_common-0.15.0.jar
-    - simpleclient_tracer_otel-0.15.0.jar
-    - simpleclient_tracer_otel_agent-0.15.0.jar
-// Micrometer Elastic registry
-    - micrometer-registry-elastic-1.9.3.jar
-// Micrometer Elastic registry dependencies
-    - slf4j-api-1.7.36.jar
-----
-
-The following example shows the corresponding `server.xml` file configuration to specify the enabling Micrometer properties and provide the shared library.
-[source,xml]
-----
-    <mpMetrics authentication="false" libraryRef="micrometerLibrary"/>
-
-    <variable name="mp.metrics.elastic.enabled" value="true" />
-    <variable name="mp.metrics.elastic.index" value="micrometer-metrics" />
-
-	<library id="micrometerLibrary">
-		<fileset dir="/path/to/directory/with/micrometer/libraries" includes="*.jar" />
-	</library>
-    
-----
-
-Note that you don't need to set the `mp.metrics.prometheus.enabled` property to true because Prometheus is enabled by default when the Prometheus registry library and its dependencies are available.
 
 [#jmx]
 == JMX metrics
