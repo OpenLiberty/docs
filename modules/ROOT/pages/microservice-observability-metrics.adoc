@@ -13,16 +13,15 @@
 :page-type: general
 = Microservice observability with metrics
 
-Building observability into microservices externalizes the internal status of a system so operations teams to monitor microservice systems more effectively.
+Building observability into microservices externalizes the internal status of a system so operations teams can monitor systems more effectively.
 MicroProfile Metrics provides a `/metrics` endpoint from which you can access all metrics that are emitted by an Open Liberty server and deployed applications.
 
-When an application is running, you can view metric data from any browser by accessing the `/metrics` endpoint, for example, `\https://localhost:9443/metrics`, where `9443` is the port number for your application. You can narrow the scope of the metrics by using the `scope` query parameter with the `/metrics` endpoint to specify the metric registry scope. For example, to view the metric data for the `base` metric registry, use the `/metrics?scope=base` endpoint. This pattern is used to access all runtime-provided scopes  (`base`,`application`, and `vendor`) and any <<customscope, user-defined metric registry scopes>>. +
-For MicroProfile Metrics 4.0 and earlier, only runtime-provided scopes are available and path parameters are used to narrow down metric data. The endpoints are `/metrics/base`, `/metrics/application`, and `/metrics/vendor`.
+When an application is running, you can view metric data from any browser by accessing the `/metrics` endpoint, for example, `\https://localhost:9443/metrics`, where `9443` is the port number for your application. You can narrow the scope of the metrics by using the `scope` query parameter with the `/metrics` endpoint to specify the metric registry scope. For example, to view the metric data for the `base` metric registry, use the `/metrics?scope=base` endpoint. This pattern is used to access all runtime-provided scopes  (`base`,`application`, and `vendor`) and any <<customscope, user-defined metric registry scopes>>. For MicroProfile Metrics 4.0 and earlier, only runtime-provided scopes are available and path parameters are used to narrow down metric data. The endpoints are `/metrics/base`, `/metrics/application`, and `/metrics/vendor`.
 For more information about metrics endpoints, see xref:introduction-monitoring-metrics.adoc#endpoint[MicroProfile Metrics and the /metrics endpoint].
 
-By default, metric data is emitted in https://prometheus.io/docs/instrumenting/exposition_formats/[Prometheus format]. Operations teams can gather the metrics and store them in a database by using tools like Prometheus. They can then visualize the metric data for analysis in dashboards such as Grafana. Starting in version 5.0, MicroProfile Metrics xref:micrometer-metrics.adoc[integrates with Micrometer] so you can send your metrics data to the third party monitoring tool of your choice.
+By default, metric data is emitted in https://prometheus.io/docs/instrumenting/exposition_formats/[Prometheus format]. Operations teams can gather the metrics and store them in a database by using tools like Prometheus. They can then visualize the metric data for analysis in dashboards such as https://grafana.com[Grafana]. Starting in version 5.0, MicroProfile Metrics xref:micrometer-metrics.adoc[integrates with Micrometer] so you can send your metrics data to the third party monitoring tool of your choice.
 
-For a list of metrics that are available in Open Liberty, see the xref:metrics-list.adoc[metrics reference information].
+For a list of metrics that are available in Open Liberty, see the xref:metrics-list.adoc[Metrics reference list].
 
 [#add]
 == Adding metrics to your applications
@@ -39,6 +38,8 @@ These metrics ultimately provide transparency for operations teams into how serv
 Starting in MicroProfile Metrics 5.0, in addition to the default `application` metric registry scope, you can define your own metric registry scope to register metrics to. You can define your own scope by specifying the `scope` parameter for metric annotations or by injecting a `MetricRegistry` with the `RegistryScope` annotation and specifying the `scope` parameter. If you don't define a value for the `scope` parameter in the metric annotation or `RegistryScope` annotation, the default scope is `application`.
 
 The following example uses the `@Counted` metric annotation to define a user-defined scope.
+
+[source,java]
 ----
 @Counted(name="customCounter" description="This counter resides in a user-defined metric registry", scope="customScope")
 public String countingThings() {
@@ -97,7 +98,7 @@ public void bad() {
 
 [#types]
 == Metric types and annotations
-The following sections describe metric types that are available and how their corresponding annotations are used. Some metric types are only available in certain versions of MicroProfile Metrics and others might behave slightly differently in MicroProfile Metrics 5.0 than in earlier versions. Details are provided in the section for each metric type. For more information, see xref:mp50-60.adoc#metrics[Differences between MicroProfile Metrrics 5.0 and 4.1].
+The following sections describe metric types that are available and how their corresponding annotations are used. Some metric types are only available in certain versions of MicroProfile Metrics and others might behave slightly differently in MicroProfile Metrics 5.0 than in earlier versions. Details are provided in the section for each metric type. For more information, see xref:mp50-60-diff.adoc#metrics[Differences between MicroProfile Metrrics 5.0 and 4.1].
 
 * <<meter,Meter>>
 * <<timer,Timer>>
@@ -105,7 +106,7 @@ The following sections describe metric types that are available and how their co
 * <<counter,Counter>> (MicroProfile Metrics 5.0 only)
 * <<gauge,Gauge>> (MicroProfile Metrics 5.0 only)
 * <<concurrentgauge,Concurrent gauge>> (MicroProfile Metrics 2.0-4.0 only)
-* <<simpletimer,Simple timer>> (MicroProfile Metrics 3.0-4.0 only)
+* <<simpletimer,Simple timer>> (MicroProfile Metrics 2.3-4.0 only)
 
 
 [#meter]
@@ -135,7 +136,7 @@ public void addDonation(Long amount) {
 A timer metric aggregates timing durations in nanoseconds and provides duration statistics.
 
 Use the `@Timed` annotation to mark a constructor or method as a timer.
-The timer tracks how frequently the annotated object is started and how long the invocations take to complete, as shown in the following examples.
+The timer tracks how frequently the annotated object is started and how long the invocations take to complete, as shown in the following example.
 
 //  MicroProfile Metrics 5.0::
 
@@ -340,7 +341,7 @@ A simple timer metric tracks the elapsed timing duration and invocation counts.
 This type of metric is available link:/blog/2020/04/09/microprofile-3-3-open-liberty-20004.html#mra[beginning in MicroProfile Metrics 2.3].
 The simple timer is a lightweight alternative to the performance-heavy timer metric.
 Beginning in MicroProfile Metrics 3.0, the simple timer metric also tracks the largest and smallest recorded duration of the previous complete minute.
-A complete minute is defined as `00:00:00.000` seconds to `00:00:59.999` seconds.
+A complete minute is defined as `00:00:00.000` seconds to `00:00:59.999` seconds. This metric type is removed starting in MicroProfile Metrics 5.0.
 
 Use the `@SimplyTimed` annotation to mark a method, constructor, or type as a simple timer.
 The simple timer tracks how frequently the annotated object is started and how long the invocations take to complete:
@@ -361,6 +362,6 @@ public JSON getWeatherData() {
 == See also
 * Guide: link:/guides/microprofile-metrics.html[Providing metrics from a microservice]
 * xref:introduction-monitoring-metrics.adoc[Monitoring with metrics]
-* xref:metrics-list.adoc[Metrics reference information]
+* xref:metrics-list.adoc[Metrics reference list]
 
 
