@@ -25,7 +25,7 @@ The MicroProfile Metrics 5.0 release introduces many changes to the specificatio
 
 === SmallRye implementation of the specification
 
-In previous versions, Open Liberty implemented the specification in its own codebase. However, for MicroProfile Metrics 5.0, Open Liberty consumes SmallRye implementation of the specification to produce the feature:mpMetrics-5.0[display=mpMetrics] 5.0 feature.
+In previous versions, Open Liberty implemented the specification in its own codebase. However, starting in MicroProfile Metrics 5.0, Open Liberty consumes SmallRye implementation of the specification to produce the feature:mpMetrics-5.0[display=mpMetrics-5.0] feature.
 
 === Removed metric types 
 
@@ -34,24 +34,29 @@ The following metric types are removed from the MicroProfile Metrics 5.0 release
 - Concurrent gauge
 - Simple timer
 - Meter
+
 [#metrics-updated]
 === Updated Metric types
 
 The following metric types are modified in the MicroProfile Metrics 5.0 release or have additional configuration properties from the SmallRye implementation:
 
-Histogram::
+- Histogram
++
 The percentile precision can be configured by using the `mp.metrics.smallrye.histogram.precision` MicroProfile Config property. The value is from 1-5, with a larger value resulting in a higher precision for calculating the percentiles at the cost of greater memory usage. The default value is set to 3.
 
-Timer::
+- Timer
++
 The timer metric no longer tracks throughput in MicroProfile Metrics 5.0. The API is updated to reflect this change.
 +
 The percentile precision can be configured by using the `mp.metrics.smallrye.timer.precision` MicroProfile Config property. The value is from 1-5, with a larger value resulting in a higher precision for calculating the percentiles at the cost of greater memory usage. The default value is set to 3.
 
-Gauge::
+- Gauge
++
 Gauges track only numerical values in MicroProfile Metrics 5.0.
 
-REST.Request metric::
-In earlier releases of MicroProfile Metrics, the `REST.Request` metric was instrumented with a `SimpleTimer` metric type. In MicroProfile Metrics 5.0 the `SimpleTimer` metric type is no longer available and the metric is now instrumented with a `Timer` metric type.
+- REST.Request metric
++
+In earlier releases of MicroProfile Metrics, the `REST.Request` metric was instrumented with a `SimpleTimer` metric type. Starting in MicroProfile Metrics 5.0, the `SimpleTimer` metric type is no longer available and the metric is now instrumented with a `Timer` metric type.
 
 === Metadata
 
@@ -63,25 +68,23 @@ Starting in MicroProfile Metrics 5.0, in addition to the default `application` m
 
 === Metric tags
 
-In prior releases, tags could be used to instrument multiple metrics with the same name as long as the tags had different values. In MicroProfile Metrics 5.0, the set of tag names must be identical across all metric IDs with the same metric name. For more information, see xref:microservice-observability-metrics.adoc#_metric_tags[Metric tags].
+In prior releases, tags could be used to instrument multiple metrics with the same name as long as the tags had different values. Starting in MicroProfile Metrics 5.0, the set of tag names must be identical across all metric IDs with the same metric name. For more information, see xref:microservice-observability-metrics.adoc#_metric_tags[Metric tags].
 
-==== Scope and application name tags
-
+Scope and application name tags::
 In MicroProfile 5.0, the  `_app` tag that was defined in prior releases by the `mp.metrics.appName` MicroProfile Config property is now designated as `mp_app`.
 The metric registry scope is also identified with a `mp_scope` tag. 
-
-Both of these tags are reserved and if they are used  when you instrument metrics, an `IllegalArgumentException` occurs.
+Both of these tags are reserved and if they are used when you instrument metrics, an `IllegalArgumentException` occurs.
 
 === REST endpoints
 
 The MicroProfile Metrics 5.0 specification redefines how the metrics output in the the `/metrics` REST endpoint is filtered with the scope and metric parameters. In previous releases, the REST endpoint used path parameters for querying metrics of a certain scope and metric name with the following syntax `/metrics/<scope>/<name>`. The MicroProfile Metrics 5.0  `/metrics` REST endpoint uses query parameters instead, in the following syntax `/metrics?scope=<scope>&name=<metric_name>`.
 
-For example, a query for `base` metrics uses the `/metrics?scope=base` REST endpoint. A query for the `jvm.uptime` metric in the `base scope uses the `/metrics?scope=base&name=jvm.uptime` REST endpoint.
+For example, a query for `base` metrics uses the `/metrics?scope=base` REST endpoint. A query for the `jvm.uptime` metric in the `base` scope uses the `/metrics?scope=base&name=jvm.uptime` REST endpoint.
 
 [#output]
 === Metric output format
 
-The MicroProfile Metrics 5.0 specification removes the explicit requirement for the JSON output format to be made available. The SmallRye implementation that the Open Liberty runtime is using has also removed JSON output from the `/metrics` endpoint. The specification now only requires that Prometheus formatted metrics be made available through the `/metrics` endpoint.
+The MicroProfile Metrics 5.0 specification removes the explicit requirement for the JSON output format to be made available. The SmallRye implementation that the Open Liberty runtime is using also removed JSON output from the `/metrics` endpoint. The specification now only requires that Prometheus formatted metrics be made available through the `/metrics` endpoint.
 
 The Prometheus formatted output is also updated, including the following changes:
 
@@ -95,8 +98,8 @@ Timer metric::
 Timer metrics output is similar to the histogram output, with the value suffix trailing after the unit suffix.
 
 Metric units::
-In earlier releases, when a metric is instrumented and a unit is defined for it, the Prometheus output is scaled to the base unit. In MicroProfile Metrics 5.0, the unit associated to the metric is what is reflected in the Prometheus output. Outout is not scaled to a base unit.
+In earlier releases, when a metric is instrumented and a unit is defined for it, the Prometheus output is scaled to the base unit. In MicroProfile Metrics 5.0, the unit associated to the metric is what is reflected in the Prometheus output. Output is not scaled to a base unit.
 
 === Integration with Micrometer
 
-The SmallRye metrics implementation, on which Open Liberty bases its feature:mpMetrics-5.0[display=mpMetrics] 5.0 feature, uses Micrometer as its core metrics library. Open Liberty servers can be configured to send metrics to the third-party metric monitoring systems that are supported by Micrometer. For more information, see xref:micrometer-metrics.adoc[Choose your won monitoring tools with Micrometer].
+The SmallRye metrics implementation, on which Open Liberty bases its feature:mpMetrics-5.0[display=mpMetrics-5.0] feature, uses Micrometer as its core metrics library. The Open Liberty runtime can be configured to send metrics to the third-party metric monitoring systems that are supported by Micrometer. For more information, see xref:micrometer-metrics.adoc[Choose your own monitoring tools with Micrometer].
