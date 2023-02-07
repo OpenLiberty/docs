@@ -27,6 +27,17 @@ You can integrate Open Liberty with Micrometer by completing the following steps
 +
   - By default, the MicroProfile Metrics 5.0 feature provides metric data only to the Prometheus monitoring tool through the `/metrics` endpoint. To customize the monitoring systems that the feature can transfer metric data to, provide the Micrometer core libraries, Micrometer registry implementations, and all necessary dependencies in a shared library. 
   - Define a config:library[display=shared library] in your `server.xml` file and reference it with the `libraryRef` attribute of the config:mpMetrics[ ] configuration element. If you use this configuration, the `/metrics` endpoint is available only if you provide the Micrometer Prometheus registry library as part of the shared library. This configuration strategy does not provide access to the Micrometer metrics API in the application.
++
+The following example shows the `server.xml` file configuration for the shared library reference.
++
+[Source,xml]
+----
+<mpMetrics authentication="false" libraryRef="micrometerLibrary"/>
+
+<library id="micrometerLibrary">
+	<fileset dir="/path/to/directory/with/micrometer/libraries" includes="*.jar" />
+</library>
+----
 
 3. Enable the user-provided Micrometer registry implementations by setting a corresponding `mp.metrics.<registry>.enabled` MicroProfile Config property to `true`.
 +
@@ -36,11 +47,19 @@ You can integrate Open Liberty with Micrometer by completing the following steps
 4. Use MicroProfile Config properties for each Micrometer registry to configure the connection to the associated monitoring tool. 
 +
   - These properties are documented in xref:microprofile-config-properties.adoc#metrics[MicroProfile Config properties: MicroProfile Metrics]. They properties use the following the syntax: `mp.metrics.<registry>.<property>`,  where `<registry>` is the identifying value that is defined for that registry by Micrometer. For example, properties for the Elastic registry follow the  `mp.metrics.elastic.<property>` syntax. For information about the properties that are available for each registry, see the Micrometer documentation.
++
+The following example shows the server.xml file configuration to declare MicroProfile Config properties for the Elastic Micrometer registry library by using the `variable` element
++
+[source,xml]
+----
+  <variable name="mp.metrics.elastic.enabled" value="true" />
+  <variable name="mp.metrics.elastic.index" value="micrometer-metrics" />
+----
 
 [#example]
 === Micrometer configuration example 
 
-The following configuration example shows how to configure the MicroProfile Metrics 5.0 feature to use the Elastic and Prometheus Micrometer registries.
+The following configuration example shows how to configure the MicroProfile Metrics 5.0 feature to use the Elastic and Prometheus Micrometer registries, as described in the previous section.
 
 In this example, a directory for the Micrometer libraries and dependencies at `/path/to/directory/with/micrometer/libraries` contains the following files:
 
