@@ -1,0 +1,581 @@
+// Copyright (c) 2023 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+// https://creativecommons.org/licenses/by-nd/4.0/
+//
+//
+// Contributors:
+// IBM Corporation
+//
+//
+//
+//
+:page-description: If you are updating your application from using Jakarta EE 9.1 features to using Jakarta EE 10.1 features, certain changes in API behavior might require you to update your application code.
+:projectName: Open Liberty
+:page-layout: general-reference
+:page-type: general
+= Differences between Jakarta EE 10.0 and 9.1
+
+If you are updating your application from using Jakarta EE 9.1 features to using Jakarta EE 10.0 features, changes in API behavior might require you to update your application code. These changes apply to several Jakarta EE APIs and the Open Liberty features that support them.
+
+The following sections describe updates for different Jakarta EE 10.0 features
+
+* <<cdi,Jakarta Contexts and Dependency Injection 4.0>>
+* <<restfulws,Jakarta RESTful Web Services 3.1>>
+* <<servlet,Jakarta Servlet 6.0>>
+* <<appAuthz,Jakarta Authorization 2.1>>
+* <<appAuthn,Jakarta Authentication 3.0>>
+* <<el,Jakarta Expression Language 5.0>>
+* <<pages,Jakarta Server Pages 3.1>>
+* <<batch,Jakarta Batch 2.1>>
+* <<bind,Jakarta XML Binding 4.0>>
+* <<mail,Jakarta Mail 2.1>>
+* <<socket,Jakarta WebSocket 2.1>>
+
+[#cdi]
+== Differences between Jakarta Contexts and Dependency Injection 4.0 and 3.0
+
+The feature:cdi-4.0[display=Jakarta Contexts and Dependency Injection 4.0] feature (`cdi-4.0`) introduces Build Compatible Extensions and observable container state events. It also changes how empty and unversioned `beans.xml` files are handled. Several previously deprecated APIs are removed in this release.
+
+=== Build Compatible Extensions
+
+CDI provides Portable Extensions to customize the CDI application initialization lifecycle. In CDI 4.0, Build Compatible Extensions make implementing extensions amenable to build-time processing. 
+
+To implement a build compatible extension, provide an implementation of the `BuildCompatibleExtension` interface that is declared in the `META-INF/services` directory. The implementation can provide methods that are annotated with one of the following extension annotations, each of which corresponds to an extension execution phase.
+
+* `@Discovery`
+* `@Enhancement`
+* `@Registration`
+* `@Synthesis`
+* `@Validation`
+
+For example, as part of the `Enhancement` phase, the implementation in the following example adds a `MyQualifier` annotation to the `MyService` type.
+
+[source,java]
+----
+public class MyExtension implements BuildCompatibleExtension {
+    @Enhancement(type=MyService.class)
+    public void addMyQualifier(ClassConfig clazz) {
+        clazz.addAnnotation(MyQualifier.class)
+    }
+}
+----
+
+=== Startup and Shutdown events
+
+Two new observable container state events are available in CDI 4.0: `Startup` and `Shutdown`. Applications can listen for these events to be notified when the CDI container is starting up or shutting down. The following example listens for `Startup` and `Shutdown` events and prints a notification for each to the console when it receives the event.
+
+[source,java]
+----
+@ApplicationScoped
+public class MyObserver {
+    public void observeStartup(@Observes Startup startupEvent) { {
+        System.out.println("CDI Container is starting");
+    }
+
+    public void observeShutdown(@Observes Shutdown shutdownEvent) { {
+        System.out.println("CDI Container is stopping");
+    }
+}
+----
+
+You can control the order among multiple observable container state methods by using the `@Priority` annotation.
+
+=== The bean-discovery-mode attribute in empty and non-empty beans.xml files 
+
+In CDI 4.0, a `beans.xml` file that does not specify the `bean-discovery-mode` attribute is treated as if the attribute is set to `bean-discovery-mode="annotated"`. 
+In CDI 3.0 and earlier, a `beans.xml` file that does not specify the `bean-discovery-mode` attribute is treated as if the attribute is set to `bean-discovery-mode="all"`. 
+These settings apply to both empty and non-empty `beans.xml` files.
+
+For an empty `beans.xml` file in CDI 4.0, you can set the `emptyBeansXmlCDI3Compatibility` attribute to enable compatibility with previous versions. If you set this attribute to true, any archives that contain an empty `beans.xml` file are treated as explicit beans archives.
+
+The best practice is to always specify a version for non-empty `beans.xml` files, as shown in the following example.
+
+[source,xml]
+----
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns="https://jakarta.ee/xml/ns/jakartaee"
+    xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/beans_4_0.xsd"
+    version="4.0"
+    bean-discovery-mode="annotated">
+</beans>
+----
+
+=== Programmatic lookup of beans and instances
+
+In CDI 4.0, a new Handle API is available to simplify programmatic inspection of bean metadata. This API avoids the need to create instances before they are required. You can obtain a `Handle` instance by using the `Instance` API, which uses the following syntax.
+
+[source,java]
+----
+public interface Handle<T> extends AutoCloseable {
+        T get();
+        Bean<T> getBean();
+        void destroy();
+        void close();
+}
+----
+
+=== Removed APIs
+
+The following previously deprecated CDI APIs are removed in CDI 4.0.
+
+* `@New` qualifier, which replaced by `@Dependent` beans.
+* `Bean#isNullable()`, not used by the implementation since CDI 1.1.
+* `BeanManager#createInjectionTarget(AnnotatedType)`, replaced by `BeanManager#getInjectionTargetFactory(AnnotatedType)`
+* `BeforeBeanDiscovery#addAnnotatedType(AnnotatedType)`, replaced by `BeforeBeanDiscovery#addAnnotatedType(AnnotatedType, String)`
+
+[#cdiConfiguration]
+=== Server.xml configuration element and attribute updates
+In the Liberty feature:cdi-4.0[display=Jakarta Contexts and Dependency Injection 4.0] feature, the config:cdi12[] configuration element is superseded by the config:cdi[] element, which applies to CDI versions 1.2 and later. The following `server.xml` file example shows the `cdi` element with two configuration attributes.
+
+[source,xml]
+----
+<cdi enableImplicitBeanArchives="false" emptyBeansXmlCDI3Compatibility="true"/>
+----
+
+The `enableImplicitBeanArchives` attribute works the same as it did with the `cdi12` element in previous versions.
+If this attribute is set to `true`, which is the default, then archives with no `beans.xml` file are treated as implicit bean archives and scanned for classes that have bean defining annotations.
+If this attribute is set to `false`, then archives that do not contain a `beans.xml` file are not scanned for annotated classes.
+
+The `emptyBeansXmlCDI3Compatibility` attribute applies only to CDI 4.0.
+If this attribute is set to `true`, an archive that contains an empty `beans.xml` file is treated as an explicit bean archive, as it was in CDI 3.0 and earlier.
+If this attribute set to `false`, which is the default, then an archive that contains an empty `beans.xml` file is treated as an implicit bean archive.
+
+For more information, see the https://jakarta.ee/specifications/cdi/4.0/apidocs/[Jakarta Contexts and Dependency Injection 4.0 Javadoc]
+
+[#restfulws]
+== Differences between Jakarta RESTful Web Services 3.1 and 3.0
+
+The feature:restfulWS-3.1[display=Jakarta Restful Web Services 3.1] feature introduces default support to send and receive multipart/form-data parts. It also introduces automatic service provider registration, a default exception mapper, and support for array types as parameters in field and bean property annotations, among other changes. 
+
+=== Support for multipart/form-data media types
+
+In previous versions, support for sending and receiving multipart/form-data parts was provided by the Liberty-specific `IAttachment` and `IMultipartBody` APIs, which are deprecated in this release. This support is now provided by the `EntityPart` API that is defined in the RESTful Web Services specification. For more information, see link:https://jakarta.ee/specifications/restful-ws/3.1/jakarta-restful-ws-spec-3.1.html#consuming_multipart_formdata[section 3.5.2 of the Jakarta Restful Web Services specification].  
+
+
+=== Global Handlers
+
+In previous Liberty feature versions of RESTful Web Services (JAXRS) and XML Web Services (JAXWS), the `com.ibm.wsspi.webservices.handler` Web Services Global Handler SPI package was automatically enabled.
+
+Starting in Jakarta EE 10, Global Handlers are disabled by default. As with previous versions, you must create a user feature to configure a Global Handler. However, as of this release, you must also add the `io.openliberty.globalhandler-1.0` protected Liberty feature to your user feature manifest file to enable the SPI package.
+
+Add `io.openliberty.globalhandler-1.0; type="osgi.subsystem.feature"` to your user feature manifest file, as shown in the following manifest file example:
+
+----
+Manifest-Version: 1.0
+Subsystem-Type: osgi.subsystem.feature
+IBM-Feature-Version: 2
+Subsystem-Version: 1.0.0
+Subsystem-Content: MySimpleGlobalHandler.jakarta;version="1.0.0",
+io.openliberty.globalhandler-1.0; type="osgi.subsystem.feature"
+Subsystem-SymbolicName: MySimpleGlobalHandlerFeature;visibility:=public
+Subsystem-ManifestVersion: 1.0
+IBM-ShortName: MySimpleGlobalHandlerFeature
+----
+
+=== Servlet APIs availability
+When previous Liberty feature versions of RESTful Web Services (JAXRS) and RESTful Web Services Client were enabled, the Servlet APIs were available to any Open Liberty application by default.
+
+Starting with RESTful Web Services 3.1 and RESTful Web Services Client 3.1, the Servlet APIs are no longer available by default when you enable these features. For Open Liberty applications that require Servlet APIs, you must also add the `servlet-6.0` feature to the `server.xml` file.
+
+=== Concurrency APIs availability
+When the `restfulWS-3.0` and `restfulWSClient-3.0` Liberty features are enabled, the Concurrency APIs are available to any Open Liberty application by default.
+
+Starting with RESTful Web Services 3.1 and RESTful Web Services Client 3.1, the Concurrency APIs are no longer available by default. For Open Liberty applications that require Concurrency APIs, you must also add the `concurrent-3.0` feature to the `server.xml` file.
+
+=== Automatic service provider registration
+
+With the service loader, Jakarta Rest providers can now be detected and registered automatically, unless the `jakarta.ws.rs.loadServices` property is set to `Boolean.FALSE` by using an application subclass `getProperties()` method. For more information, see link:https://jakarta.ee/specifications/restful-ws/3.1/jakarta-restful-ws-spec-3.1.html#services[section 4.1.2 of the Jakarta Restful Web Services specification].  
+
+=== Default exception mapper
+
+A default exception mapper is added in version 3.1.  With this addition, all exceptions that are not mapped to an existing exception mapper are handled. If the exception is a `WebApplicationException` exception, the response object is returned with whatever status code is set. For all other unmapped exceptions, the response status code is set to `500`. 
+
+=== Field and bean property annotations
+
+Support for array types as parameters is added to the following field and bean property annotations: 
+
+- `@CookieParam`
+- `@FormParam`
+- `@HeaderParam`
+- `@MatrixParam`
+- `@QueryParam`
+
+=== Response.created(URI) method
+
+The `Response.created(URI)` method now resolves relative URIs into an absolute URI against the base URI. In previous releases, the method resolved against the request URI.
+
+=== Deprecation of constructors of Cookie and NewCookie classes
+
+Constructors of the `Cookie` class are deprecated in favor of the `Cookie.Builder` class.
+Constructors of the `NewCookie` class are deprecated in favor of the `NewCookie.Builder` class.
+
+[#servlet]
+== Differences between Jakarta Servlet 6.0 and 5.0
+
+The feature:servlet-6.0[display=Jakarta Servlet 6.0] feature (`servlet-6.0`) provides new APIs and new configurations to set attributes on a response cookie.
+
+=== New ways to configure cookie attributes
+
+In Jakarta Servlet 6.0, you can set attributes on a response cookie either from a deployment descriptor file, at application startup with the `jakarta.servlet.ServletContainerInitializer` API, or at request time.
+
+To set cookie attributes in a `web.xml` deployment descriptor file, specify the `attribute` element within the `cookie-config` element, as shown in the following example.
+
+[source,xml]
+----
+<session-config>
+   <cookie-config>
+     <name>SampleCookieName</name>
+     <domain>my.domain.com</domain>
+     <path>/</path>
+     <http-only>true</http-only>
+     <secure>true</secure>
+     <attribute>
+        <attribute-name>MyAttributeName</attribute-name>
+        <attribute-value>valueExample</attribute-value>
+     </attribute>
+     <attribute>
+        <attribute-name>MyOtherAttribute</attribute-name>
+        <attribute-value>OtherValue</attribute-value>
+     </attribute>
+   </cookie-config>
+</session-config>
+----
+
+You can also set cookie attributes dynamically from an application during application startup by using the `jakarta.servlet.ServletContainerInitializer` API, as shown in the following example.
+
+[source,java]
+----
+@Override
+public void onStartup(Set<Class<?>> setOfClasses, ServletContext context) throws ServletException {
+      SessionCookieConfig scc = context.getSessionCookieConfig();
+      scc.setName("MyDynaCookieName");
+      scc.setAttribute("MyDynamicAttribute", "DynamicValue");
+      ...
+}
+----
+
+Alternatively, you can set attributes from the application at request time, as shown in the following example.
+
+[source,java]
+----
+SessionCookieConfig scc = getServletContext().getSessionCookieConfig();
+scc.setName("MyRequestCookieName");
+scc.setAttribute("MyRequestAttribute", "RequestValue");
+----
+
+If conflicts arise among different sources for the cookie configuration, the following precedence order applies to resolve the conflict, from highest to lowest precedence.
+
+. Attributes that are set by the application at request time
+. Attributes that are set by the application by using the `ServletContainerInitializer` API
+. Attributes that are set in the `web.xml` deployment descriptor file
+
+
+=== Changes to the request cookie header
+
+Servlet 6.0 implements the HTTP request cookie behavior by following the https://www.rfc-editor.org/rfc/rfc6265[rfc6265] standard, which states that HTTP client agents such as browsers do not send back cookie attributes to the application server.
+
+Previously, you could include request cookie attributes by adding the dollar sign (`$`) as a prefix to a valid attribute name. For example, `$Domain=myDomain.com` was treated as the `Domain` attribute for the request cookie. Starting in Servlet 6.0, `$Domain` is treated as a new cookie that is named `$Domain`. The dollar sign is also part of the cookie name. The only exception to this rule is the  `$Version` value.
+
+For example, consider the following HTTP request, which includes a cookie header.
+
+----
+Cookie: $Version=1; name1=value1; $Path=/Dollar_Path; $Domain=localhost; $NAME2=DollarNameValue;Domain=DomainValue
+----
+
+Before Servlet 6.0, the server created the following three request cookies from this request.
+
+----
+cookie1: name1 with the associated attributes: Path=/Dollar_Path; Domain=localhost
+cookie2: NAME2
+cookie3: Domain
+----
+
+In Servlet 6.0 and later, the server creates the following five request cookies from the same HTTP request.
+
+----
+cookie1: name1
+cookie2: $Path
+cookie3: $Domain
+cookie4: $NAME2
+cookie5: Domain
+----
+
+=== Application debug enhancements
+
+New `jakarta.servlet.ServletRequest` APIs and a new `jakarta.servlet.ServletConnection` class are available to help you debug requests to your application. With the enhancement, you can track or refer to a request or obtain details of the network connection that is used by the request by using the request ID.
+
+The following `Jakarta.servlet.ServletRequest` APIs are available in Servlet 6.0.
+
+* `String getRequestId()`
+* `String getProtocolRequestId()`
+* `ServletConnection getServletConnection()`
+
+A new `jakarta.servlet.ServletConnection` object is retrieved from the `getServletConnection()` servlet request. It includes the following APIs.
+
+* `String getConnectionId()`
+* `String getProtocol()`
+* `String getProtocolConnectionId()`
+* `boolean isSecure()`
+
+=== URI Path Verification
+
+Beginning with the Servlet 6.0 release, if any of the following sequences are present in a URI, a direct request is rejected with a `400` Bad Request status.
+
+* The encoded dot (`%2E`) character
+* The encoded forward-slash (`%2F`) character
+* The fragment (`#`) character, whether encoded (`%23`) or not
+* The back-slash character (`\`), whether encoded (`%5C`) or not
+* Any control characters, whether encoded or not
+* Any  period (`.`) or double-period (`..`) segment that has a path parameter (`;`), for example `/path/..;/info`
+* Any path that starts with a double-period (`..`), for example `/../path/info`
+
+Note: the URI path verification is not applied to the query string.
+
+=== X-Powered-By response header
+
+By default, the `X-Powered-By` header is not included in the response header. Beginning with Servlet 6.0, no configuration option is available to add the `X-Powered-By` header to the response header.
+
+=== Removed APIs and classes
+
+The following previously deprecated APIs and their corresponding constructors and methods are removed.
+
+* `jakarta.servlet.ServletContext` - `Servlet getServlet(String)`, `Enumeration<Servlet> getServlets()`, `Enumeration<String> getServletNames()`, `void log(Exception, String)`
+* `jakarta.servlet.ServletRequest` - `String getRealPath(String)`
+* `jakarta.servlet.ServletRequestWrapper` - `String getRealPath(String)`
+* `jakarta.servlet.UnavailableException` - `UnavailableException(Servlet, String)`, `Servlet getServlet()`
+* `jakarta.servlet.http.HttpServletRequest` - `boolean isRequestedSessionIdFromUrl()`
+* `jakarta.servlet.http.HttpServletRequestWrapper` - `boolean isRequestedSessionIdFromUrl()`
+* `jakarta.servlet.http.HttpServletResponse` - `String encodeUrl(String)`, `String encodeRedirectUrl(String)`, `void setStatus(int, String)`
+* `jakarta.servlet.http.HttpServletResponseWrapper` -  `String encodeUrl(String)`, `String encodeRedirectUrl(String)`, v`oid setStatus(int, String)`
+* `jakarta.servlet.http.HttpSession` - `HttpSessionContext getSessionContext()`, `Object getValue(String)`, `String[] getValueNames()`, `void putValue(String, Object)`, `void removeValue(String)`
+
+The following previously deprecated classes are removed.
+
+* `jakarta.servlet.SingleThreadModel`
+* `jakarta.servlet.http.HttpSessionContext`
+* `jakarta.servlet.http.HttpUtils`
+
+For more information, see the https://jakarta.ee/specifications/servlet/6.0/apidocs/jakarta.servlet/module-summary.html[Jakarta Servlet 6.0 Javadoc].
+
+[#appAuthz]
+== Differences between Jakarta Authorization 2.1 and 2.0
+
+The feature:appAuthorization-2.1[display=Jakarta Authorization 2.1] feature (`appAuthorization-2.1`)  introduces the following new methods.
+
+=== New methods for the jakarta.security.jacc.PolicyConfigurationFactory abstract class
+
+The `jakarta.security.jacc.PolicyConfigurationFactory` abstract class implements the following two
+new methods to  retrieve the Policy Configuration interface (`PolicyConfiguration`).
+
+* `public abstract PolicyConfiguration getPolicyConfiguration();`
+* `public abstract PolicyConfiguration getPolicyConfiguration(String contextID);`
+
+These methods are available in addition to the following `getPolicyConfiguration` method that was available in previous versions.
+
+`public abstract PolicyConfiguration getPolicyConfiguration(String contextID, boolean remove);`
+
+=== New methods for the jakarta.security.jacc.PolicyConfiguration interface
+
+The `jakarta.security.jacc.PolicyConfiguration` interface defines three new methods to read
+permissions.
+
+* `public abstract Map<String, PermissionCollection> getPerRolePermissions();`
+* `public abstract PermissionCollection getUncheckedPermissions();`
+* `public abstract PermissionCollection getExcludedPermissions();`
+
+For more information, see the https://jakarta.ee/specifications/authorization/2.1/apidocs/jakarta.security.jacc/jakarta/security/jacc/package-summary.html[Jakarta Authorization 2.1 Javadoc].
+
+[#appAuthn]
+== Differences between Jakarta Authentication 3.0 and 2.0
+
+The feature:appAuthentication-2.1[display=Jakarta Authentication 3.0] feature (`appAuthentication-3.0`) introduces changes to the `jakarta.security.auth.message.config.AuthConfigFactory` abstract class. This class implements the following two new methods to register and remove a server authentication module. 
+
+* `public abstract String registerServerAuthModule(ServerAuthModule serverAuthModule, Object context);`
+* `public abstract void removeServerAuthModule(Object context);`
+
+Before this version of the feature, support was available to register and remove only a configuration provider.
+
+For more information, see the https://jakarta.ee/specifications/authentication/3.0/apidocs/jakarta.security.auth.message/module-summary.html[Jakarta Authentication 3.0 Javadoc].
+
+[#el]
+== Differences between Jakarta Expression Language 5.0 and 4.0
+
+The feature:expressionLanguage-5.0[display=Jakarta Expression Language 5.0] feature adds support for Java Generics and includes updates to type coercion, the Expression Language resolver, and more.
+
+=== Support for Java Generics
+
+The 5.0 release adds support for Java Generics throughout the API, wherever they are appropriate. This update removes the need to cast from an `Object` instance to a specific object type in many API calls.
+
+=== Type coercion
+
+The 5.0 release implements support for https://jakarta.ee/specifications/expression-language/5.0/jakarta-expression-language-spec-5.0.html#coerce-a-to-functional-interface-method-invocation[coercing Lambda Expressions to a functional interface method invocation] and clarifies the specification for coercing arrays. However, Liberty use of the Tomcat API and implementation of the Expression Language specification already followed these clarifications to the specification for link:https://jakarta.ee/specifications/expression-language/5.0/jakarta-expression-language-spec-5.0.html#coerce-a-to-an-array-of-type-t[coercing arrays]. Therefore, no functional changes for array coercion are added in Expression Language 5.0.
+
+=== Expression Language resolver
+
+The https://jakarta.ee/specifications/expression-language/5.0/apidocs/jakarta.el/jakarta/el/beanelresolver[BeanELResolver class] is updated to also consider default method implementations when it looks for property getters, property setters, and methods.
+The documented behavior of the https://jakarta.ee/specifications/expression-language/5.0/apidocs/jakarta.el/jakarta/el/staticfieldelresolver[StaticFieldELResolver] class is updated to explicitly document that the `ELResolver.getType()` method must return null if either the `ELResolver` class or the resolved property is read-only.
+
+
+=== Method annotation access
+
+A new `MethodReference` class provides access to details of the method to which a `MethodExpression` instance resolves, including any annotations that are present on the method.
+
+=== Deprecations and removals
+
+The `ELResolver` `getFeatureDescriptors()` method is deprecated in Expression Language 5.0, with removal planned for Expression Language 6.0. A new default implementation that returns null is added. This update ensures that custom `ELResolver` implementations do not need to implement the method.
+
+The deprecated and misspelled `MethodExpression.isParmetersProvided()` method is removed from the API.
+
+For more information, see the https://jakarta.ee/specifications/expression-language/5.0/apidocs/jakarta.el/module-summary.html[Jakarta Expression Language 5.0 Javadoc].
+
+[#pages]
+== Differences between Jakarta Server Pages and 3.1 and 3.0 
+
+The feature:pages-3.1[display=Jakarta Server Pages 3.1] feature provides support for the https://jakarta.ee/specifications/pages/3.1/jakarta-server-pages-spec-3.1.html[Jakarta Server Pages 3.1] and https://jakarta.ee/specifications/tags/3.0/jakarta-tags-spec-3.0.html[Jakarta Standard Tag Library 3.0] specifications. This release includes updates for Expression Language identifiers and resolvers, new tag URIs, and more.
+
+=== Finding unknown identifiers
+
+This release adds a new option to find unknown Expression Language identifiers. When this option is enabled, a `PropertyNotFoundException` occurs if an unknown identifier is found. Previously, unknown identifiers were rendered as empty strings ("") and were difficult to identify. You can enable this option by using page directives, tag directives, or as a JSP Property Group in the `web.xml` file. 
+
+To enable this option by using page or tag directives, set the `errorOnELNotFound` attribute to `true`, as shown in the following example.
+
+----
+<%@ page errorOnELNotFound="true" %>
+----
+
+To enable this option byn using a JSP Property Group in the `web.xml` file, set the `error-on-el-not-found` element to `true`, as shown in the following example.
+
+[source,xml]
+----
+<jsp-property-group>
+   <url-pattern>*.jsp</url-pattern>
+   <error-on-el-not-found>true</error-on-el-not-found>
+</jsp-property-group>
+----
+
+For more information, see https://jakarta.ee/specifications/pages/3.1/jakarta-server-pages-spec-3.1.html#_Unknown_EL_Identifiers[Unknown EL Identifiers] in the Jakarta Server Pages specification.
+
+=== New Expression Language Resolvers 
+
+Expression Language Resolvers are updated to improve handling of imports and unresolved variables. Two new resolvers are available in this release. 
+
+ImportELResolver::
+This new import resolver, which was refactored from the `ScopedAttributeELResolver` class, makes any class or package imports from the `import` attribute available to the expression language environment. Previously, imports were available only to the scripting environment and if an expression used an import class, it resolved to an empty string. For more information, see https://jakarta.ee/specifications/pages/3.1/apidocs/jakarta.servlet.jsp/jakarta/servlet/jsp/el/importelresolver[ImportELResolver].
+
+NotFoundELResolver:: 
+This resolver always resolves a variable when other resolvers do not. It returns `null` by default, but you can alter this behavior by using the previously mentioned `error-on-el-not-found` element. For more information, see https://jakarta.ee/specifications/pages/3.1/apidocs/jakarta.servlet.jsp/jakarta/servlet/jsp/el/notfoundelresolver[NotFoundELResolver].
+
+=== Import updates
+
+Default and implicit imports for the scripting environment now also apply to the expression language environment. These default imports are `java.lang.\*`, `jakarta.servlet.*`, `jakarta.servlet.jsp.\*`, and `jakarta.servlet.http.*`.
+
+=== Namespace updates
+
+The Jakarta Tag URIs now use the `jakarta.tags.\*` pattern. Although support for the previous `\http://xmlns.jcp.org/jsp/jstl/*` pattern is maintained for backwards compatibility, it is recommended to update your applications to use these new URIs. The following example shows the `taglib` directive with the new URIs.
+
+----
+<%@ taglib prefix="c" uri="jakarta.tags.core" %> 
+<%@ taglib prefix="x" uri="jakarta.tags.xml" %> 
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %> 
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>" 
+<%@ taglib prefix="sql" uri="jakarta.tags.sql" %> 
+----
+For more information, see the https://jakarta.ee/specifications/tags/3.0/tagdocs/[Jakarta Tags doc].
+
+=== Deprecations
+
+The `isThreadSafe` directive is deprecated due to the removal of the `SingleThreadModel` interface in the Servlet 6.0 API. A workaround is implemented, but significant performance impacts might occur. Use of the `isThreadSafe` directive in Pages 3.1 is discouraged.
+
+The `jsp:plugin`, `jsp:params`, and `jsp:fallback` actions are deprecated and are not operational because current browsers no longer support the elements that are generated by the `jsp:plugin` and related actions.
+
+[#batch]
+== Differences between Jakarta Batch 2.0 and 2.1
+
+The updates in Jakarta Batch 2.1 primarily focus on improved integration with Context Dependency Injection (CDI). The discovery of Batch artifacts is now standardized with CDI, which was not fully defined in the specification previously.
+
+=== Updates for the @BatchProperty annotation
+
+The @BatchProperty annotation is expanded to allow injection of the following types: `Boolean`, `Short`, `Integer`, `Long`, `Float`, and `Double`. Previously, this annotation could inject only a `String` value. The following example demonstrates the newly added injection types.
+
+[source,java]
+----
+@Inject @BatchProperty(name="b1") Boolean b1;
+@Inject @BatchProperty(name="s1") Short s1;
+@Inject @BatchProperty(name="i1") Integer i1;
+@Inject @BatchProperty(name="l1") Long l1;
+@Inject @BatchProperty(name="f1") Float f1;
+@Inject @BatchProperty(name="d1") Double d1;
+----
+
+=== Default injection for the JobOperator interface 
+
+Previously, the default `JobOperator` interface was made available only from the `BatchRuntime.getJobOperator()` static factory method. In Jakarta Batch 2.1 and later, if an injection point for a `JobOperator`  interface exists and no user-supplied implementation is found, the default `JobOperator` instance is injected automatically. The following example demonstrates the default injection for the `JobOperator` interface.
+
+[source,java]
+----
+@Inject JobOperator jobOperator;
+----
+
+[#bind]
+== Differences between Jakarta XML Binding 4.0 and 3.0
+
+The feature:xmlBinding-4.0[display=Jakarta XML Binding 4.0] feature gives you the option to switch to a third-party implementation and removes support for the Validator API.
+
+=== Switch to a third-party implementation
+
+In Jakarta XML Binding 4.0, you can specify the `jakarta.xml.bind.JAXBContextFactory` property  to switch to a preferred third-party implementation. The `xmlBinding-4.0` feature then uses the specified implementation instead of the reference implementation. Consider the following notes when you choose a third-party implementation.
+
+If you set the `jakarta.xml.bind.JAXBContextFactory` property, you must add the specified third-party implementation to the application class path. Otherwise, a `java.lang.ClassNotFoundException` exception occurs. Furthermore, the third-party implementation must be shared between all applications that are running on the JVM. Any application that is running on the JVM that does not have the implementation added to its class path encounters a `java.lang.ClassNotFoundException` exception.
+
+=== Removal of the Validator API
+
+The `xmlBinding-4.0` feature does not support the `jakarta.xml.bind.Validator` APIs. Any application that uses this API must either remove it or replace it with a `SchemaValidation` instance. The following examples demonstrate how to use a `SchemaValidation` instance as a replacement for a Validator API.
+
+[source,java]
+----
+SchemaFactoryschemaFactory= SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI); 
+Schema dataObjectSchema= schemaFactory.newSchema(new File("dataObjectSchema.xml")); jaxbUnmarshaller.setSchema(dataObjectSchema)
+----
+
+For more information, see the https://jakarta.ee/specifications/xml-binding/4.0/jakarta-xml-binding-spec-4.0.html[Jakarta XML Binding 4.0 specification].
+
+[#mail]
+== Differences between Jakarta Mail 2.1 and 2.0
+
+The feature:mail-2.1[display=Jakarta Mail 2.1] feature introduces the `jakarta.mail.util.StreamProvider` interface. This new interface from the Mail 2.1 specification makes it possible to obtain a `StreamProvider` instance, which provides access to the encoders and decoders that are supported by the `mail-2.1` runtime. You can obtain instances of the `StreamProvider` from the `jakarta.mail.Session.getStreamProvider()` method. 
+
+For more information, see the https://jakarta.ee/specifications/mail/2.1/jakarta-mail-spec-2.1.html[Jakarta Mail 2.1 specification].
+
+[#socket]
+== Differences between Jakarta WebSocket 2.1 and 2.0
+
+The feature:websocket-2.1[display=Jakarta WebSocket 2.1] feature implements changes for specification APIs and methods. It also includes updates to the handling of user properties and the setting of the client SSL context.
+
+=== API replacement for the  WsWsocServerContainer#upgrade SPI
+
+In Jakarta WebSocket 2.1, you can programmatically upgrade your HTTP requests to a WebSocket connection by using the new link:https://jakarta.ee/specifications/websocket/2.1/apidocs/server/jakarta/websocket/server/servercontainer#upgradeHttpToWebSocket(java.lang.Object,java.lang.Object,jakarta.websocket.server.ServerEndpointConfig,java.util.Map)[jakarta.websocket.server.ServerContainer#upgradeHttpToWebSocket()] API method. This method replaces the `com.ibm.websphere.wsoc.WsWsocServerContainer` SPI, which is now deprecated, with plans to remove it in the next WebSocket release. However, this SPI is still available with the Jakarta WebSocket feature version 2.0 and earlier.
+
+=== Updates for for handling of user properties
+
+The WebSocket 2.1 release includes changes for link:https://jakarta.ee/specifications/websocket/2.1/apidocs/server/jakarta/websocket/session#getUserProperties()[user properties]. The user properties for server sessions are initially populated by the `ServerEndpointConfig.getUserProperties()` method. This method enables endpoints to retrieve properties that might be set in an overridden link:https://jakarta.ee/specifications/websocket/2.1/apidocs/server/jakarta/websocket/server/serverendpointconfig.configurator#modifyHandshake(jakarta.websocket.server.ServerEndpointConfig,jakarta.websocket.server.HandshakeRequest,jakarta.websocket.HandshakeResponse)[ServerEndpointConfig.Configurator#modifyHandshake] call for the incoming request​. 
+
+Similarly, link:https://jakarta.ee/specifications/websocket/2.1/apidocs/client/jakarta/websocket/session#getUserProperties()[user properties for client sessions] are populated with the  `EndpointConfig.getUserProperties()` method. These initial contents are shallow copies, which means that `ClientEndpointConfig#getUserProperties` and `ServerEndpointConfig#getUserProperties()` instances are now handled per endpoint, per WebSocket session. Properties are no longer global between all endpoint instances as they were in previous WebSocket versions. 
+
+=== Client SSL configuration
+Starting with WebSocket 2.1, applications can set their `SSLContext` class by using a link:https://jakarta.ee/specifications/websocket/2.1/apidocs/client/jakarta/websocket/clientendpointconfig.builder#sslContext(javax.net.ssl.SSLContext)[jakarta.websocket.ClientEndpointConfig.Builder#sslContext]​ instance, which Liberty uses to establish the `wss` connection to a server. This option overrides all Liberty server SSL configurations and must be used with caution. It is recommended to enable SSL communication in the `server.xml` file by enabling the feature:transportSecurity[display=Transport Security] feature. Also, you can configure SSL by setting the config:wsocOutbound[] attribute in the `server.xml` file.
+
+=== Other changes
+
+The following changes are effective starting with WebSocket 2.1.
+
+* A getter is available for the link:https://jakarta.ee/specifications/websocket/2.1/apidocs/server/jakarta/websocket/server/serverendpointconfig.configurator#getContainerDefaultConfigurator()[jakarta.websocket.server.ServerEndpointConfig.Configurator#getContainerDefaultConfigurator()] default platform configurator.
+* The restriction that endpoints must be added during application deployment is removed. Starting with version 2.1, new endpoints can be added at any time. 
+* The link:https://jakarta.ee/specifications/websocket/2.1/apidocs/client/jakarta/websocket/session#getRequestURI()[jakarta.websocket.Session.getRequestURI()] method returns the full URI String from the protocol to the query string, if the string is present.
+
+For more information, see the https://jakarta.ee/specifications/websocket/2.1/jakarta-websocket-spec-2.1.html[Jakarta WebSocket 2.1] specification.
+
+== See also
+
+* xref:jakarta-ee.adoc[Jakarta EE overview]
