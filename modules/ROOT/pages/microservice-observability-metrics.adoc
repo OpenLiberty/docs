@@ -16,10 +16,15 @@
 Open Liberty uses MicroProfile Metrics to expose metrics that describe the internal state of many Open Liberty components.
 MicroProfile Metrics provides a `/metrics` endpoint from which you can access all metrics that are emitted by an Open Liberty runtime and deployed applications.
 
-When an application is running, you can view metric data from any browser by accessing the `metrics` endpoint, for example, `\https://localhost:9443/metrics`, where `9443` is the port number for your application. You can narrow the scope of the metrics by using the `scope` query parameter with the `metrics` endpoint to specify the metric registry scope. For example, to view the metric data for the `base` metric registry, use the `/metrics?scope=base` endpoint. This pattern is used to access all runtime-provided scopes  (`base`, `application`, and `vendor`) and any <<customscope, user-defined metric registry scopes>>. For MicroProfile Metrics 4.0 and earlier, only runtime-provided scopes are available and path parameters are used to narrow down metric data. The endpoints are `/metrics/base`, `/metrics/application`, and `/metrics/vendor`.
+When MicroProfile Metrics is enabled and an application is running, you can view metric data from any browser by accessing the `/metrics` endpoint. An example of this endpoint is `\https://localhost:9443/metrics`, where `9443` is the port number for your application. 
+
+You can narrow the scope of the metrics by using the `scope` query parameter with the `/metrics` endpoint to specify the metric registry scope. For example, to view the metric data for the `base` metric registry, use the `/metrics?scope=base` endpoint. This pattern is used to access all runtime-provided scopes  (`base`, `application`, and `vendor`) and any <<customscope, user-defined metric registry scopes>>. 
+
+For MicroProfile Metrics 4.0 and earlier, only runtime-provided scopes are available and path parameters are used to narrow the scope of metric data. The endpoints are `/metrics/base`, `/metrics/application`, and `/metrics/vendor`.
+
 For more information about metrics endpoints, see xref:introduction-monitoring-metrics.adoc#endpoint[MicroProfile Metrics and the metrics endpoint].
 
-By default, metric data is emitted in https://prometheus.io/docs/instrumenting/exposition_formats/[Prometheus format]. Operations teams can gather the metrics and store them in a database by using tools like Prometheus. They can then visualize the metric data for analysis in dashboards such as https://grafana.com[Grafana]. Starting in version 5.0, MicroProfile Metrics xref:micrometer-metrics.adoc[integrates with Micrometer] so you can send your metrics data to the third-party monitoring tool of your choice.
+By default, metric data is emitted in https://prometheus.io/docs/instrumenting/exposition_formats/[Prometheus format]. Operations teams can gather the metrics and store them in a database by using tools like Prometheus. They can then visualize the metric data for analysis in dashboards such as https://grafana.com[Grafana]. Starting in version 5.0, MicroProfile Metrics xref:micrometer-metrics.adoc[uses embedded Micrometer metrics technology] so you can send your metrics data to the third-party monitoring tool of your choice.
 
 For a list of metrics that are available in Open Liberty, see the xref:metrics-list.adoc[Metrics reference list].
 
@@ -34,7 +39,7 @@ The simplest way to add metrics to your application is by using annotations.
 [#customscope]
 === User-defined metric registry scopes
 
-Starting in MicroProfile Metrics 5.0, in addition to the default `application` metric registry scope, you can define your own metric registry scope to register metrics to. You can define your own scope by specifying the `scope` parameter for metric annotations or by injecting a `MetricRegistry` with the `RegistryScope` annotation and specifying the `scope` parameter. If you don't define a value for the `scope` parameter in the metric annotation or `RegistryScope` annotation, the default scope is `application`.
+Starting in MicroProfile Metrics 5.0, in addition to the default `application` metric registry scope, you can define your own metric registry scope to register metrics to. Define your own scope either by specifying the `scope` parameter for metric annotations or by injecting a `MetricRegistry` with the `RegistryScope` annotation and specifying the `scope` parameter. If you don't define a value for the `scope` parameter in the metric annotation or `RegistryScope` annotation, the default scope is `application`.
 
 The following example uses the `@Counted` metric annotation to define a `customScope` user-defined scope.
 
@@ -57,7 +62,7 @@ MetricRegistry customMetricRegistry;
 
 === Metric Tags
 
-With MicroProfile metrics, you can logically group metrics that track similar statistics by instrumenting them with tags. Tags consist of a name and a value. You can instrument multiple metrics of the same type with tags of the same name but different values to group them together. 
+With MicroProfile metrics, you can logically group metrics that track similar statistics by instrumenting the metrics with tags. Tags consist of a name and a value. You can group multiple metrics of the same type together by instrumenting them with tags of the same name but different values to group them together. 
 
 For example, when you use counters, you can create multiple counters named `methodCounter` that return the count of the method that is identified by the tag.
 
@@ -102,8 +107,8 @@ The following sections describe metric types that are available and how their co
 * <<meter,Meter>>
 * <<timer,Timer>>
 * <<histogram,Histogram>>
-* <<counter,Counter>> (MicroProfile Metrics 5.0 only)
-* <<gauge,Gauge>> (MicroProfile Metrics 5.0 only)
+* <<counter,Counter>> 
+* <<gauge,Gauge>> 
 * <<concurrentgauge,Concurrent gauge>> (MicroProfile Metrics 2.0-4.0 only)
 * <<simpletimer,Simple timer>> (MicroProfile Metrics 2.3-4.0 only)
 
@@ -155,7 +160,7 @@ public String donateAmountViaCreditCard(@FormParam("amount") Long amount, @FormP
 }
 ----
 
-Starting in MicroProfile Metrics 5.0, you can adjust the the percentile precision of the `Timer` metrics by using the `mp.metrics.smallrye.timer.precision` MicroProfile Config property. The property accepts a value from 1 to 5 and is defaulted to 3 if no value is specified. A greater value results in more exact percentile calculations, but at a greater memory cost. For more information, see xref:microprofile-config-properties.adoc#metrics[MicroProfile Config properties: MicroProfile Metrics].
+Starting in MicroProfile Metrics 5.0, you can adjust the percentile precision of the `Timer` metrics by using the `mp.metrics.smallrye.timer.precision` MicroProfile Config property. The property accepts a value from 1 to 5 and is defaulted to 3 if no value is specified. A greater value results in more exact percentile calculations, but at a greater memory cost. For more information, see xref:microprofile-config-properties.adoc#metrics[MicroProfile Config properties: MicroProfile Metrics].
 
 ////
 
@@ -229,6 +234,7 @@ donationDistribution_Dollars_sum{mp_scope="application",tier="integration",} 918
 # TYPE donationDistribution_Dollars_max gauge
 donationDistribution_Dollars_max{mp_scope="application",tier="integration",} 1000.0
 ----
+Starting in MicroProfile Metrics 5.0, you can adjust the percentile precision of the `Histogram` metrics by using the `mp.metrics.smallrye.histogram.precision` MicroProfile Config property. The property accepts a value from 1 to 5 and is defaulted to 3 if no value is specified. A greater value results in more exact percentile calculations, but at a greater memory cost. For more information, see xref:microprofile-config-properties.adoc#metrics[MicroProfile Config properties: MicroProfile Metrics].
 
 ////
 MicroProfile Metrics 4.0 and earlier histogram example::
@@ -275,10 +281,8 @@ In MicroProfile 4.0 and earlier, the following JSON response is also available f
 }
 ----
 
-Starting in MicroProfile Metrics 5.0, you can adjust the the percentile precision of the `Histogram` metrics by using the `mp.metrics.smallrye.histogram.precision` MicroProfile Config property. The property accepts a value from 1 to 5 and is defaulted to 3 if no value is specified. A greater value results in more exact percentile calculations, but at a greater memory cost. For more information, see xref:microprofile-config-properties.adoc#metrics[MicroProfile Config properties: MicroProfile Metrics].
-
 [#counter]
-=== Counter (available starting with MicroProfile Metrics 5.0)
+=== Counter 
 A counter metric keeps an incremental count.
 The initial value of the counter is set to zero, and the metric increments each time that an annotated element is started.
 
@@ -296,7 +300,7 @@ public String noDonation() {
 ----
 
 [#gauge]
-=== Gauge (available starting with MicroProfile Metrics 5.0)
+=== Gauge 
 You implement a gauge metric so that the gauge can be sampled to obtain a particular value.
 For example, you might use a gauge to measure CPU temperature or disk usage.
 
@@ -317,7 +321,7 @@ public Long getTotalDonations(){
 [#concurrentgaugeOld]
 === Concurrent gauge (available only in MicroProfile Metrics 2.0-4.0)
 A concurrent gauge metric counts the concurrent invocations of an annotated element.
-This metric also tracks the high and low watermarks of each invocation.
+This metric also tracks the high and low watermarks of each invocation. This metric type is removed starting in MicroProfile Metrics 5.0.
 
 Use the `@ConcurrentGauge` annotation to mark a method as a concurrent gauge.
 The concurrent gauge increments when the annotated method is called and decrements when the annotated method returns, counting current invocations of the annotated method:
@@ -337,10 +341,10 @@ public void donationLiveStream() {
 [#simpletimer]
 === Simple timer (available only in MicroProfile Metrics 2.3-4.0)
 A simple timer metric tracks the elapsed timing duration and invocation counts.
-This type of metric is available link:/blog/2020/04/09/microprofile-3-3-open-liberty-20004.html#mra[beginning in MicroProfile Metrics 2.3].
+This type of metric is available link:/blog/2020/04/09/microprofile-3-3-open-liberty-20004.html#mra[beginning in MicroProfile Metrics 2.3]. It is removed starting in MicroProfile Metrics 5.0.
 The simple timer is a lightweight alternative to the performance-heavy timer metric.
 Beginning in MicroProfile Metrics 3.0, the simple timer metric also tracks the largest and smallest recorded duration of the previous complete minute.
-A complete minute is defined as `00:00:00.000` seconds to `00:00:59.999` seconds. This metric type is removed starting in MicroProfile Metrics 5.0.
+A complete minute is defined as `00:00:00.000` seconds to `00:00:59.999` seconds. 
 
 Use the `@SimplyTimed` annotation to mark a method, constructor, or type as a simple timer.
 The simple timer tracks how frequently the annotated object is started and how long the invocations take to complete:
