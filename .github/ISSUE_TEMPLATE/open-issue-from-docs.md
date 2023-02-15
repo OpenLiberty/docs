@@ -1,6 +1,6 @@
 ---
-name: Open Issue from Docs
-about: Ask for a certain description of the issue being reported
+name: Open an issue in the Docs repo
+about: Open an issue to report a problem with the docs. Please provide a detailed description of the issue and links to the topic where you encountered it.
 title: ''
 labels: ''
 assignees: ''
