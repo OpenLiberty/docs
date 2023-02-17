@@ -28,14 +28,14 @@ To verify an Open Liberty release package locally, you must first download an Op
 
 2. Obtain the public key file by using the public key link on the Get Started page. Save the public key file from your browser as a `.pem` file.
 
-3. After you download the files, you can run the following https://www.openssl.org/docs/man1.1.1/man1/openssl-dgst.html[OpenSSL command] from the command line to verify the package.
+3. After you download the files, you can run the following https://github.com/sigstore/cosign/tree/v1.13.1#readme[cosign command] from the command line to verify the package.
 
 [source,sh]
 ----
-openssl dgst -sha256 -verify WebSphereLiberty_06-02-2021.pem -signature openliberty-javaee8-22.0.0.1.zip.sig openliberty-javaee8-22.0.0.1.zip
+cosign verify-blob --key WebSphereLiberty_02-13-2023.pem --signature testSigs/openliberty-23.0.0.2.zip.cosign.sig openliberty-23.0.0.2.zip
 ----
 
-This example uses the `WebSphereLiberty_06-02-2021.pem` public key file and `openliberty-javaee8-22.0.0.1.zip.sig` signature file to verify the `openliberty-javaee8-22.0.0.1.zip` release package.
+This example uses the `WebSphereLiberty_02-13-2023.pem` public key file and `openliberty-23.0.0.2.zip.cosign.sig` signature file to verify the `openliberty-23.0.0.2.zip` release package.
 Replace the signature file and package version values according to the package that you want to verify.
 
 === Results
@@ -51,11 +51,11 @@ Verified OK
 To verify Open Liberty packages on Maven Central, you must first download the public key to your local machine by using https://gnupg.org[the gpg or gpg2 command].
 You must edit the trust level for the key owner. You can then use this key to remotely verify an Open Liberty .asc release file on Maven Central.
 
-1. Run the following command to download the public key file. The key ID value for the public key is `46102B8E`.
+1. Run the following command to download the public key file. The key ID value for the public key is `9E68CA00`.
 +
 [source,sh]
 ----
-gpg2 --keyserver hkp://keyserver.ubuntu.com --recv-keys 46102B8E
+gpg2 --keyserver hkp://keyserver.ubuntu.com --recv-keys 9E68CA00
 ----
 
 2. Use the `gpg2 --edit-key` command to https://www.gnupg.org/gph/en/manual/x334.html[set the trust for the key owner] to 5.
@@ -63,16 +63,15 @@ gpg2 --keyserver hkp://keyserver.ubuntu.com --recv-keys 46102B8E
 The following examples show the `gpg2 --edit-key` command and the console output that it generates.
 +
 ----
-$ gpg2 --edit-key "WebSphere Liberty"
-gpg (GnuPG/MacGPG2) 2.2.32; Copyright (C) 2021 Free Software Foundation, Inc.
+[root]# gpg2 --edit-key "International Business Machines Corporation psirt@us.ibm.com"
+gpg (GnuPG) 2.2.20; Copyright (C) 2020 Free Software Foundation, Inc.
 This is free software: you are free to change and redistribute it.
 There is NO WARRANTY, to the extent permitted by law.
 
-pub rsa4096/4D210F6946102B8E
-   created: 2021-06-02 expires: never    usage: SCEA
-   trust: ultimate   validity: ultimate
-[ultimate] (1). WebSphere Liberty (Works for IBM) <contbld@uk.ibm.com>
-[ultimate] (2) WebSphereLiberty
+pub rsa4096/BD9FD5BE9E68CA00
+created: 2023-02-10 expires: 2027-02-09 usage: SCE
+trust: unknown validity: unknown
+[ unknown] (1). International Business Machines Corporation psirt@us.ibm.com
 ----
 +
 When you run the `gpg2 --edit-key` command, the console displays information about the key owner, followed by an internal command prompt.
@@ -80,40 +79,34 @@ At this prompt, enter the `trust` command, as shown in the following example.
 +
 ----
 gpg> trust
-pub rsa4096/4D210F6946102B8E
-   created: 2021-06-02 expires: never    usage: SCEA
-   trust: ultimate   validity: ultimate
-[ultimate] (1). WebSphere Liberty (Works for IBM) <contbld@uk.ibm.com>
-[ultimate] (2) WebSphereLiberty
+pub rsa4096/BD9FD5BE9E68CA00
+created: 2023-02-10 expires: 2027-02-09 usage: SCE
+trust: unknown validity: unknown
+[ unknown] (1). International Business Machines Corporation psirt@us.ibm.com
 ----
 +
 You are then prompted to select a level of trust. Enter `5` and confirm your choice by entering `y`.
 +
 ----
-Please decide how far you trust this user to correctly verify other users keys
+Please decide how far you trust this user to correctly verify other users' keys
 (by looking at passports, checking fingerprints from different sources, etc.)
- 1 = I don't know or won't say
- 2 = I do NOT trust
- 3 = I trust marginally
- 4 = I trust fully
- 5 = I trust ultimately
- m = back to the main menu
+
+1 = I don't know or won't say
+2 = I do NOT trust
+3 = I trust marginally
+4 = I trust fully
+5 = I trust ultimately
+m = back to the main menu
 
 Your decision? 5
 Do you really want to set this key to ultimate trust? (y/N) y
-
-pub rsa4096/4D210F6946102B8E
-   created: 2021-06-02 expires: never    usage: SCEA
-   trust: ultimate   validity: ultimate
-[ultimate] (1). WebSphere Liberty (Works for IBM) <contbld@uk.ibm.com>
-[ultimate] (2) WebSphereLiberty
 ----
 
-3. Verify the file by running the `gpg2 --verify` command. The following example verifies the Open Liberty 22.0.0.1 release package.
+3. Verify the file by running the `gpg2 --verify` command. The following example verifies the Open Liberty 23.0.0.2 release package.
 +
 [source,sh]
 ----
-gpg2 --verify openliberty-runtime-22.0.0.1.zip.asc
+gpg2 --verify openliberty-runtime-23.0.0.2.zip.asc
 ----
 
 === Results
@@ -122,9 +115,9 @@ If the verification is successful, the command produces console output that is s
 
 [source,sh]
 ----
-gpg: assuming signed data in 'openliberty-runtime-22.0.0.1.zip'
-gpg: Signature made Wed Nov 24 09:02:44 2021 EST
-gpg:        using RSA key 91FFD9A642D060B66B802B9D4D210F6946102B8E
+gpg: assuming signed data in 'openliberty-runtime-23.0.0.2.zip'
+gpg: Signature made Fri Feb 10 09:02:44 2023 EST
+gpg:        using RSA key 91FFD9A642D060B66B802B9D4D210F699E68CA00
 gpg: Good signature from "WebSphere Liberty (Works for IBM) <contbld@uk.ibm.com>" [ultimate]
 gpg:        aka "WebSphereLiberty" [ultimate]
 ----
