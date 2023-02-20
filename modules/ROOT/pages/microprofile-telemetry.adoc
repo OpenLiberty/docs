@@ -40,14 +40,93 @@ This configuration results in spans for the example service that are exported to
 Alternatively, you can specify the configuration by using  environment variables in your `server.env` file. For more information, see the https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/sdk-environment-variables.md[OpenTelemetry environment variable specification].
 
 === Manual instrumentation
-Automatic instrumentation is available only for Jakarta RESTful web service applications. To create spans for other operations, such as database calls, you can add manual instrumentation to the source code for those operations. For more information, see the https://opentelemetry.io/docs/instrumentation/java/manual[OpenTelemetry manual instrumentation documentation].
+Automatic instrumentation is available only for Jakarta RESTful web service applications. To create spans for other operations, such as database calls, you can add manual instrumentation to the source code for those operations by using the https://www.javadoc.io/doc/io.opentelemetry/opentelemetry-api/1.19.0/io/opentelemetry/api/trace/package-summary.html[OpenTelemetry API]. However, before you manually instrument your code, you must complete the following prerequisites.
+
+- Enable third-party APIs for your application by adding the following code in your `server.xml` file:
++
+[source,xml]
+----
+<webApplication id="app-name" location="app-name.war">
+    <classloader apiTypeVisibility="+third-party"/>
+</webApplication>
+----
+- Add the `opentelemetry` API as a provided dependency to your build path. For example, with maven, add the following code to your `pom.xml` file:
++
+[source,xml]
+----
+<dependency>
+    <groupId>io.opentelemetry</groupId>
+    <artifactId>opentelemetry-api</artifactId>
+    <version>1.19.0</version>
+    <scope>provided</scope>
+</dependency>
+----
+
+After you complete those prerequisites, you're ready to instrument your code. The following examples show configuration with the OpenTelemetry API.
+
+- Add extra information, such as the user ID, to the current span. Any information you add to a span is visible when you look at traces on your trace server.
++
+[source,java]
+----
+private static final AttributeKey<String> USER_ID_ATTR = AttributeKey.stringKey("userId");
+
+@Inject private Span currentSpan;
+
+@GET
+public String myMethod() {
+    ...
+    currentSpan.setAttribute(USER_ID_ATTR, getUserId());
+    ...
+}
+----
+
+- Create a subspan around a particular operation, such as querying a database. This subspan allows you to see how long it took and the order in which it occurred relative to other spans.
++
+[source,java]
+----
+@Inject private Tracer tracer;
+
+@GET
+public String myMethod() {
+    ...
+    Span newSpan = tracer.spanBuilder("QueryDatabase").startSpan();
+    try (Scope s = newSpan.makeCurrent()) {
+        queryDatabase();
+    } finally {
+        newSpan.end();
+    }
+    ...
+}
+----
+
+The following important considerations apply to manual instrumentation:
+
+- You must call the `.end()` method on any span you create, otherwise the span won't be recorded.
+- The current span is used as the parent for any new spans that are created. Therefore, usually when you create a , you also want to make it current. However, you must close the `Scope` instance that is returned by the  `Span.makeCurrent()` method. You can close a `Scope` instance by specifying  a try-with-resources block, as shown in the previous example for creating a subspan.
+
+For more information, see the https://opentelemetry.io/docs/instrumentation/java/manual[OpenTelemetry manual instrumentation documentation]. However, remember that when you using the MicroPRofile Telemetry feature in Open Liberty, you must obtain the `OpenTelemetry` and `Tracer` objects by injecting them, not by creating your own.
 
 === Agent instrumentation
-The OpenTelemetry Java agent enables Java applications to generate and capture telemetry data automatically. To enable the java agent on your Open Liberty application, https://github.com/open-telemetry/opentelemetry-java-instrumentation#getting-started[download the latest agent version from OpenTelemetry] and add the following line to your `jvm.options` file.
+The https://github.com/open-telemetry/opentelemetry-java-instrumentation[OpenTelemetry Instrumentation for Java] project provides a Java agent JAR file that can be attached to any Java 8+ application to dynamically inject bytecode that adds telemetry support to popular open source libraries and frameworks. If you are using any of the https://github.com/open-telemetry/opentelemetry-java-instrumentation/blob/main/docs/supported-libraries.md#libraries--frameworks[supported libraries] in your application, you can use this agent with Open Liberty to instrument them.
+
+To enable the java agent on your Open Liberty runtime, https://github.com/open-telemetry/opentelemetry-java-instrumentation#getting-started[download the latest agent version from OpenTelemetry] and add the following line to your `jvm.options` file.
 
 [subs=+quotes]
 ----
-java -javaagent: _path/to/opentelemetry-javaagent.jar_
+-javaagent: _path/to/opentelemetry-javaagent.jar_
 ----
 
 You can configure the agent with https://github.com/open-telemetry/opentelemetry-java-instrumentation#configuring-the-agent[environment variables and system properties]. You can find a list of supported libraries and frameworks in the https://github.com/open-telemetry/opentelemetry-java-instrumentation/blob/main/docs/supported-libraries.md#libraries--frameworks[Open Telemetry Java instrumentation documentation].
+
+The OpenTelemetry Java agent is a tool that is provided by the OpenTelemetry project. Although it is compatible with Open Liberty, it is a separate project and is subject to the following limitations:
+
+- Configuration works differently when you use the agent. https://opentelemetry.io/docs/instrumentation/java/automatic/agent-config/[Configuration of the agent is well documented], but the following aspects are different from configuration without the agent:
+    - Configuration is shared between all applications that are deployed to the server.
+    - Configuration properties are only read from system properties and environment variables. They are not read from MicroProfile Config configuration sources.
+    - Because the agent reads its configuration very early in the startup process, system properties are not read from the `bootstrap.properties` file. Alternatively, you can set system properties in the `jvm.options` file by using the following syntax: `-Dname=value`
+    - Implementations of https://www.javadoc.io/doc/io.opentelemetry/opentelemetry-sdk-extension-autoconfigure-spi/1.19.0/index.html[SPI extensions] within applications are ignored. For more information, see https://opentelemetry.io/docs/instrumentation/java/automatic/agent-config/#extensions[agent documentation for providing SPI extensions].
+- When you use the agent, it takes over the instrumentation of rest calls and methods that are annotated with `@WithSpan`. As a result, the created spans might be slightly different.
+- The agent is not compatible with https://www.ibm.com/docs/en/was-liberty/base?topic=security-java-2[Java 2 security].
+- Open Liberty uses many open source libraries internally. Some of these libraries might be automatically instrumented by the agent.
+
+
