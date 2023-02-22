@@ -16,8 +16,9 @@ In microservice applications, sources of latency or inaccuracy can be difficult 
 
 MicroProfile Telemetry is based on the https://opentelemetry.io/[OpenTelemetry project], which is a collection of open source vendor-agnostic tools, APIs, and SDKs for creating and managing telemetry data.
 
-One way to increase observability of an application is by emitting traces. Traces represent requests and consist of multiple spans. A span represents a single operation in a request and contains a name, time-related data, log messages, and metadata to gather data about what occurs during a transaction. MicroProfile Telemetry supports tracing data instrumentation in three different ways: automatic instrumentation, manual instrumentation, or agent instrumentation. The data can then be exported to tracing systems like https://www.jaegertracing.io/[Jaeger] or https://zipkin.io/[Zipkin].
+One way to increase observability of an application is by emitting traces. Traces represent requests and consist of multiple spans. A span represents a single operation in a request and contains a name, time-related data, log messages, and metadata to gather data about what occurs during a transaction. MicroProfile Telemetry supports tracing data instrumentation in three different ways: <<#auto, automatic instrumentation>>, <<#manual, manual instrumentation>>, or <<#agent, agent instrumentation>>. The data can then be exported to tracing systems like https://www.jaegertracing.io/[Jaeger] or https://zipkin.io/[Zipkin].
 
+[#auto]
 == Automatic instrumentation
 With automatic instrumentation, you can observe traces without modifying the source code in your Jakarta RESTful web service (formerly JAX-RS) applications. To start emitting traces with automatic instrumentation, enable the feature:mpTelemetry[display=MicroProfile Telemetry] feature in your `server.xml` file. By default, MicroProfile Telemetry tracing is off. To enable tracing, specify either the `otel.sdk.disabled=false` MicroProfile Config property or the `OTEL_SDK_DISABLED=false environment` environment variable for your server.
 
@@ -37,6 +38,7 @@ This configuration results in spans for the example service that are exported to
 
 Alternatively, you can specify the configuration by using  environment variables in your `server.env` file. For more information, see the https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/sdk-environment-variables.md[OpenTelemetry environment variable specification].
 
+[#manual]
 == Manual instrumentation
 Automatic instrumentation is available only for Jakarta RESTful web service applications. To create spans for other operations, such as database calls, you can add manual instrumentation to the source code for those operations by using the https://www.javadoc.io/doc/io.opentelemetry/opentelemetry-api/1.19.0/io/opentelemetry/api/trace/package-summary.html[OpenTelemetry API]. However, before you manually instrument your code, you must complete the following prerequisites.
 
@@ -97,6 +99,25 @@ public String myMethod() {
 }
 ----
 
+- Annotate methods in any Jakarta CDI beans by using the `@WithSpan` annotation. This annotation creates a new Span and establishes any required relationships with the current trace context. You can annotate method parameters with the `@SpanAttribute` annotation to indicate which method parameters are part of the trace, as shown in the following example.
+
+[source,java]
+----
+@ApplicationScoped
+class SpanBean {
+
+    @WithSpan("name")
+    void spanName() {
+       ...
+    }
+
+    @WithSpan
+    void spanArgs(@SpanAttribute(value = "arg") String arg) {
+       ...
+    }
+}
+----
+
 === Considerations for using manual instrumentation
 
 The following important considerations apply to manual instrumentation:
@@ -104,8 +125,9 @@ The following important considerations apply to manual instrumentation:
 - You must call the `.end()` method on any span you create, otherwise the span won't be recorded.
 - The current span is used as the parent for any new spans that are created. Therefore, when you create a span, you usually also want to make it current. However, you must close the `Scope` instance that is returned by the  `Span.makeCurrent()` method. You can close a `Scope` instance by specifying  a try-with-resources block, as shown in the previous example for creating a subspan.
 
-For more information, see the https://opentelemetry.io/docs/instrumentation/java/manual[OpenTelemetry manual instrumentation documentation]. However, remember that when you use the MicroProfile Telemetry feature in Open Liberty, you must obtain the `OpenTelemetry` and `Tracer` objects by injecting them, not by creating your own.
+For more information, see the https://opentelemetry.io/docs/instrumentation/java/manual[OpenTelemetry manual instrumentation documentation]. However, remember when you use the MicroProfile Telemetry feature in Open Liberty, you must obtain the `OpenTelemetry` and `Tracer` objects by injecting them, not by creating your own. Furthermore, be aware that this documentation includes information for the OpenTelemetry Metrics and Logging APIs, which are not supported by MicroProfile Telemetry.
 
+[#agent]
 == Agent instrumentation
 The https://github.com/open-telemetry/opentelemetry-java-instrumentation[OpenTelemetry Instrumentation for Java] project provides a Java agent JAR file that can be attached to any Java 8+ application to dynamically inject bytecode that adds telemetry support to popular open source libraries and frameworks. If you are using any of the https://github.com/open-telemetry/opentelemetry-java-instrumentation/blob/main/docs/supported-libraries.md#libraries--frameworks[supported libraries] in your application, you can use this agent with Open Liberty to instrument them.
 
