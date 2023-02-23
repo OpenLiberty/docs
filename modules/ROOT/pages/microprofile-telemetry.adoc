@@ -20,23 +20,29 @@ One way to increase observability of an application is by emitting traces. Trace
 
 [#auto]
 == Automatic instrumentation
-With automatic instrumentation, you can observe traces without modifying the source code in your Jakarta RESTful web service (formerly JAX-RS) applications. To start emitting traces with automatic instrumentation, enable the feature:mpTelemetry[display=MicroProfile Telemetry] feature in your `server.xml` file. By default, MicroProfile Telemetry tracing is off. To enable tracing, specify either the `otel.sdk.disabled=false` MicroProfile Config property or the `OTEL_SDK_DISABLED=false environment` environment variable for your server.
+With automatic instrumentation, you can observe traces without modifying the source code in your Jakarta RESTful web service (formerly JAX-RS) applications. To start emitting traces with automatic instrumentation, enable the feature:mpTelemetry[display=MicroProfile Telemetry] feature in your `server.xml` file. By default, MicroProfile Telemetry tracing is off. To enable tracing, specify either the `otel.sdk.disabled=false` MicroProfile Config property and any exporter configuration that your tracing service service requires.
 
-You can configure how MicroProfile Telemetry collects and exports traces by specifying configuration properties in any of the xref:external-configuration.adoc#default[config sources that are available to MicroProfile Config].
-
-For example, you might create a `microprofile-config.properties` file that specifies the following properties.
+For example, to export traces to a Jaeger server with the OpenTelemetry Protocol (OTLP) enabled, you might add the following entries to your `bootstrap.properties` file:
 
 [source,properties]
 ----
 otel.sdk.disabled=false
-otel.service.name=exampleServiceName
-otel.traces.exporter=jaeger
-otel.exporter.jaeger.endpoint=http://localhost:14250
+otel.traces.exporter=otlp
+otel.exporter.otlp.endpoint=http://localhost:4317/
 ----
 
-This configuration results in spans for the example service that are exported to Jaeger at the `\http://localhost:14250` endpoint. For more information about the available properties, see xref:microprofile-config-properties.adoc#telemetry[MicroProfile Config properties: MicroProfile Telemetry].
+To export traces to a Zipkin server, you can use the following properties instead:
 
-Alternatively, you can specify the configuration by using  environment variables in your `server.env` file. For more information, see the https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/sdk-environment-variables.md[OpenTelemetry environment variable specification].
+[source,properties]
+----
+otel.sdk.disabled=false
+otel.traces.exporter=zipkin
+otel.exporter.zipkin.endpoint=http://localhost:9411/api/v2/spans
+----
+
+You can configure how MicroProfile Telemetry collects and exports traces by specifying configuration properties in any of the xref:external-configuration.adoc#default[config sources that are available to MicroProfile Config]. Alternatively, to use environment variables instead of properties, make the key name uppercase and convert any punctuation to underscores. For example, the `otel.sdk.disabled=false` property is equivalent to the `OTEL_SDK_DISABLED=false` environment variable.
+
+For more information about the available properties, see xref:microprofile-config-properties.adoc#telemetry[MicroProfile Config properties: MicroProfile Telemetry].
 
 [#manual]
 == Manual instrumentation
