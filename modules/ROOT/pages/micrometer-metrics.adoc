@@ -45,22 +45,28 @@ The following example shows the `server.xml` file configuration for the shared l
 3. Set MicroProfile Config properties to enable and configure one or more user-provided Micrometer registry implementations.
 +
   - The properties to enable third-party implementations use the following syntax: `mp.metrics.<registry>.enabled`. The `<registry>` value is an identifying value that is designated for each individual Micrometer registry. For the respective values for each Micrometer registry, see the Micrometer metrics documentation. This configuration applies to all Micrometer registry implementations except for the Prometheus registry implementation, which is enabled by default when the Prometheus registry library and its dependencies are available. 
-  - For example, if you provide the Elastic Micrometer registry library and its dependencies, you must set the `mp.metrics.elastic.enabled` property  to `true` to render it active. You can set these properties in your `server.xml` file by using the config:variable[ ] configuration element. For more information about setting MicroProfile Config properties, see xref:external-configuration.adoc[External configuration of microservices]. 
-  - You can also set MicroProfile Config properties for each Micrometer registry to configure the connection to the associated monitoring tool. The properties use the following syntax: `mp.metrics.<registry>.<property>`,  where `<registry>` is the identifying value that is defined for that registry by Micrometer. 
-  -  For example, properties for the Elastic registry follow the  `mp.metrics.elastic.<property>` syntax. For information about the properties that are available for each registry, see the Micrometer documentation.
+  - For example, if you provide the Influx Micrometer registry library and its dependencies, you must set the `mp.metrics.influx.enabled` property  to `true` to render it active. You can set these properties in your `server.xml` file by using the config:variable[ ] configuration element. For more information about setting MicroProfile Config properties, see xref:external-configuration.adoc[External configuration of microservices].
+  - You can also set MicroProfile Config properties for each Micrometer registry to configure the connection to the associated monitoring tool. The properties use the following syntax: `mp.metrics.<registry>.<property>`,  where `<registry>` is the identifying value that is defined for that registry by Micrometer.
+  - For example, properties for the Influx registry follow the  `mp.metrics.influx.<property>` syntax. For information about the properties that are available for each registry, see the Micrometer documentation.
+
+Note that the Micrometer documentation for each Micrometer registry will list, as an example, the properties in a format compliant with Spring Boot's ingestion of these properties. The properties follows the syntax `management.metrics.export.<registry>.<property>`. The `<registry>` and `<property>` values correspond to the `<registry>` and `<property>` values used for the above MicroProfile Config properties. Certain properties that are listed may contain dashes. The underlying Micrometer library reads the properties in camel case format. For example, the Micrometer Influx registry documentation lists an `auto-create-db` property that is consumed by Spring Boot. The Micrometer library accepts it as `autoCreateDb`. The corresponding MicroProfile Config property would be `mp.metrics.influx.autoCreateDb`.
 +
-The following example shows the server.xml file configuration to declare MicroProfile Config properties for the Elastic Micrometer registry library by using the `variable` element
+The following example shows the server.xml file configuration to declare MicroProfile Config properties for the Influx Micrometer registry library by using the `variable` element
 +
 [source,xml]
 ----
-<variable name="mp.metrics.elastic.enabled" value="true" />
-<variable name="mp.metrics.elastic.index" value="micrometer-metrics" />
+<variable name="mp.metrics.influx.enabled" value="true" />
+<variable name="mp.metrics.influx.uri" value="http://localhost:8086" />
+<variable name="mp.metrics.influx.autoCreatedDb" value="true"/>
+<variable name="mp.metrics.influx.bucket" value="bucketName"/>
+<variable name="mp.metrics.influx.org" value="orgName"/>
+<variable name="mp.metrics.influx.token" value="<auth_token>" />
 ----
 
 [#example]
 === Micrometer configuration example 
 
-The following configuration example shows how to configure the MicroProfile Metrics 5.0 feature to use the Elastic and Prometheus Micrometer registries, as described in the previous section.
+The following configuration example shows how to configure the MicroProfile Metrics 5.0 feature to use the Influx and Prometheus Micrometer registries, as described in the previous section.
 
 In this example, a directory for the Micrometer libraries and dependencies at `/path/to/directory/with/micrometer/libraries` contains the following files:
 
@@ -70,17 +76,20 @@ In this example, a directory for the Micrometer libraries and dependencies at `/
 // Micrometer Prometheus registry
     - micrometer-registry-prometheus-1.9.3.jar
 // Micrometer Prometheus registry's dependencies
-    - HdrHistogram-2.1.12.jar
-    - LatencyUtils-2.0.3.jar
     - simpleclient-0.15.0.jar
     - simpleclient_common-0.15.0.jar
     - simpleclient_tracer_common-0.15.0.jar
     - simpleclient_tracer_otel-0.15.0.jar
     - simpleclient_tracer_otel_agent-0.15.0.jar
-// Micrometer Elastic registry
-    - micrometer-registry-elastic-1.9.3.jar
-// Micrometer Elastic registry dependencies
+// Micrometer Influx registry
+    - micrometer-registry-influx-1.9.3.jar
+// Micrometer Influx registry dependencies
+    - hamcrest-core-1.3.jar
+    - junit-4.11.jar
     - slf4j-api-1.7.36.jar
+// Shared dependencies between Influx and Prometheus Micrometer registries
+    - HdrHistogram-2.1.12.jar
+    - LatencyUtils-2.0.3.jar
 ----
 
 The following example shows the corresponding `server.xml` file configuration to specify the enabling Micrometer properties and provide the shared library.
@@ -95,8 +104,12 @@ The following example shows the corresponding `server.xml` file configuration to
 
 <mpMetrics authentication="false" libraryRef="micrometerLibrary"/>
 
-<variable name="mp.metrics.elastic.enabled" value="true" />
-<variable name="mp.metrics.elastic.index" value="micrometer-metrics" />
+<variable name="mp.metrics.influx.enabled" value="true" />
+<variable name="mp.metrics.influx.uri" value="http://localhost:8086" />
+<variable name="mp.metrics.influx.autoCreatedDb" value="true"/>
+<variable name="mp.metrics.influx.bucket" value="bucketName"/>
+<variable name="mp.metrics.influx.org" value="orgName"/>
+<variable name="mp.metrics.influx.token" value="<auth_token>" />
 
 <library id="micrometerLibrary">
     <fileset dir="/path/to/directory/with/micrometer/libraries" includes="*.jar" />
