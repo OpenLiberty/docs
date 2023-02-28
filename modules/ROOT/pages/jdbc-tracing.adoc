@@ -1,4 +1,4 @@
-// Copyright (c) 2022 IBM Corporation and others.
+// Copyright (c) 2022, 2023 IBM Corporation and others.
 // Licensed under Creative Commons Attribution-NoDerivatives
 // 4.0 International (CC BY-ND 4.0)
 // https://creativecommons.org/licenses/by-nd/4.0/
@@ -91,6 +91,7 @@ The following subsections contain JDBC driver specific configuration.
 - <<#SQLServerJDBCdriver,Microsoft SQL Server JDBC driver>>
 - <<#SQLServerDataDirectdriver,Microsoft SQL Server DataDirect driver>>
 - <<#Oracle,Oracle>>
+  - <<#OracleCustom, Oracle customized tracing>>
 - <<#PostgreSQL,PostgreSQL>>
 - <<#Sybase,Sybase>>
 - <<#Otherdatabases,Other databases>>
@@ -192,12 +193,51 @@ The Oracle driver supports the `java.util.logging` library. The driver uses the 
 </jdbcDriver>
 ----
 
-The trace that is produced by the debugging driver is limited. You can add the following option to the `jvm.options` file to ensure that all trace is produced.
+Add the following option to the `jvm.options` file to ensure that all trace is produced.
 [source, txt]
 ----
 -Doracle.jdbc.Trace=true
 ----
 
+[#OracleCustom]
+==== Oracle customized tracing
+
+The Oracle driver tracing will be combined with Liberty tracing by default since both utilize the `java.util.logging` library. As of version 23.0.0.2, Liberty has added support for the seperation of Oracle trace from Liberty trace. This will allow users to provide standalone Oracle JDBC trace when requested by Oracle support.
+
+The following `server.xml` file example shows you how to configure the Oracle debugging driver.  No trace specification is required.
+
+[source, xml]
+---
+<jdbcDriver id="oracleDriver">
+  <library id="oracleDebug">
+      <file name="path_to_oracle_driver/ojdbcX_g.jar"/>
+  </library>
+</jdbcDriver>
+---
+
+The remaining configuration is provided by system properties.
+Add the following required properties to the `jvm.options` file to enable a new file based logger.
+
+[source, txt]
+----
+-Doracle.jdbc.Trace=true
+-DoracleLogFileName=<desired-log-name>.log
+-DoracleLogPackageName=<desired-package-to-trace>
+----
+
+Additional customization can be added to the `jvm.options` file. The following example lists the default values when none are configured.
+
+[source, txt]
+----
+-DoracleLogFileSizeLimit=0
+-DoracleLogFileCount=1
+-DoracleLogFormat=SimpleFormatter
+-DoracleLogTraceLevel=INFO
+----
+
+Note: `oracleLogFileSizeLimit=0` means there is no limit and the file can grow to any size. 
+
+For updated settings recommended by Oracle please visit their https://docs.oracle.com/en/database/oracle/oracle-database/21/jjdbc/JDBC-diagnosability.html#GUID-5E8CB599-C7D8-48E7-87E7-53559D22D318[support page].
 
 [#PostgreSQL]
 === PostgreSQL
