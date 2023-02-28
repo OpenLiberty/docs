@@ -1,11 +1,8 @@
 
-
-
 === Enable an OpenID Connect client for an application
-
 You can use the `OpenIdAuthenticationMechanismDefinition` annotation in a web or JAX-RS application to enable an OpenID Connect client for that application. Annotations can simplify the process of enabling OpenID Connect authentication in a web or JAX-RS application by eliminating the need for manual protocol implementation.
 
-The following example shows a servlet with a minimal `OpenIdAuthenticationMechanismDefinition` annotation.
+The `OpenIdAuthenticationMechanismDefinition` annotation is a part of the Jakarta Security 3.0 specification and is supported in Open Liberty by the Application Security (Jakarta Security) 5.0 feature. To use this annotation in your application, you must enable this feature in the `server.xml` file. The following example shows a servlet with a minimal `OpenIdAuthenticationMechanismDefinition` annotation.
 
 [source,java]
 ----
@@ -22,11 +19,11 @@ public class OidcAnnotatedServlet extends HttpServlet {
 }
 ----
 
-By using the `OpenIdAuthenticationMechanismDefinition` annotation, a basic OpenID Connect client can be enabled for protected resources within the `MyApp` application. This client uses an OpenID Connect Provider (OP) at `https://localhost:8920/oidc/endpoint/OP`. When a user attempts to access a protected resource in `MyApp`, the user is directed to the OP's authorization endpoint, which is obtained from the OP's discovery metadata. After the user authenticates, the OP redirects them to `https://localhost:8940/MyApp/Callback` with the authorization code.
+The example demonstrates how you can enable a basic OpenID Connect client for protected resources within the `MyApp` application by using the `OpenIdAuthenticationMechanismDefinition` annotation. This client uses an OpenID Connect Provider (OP) at `https://localhost:8920/oidc/endpoint/OP`. When you attempt to access a protected resource in `MyApp` application, you are directed to the OP authorization endpoint, which is obtained from the OP discovery metadata. After you authenticate, the OP redirects you to `https://localhost:8940/MyApp/Callback` with the authorization code.
 
-On receiving the authentication response, the OpenID Connect client verifies it and retrieves the `access`, `identity`, and `userinfo` tokens by using the authorization code. These tokens are then verified and used to establish an authenticated subject before the request is dispatched to the callback servlet. The OpenID Connect client uses the default TLS configuration specified by the server when sending requests to the OP's token and userinfo endpoints. As a result, the signer certificates of the OP must be imported into the default truststore that is configured for the default TLS configuration.
+The OpenID Connect client receives the authentication response, verifies it and retrieves the `access`, `identity`, and `userinfo` tokens by using the authorization code. These tokens are then verified and used to establish an authenticated subject before the request is dispatched to the callback servlet. The default TLS configuration that is specified by the server is used by the OpenID Connect client when it sends requests to the OP token and userinfo endpoints. As a result, the signer certificates of the OP must be imported into the default truststore that is configured for the default TLS configuration.
 
-By default, the OpenID Connect client uses the `jwks_uri` from the OP's discovery metadata to acquire the signing key that is required for validating token signatures. However, it is possible to specify a different JWK endpoint URL by using the jwksURI attribute within the @OpenIdProviderMetadata annotation for the providerMetadata attribute.
+By default, the OpenID Connect client uses the `jwks_uri` value from the OP discovery metadata to acquire the signing key that is required for validating token signatures. However, it is possible to specify a different JWK endpoint URL by using the `jwksURI` attribute within the `@OpenIdProviderMetadata` annotation for the `providerMetadata` attribute.
 
 [source,java]
 ----
@@ -36,7 +33,7 @@ By default, the OpenID Connect client uses the `jwks_uri` from the OP's discover
                                          …
 ----
 
-To use the minimal annotation, the application needs to provide an implementation for the callback servlet. This callback servlet must use the new `OpenIdContext` API to retrieve the original request URL and then redirect to the original resource, as shown in the following example.
+To use the minimal annotation, the application needs to provide an implementation for the callback servlet. This callback servlet must use the `OpenIdContext` API to retrieve the original request URL and then redirect to the original resource, as shown in the following example.
 
 [source,java]
 ----
@@ -62,7 +59,7 @@ public class CallbackServlet extends HttpServlet {
 }
 ----
 
-You can avoid creating a callback servlet by setting the `redirectToOriginalResource` attribute to `true` in the annotation. The OpenID Connect client will automatically redirect to the original resource as shown in the following example.
+You can avoid creating a callback servlet by setting the `redirectToOriginalResource` attribute to `true` in the annotation. The OpenID Connect client automatically redirects to the original resource, as shown in the following example.
 
 [source,java]
 ----
@@ -71,7 +68,7 @@ You can avoid creating a callback servlet by setting the `redirectToOriginalReso
                                          …
 ----
 
-You can also override the metadata that is obtained from the OP's discovery endpoint by adding a `providerMetadata` attribute to the annotation. The following example overrides the authorization and token endpoints.
+You can also override the metadata that is obtained from the OP discovery endpoint by adding a `providerMetadata` attribute to the annotation. The following example overrides the authorization and token endpoints.
 
 [source,java]
 ----
@@ -83,7 +80,7 @@ You can also override the metadata that is obtained from the OP's discovery endp
 ----
 
 
-All attributes support Jakarta Expression Language 5.0 (EL), and EL expressions can be specified directly in a String attribute. For example, if you have a bean providing the secret and want to avoid putting it in the annotation, you can use the following syntax.
+All attributes support Jakarta Expression Language 5.0 (EL), and EL expressions can be specified directly in a `String` attribute. For example, if you have a bean that supplies the secret and you prefer not to include it in the annotation, you can use the following syntax.
 
 [source,java]
 ----
@@ -103,7 +100,9 @@ You can use alternative attributes that are designed for EL expressions for attr
                                          …
 ----
 
-If the OP generates tokens that lack a `preferred_username` claim for the usernames or a `groups` claim for the groups, the `claimsDefinition` attribute can be used. Since Liberty OP generates an identity token with `sub` and `groupIds` claims, the `claimsDefinition` attribute must be used to specify the name and groups claim, especially when the `providerURI` attribute points to a Liberty OP. The following example shows how to specify the `sub` claim for the caller name and the `groupIds` claim for groups.
+If the OP generates tokens that lack a `preferred_username` claim for the usernames or a `groups` claim for the groups, the `claimsDefinition` attribute can be used. Liberty OP generates an identity token with `sub` and `groupIds` claims. The `claimsDefinition` attribute must be used to specify the name and groups claim, especially when the `providerURI` attribute points to a Liberty OP.
+
+The following example shows how to specify the `sub` claim for the caller name and the `groupIds` claim for groups.
 
 [source,java]
 ----
@@ -115,7 +114,8 @@ If the OP generates tokens that lack a `preferred_username` claim for the userna
 
 In the absence of any role mappings for the application, role protection of the resource is automatically mapped to the associated group from the claim specified by the `callerGroupsClaim` attribute. For example, an application that is protected by the `all` role would necessitate an `all` group in the `groupIds` claim.
 
-With the use of the `LogoutDefinition` annotation and the `logout` attribute, it is now possible to examine token expirations and their corresponding outcomes. The following example shows you how to activate checks for access and identity token expiration, and also enable an RP-Initiated Logout with the OP's `end_session_endpoint` when either token expires.
+With the use of the `LogoutDefinition` annotation and the `logout` attribute, it is now possible to examine token expirations and their corresponding outcomes. 
+The following example shows you how to enable checks for access and identity token expiration. It also demonstrates how to activate a Relying Party (RP)-Initiated Logout with the OP end_session_endpoint when either token expires.
 
 [source,java]
 ----
@@ -132,4 +132,4 @@ For more information about the `OpenIdAuthenticationMechanismDefinition` annotat
 
 The Jakarta Security 3.0 specification also introduces the `OpenIdContext` bean and various APIs for handling the access, identity, and refresh tokens.
 
-The JavaDoc for the Jakarta Security 3.0 APIs are available from https://github.com/jakartaee/security/tree/3.0.0-RELEASE[Jakarta Security].
+The Javadoc for the Jakarta Security 3.0 APIs are available from https://github.com/jakartaee/security/tree/3.0.0-RELEASE[Jakarta Security].
