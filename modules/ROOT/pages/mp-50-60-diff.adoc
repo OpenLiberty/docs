@@ -20,6 +20,11 @@ If you are updating your application from using MicroProfile 5.0 features to usi
 
 link:https://github.com/eclipse/microprofile/releases/tag/6.0[MicroProfile 6.0] is a major release. It includes link:https://jakarta.ee/specifications/coreprofile/10/[Jakarta EE 10 Core Profile] and replaces MicroProfile OpenTracing with MicroProfile Telemetry. Consequently, MicroProfile OpenTracing moves out of the umbrella release and becomes a stand-alone specification.
 
+The following sections provide details about migrating your applications from MicroProfile 5.0 to 6.0:
+
+- <<#metrics, Differences between MicroProfile Metrics 5.0 and 4.0>>
+- <<#telemetry, Differences between MicroProfile Telemetry 1.0 and MicroProfile OpenTracing 3.0>> 
+
 [#metrics]
 == Differences between MicroProfile Metrics 5.0 and 4.0
 
@@ -113,9 +118,9 @@ In MicroProfile 6.0, MicroProfile Telemetry 1.0 replaces MicroProfile OpenTracin
 
 === Configuration changes
 
-In addition to replacing the `mpOpenTracing-*.*` feature with the `mpOpenTelemtry-1.0` features in your `server.xml` file, you must provide configuration to allow the MicroProfile Telemetry feature to connect to your distributed trace service. For more information, see xref:microprofile-telemetry.adoc[Enable distributed tracing with MicroProfile Telemetry]. 
+In addition to replacing the `mpOpenTracing-3.0` feature with the `mpTelemtry-1.0` feature in your `server.xml` file, you must provide configuration to allow the MicroProfile Telemetry feature to connect to your distributed trace service. For more information, see xref:microprofile-telemetry.adoc[Enable distributed tracing with MicroProfile Telemetry]. 
 
-You do not need to package a client for your particular tracing service. MicroProfile Telemetry includes exporters for the OpenTelemetry Protocol (OTLP), which is used by Jaeger since v1.35, Zipkin, and the older Jaeger protocol. If you need to export to a different service, you can provide a custom exporter by using the link:https://www.javadoc.io/doc/io.opentelemetry/opentelemetry-sdk-extension-autoconfigure-spi/1.19.0/io/opentelemetry/sdk/autoconfigure/spi/traces/ConfigurableSpanExporterProvider.html[ConfigurableSpanExporterProvider SPI].
+You do not need to package a client for your particular tracing service. MicroProfile Telemetry includes exporters for Zipkin, the OpenTelemetry Protocol (OTLP) (which is used by Jaeger since v1.35), and the older Jaeger protocol. If you need to export to a different service, you can provide a custom exporter by using the link:https://www.javadoc.io/doc/io.opentelemetry/opentelemetry-sdk-extension-autoconfigure-spi/1.19.0/io/opentelemetry/sdk/autoconfigure/spi/traces/ConfigurableSpanExporterProvider.html[ConfigurableSpanExporterProvider SPI].
 
 ==== Selecting a compatible propagator
 
@@ -125,11 +130,11 @@ The `otel.propagators` configuration property configures which propagators are u
 
 * `tracecontext`: link:https://www.w3.org/TR/trace-context/[W3C Trace Context] (usually used together with `baggage`)
 * `baggage`: link:https://www.w3.org/TR/baggage/[W3C Baggage]
-* b3: link:https://github.com/openzipkin/b3-propagation#single-header[B3 single header]
-* b3multi: link:https://github.com/openzipkin/b3-propagation#multiple-headers[B3 Multi header]
-* jaeger: link:https://www.jaegertracing.io/docs/1.21/client-libraries/#propagation-format[Jaeger]
+* `b3`: link:https://github.com/openzipkin/b3-propagation#single-header[B3 single header]
+* `b3multi`: link:https://github.com/openzipkin/b3-propagation#multiple-headers[B3 Multi header]
+* `jaeger`: link:https://www.jaegertracing.io/docs/1.21/client-libraries/#propagation-format[Jaeger]
 
-The default value is `tracecontext,baggage`.
+You can use these values to specify one or more propagators. The default value is `tracecontext,baggage`.
 
 If more than one propagator is enabled, then all headers are added to outgoing requests and any header is accepted for incoming requests. For example, if you are migrating from using a Jaeger client, you might set `otel.propagators=jaeger` to use the Jaeger propagation protocol. Alternatively, you might set `otel.propagators=jaeger,tracecontext,baggage`, to allow use of both the Jaeger and W3C protocols.
 
@@ -170,7 +175,7 @@ Update your application dependencies to remove the OpenTracing API and add the O
 </dependency>
 ----
 
-Just like the MicroProfile OpenTracing 3.0 feature (`mpOpenTracing-3.0`), The MicroProfile Telemetry 1.0 feature (`mpTelemetry-1.0`) feature requires that you xref:microprofile-telemetry.adoc#manual[enable third-party APIs] to use the API classes in your application.
+Just like the MicroProfile OpenTracing 3.0 feature (`mpOpenTracing-3.0`), the MicroProfile Telemetry 1.0 feature (`mpTelemetry-1.0`) feature requires that you xref:microprofile-telemetry.adoc#manual[enable third-party APIs] to use the API classes in your application.
 
 The shim converts most calls to the OpenTracing API into calls to the OpenTelemetry API, but it doesn't make the OpenTracing `Tracer` class available for injection.
 
