@@ -16,16 +16,18 @@ The Admin Center is a web-based graphical user interface (GUI) for Open Liberty 
 
 == Set up Admin Center
 
-If the Admin Center feature is not already installed in your runtime, install it by running the xref:reference:command/featureUtility-installFeature.adoc[featureUtility installFeature] command from the `_path_to_liberty_/wlp/bin` directory, as shown in the following example: 
-
+. If the Admin Center feature is not already installed in your runtime, install it by running the xref:reference:command/featureUtility-installFeature.adoc[featureUtility installFeature] command from the `_path_to_liberty_/wlp/bin` directory, as shown in the following example.
++
 [source,sh]
 ----
 featureUtility installFeature adminCenter-1.0
 ----
++
+. Enable the feature:adminCenter[display=Admin Center feature] in your `server.xml` file and link:/docs/latest/reference/feature/restConnector-2.0.html#_configure_rest_api_management_roles[configure a management role] for either the reader or administrator role.
++
+. Admin Center is only accessible over HTTPS, you must specify an HTTPS port and configure a keystore to protect `keystore` files that contain server authentication credentials. You can use the following example `server.xml` file to set up a test instance of Admin Center.
 
-To use the Admin Center, you must enable the feature:adminCenter[display=Admin Center feature] in your `server.xml` file and link:/docs/latest/reference/feature/restConnector-2.0.html#_configure_rest_api_management_roles[configure a management role] for either the reader or administrator role. Furthermore, because Admin Center is only accessible over HTTPS, you must specify an HTTPS port and configure a keystore to protect `keystore` files that contain server authentication credentials.
-
-You can use the following example `server.xml` file to set up a test instance of Admin Center. This example enables the `adminCenter-1.0` feature and configures a https://www.openliberty.io/docs/latest/user-registries-application-security.html#_basic_user_registries_for_application_development[basic user registry] that defines users in the `reader-role` and `administrator-role` management roles. It also specifies an HTTPS port in the `httpEndpoint` element and a default keystore and password reference in the `keyStore` element:
+This example enables the `adminCenter-1.0` feature and configures a https://www.openliberty.io/docs/latest/user-registries-application-security.html#_basic_user_registries_for_application_development[basic user registry] that defines users in the `reader-role` and `administrator-role` management roles. It also specifies an HTTPS port in the `httpEndpoint` element and a default keystore and password reference in the `keyStore` element.
 
 [source,xml]
 ----
@@ -54,33 +56,35 @@ You can use the following example `server.xml` file to set up a test instance of
 
 == Log in to Admin Center
 
-Before you access the Admin Center GUI, make sure that your server is running. In a web browser, go to the Admin Center login page at the following URL:
+Before you access the Admin Center GUI, make sure that your server is running. In a web browser, go to the Admin Center login page at the following URL.
 
 `\https://host_name:port_number/adminCenter`
 
 For the `host_name` value, specify the IP address or domain name server (DNS) hostname of the computer that the Open Liberty server runs on. If the browser is running on the same computer as the server, you can specify `localhost` as the hostname.
 For the `port_number` value, specify the `httpsPort` value from the `httpEndpoint` element in your `server.xml` file.
 
-For example, if your browser is running on the same computer as your server and you use the previous example `server.xml` configuration, Admin Center is accessible from the following URL:
+For example, if your browser is running on the same computer as your server and you use the previous example `server.xml` configuration, Admin Center is accessible from the following URL.
 
 `https://localhost:9443/adminCenter`
 
 If your browser prompts you to confirm that the connection is trusted, specify an exception or otherwise enable the connection to continue to Admin Center.
 To log in to Admin Center, specify the username and password from your management role configuration. For example, if you use the previously provided example `server.xml` configuration, specify `admin` as the username and `adminpwd` as the password.
 
-The following screen capture shows the Admin Center login screen:
+The following screen capture shows the **Admin Center login** screen.
 
-image::ui_login.png[The Admin Center login screen,align="center"]
+image::ui_login.png[The Admin Center login screen,align="center"] 
 
 == Select tools from the Toolbox
 
-After you log in to Admin Center, the browser displays the **Toolbox**, which contains tools such as the **Server Config** and **Explore** tools and a bookmark to link:https://openliberty.io[the Open Liberty website]. The following screen capture shows the Admin Center **Toolbox**:
+After you log in to Admin Center, the browser displays the **Toolbox**, which contains tools such as the **Server Config** and **Explore** tools and a bookmark to link:https://openliberty.io[the Open Liberty website]. 
 
-image::ui-default-toolbox.png[align="center"]
+The following screen capture shows the Admin Center **Toolbox**.
+
+image::ui-default-toolbox.png[The Admin Center Toolbox screen,align="center"]
 
 The **Server Config** and **Explore** tools are available by default. The **Java Batch** and **OpenID Connect** tools are available only if you enable and configure the respective Open Liberty features for those functions. You can add or remove tools from the **Toolbox** by selecting the **Edit** icon. To use a tool, select its **Toolbox** icon.
 
-The following tools are available from the Admin Center:
+The following tools are available from the Admin Center.
 
 * <<#server,Server Config>>
 * <<#explore,Explore>>
@@ -88,14 +92,13 @@ The following tools are available from the Admin Center:
 * <<#openid,OpenID Connect tools>>
 
 [#server]
-=== Manage your server configuration with the Server Config tool
+=== Manage and test your server configuration with the Server Config tool
 
-You can use the **Server Config** tool to view and edit Open Liberty server configuration files.
-To edit configuration files, you must be in the `administrator-role` management role.
+You can use the **Server Config** tool to view and edit Open Liberty server configuration files and to test server connections to different resources. To edit configuration files or test connections, you must be in the `administrator-role` management role.
 
 Before you can edit configuration files, the tool prompts you to add a link:https://openliberty.io/docs/latest/reference/config/remoteFileAccess.html[remoteFileAccess] element to your `server.xml` file. You can copy the example element from the browser window or configure it  manually. If you do not add this element, the configuration files are shown in read-only mode.
 
-To enable write access to configuration files, add the following code to your `server.xml` file:
+To enable write access to configuration files, add the following code to your `server.xml` file.
 [source, xml]
 ----
 <remoteFileAccess>
@@ -109,9 +112,46 @@ The **Design** mode displays the content of configuration files by using graphic
 
 The **Source** mode enables direct access to edit the file text and provides tooltip descriptions for file elements. Hover over elements and parameters to view their documentation. You can press Ctrl+Space to use content assist, which helps you add new elements, parameters, and values. However, the **Source** mode editor does not validate the configuration values that you specify. Changes that you make in **Source** mode are applied to your running server. Specifying invalid configuration values might produce errors or cause your server to fail.
 
-The following screen capture shows the **Design** tab of the **Server Config** tool:
+The following screen capture shows the **Design** tab of the **Server Config** tool.
 
-image::ui_serverConfigTool2.png[Server Config Tool Design tab align="center"]
+image::ui_serverConfigTool2.png[Design tab of the Server Config Tool,align="center"]
+
+=== Test server connections to resources with the Server Config tool
+
+You can test the connection to Java Database Connectivity (xref:reference:feature/jdbc-4.3.adoc[JDBC]), Java EE Connector Architecture (xref:reference:feature/jca-1.7.adoc[JCA]), Java Message Service (xref:reference:feature/jms-2.0.adoc[JMS]), and xref:reference:feature/cloudant-1.0.adoc[Cloudant] resources by using the Server Config tool.
+
+. To test connections with the **Server Config** tool, you must enable the feature:restConnector[display=Admin REST Connector] and feature:mpOpenAPI[display=MicroProfile OpenAPI] features in your `server.xml` file, in addition to the feature:adminCenter[display=Admin Center] feature. You must also enable any features to support the server resource that your are checking the connection to. The following example also enables the JDBC feature to support a database connection.
++
+[source, xml]
+----
+<featureManager>
+   <feature>adminCenter-1.0</feature>
+   <feature>restConnector-2.0</feature>
+   <feature>mpOpenApi-3.0</feature>
+   <feature>jdbc-4.3</feature>
+   ...
+</featureManager>
+----
++
+. In the **Server Config** tool, select the resource for which you want to test the connection from the Server menu in the **Design** tab.
++
+. In the display window for your chosen resource, click the **Test** button.
++
+The following screen capture shows the **Design** tab and the display window for the chosen resource in the **Server Config** tool.
++
+image::ui_test_connection_1.png[Resource information on Server Config Tool,align="center"]
++
+. Choose the authentication method that you want to employ for the connection test. The three authentication methods are: **Container authentication**, **Application authentication**, or **No resource reference**.
++
+The following screen capture shows the **Connection Test** page and the authentication methods.
++
+image::ui_test_connection_2.png[Connection Test page,align="center"]
++
+. In the selected authentication method, specify the required fields and click the **Connection Test** button.
+The result of the test is displayed.
+
+The Admin Center uses REST APIs to validate the connections. For more information, see link:https://openliberty.io/docs/latest/validating-server-connections.html[Validating server connections].
+
 
 [#explore]
 === Monitor and manage resources with the Explore tool
@@ -121,9 +161,11 @@ For more timely updates to server and application status in the **Explore** tool
 
 You can select the **Applications** view from the navigation bar to monitor, stop, start, or restart applications that are running on your server.
 
-The **Monitor** view on the navigation bar shows server and system metrics graphically in charts. You can use the Monitor view to track heap memory, loaded classes, active Java virtual machine (JVM) threads, and central processing unit (CPU) usage. The following screen capture shows the **Monitor** view of the **Explore** tool:
+The **Monitor** view on the navigation bar shows server and system metrics graphically in charts. You can use the Monitor view to track heap memory, loaded classes, active Java virtual machine (JVM) threads, and central processing unit (CPU) usage. 
 
-image::ui_exploreTool3.png[monitor view of explore tool,align="center"]
+The following screen capture shows the **Monitor** view of the **Explore** tool.
+
+image::ui_exploreTool3.png[Monitor view of explore tool,align="center"]
 
 You can add more resource metrics to the **Monitor** view by selecting the **Edit** icon and choosing an option from the menu. When the feature:monitor[display=Performance Monitoring] feature is enabled, more resource metrics are available from this menu. Depending on what resources are configured for the server, the following resource metrics might be available:
 
@@ -137,15 +179,17 @@ You can add more resource metrics to the **Monitor** view by selecting the **Edi
 [#batch]
 === Manage Java batch jobs with the Java Batch tool
 
-If you configure the feature:batchManagement[display=Batch Management] feature, you can access the **Java Batch** tool. With this tool, you can view the progress and status of your Java batch jobs, manage their instances, and view their log files. The following screen capture shows the **Java Batch** tool:
+If you configure the feature:batchManagement[display=Batch Management] feature, you can access the **Java Batch** tool. With this tool, you can view the progress and status of your Java batch jobs, manage their instances, and view their log files. 
 
-image::ui_javaBatchTool.png[align="center"]
+The following screen capture shows the **Java Batch** tool.
+
+image::ui_javaBatchTool.png[Java Batch tool,align="center"]
 
 Each batch job has an **Actions** icon, which you can select to stop, restart, or purge the job, and a **View Logs** icon, which you can select to view the job logs. To view details and metrics for a batch job, hover over the **Batch Job Name** and select an option from the tooltip menu.
 
 If batch jobs or job logs are on remote servers, link:/guides/cors.html[configure cross origin region sharing (CORS)] on each remote server. CORS enables Admin Center to request job information from remote servers.
 
-The Batch Management feature requires custom authorization to view and manage batch jobs. To use the Java Batch tool, you must configure a `com.ibm.ws.batch` custom authorization role, in addition to the reader or administrator management role that is required to access the Admin Center. The following `server.xml` file example shows configuration for a `wanda` user who is granted the administrator management role and the batchAdmin custom authorization role:
+The Batch Management feature requires custom authorization to view and manage batch jobs. To use the Java Batch tool, you must configure a `com.ibm.ws.batch` custom authorization role, in addition to the reader or administrator management role that is required to access the Admin Center. The following `server.xml` file example shows configuration for a `wanda` user who is granted the administrator management role and the batchAdmin custom authorization role.
 
 [source,xml]
 ----
