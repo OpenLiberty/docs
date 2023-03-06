@@ -21,19 +21,19 @@ If you are updating your application from using Jakarta EE 9.1 features to using
 The following sections describe updates for different Jakarta EE 10 features
 
 * <<global, Global differences between Jakarta EE 10 and 9.1>>
-* <<cdi,Jakarta Contexts and Dependency Injection 4.0>>
-* <<restfulws,Jakarta RESTful Web Services 3.1>>
-* <<security,Jakarta Security 3.0>>
-* <<servlet,Jakarta Servlet 6.0>>
-* <<appAuthz,Jakarta Authorization 2.1>>
 * <<appAuthn,Jakarta Authentication 3.0>>
+* <<appAuthz,Jakarta Authorization 2.1>>
+* <<batch,Jakarta Batch 2.1>>
+* <<cdi,Jakarta Contexts and Dependency Injection 4.0>>
 * <<el,Jakarta Expression Language 5.0>>
 * <<faces, Jakarta Faces 4.0>>
-* <<pages,Jakarta Server Pages 3.1>>
-* <<batch,Jakarta Batch 2.1>>
-* <<bind,Jakarta XML Binding 4.0>>
 * <<mail,Jakarta Mail 2.1>>
+* <<restfulws,Jakarta RESTful Web Services 3.1>>
+* <<security,Jakarta Security 3.0>>
+* <<pages,Jakarta Server Pages 3.1>>
+* <<servlet,Jakarta Servlet 6.0>>
 * <<socket,Jakarta WebSocket 2.1>>
+* <<bind,Jakarta XML Binding 4.0>>
 * <<xml,Jakarta XML Web Services 4.0>>
 
 [#global]
@@ -69,6 +69,73 @@ When you enable the feature:jwt-1.0[display=JSON Web Token 1.0] (`jwt-1.0`) Libe
 
 Similarly, the `com.ibm.wsspi.rest.handler`, `com.ibm.wsspi.rest.handler.helper`, and `com.ibm.wsspi.wab.configure` SPIs are no longer available to user features when the `jwt-1.0` feature is enabled with Jakarta EE 10 Liberty features. For Open Liberty user features that require these SPIs, you must add the `com.ibm.websphere.appserver.restHandler-1.0` or `com.ibm.wsspi.appserver.webBundle-1.0` feature to your user feature `mf` file.
 
+[#appAuthn]
+== Differences between Jakarta Authentication 3.0 and 2.0
+
+The feature:appAuthentication-2.1[display=Jakarta Authentication 3.0] feature (`appAuthentication-3.0`) introduces changes to the `jakarta.security.auth.message.config.AuthConfigFactory` abstract class. This class implements the following two new methods to register and remove a server authentication module. 
+
+* `public abstract String registerServerAuthModule(ServerAuthModule serverAuthModule, Object context);`
+* `public abstract void removeServerAuthModule(Object context);`
+
+Before this version of the feature, support was available to register and remove only a configuration provider.
+
+For more information, see the https://jakarta.ee/specifications/authentication/3.0/apidocs/jakarta.security.auth.message/module-summary.html[Jakarta Authentication 3.0 Javadoc].
+
+[#appAuthz]
+== Differences between Jakarta Authorization 2.1 and 2.0
+
+The feature:appAuthorization-2.1[display=Jakarta Authorization 2.1] feature (`appAuthorization-2.1`)  introduces the following new methods.
+
+=== New methods for the jakarta.security.jacc.PolicyConfigurationFactory abstract class
+
+The `jakarta.security.jacc.PolicyConfigurationFactory` abstract class implements the following two
+new methods to  retrieve the Policy Configuration interface (`PolicyConfiguration`).
+
+* `public abstract PolicyConfiguration getPolicyConfiguration();`
+* `public abstract PolicyConfiguration getPolicyConfiguration(String contextID);`
+
+These methods are available in addition to the following `getPolicyConfiguration` method that was available in previous versions.
+
+`public abstract PolicyConfiguration getPolicyConfiguration(String contextID, boolean remove);`
+
+=== New methods for the jakarta.security.jacc.PolicyConfiguration interface
+
+The `jakarta.security.jacc.PolicyConfiguration` interface defines three new methods to read
+permissions.
+
+* `public abstract Map<String, PermissionCollection> getPerRolePermissions();`
+* `public abstract PermissionCollection getUncheckedPermissions();`
+* `public abstract PermissionCollection getExcludedPermissions();`
+
+For more information, see the https://jakarta.ee/specifications/authorization/2.1/apidocs/jakarta.security.jacc/jakarta/security/jacc/package-summary.html[Jakarta Authorization 2.1 Javadoc].
+
+[#batch]
+== Differences between Jakarta Batch 2.0 and 2.1
+
+The updates in Jakarta Batch 2.1 primarily focus on improved integration with Context Dependency Injection (CDI). The discovery of Batch artifacts is now standardized with CDI, which was not fully defined in the specification previously.
+
+=== Updates for the @BatchProperty annotation
+
+The @BatchProperty annotation is expanded to allow injection of the following types: `Boolean`, `Short`, `Integer`, `Long`, `Float`, and `Double`. Previously, this annotation could inject only a `String` value. The following example demonstrates the newly added injection types.
+
+[source,java]
+----
+@Inject @BatchProperty(name="b1") Boolean b1;
+@Inject @BatchProperty(name="s1") Short s1;
+@Inject @BatchProperty(name="i1") Integer i1;
+@Inject @BatchProperty(name="l1") Long l1;
+@Inject @BatchProperty(name="f1") Float f1;
+@Inject @BatchProperty(name="d1") Double d1;
+----
+
+=== Default injection for the JobOperator interface 
+
+Previously, the default `JobOperator` interface was made available only from the `BatchRuntime.getJobOperator()` static factory method. In Jakarta Batch 2.1 and later, if an injection point for a `JobOperator`  interface exists and no user-supplied implementation is found, the default `JobOperator` instance is injected automatically. The following example demonstrates the default injection for the `JobOperator` interface.
+
+[source,java]
+----
+@Inject JobOperator jobOperator;
+----
 
 [#cdi]
 == Differences between Jakarta Contexts and Dependency Injection 4.0 and 3.0
@@ -182,6 +249,154 @@ If this attribute set to `false`, which is the default, then an archive that con
 
 For more information, see the https://jakarta.ee/specifications/cdi/4.0/apidocs/[Jakarta Contexts and Dependency Injection 4.0 Javadoc]
 
+[#el]
+== Differences between Jakarta Expression Language 5.0 and 4.0
+
+The feature:expressionLanguage-5.0[display=Jakarta Expression Language 5.0] feature adds support for Java Generics and includes updates to type coercion, the Expression Language resolver, and more.
+
+=== Support for Java Generics
+
+The 5.0 release adds support for Java Generics throughout the API, wherever they are appropriate. This update removes the need to cast from an `Object` instance to a specific object type in many API calls.
+
+=== Type coercion
+
+The 5.0 release implements support for https://jakarta.ee/specifications/expression-language/5.0/jakarta-expression-language-spec-5.0.html#coerce-a-to-functional-interface-method-invocation[coercing Lambda Expressions to a functional interface method invocation] and clarifies the specification for coercing arrays. However, Liberty use of the Tomcat API and implementation of the Expression Language specification already followed these clarifications to the specification for link:https://jakarta.ee/specifications/expression-language/5.0/jakarta-expression-language-spec-5.0.html#coerce-a-to-an-array-of-type-t[coercing arrays]. Therefore, no functional changes for array coercion are added in Expression Language 5.0.
+
+=== Expression Language resolver
+
+The https://jakarta.ee/specifications/expression-language/5.0/apidocs/jakarta.el/jakarta/el/beanelresolver[BeanELResolver class] is updated to also consider default method implementations when it looks for property getters, property setters, and methods.
+The documented behavior of the https://jakarta.ee/specifications/expression-language/5.0/apidocs/jakarta.el/jakarta/el/staticfieldelresolver[StaticFieldELResolver] class is updated to explicitly document that the `ELResolver.getType()` method must return null if either the `ELResolver` class or the resolved property is read-only.
+
+
+=== Method annotation access
+
+A new `MethodReference` class provides access to details of the method to which a `MethodExpression` instance resolves, including any annotations that are present on the method.
+
+=== Deprecations and removals
+
+The `ELResolver` `getFeatureDescriptors()` method is deprecated in Expression Language 5.0, with removal planned for Expression Language 6.0. A new default implementation that returns null is added. This update ensures that custom `ELResolver` implementations do not need to implement the method.
+
+The deprecated and misspelled `MethodExpression.isParmetersProvided()` method is removed from the API.
+
+For more information, see the https://jakarta.ee/specifications/expression-language/5.0/apidocs/jakarta.el/module-summary.html[Jakarta Expression Language 5.0 Javadoc].
+
+[#faces]
+== Differences between Jakarta Faces 4.0 and 3.0
+
+The feature:faces-4.0[display=Jakarta Faces 4.0] feature introduces programmatic creation of facelets, automatic extensionless mapping, and numerous improvements and removals. 
+
+=== Programmatically create facelets
+
+As of the 4.0 release, facelets no longer need to exist as XML files and can now be programmatically created with Java. For an example, see link:https://github.com/jakartaee/faces/issues/1581[this spec issue]. 
+
+=== Map to facelets without specifying an extension
+
+You can now configure facelets to be reached without any extensions by setting the `jakarta.faces.AUTOMATIC_EXTENSIONLESS_MAPPING` context parameter to `true`. For example, when this parameter is set to true, `somePage.xhtml` can be reached by `<context-root>/somePage` because the `FacesServlet` maps to `/somePage` automatically.
+
+=== New attributes 
+
+link:https://jakarta.ee/specifications/faces/4.0/vdldoc/f/websocket.html#onerror[<f:websocket onerror="…">]::
+It was reported that the `onclose` attribute was sometimes not enough for reporting errors, so this `onerror` attribute was added to handle any unexpected errors that occur on the WebSocket connection.
+
+link:https://jakarta.ee/specifications/faces/4.0/vdldoc/h/inputfile#accept[<h:inputFile accept="…">]::
+Use this attribute to  specify the comma-separated string of mime file types that the client file browser filters through.
+
+link:https://jakarta.ee/specifications/faces/4.0/vdldoc/h/inputfile#multiple[<h:inputFile multiple="…">]::
+Use this attribute to upload multiple files with the https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/multiple[multiple] HTML attribute. 
+
+link:https://jakarta.ee/specifications/faces/4.0/vdldoc/h/inputtext#type[<h:inputText type="…">]::
+This attribute enables https://developer.mozilla.org/en-US/docs/Learn/Forms/HTML5_input_types[HTML5 input types], such as `email`, `date`, `tel`, and many others.
+
+=== New tags 
+
+https://jakarta.ee/specifications/faces/4.0/vdldoc/f/selectitemgroups[<f:selectItemGroups>]::
+This tag renders multiple `optgroup` elements so you can offer a nested collection of `option` elements. For more information about `outgroup` elements, see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/optgroup[<optgroup>: The Option Group element].
+
+https://jakarta.ee/specifications/faces/4.0/vdldoc/f/selectitemgroup[<f:selectItemGroup>]::
+This tag is similar to the `<f:selectItemGroups>` tag but allows only one `optgroup` to be rendered.
+
+=== New methods 
+
+link:https://jakarta.ee/specifications/faces/4.0/apidocs/jakarta/faces/context/facescontext#getLifecycle()[FacesContext#getLifecycle()]::
+This method is a convenience method to determine the current phase of the Faces lifecycle.
+
+link:https://jakarta.ee/specifications/faces/4.0/apidocs/jakarta/faces/component/uiviewroot#getDoctype()[UIViewRoot#getDoctype()]::
+This method returns the declared `DOCTYPE` of the facelet.
+
+=== New context parameters
+
+link:https://jakarta.ee/specifications/faces/4.0/apidocs/jakarta/faces/webapp/facesservlet#AUTOMATIC_EXTENSIONLESS_MAPPING_PARAM_NAME[jakarta.faces.AUTOMATIC_EXTENSIONLESS_MAPPING]::
+This parameter enables automatic mapping to a facelet without specifying an extension. The default value is false.
+
+link:https://jakarta.ee/specifications/faces/4.0/apidocs/jakarta/faces/lifecycle/clientwindow#NUMBER_OF_CLIENT_WINDOWS_PARAM_NAME[jakarta.faces.NUMBER_OF_CLIENT_WINDOWS]::
+This parameter sets the maximum number of `ClientWindows` instances, which is used by the `ClientWindowScoped` annotation. The default value is 10. This parameter can be used only when the `jakarta.faces.CLIENT_WINDOW_MODE` parameter is enabled.
+
+link:https://myfaces.apache.org/#/core40[org.apache.myfaces.USE_LAMBDA_METAFACTORY]::
+Although not specification-defined, this  experimental MyFaces parameter allows lambdas to be used for the setting and getting of bean properties, rather than reflection. Lambdas offer significant performance improvement over reflection. If any problems arise, an error is logged and the traditional lookup is used as a fall back to prevent the application from breaking.
+
+
+=== Annotation updates
+
+link:https://jakarta.ee/specifications/faces/4.0/apidocs/jakarta/faces/lifecycle/clientwindowscoped[@ClientWindowScoped]::
+A new CDI scope  is added that allows classes with this annotation to live for the current `ClientWindow`, which is enabled by setting the `javax.faces.CLIENT_WINDOW_MODE` parameter to `url` mode. In other words, the classes are active when the `jfwid` request parameter is first used and reused across faces link components. 
++
+This annotation is similar to the `FlowScope` annotation but more flexible, because it's not limited to a subset of pages.  Faces limits the number of Client Windows with the `jakarta.faces.NUMBER_OF_CLIENT_WINDOWS` parameter, which has a default value of `10`.
+
+Addition of annotation literals for all `@Qualifiers`::
+With this change, you no longer need to create your own annotation literals. Now you can easily retrieve Faces-specific instances with the CDI API, as shown in the following example. 
++
+[source,java]
+----
+Map<String, Object> requestMap = CDI.current().select(new TypeLiteral<Map<String, Object>>() {}, RequestMap.Literal.INSTANCE).get();
+----
+
+=== URI updates
+
+The `\http://xmlns.jcp.org/jsf/\*` URIs are updated to the `jakarta.faces.*` URN.  For example, any URI in the `\http://xmlns.jcp.org/jsf/\*` pattern now uses the `jakarta.faces.*` URN pattern and any URI in the `\http://xmlns.jcp.org/jsp/jstl/\*` pattern now uses the `jakarta.tags.*` URN pattern. However, Faces 4.0 is still backward compatible with the older URIs.
+
+=== Other improvements and updates
+
+- The term `JSF` is changed to `Faces` throughout the code. This change includes renames such as `jsf.js` to `faces.js`, `window.jsf` to `window.faces`, and `xmlns:jsf` to `xmlns:faces`. For more information, see https://github.com/jakartaee/faces/issues/1552[this spec issue]. 
+
+- The list layout, `layout="list"`, was added to the `<h:selectManyCheckbox>` and `<h:selectOneRadio>` tags. This new layout allows easier CSS control because the HTML is generated with `<ul>` and `<li>` elements rather than the outdated `<table>` and associated elements.
+
+- The `UIComponent#subscribeToEvent()` method is now more convenient. The 4.0 spec mandates that listeners can no longer be added twice, and that the `UIComponent#getListenersForEventClass()` method must not return null.
+
+- The type attribute is skipped for `<link>` and `<script>` elements when the doctype is HTML5 because the type is already implied.
+
+- The `<f:ajax>` behavior is improved for composite components when it is used with the `@this` keyword. The following statement was added to the specification: _When nested within a composite component, and the value contains or implies the keyword @this, then the keyword must be remapped to the targets attribute of the associated `<composite:clientBehavior>` declaration_. For more information, see the  https://jakarta.ee/specifications/faces/4.0/vdldoc/f/ajax.html[execute attribute for the ajax tag] and https://github.com/jakartaee/faces/issues/1567[this spec issue]. 
+
+- The `ExternalContext#addResponseCookie()` method now supports custom cookie attributes, such as `SameSite`. This support is provided by the Servlet 6.0 https://jakarta.ee/specifications/servlet/6.0/apidocs/jakarta.servlet/jakarta/servlet/http/cookie#setAttribute(java.lang.String,java.lang[jakarta.servlet.http.Cookie#setAttribute()] method.
+
+- MyFaces updated its JavaScript implementation to the newer ECMAScript 2015 (ES6) standard.  As a result, older browsers, such a Internet Explorer, do not support the newer syntax.  Automation tools for testing, such as HTMLUnit, also might encounter errors. 
+
+=== Removals
+
+Although the 4.0 release includes no new deprecations, many previously deprecated methods and classes are removed. Links for the following removals reference the Faces 3.0 API Docs for convenience as these are removed from Faces 4.0.
+
+- Pages (formerly JSP) support is removed entirely. Pages (JSP) can no longer be used as a view technology. Only facelets are supported.
+
+- Native Managed Bean support and the related code is been removed. You must now switch to CDI.
+
+- `MethodBinding`, `ValueBinding`, and related fields and classes are removed. You must switch to the Expression Language equivalents, such as `MethodBind` to `MethodExpression` and `PropertyResolver` to `ELResolver`. See the https://jakarta.ee/specifications/faces/3.0/apidocs/jakarta/faces/el/package-summary.html[Faces 3.0 API] for migration assistance.
+
+- The `CURRENT_COMPONENT` and `CURRENT_COMPOSITE_COMPONENT` constants are removed from the `UIComponent` class. Use the `UIComponent#getCurrentComponent()` and `UIComponent#getCurrentCompositeComponent()` utility methods instead.
+
+- The deprecated `StateManger` methods are removed. See the https://jakarta.ee/specifications/faces/3.0/apidocs/jakarta/faces/application/statemanager[Faces 3.0 API notes for the StateManger] for migration assistance.
+
+- The `ResourceResolver` class is removed. Use the `ResourceHandler` class instead, as it can perform the same functions. See the https://jakarta.ee/specifications/faces/3.0/apidocs/jakarta/faces/view/facelets/resourceresolver[Faces 3.0 API docs for ResourceResolver] for migration assistance.
+
+- The `PreJsf2ExceptionHandlerFactory` class is removed.
+
+For all other non-specification changes, see the https://myfaces.apache.org/#/news[MyFaces release notes].
+
+[#mail]
+== Differences between Jakarta Mail 2.1 and 2.0
+
+The feature:mail-2.1[display=Jakarta Mail 2.1] feature introduces the `jakarta.mail.util.StreamProvider` interface. This new interface from the Mail 2.1 specification makes it possible to obtain a `StreamProvider` instance, which provides access to the encoders and decoders that are supported by the `mail-2.1` runtime. You can obtain instances of the `StreamProvider` from the `jakarta.mail.Session.getStreamProvider()` method. 
+
+For more information, see the https://jakarta.ee/specifications/mail/2.1/jakarta-mail-spec-2.1.html[Jakarta Mail 2.1 specification].
+
 [#restfulws]
 == Differences between Jakarta RESTful Web Services 3.1 and 3.0
 
@@ -261,7 +476,67 @@ Constructors of the `NewCookie` class are deprecated in favor of the `NewCookie.
 
 In Open Liberty, the link:https://jakarta.ee/specifications/security/3.0/jakarta-security-spec-3.0.html[Jakarta Security 3.0 specification] is supported by the feature:appSecurity-5.0[display=Application Security (Jakarta Security ) 5.0] feature. This feature introduces a new link:https://jakarta.ee/specifications/security/3.0/apidocs/jakarta.security/jakarta/security/enterprise/authentication/mechanism/http/openidauthenticationmechanismdefinition[@OpenIdAuthenticationMechanismDefinition] annotation to configure a built-in OpenID Connect authentication mechanism. This authentication mechanism functions as an OpenID Connect client, or Relying Party (RP), so that you can use an OpenID Connect Provider(OP) as a single sign-on identity provider. It also introduces the `OpenIdContext` bean and various APIs for handling the access token, identity token, and refresh token.
 
-For more information, see the link:https://jakarta.ee/specifications/security/3.0/apidocs/jakarta.security/module-summary.html[Jakarta Security 3.0 Javadoc] and [LINK TO FORTHCOMING ODIC DOC].
+For more information, see the link:https://jakarta.ee/specifications/security/3.0/apidocs/jakarta.security/module-summary.html[Jakarta Security 3.0 Javadoc] and the xref:/enable-OpenID-Connect-client.adoc[Enable an OpenID Connect client for an application] topic.
+
+[#pages]
+== Differences between Jakarta Server Pages and 3.1 and 3.0 
+
+The feature:pages-3.1[display=Jakarta Server Pages 3.1] feature provides support for the https://jakarta.ee/specifications/pages/3.1/jakarta-server-pages-spec-3.1.html[Jakarta Server Pages 3.1] and https://jakarta.ee/specifications/tags/3.0/jakarta-tags-spec-3.0.html[Jakarta Standard Tag Library 3.0] specifications. This release includes updates for Expression Language identifiers and resolvers, new tag URIs, and more.
+
+=== Finding unknown identifiers
+
+This release adds a new option to find unknown Expression Language identifiers. When this option is enabled, a `PropertyNotFoundException` occurs if an unknown identifier is found. Previously, unknown identifiers were rendered as empty strings ("") and were difficult to identify. You can enable this option by using page directives, tag directives, or as a JSP Property Group in the `web.xml` file. 
+
+To enable this option by using page or tag directives, set the `errorOnELNotFound` attribute to `true`, as shown in the following example.
+
+----
+<%@ page errorOnELNotFound="true" %>
+----
+
+To enable this option byn using a JSP Property Group in the `web.xml` file, set the `error-on-el-not-found` element to `true`, as shown in the following example.
+
+[source,xml]
+----
+<jsp-property-group>
+   <url-pattern>*.jsp</url-pattern>
+   <error-on-el-not-found>true</error-on-el-not-found>
+</jsp-property-group>
+----
+
+For more information, see https://jakarta.ee/specifications/pages/3.1/jakarta-server-pages-spec-3.1.html#_Unknown_EL_Identifiers[Unknown EL Identifiers] in the Jakarta Server Pages specification.
+
+=== New Expression Language Resolvers 
+
+Expression Language Resolvers are updated to improve handling of imports and unresolved variables. Two new resolvers are available in this release. 
+
+ImportELResolver::
+This new import resolver, which was refactored from the `ScopedAttributeELResolver` class, makes any class or package imports from the `import` attribute available to the expression language environment. Previously, imports were available only to the scripting environment and if an expression used an import class, it resolved to an empty string. For more information, see https://jakarta.ee/specifications/pages/3.1/apidocs/jakarta.servlet.jsp/jakarta/servlet/jsp/el/importelresolver[ImportELResolver].
+
+NotFoundELResolver:: 
+This resolver always resolves a variable when other resolvers do not. It returns `null` by default, but you can alter this behavior by using the previously mentioned `error-on-el-not-found` element. For more information, see https://jakarta.ee/specifications/pages/3.1/apidocs/jakarta.servlet.jsp/jakarta/servlet/jsp/el/notfoundelresolver[NotFoundELResolver].
+
+=== Import updates
+
+Default and implicit imports for the scripting environment now also apply to the expression language environment. These default imports are `java.lang.\*`, `jakarta.servlet.*`, `jakarta.servlet.jsp.\*`, and `jakarta.servlet.http.*`.
+
+=== Namespace updates
+
+The Jakarta Tag URIs now use the `jakarta.tags.\*` pattern. Although support for the previous `\http://xmlns.jcp.org/jsp/jstl/*` pattern is maintained for backwards compatibility, it is recommended to update your applications to use these new URIs. The following example shows the `taglib` directive with the new URIs.
+
+----
+<%@ taglib prefix="c" uri="jakarta.tags.core" %> 
+<%@ taglib prefix="x" uri="jakarta.tags.xml" %> 
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %> 
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>" 
+<%@ taglib prefix="sql" uri="jakarta.tags.sql" %> 
+----
+For more information, see the https://jakarta.ee/specifications/tags/3.0/tagdocs/[Jakarta Tags doc].
+
+=== Deprecations
+
+The `isThreadSafe` directive is deprecated due to the removal of the `SingleThreadModel` interface in the Servlet 6.0 API. A workaround is implemented, but significant performance impacts might occur. Use of the `isThreadSafe` directive in Pages 3.1 is discouraged.
+
+The `jsp:plugin`, `jsp:params`, and `jsp:fallback` actions are deprecated and are not operational because current browsers no longer support the elements that are generated by the `jsp:plugin` and related actions.
 
 [#servlet]
 == Differences between Jakarta Servlet 6.0 and 5.0
@@ -433,305 +708,6 @@ The following previously deprecated classes are removed.
 
 For more information, see the https://jakarta.ee/specifications/servlet/6.0/apidocs/jakarta.servlet/module-summary.html[Jakarta Servlet 6.0 Javadoc].
 
-[#appAuthz]
-== Differences between Jakarta Authorization 2.1 and 2.0
-
-The feature:appAuthorization-2.1[display=Jakarta Authorization 2.1] feature (`appAuthorization-2.1`)  introduces the following new methods.
-
-=== New methods for the jakarta.security.jacc.PolicyConfigurationFactory abstract class
-
-The `jakarta.security.jacc.PolicyConfigurationFactory` abstract class implements the following two
-new methods to  retrieve the Policy Configuration interface (`PolicyConfiguration`).
-
-* `public abstract PolicyConfiguration getPolicyConfiguration();`
-* `public abstract PolicyConfiguration getPolicyConfiguration(String contextID);`
-
-These methods are available in addition to the following `getPolicyConfiguration` method that was available in previous versions.
-
-`public abstract PolicyConfiguration getPolicyConfiguration(String contextID, boolean remove);`
-
-=== New methods for the jakarta.security.jacc.PolicyConfiguration interface
-
-The `jakarta.security.jacc.PolicyConfiguration` interface defines three new methods to read
-permissions.
-
-* `public abstract Map<String, PermissionCollection> getPerRolePermissions();`
-* `public abstract PermissionCollection getUncheckedPermissions();`
-* `public abstract PermissionCollection getExcludedPermissions();`
-
-For more information, see the https://jakarta.ee/specifications/authorization/2.1/apidocs/jakarta.security.jacc/jakarta/security/jacc/package-summary.html[Jakarta Authorization 2.1 Javadoc].
-
-[#appAuthn]
-== Differences between Jakarta Authentication 3.0 and 2.0
-
-The feature:appAuthentication-2.1[display=Jakarta Authentication 3.0] feature (`appAuthentication-3.0`) introduces changes to the `jakarta.security.auth.message.config.AuthConfigFactory` abstract class. This class implements the following two new methods to register and remove a server authentication module. 
-
-* `public abstract String registerServerAuthModule(ServerAuthModule serverAuthModule, Object context);`
-* `public abstract void removeServerAuthModule(Object context);`
-
-Before this version of the feature, support was available to register and remove only a configuration provider.
-
-For more information, see the https://jakarta.ee/specifications/authentication/3.0/apidocs/jakarta.security.auth.message/module-summary.html[Jakarta Authentication 3.0 Javadoc].
-
-[#el]
-== Differences between Jakarta Expression Language 5.0 and 4.0
-
-The feature:expressionLanguage-5.0[display=Jakarta Expression Language 5.0] feature adds support for Java Generics and includes updates to type coercion, the Expression Language resolver, and more.
-
-=== Support for Java Generics
-
-The 5.0 release adds support for Java Generics throughout the API, wherever they are appropriate. This update removes the need to cast from an `Object` instance to a specific object type in many API calls.
-
-=== Type coercion
-
-The 5.0 release implements support for https://jakarta.ee/specifications/expression-language/5.0/jakarta-expression-language-spec-5.0.html#coerce-a-to-functional-interface-method-invocation[coercing Lambda Expressions to a functional interface method invocation] and clarifies the specification for coercing arrays. However, Liberty use of the Tomcat API and implementation of the Expression Language specification already followed these clarifications to the specification for link:https://jakarta.ee/specifications/expression-language/5.0/jakarta-expression-language-spec-5.0.html#coerce-a-to-an-array-of-type-t[coercing arrays]. Therefore, no functional changes for array coercion are added in Expression Language 5.0.
-
-=== Expression Language resolver
-
-The https://jakarta.ee/specifications/expression-language/5.0/apidocs/jakarta.el/jakarta/el/beanelresolver[BeanELResolver class] is updated to also consider default method implementations when it looks for property getters, property setters, and methods.
-The documented behavior of the https://jakarta.ee/specifications/expression-language/5.0/apidocs/jakarta.el/jakarta/el/staticfieldelresolver[StaticFieldELResolver] class is updated to explicitly document that the `ELResolver.getType()` method must return null if either the `ELResolver` class or the resolved property is read-only.
-
-
-=== Method annotation access
-
-A new `MethodReference` class provides access to details of the method to which a `MethodExpression` instance resolves, including any annotations that are present on the method.
-
-=== Deprecations and removals
-
-The `ELResolver` `getFeatureDescriptors()` method is deprecated in Expression Language 5.0, with removal planned for Expression Language 6.0. A new default implementation that returns null is added. This update ensures that custom `ELResolver` implementations do not need to implement the method.
-
-The deprecated and misspelled `MethodExpression.isParmetersProvided()` method is removed from the API.
-
-For more information, see the https://jakarta.ee/specifications/expression-language/5.0/apidocs/jakarta.el/module-summary.html[Jakarta Expression Language 5.0 Javadoc].
-
-[#pages]
-== Differences between Jakarta Server Pages and 3.1 and 3.0 
-
-The feature:pages-3.1[display=Jakarta Server Pages 3.1] feature provides support for the https://jakarta.ee/specifications/pages/3.1/jakarta-server-pages-spec-3.1.html[Jakarta Server Pages 3.1] and https://jakarta.ee/specifications/tags/3.0/jakarta-tags-spec-3.0.html[Jakarta Standard Tag Library 3.0] specifications. This release includes updates for Expression Language identifiers and resolvers, new tag URIs, and more.
-
-=== Finding unknown identifiers
-
-This release adds a new option to find unknown Expression Language identifiers. When this option is enabled, a `PropertyNotFoundException` occurs if an unknown identifier is found. Previously, unknown identifiers were rendered as empty strings ("") and were difficult to identify. You can enable this option by using page directives, tag directives, or as a JSP Property Group in the `web.xml` file. 
-
-To enable this option by using page or tag directives, set the `errorOnELNotFound` attribute to `true`, as shown in the following example.
-
-----
-<%@ page errorOnELNotFound="true" %>
-----
-
-To enable this option byn using a JSP Property Group in the `web.xml` file, set the `error-on-el-not-found` element to `true`, as shown in the following example.
-
-[source,xml]
-----
-<jsp-property-group>
-   <url-pattern>*.jsp</url-pattern>
-   <error-on-el-not-found>true</error-on-el-not-found>
-</jsp-property-group>
-----
-
-For more information, see https://jakarta.ee/specifications/pages/3.1/jakarta-server-pages-spec-3.1.html#_Unknown_EL_Identifiers[Unknown EL Identifiers] in the Jakarta Server Pages specification.
-
-=== New Expression Language Resolvers 
-
-Expression Language Resolvers are updated to improve handling of imports and unresolved variables. Two new resolvers are available in this release. 
-
-ImportELResolver::
-This new import resolver, which was refactored from the `ScopedAttributeELResolver` class, makes any class or package imports from the `import` attribute available to the expression language environment. Previously, imports were available only to the scripting environment and if an expression used an import class, it resolved to an empty string. For more information, see https://jakarta.ee/specifications/pages/3.1/apidocs/jakarta.servlet.jsp/jakarta/servlet/jsp/el/importelresolver[ImportELResolver].
-
-NotFoundELResolver:: 
-This resolver always resolves a variable when other resolvers do not. It returns `null` by default, but you can alter this behavior by using the previously mentioned `error-on-el-not-found` element. For more information, see https://jakarta.ee/specifications/pages/3.1/apidocs/jakarta.servlet.jsp/jakarta/servlet/jsp/el/notfoundelresolver[NotFoundELResolver].
-
-=== Import updates
-
-Default and implicit imports for the scripting environment now also apply to the expression language environment. These default imports are `java.lang.\*`, `jakarta.servlet.*`, `jakarta.servlet.jsp.\*`, and `jakarta.servlet.http.*`.
-
-=== Namespace updates
-
-The Jakarta Tag URIs now use the `jakarta.tags.\*` pattern. Although support for the previous `\http://xmlns.jcp.org/jsp/jstl/*` pattern is maintained for backwards compatibility, it is recommended to update your applications to use these new URIs. The following example shows the `taglib` directive with the new URIs.
-
-----
-<%@ taglib prefix="c" uri="jakarta.tags.core" %> 
-<%@ taglib prefix="x" uri="jakarta.tags.xml" %> 
-<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %> 
-<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>" 
-<%@ taglib prefix="sql" uri="jakarta.tags.sql" %> 
-----
-For more information, see the https://jakarta.ee/specifications/tags/3.0/tagdocs/[Jakarta Tags doc].
-
-=== Deprecations
-
-The `isThreadSafe` directive is deprecated due to the removal of the `SingleThreadModel` interface in the Servlet 6.0 API. A workaround is implemented, but significant performance impacts might occur. Use of the `isThreadSafe` directive in Pages 3.1 is discouraged.
-
-The `jsp:plugin`, `jsp:params`, and `jsp:fallback` actions are deprecated and are not operational because current browsers no longer support the elements that are generated by the `jsp:plugin` and related actions.
-
-[#batch]
-== Differences between Jakarta Batch 2.0 and 2.1
-
-The updates in Jakarta Batch 2.1 primarily focus on improved integration with Context Dependency Injection (CDI). The discovery of Batch artifacts is now standardized with CDI, which was not fully defined in the specification previously.
-
-=== Updates for the @BatchProperty annotation
-
-The @BatchProperty annotation is expanded to allow injection of the following types: `Boolean`, `Short`, `Integer`, `Long`, `Float`, and `Double`. Previously, this annotation could inject only a `String` value. The following example demonstrates the newly added injection types.
-
-[source,java]
-----
-@Inject @BatchProperty(name="b1") Boolean b1;
-@Inject @BatchProperty(name="s1") Short s1;
-@Inject @BatchProperty(name="i1") Integer i1;
-@Inject @BatchProperty(name="l1") Long l1;
-@Inject @BatchProperty(name="f1") Float f1;
-@Inject @BatchProperty(name="d1") Double d1;
-----
-
-=== Default injection for the JobOperator interface 
-
-Previously, the default `JobOperator` interface was made available only from the `BatchRuntime.getJobOperator()` static factory method. In Jakarta Batch 2.1 and later, if an injection point for a `JobOperator`  interface exists and no user-supplied implementation is found, the default `JobOperator` instance is injected automatically. The following example demonstrates the default injection for the `JobOperator` interface.
-
-[source,java]
-----
-@Inject JobOperator jobOperator;
-----
-
-[#bind]
-== Differences between Jakarta XML Binding 4.0 and 3.0
-
-The feature:xmlBinding-4.0[display=Jakarta XML Binding 4.0] feature gives you the option to switch to a third-party implementation and removes support for the Validator API.
-
-=== Switch to a third-party implementation
-
-In Jakarta XML Binding 4.0, you can specify the `jakarta.xml.bind.JAXBContextFactory` property  to switch to a preferred third-party implementation. The `xmlBinding-4.0` feature then uses the specified implementation instead of the reference implementation. Consider the following notes when you choose a third-party implementation.
-
-If you set the `jakarta.xml.bind.JAXBContextFactory` property, you must add the specified third-party implementation to the application class path. Otherwise, a `java.lang.ClassNotFoundException` exception occurs. Furthermore, the third-party implementation must be shared between all applications that are running on the JVM. Any application that is running on the JVM that does not have the implementation added to its class path encounters a `java.lang.ClassNotFoundException` exception.
-
-=== Removal of the Validator API
-
-The `xmlBinding-4.0` feature does not support the `jakarta.xml.bind.Validator` APIs. Any application that uses this API must either remove it or replace it with a `SchemaValidation` instance. The following examples demonstrate how to use a `SchemaValidation` instance as a replacement for a Validator API.
-
-[source,java]
-----
-SchemaFactoryschemaFactory= SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI); 
-Schema dataObjectSchema= schemaFactory.newSchema(new File("dataObjectSchema.xml")); jaxbUnmarshaller.setSchema(dataObjectSchema)
-----
-
-For more information, see the https://jakarta.ee/specifications/xml-binding/4.0/jakarta-xml-binding-spec-4.0.html[Jakarta XML Binding 4.0 specification].
-
-[#faces]
-== Differences between Jakarta Faces 4.0 and 3.0
-
-The feature:faces-4.0[display=Jakarta Faces 4.0] feature introduces programmatic creation of facelets, automatic extensionless mapping, and numerous improvements and removals. 
-
-=== Programmatically create facelets
-
-As of the 4.0 release, facelets no longer need to exist as XML files and can now be programmatically created with Java. For an example, see link:https://github.com/jakartaee/faces/issues/1581[this spec issue]. 
-
-=== Map to facelets without specifying an extension
-
-You can now configure facelets to be reached without any extensions by setting the `jakarta.faces.AUTOMATIC_EXTENSIONLESS_MAPPING` context parameter to `true`. For example, when this parameter is set to true, `somePage.xhtml` can be reached by `<context-root>/somePage` because the `FacesServlet` maps to `/somePage` automatically.
-
-=== New attributes 
-
-link:https://jakarta.ee/specifications/faces/4.0/vdldoc/f/websocket.html#onerror[<f:websocket onerror="…">]::
-It was reported that the `onclose` attribute was sometimes not enough for reporting errors, so this `onerror` attribute was added to handle any unexpected errors that occur on the WebSocket connection.
-
-link:https://jakarta.ee/specifications/faces/4.0/vdldoc/h/inputfile#accept[<h:inputFile accept="…">]::
-Use this attribute to  specify the comma-separated string of mime file types that the client file browser filters through.
-
-link:https://jakarta.ee/specifications/faces/4.0/vdldoc/h/inputfile#multiple[<h:inputFile multiple="…">]::
-Use this attribute to upload multiple files with the https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/multiple[multiple] HTML attribute. 
-
-link:https://jakarta.ee/specifications/faces/4.0/vdldoc/h/inputtext#type[<h:inputText type="…">]::
-This attribute enables https://developer.mozilla.org/en-US/docs/Learn/Forms/HTML5_input_types[HTML5 input types], such as `email`, `date`, `tel`, and many others.
-
-=== New tags 
-
-https://jakarta.ee/specifications/faces/4.0/vdldoc/f/selectitemgroups[<f:selectItemGroups>]::
-This tag renders multiple `optgroup` elements so you can offer a nested collection of `option` elements. For more information about `outgroup` elements, see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/optgroup[<optgroup>: The Option Group element].
-
-https://jakarta.ee/specifications/faces/4.0/vdldoc/f/selectitemgroup[<f:selectItemGroup>]::
-This tag is similar to the `<f:selectItemGroups>` tag but allows only one `optgroup` to be rendered.
-
-=== New methods 
-
-link:https://jakarta.ee/specifications/faces/4.0/apidocs/jakarta/faces/context/facescontext#getLifecycle()[FacesContext#getLifecycle()]::
-This method is a convenience method to determine the current phase of the Faces lifecycle.
-
-link:https://jakarta.ee/specifications/faces/4.0/apidocs/jakarta/faces/component/uiviewroot#getDoctype()[UIViewRoot#getDoctype()]::
-This method returns the declared `DOCTYPE` of the facelet.
-
-=== New context parameters
-
-link:https://jakarta.ee/specifications/faces/4.0/apidocs/jakarta/faces/webapp/facesservlet#AUTOMATIC_EXTENSIONLESS_MAPPING_PARAM_NAME[jakarta.faces.AUTOMATIC_EXTENSIONLESS_MAPPING]::
-This parameter enables automatic mapping to a facelet without specifying an extension. The default value is false.
-
-link:https://jakarta.ee/specifications/faces/4.0/apidocs/jakarta/faces/lifecycle/clientwindow#NUMBER_OF_CLIENT_WINDOWS_PARAM_NAME[jakarta.faces.NUMBER_OF_CLIENT_WINDOWS]::
-This parameter sets the maximum number of `ClientWindows` instances, which is used by the `ClientWindowScoped` annotation. The default value is 10. This parameter can be used only when the `jakarta.faces.CLIENT_WINDOW_MODE` parameter is enabled.
-
-link:https://myfaces.apache.org/#/core40[org.apache.myfaces.USE_LAMBDA_METAFACTORY]::
-Although not specification-defined, this  experimental MyFaces parameter allows lambdas to be used for the setting and getting of bean properties, rather than reflection. Lambdas offer significant performance improvement over reflection. If any problems arise, an error is logged and the traditional lookup is used as a fall back to prevent the application from breaking.
-
-
-=== Annotation updates
-
-link:https://jakarta.ee/specifications/faces/4.0/apidocs/jakarta/faces/lifecycle/clientwindowscoped[@ClientWindowScoped]::
-A new CDI scope  is added that allows classes with this annotation to live for the current `ClientWindow`, which is enabled by setting the `javax.faces.CLIENT_WINDOW_MODE` parameter to `url` mode. In other words, the classes are active when the `jfwid` request parameter is first used and reused across faces link components. 
-+
-This annotation is similar to the `FlowScope` annotation but more flexible, because it's not limited to a subset of pages.  Faces limits the number of Client Windows with the `jakarta.faces.NUMBER_OF_CLIENT_WINDOWS` parameter, which has a default value of `10`.
-
-Addition of annotation literals for all `@Qualifiers`::
-With this change, you no longer need to create your own annotation literals. Now you can easily retrieve Faces-specific instances with the CDI API, as shown in the following example. 
-+
-[source,java]
-----
-Map<String, Object> requestMap = CDI.current().select(new TypeLiteral<Map<String, Object>>() {}, RequestMap.Literal.INSTANCE).get();
-----
-
-=== URI updates
-
-The `\http://xmlns.jcp.org/jsf/\*` URIs are updated to the `jakarta.faces.*` URN.  For example, any URI in the `\http://xmlns.jcp.org/jsf/\*` pattern now uses the `jakarta.faces.*` URN pattern and any URI in the `\http://xmlns.jcp.org/jsp/jstl/\*` pattern now uses the `jakarta.tags.*` URN pattern. However, Faces 4.0 is still backward compatible with the older URIs.
-
-=== Other improvements and updates
-
-- The term `JSF` is changed to `Faces` throughout the code. This change includes renames such as `jsf.js` to `faces.js`, `window.jsf` to `window.faces`, and `xmlns:jsf` to `xmlns:faces`. For more information, see https://github.com/jakartaee/faces/issues/1552[this spec issue]. 
-
-- The list layout, `layout="list"`, was added to the `<h:selectManyCheckbox>` and `<h:selectOneRadio>` tags. This new layout allows easier CSS control because the HTML is generated with `<ul>` and `<li>` elements rather than the outdated `<table>` and associated elements.
-
-- The `UIComponent#subscribeToEvent()` method is now more convenient. The 4.0 spec mandates that listeners can no longer be added twice, and that the `UIComponent#getListenersForEventClass()` method must not return null.
-
-- The type attribute is skipped for `<link>` and `<script>` elements when the doctype is HTML5 because the type is already implied.
-
-- The `<f:ajax>` behavior is improved for composite components when it is used with the `@this` keyword. The following statement was added to the specification: _When nested within a composite component, and the value contains or implies the keyword @this, then the keyword must be remapped to the targets attribute of the associated `<composite:clientBehavior>` declaration_. For more information, see the  https://jakarta.ee/specifications/faces/4.0/vdldoc/f/ajax.html[execute attribute for the ajax tag] and https://github.com/jakartaee/faces/issues/1567[this spec issue]. 
-
-- The `ExternalContext#addResponseCookie()` method now supports custom cookie attributes, such as `SameSite`. This support is provided by the Servlet 6.0 https://jakarta.ee/specifications/servlet/6.0/apidocs/jakarta.servlet/jakarta/servlet/http/cookie#setAttribute(java.lang.String,java.lang[jakarta.servlet.http.Cookie#setAttribute()] method.
-
-- MyFaces updated its JavaScript implementation to the newer ECMAScript 2015 (ES6) standard.  As a result, older browsers, such a Internet Explorer, do not support the newer syntax.  Automation tools for testing, such as HTMLUnit, also might encounter errors. 
-
-=== Removals
-
-Although the 4.0 release includes no new deprecations, many previously deprecated methods and classes are removed. Links for the following removals reference the Faces 3.0 API Docs for convenience as these are removed from Faces 4.0.
-
-- Pages (formerly JSP) support is removed entirely. Pages (JSP) can no longer be used as a view technology. Only facelets are supported.
-
-- Native Managed Bean support and the related code is been removed. You must now switch to CDI.
-
-- `MethodBinding`, `ValueBinding`, and related fields and classes are removed. You must switch to the Expression Language equivalents, such as `MethodBind` to `MethodExpression` and `PropertyResolver` to `ELResolver`. See the https://jakarta.ee/specifications/faces/3.0/apidocs/jakarta/faces/el/package-summary.html[Faces 3.0 API] for migration assistance.
-
-- The `CURRENT_COMPONENT` and `CURRENT_COMPOSITE_COMPONENT` constants are removed from the `UIComponent` class. Use the `UIComponent#getCurrentComponent()` and `UIComponent#getCurrentCompositeComponent()` utility methods instead.
-
-- The deprecated `StateManger` methods are removed. See the https://jakarta.ee/specifications/faces/3.0/apidocs/jakarta/faces/application/statemanager[Faces 3.0 API notes for the StateManger] for migration assistance.
-
-- The `ResourceResolver` class is removed. Use the `ResourceHandler` class instead, as it can perform the same functions. See the https://jakarta.ee/specifications/faces/3.0/apidocs/jakarta/faces/view/facelets/resourceresolver[Faces 3.0 API docs for ResourceResolver] for migration assistance.
-
-- The `PreJsf2ExceptionHandlerFactory` class is removed.
-
-For all other non-specification changes, see the https://myfaces.apache.org/#/news[MyFaces release notes].
-
-[#mail]
-== Differences between Jakarta Mail 2.1 and 2.0
-
-The feature:mail-2.1[display=Jakarta Mail 2.1] feature introduces the `jakarta.mail.util.StreamProvider` interface. This new interface from the Mail 2.1 specification makes it possible to obtain a `StreamProvider` instance, which provides access to the encoders and decoders that are supported by the `mail-2.1` runtime. You can obtain instances of the `StreamProvider` from the `jakarta.mail.Session.getStreamProvider()` method. 
-
-For more information, see the https://jakarta.ee/specifications/mail/2.1/jakarta-mail-spec-2.1.html[Jakarta Mail 2.1 specification].
-
 [#socket]
 == Differences between Jakarta WebSocket 2.1 and 2.0
 
@@ -759,6 +735,29 @@ The following changes are effective starting with WebSocket 2.1.
 * The link:https://jakarta.ee/specifications/websocket/2.1/apidocs/client/jakarta/websocket/session#getRequestURI()[jakarta.websocket.Session.getRequestURI()] method returns the full URI String from the protocol to the query string, if the string is present.
 
 For more information, see the https://jakarta.ee/specifications/websocket/2.1/jakarta-websocket-spec-2.1.html[Jakarta WebSocket 2.1] specification.
+
+[#bind]
+== Differences between Jakarta XML Binding 4.0 and 3.0
+
+The feature:xmlBinding-4.0[display=Jakarta XML Binding 4.0] feature gives you the option to switch to a third-party implementation and removes support for the Validator API.
+
+=== Switch to a third-party implementation
+
+In Jakarta XML Binding 4.0, you can specify the `jakarta.xml.bind.JAXBContextFactory` property  to switch to a preferred third-party implementation. The `xmlBinding-4.0` feature then uses the specified implementation instead of the reference implementation. Consider the following notes when you choose a third-party implementation.
+
+If you set the `jakarta.xml.bind.JAXBContextFactory` property, you must add the specified third-party implementation to the application class path. Otherwise, a `java.lang.ClassNotFoundException` exception occurs. Furthermore, the third-party implementation must be shared between all applications that are running on the JVM. Any application that is running on the JVM that does not have the implementation added to its class path encounters a `java.lang.ClassNotFoundException` exception.
+
+=== Removal of the Validator API
+
+The `xmlBinding-4.0` feature does not support the `jakarta.xml.bind.Validator` APIs. Any application that uses this API must either remove it or replace it with a `SchemaValidation` instance. The following examples demonstrate how to use a `SchemaValidation` instance as a replacement for a Validator API.
+
+[source,java]
+----
+SchemaFactoryschemaFactory= SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI); 
+Schema dataObjectSchema= schemaFactory.newSchema(new File("dataObjectSchema.xml")); jaxbUnmarshaller.setSchema(dataObjectSchema)
+----
+
+For more information, see the https://jakarta.ee/specifications/xml-binding/4.0/jakarta-xml-binding-spec-4.0.html[Jakarta XML Binding 4.0 specification].
 
 [#xml]
 == Differences between Jakarta XML Web Services 4.0 and 3.0
