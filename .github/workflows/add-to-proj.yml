@@ -1,24 +1,19 @@
-name: Add new issues to project
+name: Adds issues with "open" label to GitHub project
 on:
   issues:
-    types: [opened, labeled]
-    
-env:
-   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  
+    types:
+      - opened
+      - labeled
+
 jobs:
-  assign_one_project:
+  add-to-project:
+    name: Add issues with "open" label to GitHub project
     runs-on: ubuntu-latest
-    name: Assign to Docs Planning Project
+    permissions:
+      repository-projects: write
     steps:
-      - name: Assign new issues to the docs planning project board
-        uses: srggrs/assign-one-project-github-action@1.2.1
-        if: |
-          github.event_name == 'issues' &&
-          (
-            github.event.action == 'opened' ||
-            contains(github.event.issue.labels.*.name, 'open')
-          )
+      - uses: actions/add-to-project@v0.4.0
         with:
-          project: 'https://github.com/orgs/OpenLiberty/projects/18'
-          column_name: 'Triage'        
+          project-url: https://github.com/orgs/OpenLiberty/projects/18
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          labeled: open
