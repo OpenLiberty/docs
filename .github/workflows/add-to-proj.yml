@@ -1,20 +1,24 @@
 name: Add new issues to project
-
 on:
   issues:
-    types:
-      - opened
-
+    types: [opened, labeled]
+    
+env:
+  MY_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  
 jobs:
-  add-to-project:
-    name: Add issue to project
+  assign_one_project:
     runs-on: ubuntu-latest
+    name: Assign to Docs Planning Project
     steps:
-      - uses: actions/add-to-project@v0.4.1
+      - name: Assign new issues to the blog planning project board
+        uses: srggrs/assign-one-project-github-action@1.2.1
+        if: |
+          github.event_name == 'issues' &&
+          (
+            github.event.action == 'opened' ||
+            contains(github.event.issue.labels.*.name, 'open')
+          )
         with:
-          # You can target a repository in a different organization
-          # to the issue
-          project-url: https://github.com/orgs/OpenLiberty/projects/18
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          labeled: 
-          label-operator: 
+          project: 'https://github.com/orgs/OpenLiberty/projects/18'
+          column_name: 'Triage'        
