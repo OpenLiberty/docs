@@ -1,0 +1,24 @@
+name: Add new issues to project
+on:
+  issues:
+    types: [opened, labeled]
+    
+env:
+  MY_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  
+jobs:
+  assign_one_project:
+    runs-on: ubuntu-latest
+    name: Assign to Docs Planning Project
+    steps:
+      - name: Assign new issues to the blog planning project board
+        uses: srggrs/assign-one-project-github-action@1.2.1
+        if: |
+          github.event_name == 'issues' &&
+          (
+            github.event.action == 'opened' ||
+            contains(github.event.issue.labels.*.name, 'open')
+          )
+        with:
+          project: 'https://github.com/orgs/OpenLiberty/projects/18'
+          column_name: 'Triage'        
