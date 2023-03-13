@@ -16,9 +16,9 @@ In microservice applications, sources of latency or inaccuracy can be difficult 
 
 One way to increase observability of an application is by emitting traces. Traces represent requests and consist of multiple spans. A span represents a single operation in a request and contains a name, time-related data, log messages, and metadata to gather data about what occurs during a transaction.
 
-MicroProfile Telemetry is based on the https://opentelemetry.io/[OpenTelemetry project], which is a collection of open source vendor-agnostic tools, APIs, and SDKs for creating and managing trace data. You can enable MicroProfile Telemetry for Open Liberty by adding the MicroProfile Telemetry feature to your `server.xml` file providing configuration to allow the feature to connect to your distributed trace service.
+link:https://projects.eclipse.org/projects/technology.microprofile/releases/microprofile-telemetry-1.0/plan%E2%80%A8%E2%80%A822.0.0.10-bet[MicroProfile Telemetry] is based on the https://opentelemetry.io/[OpenTelemetry project], which is a collection of open source vendor-agnostic tools, APIs, and SDKs for creating and managing trace data. You can enable MicroProfile Telemetry for Open Liberty by adding the feature:mpTelemetry[display=MicroProfile Telemetry] feature to your `server.xml` file and configuring the feature to connect to your distributed trace service.
 
-MicroProfile Telemetry supports tracing data instrumentation in three different ways: <<#auto, automatic instrumentation>>, <<#manual, manual instrumentation>>, or <<#agent, agent instrumentation>>. The data can then be exported to tracing systems like https://www.jaegertracing.io/[Jaeger] or https://zipkin.io/[Zipkin].
+MicroProfile Telemetry supports the instrumentation of tracing data in your code in three different ways: <<#auto, automatic instrumentation>>, <<#manual, manual instrumentation>>, or <<#agent, agent instrumentation>>. The data can then be exported to tracing systems like https://www.jaegertracing.io/[Jaeger] or https://zipkin.io/[Zipkin].
 
 MicroProfile Telemetry replaces MicroProfile OpenTracing. For information about migrating your applications from MicroProfile OpenTracing to MicroProfile Telemetry, see xref:mp-50-60-diff.adoc#telemetry[Differences between MicroProfile Telemetry 1.0 and MicroProfile OpenTracing 3.0]. 
 
@@ -26,7 +26,7 @@ MicroProfile Telemetry replaces MicroProfile OpenTracing. For information about 
 == Automatic instrumentation
 With automatic instrumentation, you can observe traces without modifying the source code in your Jakarta RESTful web service (formerly JAX-RS) applications. To start emitting traces with automatic instrumentation, enable the feature:mpTelemetry[display=MicroProfile Telemetry] feature in your `server.xml` file. By default, MicroProfile Telemetry tracing is off. To enable tracing, specify the `otel.sdk.disabled=false` MicroProfile Config property and any exporter configuration that your tracing service service requires.
 
-For example, to export traces to a Jaeger server with the OpenTelemetry Protocol (OTLP) enabled, add the following entries to your `bootstrap.properties` file:
+For example, to export traces to a Jaeger server with the OpenTelemetry Protocol (OTLP) enabled, add the following entries to your `bootstrap.properties` file.
 
 [source,properties]
 ----
@@ -60,7 +60,8 @@ Automatic instrumentation is available only for Jakarta RESTful web service appl
     <classloader apiTypeVisibility="+third-party"/>
 </webApplication>
 ----
-- Add the `opentelemetry` API and OpenTelemetry instrumentation annotations as a provided dependency to your build path. For example, with Maven, add the following code to your `pom.xml` file:
+
+- Add the `opentelemetry` API and OpenTelemetry instrumentation annotations as a provided dependency to your build path. For example, with Maven, add the following code to your `pom.xml` file.
 +
 [source,xml]
 ----
@@ -78,9 +79,9 @@ Automatic instrumentation is available only for Jakarta RESTful web service appl
     </dependency>
 ----
 
-After you complete those prerequisites, you're ready to instrument your code. The following examples show configuration with the OpenTelemetry API.
+After you complete those prerequisites, you're ready to instrument your code. The following examples show configuration optionswith the OpenTelemetry API.
 
-- Add extra information, such as the user ID, to the current span. Any information you add to a span is visible when you look at traces on your trace server.
+- Add extra information, such as the user ID, to the current span. Any information that you add to a span is visible when you look at traces on your trace server.
 +
 [source,java]
 ----
@@ -136,9 +137,9 @@ class SpanBean {
 
 === Considerations for using manual instrumentation
 
-The following important considerations apply to manual instrumentation:
+The following important considerations apply to manual instrumentation.
 
-- You must call the `.end()` method on any span you create, otherwise the span won't be recorded.
+- You must call the `.end()` method on any span you create, otherwise the span is not recorded.
 - The current span is used as the parent for any new spans that are created. Therefore, when you create a span, you usually also want to make it current. However, you must close the `Scope` instance that is returned by the  `Span.makeCurrent()` method. You can close a `Scope` instance by specifying  a try-with-resources block, as shown in the previous example for creating a subspan.
 
 For more information, see the https://opentelemetry.io/docs/instrumentation/java/manual[OpenTelemetry manual instrumentation documentation]. However, remember when you use the MicroProfile Telemetry feature in Open Liberty, you must obtain the `OpenTelemetry` and `Tracer` objects by injecting them, not by creating your own. Furthermore, be aware that this documentation includes information for the OpenTelemetry Metrics and Logging APIs, which are not supported by MicroProfile Telemetry.
@@ -158,12 +159,12 @@ You can configure the agent with https://github.com/open-telemetry/opentelemetry
 
 === Limitations of agent instrumentation
 
-The OpenTelemetry Java agent is a tool that is provided by the OpenTelemetry project. Although it is compatible with Open Liberty, it is a separate project and is subject to the following limitations:
+The OpenTelemetry Java agent is a tool that is provided by the OpenTelemetry project. Although it is compatible with Open Liberty, it is a separate project and is subject to the following limitations.
 
 * Configuration works differently when you use the agent. https://opentelemetry.io/docs/instrumentation/java/automatic/agent-config/[Configuration of the agent is well documented], but the following aspects are different from configuration without the agent:
     ** Configuration is shared between all applications that are deployed to the server.
     ** Configuration properties are only read from system properties and environment variables. They are not read from MicroProfile Config configuration sources.
-    ** Because the agent reads its configuration very early in the startup process, system properties are not read from the `bootstrap.properties` file. Alternatively, you can set system properties in the `jvm.options` file by using the following syntax: `-Dname=value`
+    ** Because the agent reads its configuration early in the startup process, system properties are not read from the `bootstrap.properties` file. Alternatively, you can set system properties in the `jvm.options` file by using the following syntax: `-Dname=value`
     ** Implementations of https://www.javadoc.io/doc/io.opentelemetry/opentelemetry-sdk-extension-autoconfigure-spi/1.19.0/index.html[SPI extensions] within applications are ignored. For more information, see the https://opentelemetry.io/docs/instrumentation/java/automatic/agent-config/#extensions[agent documentation for providing SPI extensions].
 * When you use the agent, it takes over the instrumentation of REST calls and methods that are annotated with `@WithSpan`. As a result, the created spans might be slightly different.
 * The agent is not compatible with https://www.ibm.com/docs/en/was-liberty/base?topic=security-java-2[Java 2 security].
