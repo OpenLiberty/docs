@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2021 IBM Corporation and others.
+// Copyright (c) 2019, 2022 IBM Corporation and others.
 // Licensed under Creative Commons Attribution-NoDerivatives
 // 4.0 International (CC BY-ND 4.0)
 //   https://creativecommons.org/licenses/by-nd/4.0/
@@ -16,6 +16,8 @@
 :mp-2-0: feature:mpMetrics-2.0[display=MicroProfile Metrics 2.0]
 :mp-2-3: feature:mpMetrics-2.3[display=MicroProfile Metrics 2.3]
 :mp-3-0: feature:mpMetrics-3.0[display=MicroProfile Metrics 3.0]
+:mp-4-0: feature:mpMetrics-4.0[display=MicroProfile Metrics 4.0]
+:mp-5-0: feature:mpMetrics-5.0[display=MicroProfile Metrics 5.0]
 :mp-ft-3-0: feature:mpFaultTolerance-3.0[display=MicroProfile Fault Tolerance 3.0]
 :base-metric-features: feature:mpMetrics[display=MicroProfile Metrics]
 :vendor-metric-features: feature:mpMetrics[display=MicroProfile Metrics]
@@ -24,17 +26,18 @@
 :grpc-server-metric-features: feature:mpMetrics[display=MicroProfile Metrics] and feature:grpc[display=gRPC]
 = Metrics reference list
 
-The metrics reference list includes all the metrics that are available for Open Liberty.
+The metrics reference tables list and describe all the metrics that are available for Open Liberty.
 Use metric data to effectively monitor the status of your microservice systems.
 
-Metrics are emitted from a number of different places.
-You can obtain them from applications, the Open Liberty runtime, and the Java virtual machine (JVM).
+You can obtain metrics from applications, the Open Liberty runtime, and the Java virtual machine (JVM).
 They can be gathered and stored in database tools, such as https://prometheus.io/[Prometheus], and displayed on dashboards, such as https://grafana.com/[Grafana].
-For more information about building observability into your applications, see xref:microservice-observability-metrics.adoc[Microservice observability with metrics].
+For more information about building observability into your applications, see xref:microservice-observability-metrics.adoc[Microservice observability with metrics]. For information about integrating MicroProfile Metrics 5.0 with Micrometer to send metric data to third-party monitoring systems, see xref:micrometer-metrics.adoc[Choose your own monitoring tools with MicroProfile Metrics].
 
-When the feature:mpMetrics[display="MicroProfile metrics"] feature is enabled, a set of base metrics is always reported. You can augment this set of metrics by collecting vendor metrics, which are available from different monitoring components within your Open Liberty server. When you enable both the feature:monitor[display="Performance Monitoring"] and the MicroProfile metrics features, you enable the reporting of vendor metrics on the `/metrics` endpoint. The Performance Monitoring feature retrieves the statistical data from all available monitoring components. The `REST` base metrics that were introduced in MicroProfile Metrics 2.3 also rely on the Performance Monitoring feature. Before MicroProfile Metrics 2.3, the Performance Monitoring feature had to be explicitly configured. In MicroProfile Metrics 2.3, and later, the Performance Monitoring feature is automatically enabled by MicroProfile Metrics during startup.
+== Base and vendor metrics
+When the feature:mpMetrics[display="MicroProfile metrics"] feature is enabled, a set of base metrics is always reported. You can augment this set of metrics by collecting vendor metrics, which are available from different monitoring components within your Open Liberty server. When you enable both the feature:monitor[display="Performance Monitoring"] and the MicroProfile metrics feature, you enable the reporting of vendor metrics on the `/metrics` endpoint. The Performance Monitoring feature retrieves the statistical data from all available monitoring components. The `REST` base metrics that were introduced in MicroProfile Metrics 2.3 also rely on the Performance Monitoring feature. Before MicroProfile Metrics 2.3, the Performance Monitoring feature had to be explicitly configured. In MicroProfile Metrics 2.3, and later, the Performance Monitoring feature is automatically enabled by MicroProfile Metrics during startup.
 
-By default, all monitoring components are enabled. If your server is collecting more metrics data than you need, you can improve the server performance by collecting only those vendor metrics that you intend to use. To configure only a subset of vendor metrics to be reported, specify the components that you want to monitor in the `filter` attribute for the `monitor` configuration element in your `server.xml` file. You can identify the relevant monitoring component for each vendor metric by referencing the **Monitoring component** column of the <<#metrics-table,Metrics that are available for Open Liberty>> table.
+== Filter metrics to gather only the data you need
+By default, all monitoring components are enabled. If your server is collecting more metrics data than you need, you can improve the server performance by collecting only those vendor metrics that you intend to use. To configure only a subset of vendor metrics to be reported, specify the components that you want to monitor in the `filter` attribute for the `monitor` configuration element in your `server.xml` file. You can identify the relevant monitoring component for each vendor metric by referencing the **Monitoring component** column of the metrics reference tables.
 
 To enable only the monitoring components that are used by MicroProfile Metrics, add the following code to your `server.xml` file.
 
@@ -57,22 +60,737 @@ To disable all monitoring components, add the following code to your `server.xml
 <monitor  filter=" "/>
 ----
 
-In the following table, the Prometheus metric names are listed after each metric.
-The table also lists the metric types, metric units, and descriptions of all metrics that are available for Open Liberty. For the vendor metrics, the associated monitoring component that you can use to filter the metric is also included.
-Metric units are included along with both the metric names and Prometheus names as these units can differ because the Prometheus exporter scales metrics to a base unit.
-For example, while the `ft.<name>.bulkhead.executionDuration` metric is recorded internally in nanoseconds, the Prometheus output is in seconds.
-If no unit is listed next to the metric name, then no units are associated with that metric.
+== Metrics reference tables
+
+The following two tables list the available metrics when you use <<#metrics-table-mp-metrics-5, MicroProfile Metrics 5.0>> or <<#metrics-table,MicroProfile Metrics 4.0 (or earlier versions)>>.
+In both tables, the Prometheus metric names are listed after each metric.
+The tables also list the metric types, metric units, and descriptions of all metrics that are available for Open Liberty. For the vendor metrics, the associated monitoring component that you can use to filter the metric is also included.
 The **Features required** column of the table includes the feature or features that must be enabled to obtain that metric data.
 The **Version introduced** column specifies the minimum version of the feature that you must enable to collect the metric.
-{empty} +
 
-[#metrics-table]
-.Metrics that are available for Open Liberty
+=== Units in the metrics reference tables
+
+For both tables, metric units are included along with both the metric names and Prometheus names. In MicroProfile 4.0 and earlier, these units can differ because the Prometheus exporter scales metrics to a base unit.
+For example, while the `ft.<name>.bulkhead.executionDuration` metric is recorded internally in nanoseconds, the Prometheus output is in seconds.
+In MicroProfile Metrics 5.0, the unit that is associated with the metric is what is reflected in the Prometheus output. The metrics are not scaled to a base unit. 
+
+If no unit is listed next to the metric name, then no units are associated with that metric.
+
+=== MicroProfile Metrics 5.0 metrics reference
+
+A separate table is included for MicroProfile Metrics 5.0 because of changes in the release that affect the formatting of the Prometheus name, base metrics, and the metric types.
+For more information, see xref:mp-50-60-diff.adoc#output[Differences between MicroProfile Metrics 5.0 and earlier versions: Metric output format].
+
+The following table lists and describes the metrics that are available for Open Liberty for MicroProfile Metrics 5.0.
+
+[#metrics-table-mp-metrics-5]
+.MicroProfile Metrics 5.0 metrics reference (`mpMetrics-5.0`)
 [%header,cols="3,3,6,2,2,2"]
 |===
 
-|MicroProfile Metrics 3.0 name
-|MicroProfile Metrics 3.0 Prometheus name(s)
+
+|MicroProfile Metrics 5.0 name
+|MicroProfile Metrics 5.0 Prometheus name(s)
+|Type and description
+|Monitoring component
+|Features required
+|Version introduced
+
+|classloader.loadedClasses.count
+|classloader_loadedClasses_count{mp_scope="base"}
+|The number of classes that are currently loaded in the JVM.
+This metric is a gauge.
+|Base metric
+|{base-metric-features}
+|{mp-2-0}
+
+|classloader.loadedClasses.total
+|classloader_loadedClasses_total{mp_scope="base"}
+|The total number of classes that were loaded since the JVM started.
+This metric is a counter.
+|Base metric
+|{base-metric-features}
+|{mp-2-0}
+
+|classloader.unloadedClasses.total
+|classloader_unloadedClasses_total{mp_scope="base"}
+|The total number of classes that were unloaded since the JVM started.
+This metric is a counter.
+|Base metric
+|{base-metric-features}
+|{mp-2-0}
+
+|connectionpool.connectionHandles{datasource=<datasourceName>}
+|connectionpool_connectionHandles{datasource="<datasourceName>",mp_scope="vendor"}
+|The number of connections that are in use. This number might include multiple connections that are shared from a single managed connection.
+This metric is a gauge.
+|`ConnectionPool`
+|{vendor-metric-features}
+|{mp-2-0}
+
+|connectionpool.create.total{datasource=<datasourceName>}
+|connectionpool_create_total{datasource="<datasourceName>",mp_scope="vendor"}
+|The total number of managed connections that were created since the pool creation.
+This metric is a counter.
+|`ConnectionPool`
+|{vendor-metric-features}
+|{mp-2-0}
+
+|connectionpool.destroy.total{datasource=<datasourceName>}
+|connectionpool_destroy_total{datasource="<datasourceName>",mp_scope="vendor"}
+|The total number of managed connections that were destroyed since the pool creation.
+This metric is a counter.
+|`ConnectionPool`
+|{vendor-metric-features}
+|{mp-2-0}
+
+|connectionpool.freeConnections{datasource=<datasourceName>}
+|connectionpool_freeConnections{datasource="<datasourceName>",mp_scope="vendor"}
+|The number of managed connections in the free pool.
+This metric is a gauge.
+|`ConnectionPool`
+|{vendor-metric-features}
+|{mp-2-0}
+
+|connectionPool.inUseTime.total{datasource=<datasourceName>} / (seconds)
+|connectionpool_inUseTime_total_seconds{datasource="<datasourceName>",mp_scope="vendor"} / (seconds)
+|The total time that all connections are in-use since the start of the server.
+This metric is a gauge.
+|`ConnectionPool`
+|{vendor-metric-features}
+|{mp-2-0}
+
+|connectionpool.managedConnections{datasource=<datasourceName>}
+|connectionpool_managedConnections{datasource="<datasourceName>",mp_scope="vendor"}
+|The current sum of managed connections in the free, shared, and unshared pools.
+This metric is a gauge.
+|`ConnectionPool`
+|{vendor-metric-features}
+|{mp-2-0}
+
+|connectionpool.queuedRequests.total{datasource=<datasourceName>}
+|connectionpool_queuedRequests_total{datasource="<datasourceName>",mp_scope="vendor"}
+|The total number of connection requests that waited for a connection because of a full connection pool since the start of the server.
+This metric is a counter.
+|`ConnectionPool`
+|{vendor-metric-features}
+|{mp-2-0}
+
+|connectionPool.usedConnections.total{datasource=<datasourceName>}
+|connectionpool_usedConnections_total{datasource="<datasourceName>",mp_scope="vendor"}
+|The total number of connection requests that waited because of a full connection pool or did not wait since the start of the server. Any connections that are currently in use are not included in this total.
+This metric is a counter.
+|`ConnectionPool`
+|{vendor-metric-features}
+|{mp-2-0}
+
+|connectionpool.waitTime.total{datasource=<datasourceName>} / (seconds)
+|connectionpool_waitTime_total_seconds{datasource="<datasourceName>",mp_scope="vendor"} / (seconds)
+|The total wait time on all connection requests since the start of the server.
+This metric is a gauge.
+|`ConnectionPool`
+|{vendor-metric-features}
+|{mp-2-0}
+
+|cpu.availableProcessors
+|cpu_availableProcessors{mp_scope="base"}
+|The number of processors available to the JVM.
+This metric is a gauge.
+|Base metric
+|{base-metric-features}
+|{mp-1-0}
+
+|cpu.processCpuLoad / (percent)
+|cpu_processCpuLoad_percent{mp_scope="base"} / (percent)
+|The recent CPU usage for the JVM process.
+This metric is a gauge.
+|Base metric
+|{base-metric-features}
+|{mp-1-0}
+
+|cpu.processCpuTime / (seconds)
+|cpu_processCpuTime_seconds{mp_scope="base"} / (seconds)
+|The CPU time for the JVM process.
+This metric is a gauge.
+|Base metric
+|{base-metric-features}
+|{mp-2-0}
+
+|cpu.systemLoadAverage
+|cpu_systemLoadAverage{mp_scope="base"}
+|The system load average for the last minute. If the system load average is not available, a negative value is displayed.
+This metric is a gauge.
+|Base metric
+|{base-metric-features}
+|{mp-1-0}
+
+|ft.bulkhead.calls.total{
+    method="<name>",
+    bulkheadResult=["accepted"\|"rejected"]
+}
+|ft_bulkhead_calls_total{
+    method="<name>",
+    mp_scope="base",
+    bulkheadResult=["accepted"\|"rejected"]
+}
+|The number of times that the bulkhead logic was run. This number is usually once per method call, but it might be zero if a circuit breaker prevents execution or more than once per method call if the method call is retried. This metric is available when you use the `@Bulkhead` fault tolerance annotation.
+This metric is a counter.
+|Base metric, but available only when MP Fault Tolerance feature is enabled.
+|{ft-metric-features}
+|{mp-ft-3-0}
+
+|ft.bulkhead.executionsRunning{method="<name>"}
+|ft_bulkhead_executionsRunning{method="<name>",mp_scope="base"}
+|The number of currently running executions. This metric is available when you use the `@Bulkhead` fault tolerance annotation.
+This metric is a gauge.
+|Base metric, but available only when MP Fault Tolerance feature is enabled.
+|{ft-metric-features}
+|{mp-ft-3-0}
+
+|ft.bulkhead.executionsWaiting{method="<name>"}
+|ft_bulkhead_executionsWaiting{method="<name>",mp_scope="base"}
+|The number of executions currently waiting in the queue. This metric is available when you use the `@Bulkhead` fault tolerance annotation and the `@Asynchronous` annotation.
+This metric is a gauge.
+|Base metric, but available only when MP Fault Tolerance feature is enabled.
+|{ft-metric-features}
+|{mp-ft-3-0}
+
+|ft.bulkhead.runningDuration{method="<name>"} / (nanoseconds)
+|ft_bulkhead_runningDuration_seconds_max{method="<name>",mp_scope="base"}
+ft_bulkhead_runningDuration_seconds_count{method="<name>",mp_scope="base"}
+ft_bulkhead_runningDuration_seconds_sum{method="<name>",mp_scope="base"}
+ft_bulkhead_runningDuration_seconds{
+    method="<name>",
+    mp_scope="base",
+    quantile=["0.5"\|"0.75"\|"0.95"\|"0.98"\|"0.99"\|"0.999"]
+} / seconds
+|A histogram of the time that method executions spent running. This metric is available when you use the `@Bulkhead` fault tolerance annotation.
+|Base metric, but available only when MP Fault Tolerance feature is enabled.
+|{ft-metric-features}
+|{mp-ft-3-0}
+
+|ft.bulkhead.waitingDuration{method="<name>"} / (nanoseconds)
+|ft_bulkhead_waitingDuration_seconds_max{method="<name>",mp_scope="base"}
+ft_bulkhead_waitingDuration_seconds_count{method="<name>",mp_scope="base"}
+ft_bulkhead_waitingDuration_seconds_sum{method="<name>",mp_scope="base"}
+ft_bulkhead_waitingDuration_seconds{
+    method="<name>",
+    mp_scope="base",
+    quantile=["0.5"\|"0.75"\|"0.95"\|"0.98"\|"0.99"\|"0.999"]
+} / seconds
+|A histogram of the time that method executions spent waiting in the queue. This metric is available when you use the `@Bulkhead` fault tolerance annotation and the `@Asynchronous` annotation.
+|Base metric, but available only when MP Fault Tolerance feature is enabled.
+|{ft-metric-features}
+|{mp-ft-3-0}
+
+|ft.circuitbreaker.calls.total{
+    method="<name>",
+    circuitBreakerResult=["success"\|"failure"\|"circuitBreakerOpen"]
+}
+|ft_circuitbreaker_calls_total{
+    method="<name>",
+    mp_scope="base",
+    circuitBreakerResult=["success"\|"failure"\|"circuitBreakerOpen"]
+}
+|The number of times that the circuit breaker logic was run. This number is usually once per method call, but might be more if the method call is retried. This metric is available when you use the `@CircuitBreaker` fault tolerance annotation.
+This metric is a counter.
+|Base metric, but available only when MP Fault Tolerance feature is enabled.
+|{ft-metric-features}
+|{mp-ft-3-0}
+
+|ft.circuitbreaker.state.total{
+    method="<name>",
+    state=["open"\|"closed"\|"halfOpen"]
+} / (nanoseconds)
+|ft_circuitbreaker_state_total_seconds{
+    method="<name>",
+    mp_scope="base",
+    state=["open"\|"closed"\|"halfOpen"]
+} / (seconds)
+|The amount of time that the circuit breaker has spent in each state. These values increase monotonically. This metric is available when you use the `@CircuitBreaker` fault tolerance annotation.
+This metric is a gauge.
+|Base metric, but available only when MP Fault Tolerance feature is enabled.
+|{ft-metric-features}
+|{mp-ft-3-0}
+
+|ft.circuitbreaker.opened.total{method="<name>"}
+|ft_circuitbreaker_opened_total{method="<name>",mp_scope="base"}
+|The number of times that the circuit breaker has moved from close state to open state. This metric is available when you use the `@CircuitBreaker` fault tolerance annotation.
+This metric is a counter.
+|Base metric, but available only when MP Fault Tolerance feature is enabled.
+|{ft-metric-features}
+|{mp-ft-3-0}
+
+|ft.invocations.total{
+    method="<name>",
+    result=["valueReturned"\|"exceptionThrown"],
+    fallback=["applied"\|"notApplied"\|"notDefined"]
+}
+|ft_invocations_total{
+    method="<name>",
+    mp_scope="base",
+    result=["valueReturned"\|"exceptionThrown"],
+    fallback=["applied"\|"notApplied"\|"notDefined"]
+}
+|The number of times that the method was called.
+This metric is a counter.
+|Base metric, but available only when MP Fault Tolerance feature is enabled.
+|{ft-metric-features}
+|{mp-ft-3-0}
+
+|ft.retry.calls.total{
+    method="<name>",
+    retried=["true"\|"false"],
+    retryResult=["valueReturned"
+                \|"exceptionNotRetryable"
+                \|"maxRetriesReached"
+                \|"maxDurationReached"]
+}
+|ft_retry_calls_total{
+    method="<name>",
+    mp_scope="base",
+    retried=["true"\|"false"],
+    retryResult=["valueReturned"
+                \|"exceptionNotRetryable"
+                \|"maxRetriesReached"
+                \|"maxDurationReached"]
+}
+|The number of times that the retry logic was run. This will always be once per method call. This metric is available when you use the `@Retry` fault tolerance annotation.
+This metric is a counter.
+|Base metric, but available only when MP Fault Tolerance feature is enabled.
+|{ft-metric-features}
+|{mp-ft-3-0}
+
+|ft.retry.retries.total{method="<name>"}
+|ft_retry_retries_total{method="<name>",mp_scope="base"}
+|The number of times that the method was retried. This metric is available when you use the `@Retry` fault tolerance annotation.
+This metric is a counter.
+|Base metric, but available only when MP Fault Tolerance feature is enabled.
+|{ft-metric-features}
+|{mp-ft-3-0}
+
+|ft.timeout.calls.total{
+    method="<name>",
+    timedOut=["true"\|"false"]
+}
+|ft_timeout_calls_total{
+    method="<name>",
+    mp_scope="base",
+    timedOut=["true"\|"false"]
+}
+|The number of times that the timeout logic was run. This number is usually once per method call, but it might be zero if a circuit breaker prevents execution or more than once per method call if the method call is retried. This metric is available when you use the `@Timeout` fault tolerance annotation.
+This metric is a counter.
+|Base metric, but available only when MP Fault Tolerance feature is enabled.
+|{ft-metric-features}
+|{mp-ft-3-0}
+
+|ft.timeout.executionDuration{method="<name>"} / (nanoseconds)
+|ft_timeout_executionDuration_seconds_max{method="<name>",mp_scope="base"}
+ft_timeout_executionDuration_seconds_sum{method="<name>",mp_scope="base"}
+ft_timeout_executionDuration_seconds_count{method="<name>",mp_scope="base"}
+ft_timeout_executionDuration_seconds{
+    method="<name>",
+    mp_scope="base",
+    quantile=["0.5"\|"0.75"\|"0.95"\|"0.98"\|"0.99"\|"0.999"]
+} / (seconds)
+|A histogram of the execution time for the method. This metric is available when you use the `@Timeout` fault tolerance annotation.
+|Base metric, but available only when MP Fault Tolerance feature is enabled.
+|{ft-metric-features}
+|{mp-ft-3-0}
+
+|gc.time{name=<gcName>} / (seconds)
+|gc_time_seconds{mp_scope="base",name="<gcType>"} / (seconds)
+|The approximate accumulated garbage collection elapsed time. This metric displays `-1` if the garbage collection elapsed time is undefined for this collector.
+This metric is a gauge.
+|Base metric
+|{base-metric-features}
+|{mp-2-0}
+
+|gc.total{name=<gcName>}
+|gc_total{mp_scope="base",name="<gcType>"}
+|The number of garbage collections that occurred. This metric displays `-1` if the garbage collection count is undefined for this collector.
+This metric is a counter.
+|Base metric
+|{base-metric-features}
+|{mp-2-0}
+
+|grpc.client.receivedMessages.total{grpc=<method_signature>}
+|grpc_client_receivedMessages_total{mp_scope="vendor"}
+|The number of stream messages received from the server.
+This metric is a counter.
+|`GrpcClient`
+|{grpc-client-metric-features}
+|{mp-2-3}
+
+|grpc.client.responseTime.total{grpc=<method_signature>} / (seconds)
+|grpc_client_responseTime_total_seconds{mp_scope="vendor"} / (seconds)
+|The response time of completed RPCs.
+This metric is a gauge.
+|`GrpcClient`
+|{grpc-client-metric-features}
+|{mp-2-3}
+
+|grpc.client.rpcCompleted.total{grpc=<method_signature>}
+|grpc_client_rpcCompleted_total{mp_scope="vendor"}
+|The number of RPCs completed on the client, regardless of success or failure.
+This metric is a counter.
+|`GrpcClient`
+|{grpc-client-metric-features}
+|{mp-2-3}
+
+|grpc.client.rpcStarted.total{grpc=<method_signature>}
+|grpc_client_rpcStarted_total{mp_scope="vendor"}
+|The number of RPCs started on the client.
+This metric is a counter.
+|`GrpcClient`
+|{grpc-client-metric-features}
+|{mp-2-3}
+
+|grpc.client.sentMessages.total{grpc=<method_signature>}
+|grpc_client_sentMessages_total{mp_scope="vendor"}
+|The number of stream messages sent by the client.
+This metric is a counter.
+|`GrpcClient`
+|{grpc-client-metric-features}
+|{mp-2-3}
+
+|grpc.server.receivedMessages.total{grpc=<service_name>}
+|grpc_server_receivedMessages_total{mp_scope="vendor"}
+|The number of stream messages received from the client.
+This metric is a counter.
+|`GrpcServer`
+|{grpc-server-metric-features}
+|{mp-2-3}
+
+|grpc.server.responseTime.total{grpc=<service_name>} / (seconds)
+|grpc_server_responseTime_total_seconds{mp_scope="vendor"} / (seconds)
+|The response time of completed RPCs.
+This metric is a gauge.
+|`GrpcServer`
+|{grpc-server-metric-features}
+|{mp-2-3}
+
+|grpc.server.rpcCompleted.total{grpc=<service_name>}
+|grpc_server_rpcCompleted_total{mp_scope="vendor"}
+|The number of RPCs completed on the server, regardless of success or failure.
+This metric is a counter.
+|`GrpcServer`
+|{grpc-server-metric-features}
+|{mp-2-3}
+
+|grpc.server.rpcStarted.total{grpc=<service_name>}
+|grpc_client_rpcStarted_total{mp_scope="vendor"}
+|The number of RPCs started on the server.
+This metric is a counter.
+|`GrpcServer`
+|{grpc-server-metric-features}
+|{mp-2-3}
+
+|grpc.server.sentMessages.total{grpc=<service_name>}
+|grpc_server_sentMessages_total{mp_scope="vendor"}
+|The number of stream messages sent by the server.
+This metric is a counter.
+|`GrpcServer`
+|{grpc-server-metric-features}
+|{mp-2-3}
+
+|jaxws.client.checkedApplicationFaults.total{endpoint=<endpointName>}
+|jaxws_client_checkedApplicationFaults_total{endpoint="<endpointName>",mp_scope="vendor"}
+|The number of checked application faults.
+This metric is a counter.
+|N/A, always available
+|{vendor-metric-features}
+|{mp-2-0}
+
+|jaxws.client.invocations.total{endpoint=<endpointName>}
+|jaxws_client_invocations_total{endpoint="<endpointName>",mp_scope="vendor"}
+|The number of invocations to this endpoint or operation.
+This metric is a counter.
+|N/A, always available
+|{vendor-metric-features}
+|{mp-2-0}
+
+|jaxws.client.logicalRuntimeFaults.total{endpoint=<endpointName>}
+|jaxws_client_logicalRuntimeFaults_total{endpoint="<endpointName>",mp_scope="vendor"}
+|The number of logical runtime faults.
+This metric is a counter.
+|N/A, always available
+|{vendor-metric-features}
+|{mp-2-0}
+
+|jaxws.client.responseTime.total{endpoint=<endpointName>} / (seconds)
+|jaxws_client_responseTime_total_seconds{endpoint="<endpointName>",mp_scope="vendor"} / (seconds)
+|The total response handling time since the start of the server.
+This metric is a gauge.
+|N/A, always available
+|{vendor-metric-features}
+|{mp-2-0}
+
+|jaxws.client.runtimeFaults.total{endpoint=<endpointName>}
+|jaxws_client_runtimeFaults_total{endpoint="<endpointName>",mp_scope="vendor"}
+|The number of runtime faults.
+This metric is a counter.
+|N/A, always available
+|{vendor-metric-features}
+|{mp-2-0}
+
+|jaxws.client.uncheckedApplicationFaults.total{endpoint=<endpointName>}
+|jaxws_client_uncheckedApplicationFaults_total{endpoint="<endpointName>",mp_scope="vendor"}
+|The number of unchecked application faults.
+This metric is a counter.
+|N/A, always available
+|{vendor-metric-features}
+|{mp-2-0}
+
+|jaxws.server.checkedApplicationFaults.total{endpoint=<endpointName>}
+|jaxws_server_checkedApplicationFaults_total{endpoint="<endpointName>",mp_scope="vendor"}
+|The number of checked application faults.
+This metric is a counter.
+|N/A, always available
+|{vendor-metric-features}
+|{mp-2-0}
+
+|jaxws.server.invocations.total{endpoint=<endpointName>}
+|jaxws_server_invocations_total{endpoint="<endpointName>",mp_scope="vendor"}
+|The number of invocations to this endpoint or operation.
+This metric is a counter.
+|N/A, always available
+|{vendor-metric-features}
+|{mp-2-0}
+
+|jaxws.server.logicalRuntimeFaults.total{endpoint=<endpointName>}
+|jaxws_server_logicalRuntimeFaults_total{endpoint="<endpointName>",mp_scope="vendor"}
+|The number of logical runtime faults.
+This metric is a counter.
+|N/A, always available
+|{vendor-metric-features}
+|{mp-2-0}
+
+|jaxws.server.responseTime.total{endpoint=<endpointName>} / (seconds)
+|jaxws_server_responseTime_total_seconds{endpoint="<endpointName>",mp_scope="vendor"} / (seconds)
+|The total response handling time since the start of the server.
+This metric is a gauge.
+|N/A, always available
+|{vendor-metric-features}
+|{mp-2-0}
+
+|jaxws.server.runtimeFaults.total{endpoint=<endpointName>}
+|jaxws_server_runtimeFaults_total{endpoint="<endpointName>",mp_scope="vendor"}
+|The number of runtime faults.
+This metric is a counter.
+|N/A, always available
+|{vendor-metric-features}
+|{mp-2-0}
+
+|jaxws.server.uncheckedApplicationFaults.total{endpoint=<endpointName>}
+|jaxws_server_uncheckedApplicationFaults_total{endpoint="<endpointName>",mp_scope="vendor"}
+|The number of unchecked application faults.
+This metric is a counter.
+|N/A, always available
+|{vendor-metric-features}
+|{mp-2-0}
+
+|jvm.uptime / (seconds)
+|jvm_uptime_seconds{mp_scope="base"} / (seconds)
+|The time elapsed since the start of the JVM.
+This metric is a gauge.
+|`JVM`
+|{base-metric-features}
+|{mp-1-0}
+
+|memory.committedHeap / (bytes)
+|memory_committedHeap_bytes{mp_scope="base"} / (bytes)
+|The amount of memory that is committed for the JVM to use.
+This metric is a gauge.
+|Base metric
+|{base-metric-features}
+|{mp-1-0}
+
+|memory.maxHeap / (bytes)
+|memory_maxHeap_bytes{mp_scope="base"} / (bytes)
+|The maximum amount of heap memory that can be used for memory management. This metric displays `-1` if the maximum heap memory size is undefined. This amount of memory is not guaranteed to be available for memory management if it is greater than the amount of committed memory.
+This metric is a gauge.
+|Base metric
+|{base-metric-features}
+|{mp-1-0}
+
+|memory.usedHeap / (bytes)
+|memory_usedHeap_bytes{mp_scope="base"} / (bytes)
+|The amount of used heap memory.
+This metric is a gauge.
+|Base metric
+|{base-metric-features}
+|{mp-1-0}
+
+|requestTiming.activeRequestCount
+|requestTiming_activeRequestCount{mp_scope="vendor"}
+|The number of servlet requests that are currently running.
+This metric is a gauge.
+|`RequestTiming`
+|{mp-2-0} or later and feature:requestTiming[display=Request timing]
+|{mp-2-0}
+
+|requestTiming.hungRequestCount
+|requestTiming_hungRequestCount{mp_scope="vendor"}
+|The number of servlet requests that are currently running but are hung.
+This metric is a gauge.
+|`RequestTiming`
+|{mp-2-0} or later and feature:requestTiming[display=Request timing]
+|{mp-2-0}
+
+|requestTiming.requestCount
+|requestTiming_requestCount_total{mp_scope="vendor"}
+|The number of servlet requests since the server started.
+This metric is a counter.
+|`RequestTiming`
+|{mp-2-0} or later and feature:requestTiming[display=Request timing]
+|{mp-2-0}
+
+|requestTiming.slowRequestCount
+|requestTiming_slowRequestCount{mp_scope="vendor"}
+|The number of servlet requests that are currently running but are slow.
+This metric is a gauge.
+|`RequestTiming`
+|{mp-2-0} or later and feature:requestTiming[display=Request timing]
+|{mp-2-0}
+
+|REST.request 
+|REST_request_seconds_max{class="<fully_qualified_class_name>",method="<method_signature>",mp_scope="base"} {empty}+
+ {empty}+
+REST_request_seconds_sum{class="<fully_qualified_class_name>",method="<method_signature>",mp_scope="base"} {empty}+
+ {empty}+
+REST_request_seconds_count{class="<fully_qualified_class_name>",method="<method_signature>",mp_scope="base"} {empty}+
+ {empty}+
+REST_request_seconds{
+ class="<fully_qualified_class_name>",
+ method="<method_signature>",
+ mp_scope="base",
+ quantile=["0.5"\|"0.75"\|"0.95"\|"0.98"\|"0.99"\|"0.999"]
+ }
+|The number of invocations and total response time of this RESTful resource method since the start of the server. The metric does not record the elapsed time nor count of a REST request if it resulted in an unmapped exception. Also tracks the highest recorded time duration and the 50th, 75th, 95th, 98th, 99th and 99.9th percentile.
+This metric is a timer.
+|`REST`
+|{base-metric-features}
+|{mp-5-0} +
+Note: This metric was changed from a Simple Timer metric to a Timer metric in MicroProfile Metrics 5.0
+
+|REST.request.unmappedException.total
+|REST_request_unmappedException_total{class="<fully_qualified_class_name>",method="<method_signature>",mp_scope="base"}
+|The total number of unmapped exceptions that occur from this RESTful resource method since the server started.
+This metric is a counter.
+|`REST`
+|{base-metric-features}
+|{mp-3-0}
+
+|servlet.request.total{servlet=<servletName>}
+|servlet_request_total{mp_scope="vendor",servlet="<servletName>"}
+|The total number of visits to this servlet since the start of the server.
+This metric is a counter.
+|`WebContainer`
+|{vendor-metric-features}
+|{mp-2-0}
+
+|servlet.responseTime.total{servlet=<servletName>} / (seconds)
+|servlet_responseTime_total_seconds{mp_scope="vendor",servlet="<servletName>"} / (seconds)
+|The total of the servlet response time since the start of the server.
+This metric is a gauge.
+|`WebContainer`
+|{vendor-metric-features}
+|{mp-2-0}
+
+|session.activeSessions{appname=<appName>}
+|session_activeSessions{appname="<appName>",mp_scope="vendor"}
+|The number of concurrently active sessions. A session is considered active if the application server is processing a request that uses that user session.
+This metric is a gauge.
+|`Session`
+|{vendor-metric-features}
+|{mp-2-0}
+
+|session.create.total{appname=<appName>}
+|session_create_total{appname="<appName>",mp_scope="vendor"}
+|The number of sessions that logged in since this metric was enabled.
+This metric is a gauge.
+|`Session`
+|{vendor-metric-features}
+|{mp-2-0}
+
+|session.invalidated.total{appname=<appName>}
+|session_invalidated_total{appname="<appName>",mp_scope="vendor"}
+|The number of sessions that logged out since this metric was enabled.
+This metric is a counter.
+|`Session`
+|{vendor-metric-features}
+|{mp-2-0}
+
+|session.invalidatedbyTimeout.total{appname=<appName>}
+|session_invalidatedbyTimeout_total{appname="<appName>",mp_scope="vendor"}
+|The number of sessions that logged out because of a timeout since this metric was enabled.
+This metric is a counter.
+|`Session`
+|{vendor-metric-features}
+|{mp-2-0}
+
+|session.liveSessions{appname=<appName>}
+|session_liveSessions{appname="<appName>",mp_scope="vendor"}
+|The number of users that are currently logged in since this metric was enabled.
+This metric is a gauge.
+|`Session`
+|{vendor-metric-features}
+|{mp-2-0}
+
+|thread.count
+|thread_count{mp_scope="base"}
+|The current number of live threads, including both daemon and non-daemon threads.
+This metric is a gauge.
+|Base metric
+|{base-metric-features}
+|{mp-2-0}
+
+|thread.daemon.count
+|thread_daemon_count{mp_scope="base"}
+|The current number of live daemon threads.
+This metric is a gauge.
+|Base metric
+|{base-metric-features}
+|{mp-2-0}
+
+|thread.max.count
+|thread_max_count{mp_scope="base"}
+|The peak live thread count since the JVM started or the peak was reset. This thread count includes both daemon and non-daemon threads.
+This metric is a gauge.
+|Base metric
+|{base-metric-features}
+|{mp-2-0}
+
+|threadpool.activeThreads{pool=<poolName>}
+|threadpool_activeThreads{mp_scope="vendor",pool="<poolName>"}
+|The number of threads that are actively running tasks.
+This metric is a gauge.
+|`ThreadPool`
+|{vendor-metric-features}
+|{mp-2-0}
+
+|threadpool.size{pool=<poolName>}
+|threadpool_size{mp_scope="vendor",pool="<poolName>"}
+|The size of the thread pool.
+This metric is a gauge.
+|`ThreadPool`
+|{vendor-metric-features}
+|{mp-2-0}
+
+|===
+
+=== MicroProfile Metrics 4.0 and earlier metrics reference
+
+The following table lists and describes the metrics that are available for Open Liberty for MicroProfile Metrics 4.0 and earlier.
+
+[#metrics-table]
+.MicroProfile Metrics 4.0 and earlier metrics reference
+[%header,cols="3,3,6,2,2,2"]
+|===
+
+|MicroProfile Metrics 4.0 name
+|MicroProfile Metrics 4.0 Prometheus name(s)
 |Type and description
 |Monitoring component
 |Features required
@@ -103,7 +821,7 @@ This metric is a counter.
 |{mp-2-0}
 
 |connectionpool.connectionHandles{datasource=<datasourceName>}
-|vendor_connectionpool_connectionHandles{datasource=<dataSourceName>}
+|vendor_connectionpool_connectionHandles{datasource="<datasourceName>"}
 |The number of connections that are in use. This number might include multiple connections that are shared from a single managed connection.
 This metric is a gauge.
 |`ConnectionPool`
@@ -111,7 +829,7 @@ This metric is a gauge.
 |{mp-2-0}
 
 |connectionpool.create.total{datasource=<datasourceName>}
-|vendor_connectionpool_create_total{datasource=<dataSourceName>}
+|vendor_connectionpool_create_total{datasource="<datasourceName>"}
 |The total number of managed connections that were created since the pool creation.
 This metric is a counter.
 |`ConnectionPool`
@@ -119,7 +837,7 @@ This metric is a counter.
 |{mp-2-0}
 
 |connectionpool.destroy.total{datasource=<datasourceName>}
-|vendor_connectionpool_destroy_total{datasource=<dataSourceName>}
+|vendor_connectionpool_destroy_total{datasource="<datasourceName>"}
 |The total number of managed connections that were destroyed since the pool creation.
 This metric is a counter.
 |`ConnectionPool`
@@ -127,7 +845,7 @@ This metric is a counter.
 |{mp-2-0}
 
 |connectionpool.freeConnections{datasource=<datasourceName>}
-|vendor_connectionpool_freeConnections{datasource=<dataSourceName>}
+|vendor_connectionpool_freeConnections{datasource="<datasourceName>"}
 |The number of managed connections in the free pool.
 This metric is a gauge.
 |`ConnectionPool`
@@ -135,7 +853,7 @@ This metric is a gauge.
 |{mp-2-0}
 
 |connectionPool.inUseTime.total{datasource=<datasourceName>} / (milliseconds)
-|vendor_connectionpool_inUseTime_total_seconds{datasource=<dataSourceName>} / (seconds)
+|vendor_connectionpool_inUseTime_total_seconds{datasource="<datasourceName>"} / (seconds)
 |The total time that all connections are in-use since the start of the server.
 This metric is a gauge.
 |`ConnectionPool`
@@ -143,7 +861,7 @@ This metric is a gauge.
 |{mp-2-0}
 
 |connectionpool.managedConnections{datasource=<datasourceName>}
-|vendor_connectionpool_managedConnections{datasource=<dataSourceName>}
+|vendor_connectionpool_managedConnections{datasource="<datasourceName>"}
 |The current sum of managed connections in the free, shared, and unshared pools.
 This metric is a gauge.
 |`ConnectionPool`
@@ -151,7 +869,7 @@ This metric is a gauge.
 |{mp-2-0}
 
 |connectionpool.queuedRequests.total{datasource=<datasourceName>}
-|vendor_connectionpool_queuedRequests_total{datasource=<dataSourceName>}
+|vendor_connectionpool_queuedRequests_total{datasource="<datasourceName>"}
 |The total number of connection requests that waited for a connection because of a full connection pool since the start of the server.
 This metric is a counter.
 |`ConnectionPool`
@@ -159,7 +877,7 @@ This metric is a counter.
 |{mp-2-0}
 
 |connectionPool.usedConnections.total{datasource=<datasourceName>}
-|vendor_connectionpool_usedConnections_total{datasource=<dataSourceName>}
+|vendor_connectionpool_usedConnections_total{datasource="<datasourceName>"}
 |The total number of connection requests that waited because of a full connection pool or did not wait since the start of the server. Any connections that are currently in use are not included in this total.
 This metric is a counter.
 |`ConnectionPool`
@@ -167,7 +885,7 @@ This metric is a counter.
 |{mp-2-0}
 
 |connectionpool.waitTime.total{datasource=<datasourceName>} / (milliseconds)
-|vendor_connectionpool_waitTime_total_seconds{datasource=<dataSourceName>} / (seconds)
+|vendor_connectionpool_waitTime_total_seconds{datasource="<datasourceName>"} / (seconds)
 |The total wait time on all connection requests since the start of the server.
 This metric is a gauge.
 |`ConnectionPool`
@@ -476,7 +1194,7 @@ This metric is a counter.
 |{mp-2-3}
 
 |jaxws.client.checkedApplicationFaults.total{endpoint=<endpointName>}
-|vendor_jaxws_client_checkedApplicationFaults_total{endpoint=<endpointName>}
+|vendor_jaxws_client_checkedApplicationFaults_total{endpoint="<endpointName>"}
 |The number of checked application faults.
 This metric is a counter.
 |N/A, always available
@@ -484,7 +1202,7 @@ This metric is a counter.
 |{mp-2-0}
 
 |jaxws.client.invocations.total{endpoint=<endpointName>}
-|vendor_jaxws_client_invocations_total{endpoint=<endpointName>}
+|vendor_jaxws_client_invocations_total{endpoint="<endpointName>"}
 |The number of invocations to this endpoint or operation.
 This metric is a counter.
 |N/A, always available
@@ -492,7 +1210,7 @@ This metric is a counter.
 |{mp-2-0}
 
 |jaxws.client.logicalRuntimeFaults.total{endpoint=<endpointName>}
-|vendor_jaxws_client_logicalRuntimeFaults_total{endpoint=<endpointName>}
+|vendor_jaxws_client_logicalRuntimeFaults_total{endpoint="<endpointName>"}
 |The number of logical runtime faults.
 This metric is a counter.
 |N/A, always available
@@ -500,7 +1218,7 @@ This metric is a counter.
 |{mp-2-0}
 
 |jaxws.client.responseTime.total{endpoint=<endpointName>} / (milliseconds)
-|vendor_jaxws_client_responseTime_total_seconds{endpoint=<endpointName>} / (seconds)
+|vendor_jaxws_client_responseTime_total_seconds{endpoint="<endpointName>"} / (seconds)
 |The total response handling time since the start of the server.
 This metric is a gauge.
 |N/A, always available
@@ -508,7 +1226,7 @@ This metric is a gauge.
 |{mp-2-0}
 
 |jaxws.client.runtimeFaults.total{endpoint=<endpointName>}
-|vendor_jaxws_client_runtimeFaults_total{endpoint=<endpointName>}
+|vendor_jaxws_client_runtimeFaults_total{endpoint="<endpointName>"}
 |The number of runtime faults.
 This metric is a counter.
 |N/A, always available
@@ -516,7 +1234,7 @@ This metric is a counter.
 |{mp-2-0}
 
 |jaxws.client.uncheckedApplicationFaults.total{endpoint=<endpointName>}
-|vendor_jaxws_client_uncheckedApplicationFaults_total{endpoint=<endpointName>}
+|vendor_jaxws_client_uncheckedApplicationFaults_total{endpoint="<endpointName>"}
 |The number of unchecked application faults.
 This metric is a counter.
 |N/A, always available
@@ -524,7 +1242,7 @@ This metric is a counter.
 |{mp-2-0}
 
 |jaxws.server.checkedApplicationFaults.total{endpoint=<endpointName>}
-|vendor_jaxws_server_checkedApplicationFaults_total{endpoint=<endpointName>}
+|vendor_jaxws_server_checkedApplicationFaults_total{endpoint="<endpointName>"}
 |The number of checked application faults.
 This metric is a counter.
 |N/A, always available
@@ -532,7 +1250,7 @@ This metric is a counter.
 |{mp-2-0}
 
 |jaxws.server.invocations.total{endpoint=<endpointName>}
-|vendor_jaxws_server_invocations_total{endpoint=<endpointName>}
+|vendor_jaxws_server_invocations_total{endpoint="<endpointName>"}
 |The number of invocations to this endpoint or operation.
 This metric is a counter.
 |N/A, always available
@@ -540,7 +1258,7 @@ This metric is a counter.
 |{mp-2-0}
 
 |jaxws.server.logicalRuntimeFaults.total{endpoint=<endpointName>}
-|vendor_jaxws_server_logicalRuntimeFaults_total{endpoint=<endpointName>}
+|vendor_jaxws_server_logicalRuntimeFaults_total{endpoint="<endpointName>"}
 |The number of logical runtime faults.
 This metric is a counter.
 |N/A, always available
@@ -548,7 +1266,7 @@ This metric is a counter.
 |{mp-2-0}
 
 |jaxws.server.responseTime.total{endpoint=<endpointName>} / (milliseconds)
-|vendor_jaxws_server_responseTime_total_seconds{endpoint=<endpointName>} / (seconds)
+|vendor_jaxws_server_responseTime_total_seconds{endpoint="<endpointName>"} / (seconds)
 |The total response handling time since the start of the server.
 This metric is a gauge.
 |N/A, always available
@@ -556,7 +1274,7 @@ This metric is a gauge.
 |{mp-2-0}
 
 |jaxws.server.runtimeFaults.total{endpoint=<endpointName>}
-|vendor_jaxws_server_runtimeFaults_total{endpoint=<endpointName>}
+|vendor_jaxws_server_runtimeFaults_total{endpoint="<endpointName>"}
 |The number of runtime faults.
 This metric is a counter.
 |N/A, always available
@@ -564,7 +1282,7 @@ This metric is a counter.
 |{mp-2-0}
 
 |jaxws.server.uncheckedApplicationFaults.total{endpoint=<endpointName>}
-|vendor_jaxws_server_uncheckedApplicationFaults_total{endpoint=<endpointName>}
+|vendor_jaxws_server_uncheckedApplicationFaults_total{endpoint="<endpointName>"}
 |The number of unchecked application faults.
 This metric is a counter.
 |N/A, always available
@@ -654,7 +1372,7 @@ This metric is a counter.
 |{mp-3-0}
 
 |servlet.request.total{servlet=<servletName>}
-|vendor_servlet_request_total{servlet=<servletname>}
+|vendor_servlet_request_total{servlet="<servletName>"}
 |The total number of visits to this servlet since the start of the server.
 This metric is a counter.
 |`WebContainer`
@@ -662,7 +1380,7 @@ This metric is a counter.
 |{mp-2-0}
 
 |servlet.responseTime.total{servlet=<servletName>} / (nanoseconds)
-|vendor_servlet_responseTime_total_seconds / (seconds)
+|vendor_servlet_responseTime_total_seconds{servlet="<servletName>"} / (seconds)
 |The total of the servlet response time since the start of the server.
 This metric is a gauge.
 |`WebContainer`
@@ -670,7 +1388,7 @@ This metric is a gauge.
 |{mp-2-0}
 
 |session.activeSessions{appname=<appName>}
-|vendor_session_activeSessions{appname=<appName>}
+|vendor_session_activeSessions{appname="<appName>"}
 |The number of concurrently active sessions. A session is considered active if the application server is processing a request that uses that user session.
 This metric is a gauge.
 |`Session`
@@ -678,7 +1396,7 @@ This metric is a gauge.
 |{mp-2-0}
 
 |session.create.total{appname=<appName>}
-|vendor_session_create_total{appname=<appName>}
+|vendor_session_create_total{appname="<appName>"}
 |The number of sessions that logged in since this metric was enabled.
 This metric is a gauge.
 |`Session`
@@ -686,7 +1404,7 @@ This metric is a gauge.
 |{mp-2-0}
 
 |session.invalidated.total{appname=<appName>}
-|vendor_session_invalidated_total{appname=<appName>}
+|vendor_session_invalidated_total{appname="<appName>"}
 |The number of sessions that logged out since this metric was enabled.
 This metric is a counter.
 |`Session`
@@ -694,7 +1412,7 @@ This metric is a counter.
 |{mp-2-0}
 
 |session.invalidatedbyTimeout.total{appname=<appName>}
-|vendor_session_invalidatedbyTimeout_total{appname=<appName>}
+|vendor_session_invalidatedbyTimeout_total{appname="<appName>"}
 |The number of sessions that logged out because of a timeout since this metric was enabled.
 This metric is a counter.
 |`Session`
@@ -702,7 +1420,7 @@ This metric is a counter.
 |{mp-2-0}
 
 |session.liveSessions{appname=<appName>}
-|vendor_session_liveSessions{appname=<appName>}
+|vendor_session_liveSessions{appname="<appName>"}
 |The number of users that are currently logged in since this metric was enabled.
 This metric is a gauge.
 |`Session`
@@ -750,6 +1468,10 @@ This metric is a gauge.
 |{mp-2-0}
 
 |===
+
+{empty} +
+
+
 
 == See also
 
