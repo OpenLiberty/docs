@@ -18,9 +18,9 @@
 
 MicroProfile 6.0 is a major release. It includes Jakarta EE 10 Core Profile and replaces MicroProfile OpenTracing with MicroProfile Telemetry. 
 
-Consequently, MicroProfile OpenTracing moves out of the umbrella release and becomes a stand-alone specification. For more information about Jakarta EE 10 Core Profile, see the link:https://jakarta.ee/specifications/coreprofile/10/[Core Profile specification].
+Therefore, MicroProfile OpenTracing moves out of the umbrella release and becomes a stand-alone specification. For more information about Jakarta EE 10 Core Profile, see the link:https://jakarta.ee/specifications/coreprofile/10/[Core Profile specification].
 
-If you are updating your application from using MicroProfile 5.0 features to using link:https://github.com/eclipse/microprofile/releases/tag/6.0[MicroProfile 6.0] features, changes in API behavior might require you to update your application code. The following sections provide details about migrating your applications from MicroProfile 5.0 to 6.0:
+If you are updating your application from using MicroProfile 5.0 features to using link:https://github.com/eclipse/microprofile/releases/tag/6.0[MicroProfile 6.0] features, changes in API behavior might require you to update your application code. The following sections provide details about migrating your applications from MicroProfile 5.0 to 6.0.
 
 - <<#openapi, Differences between MicroProfile OpenAPI 3.1 and 3.0>>
 - <<#jwt, Differences between MicroProfile JSON Web Token 2.1 and 2.0>> 
@@ -44,11 +44,11 @@ The MicroProfile Metrics 5.0 release introduces many changes to the specificatio
 
 === SmallRye implementation of the specification
 
-In previous versions, Open Liberty implemented the specification in its own codebase. However, starting in MicroProfile Metrics 5.0, Open Liberty consumes SmallRye implementation of the specification to produce the feature:mpMetrics-5.0[display=mpMetrics-5.0] feature.
+In previous versions, Open Liberty implemented the specification in its own codebase. However, starting in MicroProfile Metrics 5.0, Open Liberty consumes the SmallRye implementation of the specification to produce the feature:mpMetrics-5.0[display=mpMetrics-5.0] feature.
 
 === Removed metric types 
 
-The following metric types are removed from the MicroProfile Metrics 5.0 release:
+The following metric types are removed from the MicroProfile Metrics 5.0 release. 
 
 - Concurrent gauge
 - Simple timer
@@ -103,12 +103,12 @@ For example, a query for `base` metrics uses the `/metrics?scope=base` REST endp
 [#output]
 === Metric output format
 
-The MicroProfile Metrics 5.0 specification removes the explicit requirement for the JSON output format to be made available. The SmallRye implementation that the Open Liberty runtime is using also removed JSON output from the `/metrics` endpoint. The specification now only requires that Prometheus formatted metrics be made available through the `/metrics` endpoint.
+The MicroProfile Metrics 5.0 specification removes the explicit requirement for the JSON output format to be made available. The SmallRye implementation that the Open Liberty runtime is using also removed JSON output from the `/metrics` endpoint. The specification now only requires that Prometheus-formatted metrics be made available through the `/metrics` endpoint.
 
-The Prometheus formatted output is also updated, including the following changes:
+The Prometheus-formatted output is also updated, including the following changes.
 
 Metric registry scope:: 
-The Metric Registry scope that a metric is associated to was indicated with a prefix of `base_` or `vendor_` in the Prometheus formatted name. In MicroProfile Metrics 5.0, this information is displayed with an `mp_scope` tag, for example, `{mp_scope="base"}`.
+The Metric Registry scope that a metric is associated to was indicated with a prefix of `base_` or `vendor_` in the Prometheus-formatted name. In MicroProfile Metrics 5.0, this information is displayed with an `mp_scope` tag, for example, `{mp_scope="base"}`.
 
 Histogram metric::
 In MicroProfile Metrics 5.0, metrics that are instrumented with a `Histogram` metric type have fewer formatted outputs than in previous releases, due to the removal of the `min`, `mean`, and `stddev` values. Furthermore, the formatting of the Prometheus output is changed. The suffix that defines the `Histogram` value trails after the unit suffix. For example, `bulkhead_waitingDuration_max_seconds` becomes `bulkhead_waitingDuration_seconds_max`.
@@ -132,13 +132,13 @@ In MicroProfile 6.0, MicroProfile Telemetry 1.0 replaces MicroProfile OpenTracin
 
 In addition to replacing the `mpOpenTracing-3.0` feature with the `mpTelemtry-1.0` feature in your `server.xml` file, you must provide configuration to allow the MicroProfile Telemetry feature to connect to your distributed trace service. For more information, see xref:microprofile-telemetry.adoc[Enable distributed tracing with MicroProfile Telemetry]. 
 
-You do not need to package a client for your particular tracing service. MicroProfile Telemetry includes exporters for Zipkin, the OpenTelemetry Protocol (OTLP) (which is used by Jaeger since v1.35), and the older Jaeger protocol. If you need to export to a different service, you can provide a custom exporter by using the link:https://www.javadoc.io/doc/io.opentelemetry/opentelemetry-sdk-extension-autoconfigure-spi/1.19.0/io/opentelemetry/sdk/autoconfigure/spi/traces/ConfigurableSpanExporterProvider.html[ConfigurableSpanExporterProvider SPI].
+You do not need to package a client for your particular tracing service. MicroProfile Telemetry includes exporters for Zipkin, the OpenTelemetry Protocol (OTLP) (which is used by Jaeger since v1.35), and the older Jaeger protocol. If you need to export to a different service, you can provide a custom exporter by using the link:https://www.javadoc.io/doc/io.opentelemetry/opentelemetry-sdk-extension-autoconfigure-spi/1.19.0/io/opentelemetry/sdk/autoconfigure/spi/traces/ConfigurableSpanExporterProvider.html[ConfigurableSpanExporterProvider service provider interface (SPI)].
 
 ==== Selecting a compatible propagator
 
 Several different standards are available to propagate span information between microservices by using HTTP headers. If you're upgrading microservices one at a time, you must enable a propagation method that is compatible with your other microservices.
 
-The `otel.propagators` configuration property configures which propagators are used. The following values are available:
+The `otel.propagators` configuration property configures which propagators are used. The following values are available.
 
 * `tracecontext`: link:https://www.w3.org/TR/trace-context/[W3C Trace Context] (usually used together with `baggage`)
 * `baggage`: link:https://www.w3.org/TR/baggage/[W3C Baggage]
@@ -164,7 +164,7 @@ The `@Traced` annotation is removed and how you migrate depends on where you wer
 
 ==== Start migrating by using the OpenTracing shim
 
-Update your application dependencies to remove the OpenTracing API and add the OpenTelemetry API as a provided dependency and the OpenTracing shim as a regular dependency. For example, add the following dependencies in your Maven `pom.xml` file:
+Update your application dependencies to remove the OpenTracing API and add the OpenTelemetry API as a provided dependency and the OpenTracing shim as a regular dependency. For example, add the following dependencies in your Maven `pom.xml` file.
 
 [source,xml]
 ----
@@ -190,7 +190,7 @@ Update your application dependencies to remove the OpenTracing API and add the O
 Just like the MicroProfile OpenTracing 3.0 feature (`mpOpenTracing-3.0`), the MicroProfile Telemetry 1.0 feature (`mpTelemetry-1.0`) feature requires that you xref:microprofile-telemetry.adoc#manual[enable third-party APIs] to use the API classes in your application.
 
 The shim converts most calls to the OpenTracing API into calls to the OpenTelemetry API, but it doesn't make the OpenTracing `Tracer` class available for injection.
-To enable injection of the OpenTracing `Tracer` class, you also need to add a CDI Producer Method that uses the shim to provide instances of the class for injection. If CDI discovery is enabled, you can add the following class to your application:
+To enable injection of the OpenTracing `Tracer` class, you also need to add a CDI Producer Method that uses the shim to provide instances of the class for injection. If CDI discovery is enabled, you can add the following class to your application.
 
 [source,java]
 ----
@@ -220,7 +220,7 @@ You can continue to use the OpenTracing API in your code with the OpenTracing Sh
 
 The OpenTelemetry API is similar to the OpenTracing API so the changes to your code are likely to be straightforward. Where you previously injected the `io.opentracing.Tracer` class, you must instead inject the `io.opentelemetry.api.trace.Tracer` class and use the methods on that class to create new spans.
 
-As an example, take the following code for the OpenTracing API, which creates and activates a span around an operation:
+As an example, take the following code for the OpenTracing API, which creates and activates a span around an operation.
 
 [source,java]
 ----
@@ -232,7 +232,7 @@ try (Scope childScope = tracer.activateSpan(span)) {
 }
 ----
 
-Corresponding code that uses the OpenTelemetry API is similar to the following example:
+Corresponding code that uses the OpenTelemetry API is similar to the following example,
 
 
 [source,java]
@@ -245,7 +245,8 @@ try (Scope childScope = span.makeCurrent()) {
 }
 ----
 
-For more information about on the OpenTelemetry API, see the link:https://www.javadoc.io/doc/io.opentelemetry/opentelemetry-api/1.19.0/io/opentelemetry/api/trace/package-summary.html[Javadoc].
+For more information about the OpenTelemetry API, see the link:https://www.javadoc.io/doc/io.opentelemetry/opentelemetry-api/1.19.0/io/opentelemetry/api/trace/package-summary.html[Javadoc].
+
 For more information about migrating to the OpenTelemetry API, see link:https://opentelemetry.io/docs/migration/opentracing/#step-2-progressively-replace-instrumentation[the OpenTelemetry documentation].
 
 
