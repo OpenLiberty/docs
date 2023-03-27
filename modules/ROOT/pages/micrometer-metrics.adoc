@@ -1,0 +1,126 @@
+// Copyright (c) 2019, 2023 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description: The Open Liberty MicroProfile Metrics 5.0 feature uses embedded Micrometer metrics technology to transfer metric data to multiple third-party monitoring systems. Micrometer enables you to instrument your code in a standardized way to visualize metrics results in the monitoring system of your choice. 
+:seo-title: Choose your own monitoring tools with Micrometer - OpenLiberty.io
+:seo-description: The Open Liberty MicroProfile Metrics 5.0 feature uses embedded Micrometer metrics technology to transfer metric data to multiple third-party monitoring systems. Micrometer enables you to instrument your code in a standardized way to visualize metrics results in the monitoring system of your choice.
+:page-layout: general-reference
+:page-type: general
+= Choose your own monitoring tools with MicroProfile Metrics
+
+The Open Liberty MicroProfile Metrics 5.0 feature uses embedded Micrometer metrics technology to transfer metric data to multiple third-party monitoring systems. Starting in MicroProfile Metrics 5.0, you can instrument your code in a standardized way to visualize metrics results in the monitoring system of your choice. 
+
+Micrometer can connect to many commonly used third-party metric monitoring systems. For a full list of metric monitoring systems, see the https://micrometer.io/docs[Micrometer metrics documentation].  
+
+By default, the MicroProfile Metrics 5.0 feature can send data to the Prometheus monitoring tool through the `/metrics` endpoint without requiring extra configuration. If you want to integrate Open Liberty with one or more other monitoring systems that work with Micrometer, complete the following steps. The <<#example,Micrometer configuration example>> demonstrates the configuration that the steps describe.
+
+
+== Configure Open Liberty integration with third-party monitoring tools
+
+You can integrate Open Liberty with one or more of the monitoring systems that work with Micrometer by completing the following steps. The <<#example,Micrometer configuration example>> demonstrates the configuration that the steps describe.
+
+1. Enable the feature:mpMetrics-5.0[display=MicroProfile Metrics 5.0] feature in your `server.xml` file.
+
+2. Provide the Micrometer core library, Micrometer registry implementations, and the related dependencies to the Open Liberty runtime. 
++
+  - By default, the MicroProfile Metrics 5.0 feature provides metric data only to the Prometheus monitoring tool through the `/metrics` endpoint. To customize the monitoring systems that the feature can transfer metric data to, provide the Micrometer core libraries, Micrometer registry implementations, and all necessary dependencies in a shared library. 
+  - Define a config:library[display=shared library] in your `server.xml` file and reference it with the `libraryRef` attribute of the config:mpMetrics[ ] configuration element. If you use this configuration, the `/metrics` endpoint is available only if you provide the Micrometer Prometheus registry library as part of the shared library. This configuration strategy does not provide access to the Micrometer metrics API in the application.
++
+The following example shows the `server.xml` file configuration for the shared library reference.
++
+[source,xml]
+----
+<mpMetrics authentication="false" libraryRef="micrometerLibrary"/>
+
+<library id="micrometerLibrary">
+    <fileset dir="/path/to/directory/with/micrometer/libraries" includes="*.jar" />
+</library>
+----
+
+3. Set MicroProfile Config properties to enable and configure one or more user-provided Micrometer registry implementations.
++
+  - The properties to enable third-party implementations use the following syntax: `mp.metrics.<registry>.enabled`. The `<registry>` value is an identifying value that is designated for each individual Micrometer registry. For the respective values for each Micrometer registry, see the Micrometer metrics documentation. This configuration applies to all Micrometer registry implementations except for the Prometheus registry implementation, which is enabled by default when the Prometheus registry library and its dependencies are available. 
+  - For example, if you provide the Influx Micrometer registry library and its dependencies, you must set the `mp.metrics.influx.enabled` property  to `true` to render it active. You can set these properties in your `server.xml` file by using the config:variable[ ] configuration element. For more information about setting MicroProfile Config properties, see xref:external-configuration.adoc[External configuration of microservices].
+  - You can also set MicroProfile Config properties for each Micrometer registry to configure the connection to the associated monitoring tool. The properties use the following syntax: `mp.metrics.<registry>.<property>`,  where `<registry>` is the identifying value that is defined for that registry by Micrometer.
+  - For example, properties for the Influx registry follow the  `mp.metrics.influx.<property>` syntax. For information about the properties that are available for each registry, see the Micrometer documentation.
+
+The Micrometer documentation for each Micrometer registry lists  example properties in a format that is compliant with the Spring Boot ingestion of these properties. These example properties follow the `management.metrics.export.<registry>.<property>` syntax. The `<registry>` and `<property>` values correspond to the `<registry>` and `<property>` values that are used for the previously described MicroProfile Config properties. Certain properties that are listed might contain dashes. The underlying Micrometer library reads the properties in camel case format. For example, the Micrometer Influx registry documentation lists an `auto-create-db` property that is consumed by Spring Boot. The Micrometer library accepts it as `autoCreateDb`. The corresponding MicroProfile Config property is `mp.metrics.influx.autoCreateDb`.
++
+The following example shows the server.xml file configuration to declare MicroProfile Config properties for the Influx Micrometer registry library by using the `variable` element
++
+[source,xml]
+----
+<variable name="mp.metrics.influx.enabled" value="true" />
+<variable name="mp.metrics.influx.uri" value="http://localhost:8086" />
+<variable name="mp.metrics.influx.autoCreatedDb" value="true"/>
+<variable name="mp.metrics.influx.bucket" value="bucketName"/>
+<variable name="mp.metrics.influx.org" value="orgName"/>
+<variable name="mp.metrics.influx.token" value="<auth_token>" />
+----
+
+[#example]
+=== Micrometer configuration example 
+
+The following configuration example shows how to configure the MicroProfile Metrics 5.0 feature to use the Influx and Prometheus Micrometer registries, as described in the previous section.
+
+In this example, a directory for the Micrometer libraries and dependencies at `/path/to/directory/with/micrometer/libraries` contains the following files:
+
+----
+// Micrometer core
+    - micrometer-core-1.9.3.jar
+// Micrometer core dependencies
+    - HdrHistogram-2.1.12.jar
+    - LatencyUtils-2.0.3.jar
+// Micrometer Prometheus registry
+    - micrometer-registry-prometheus-1.9.3.jar
+// Micrometer Prometheus registry's dependencies
+    - simpleclient-0.15.0.jar
+    - simpleclient_common-0.15.0.jar
+    - simpleclient_tracer_common-0.15.0.jar
+    - simpleclient_tracer_otel-0.15.0.jar
+    - simpleclient_tracer_otel_agent-0.15.0.jar
+// Micrometer Influx registry
+    - micrometer-registry-influx-1.9.3.jar
+// Micrometer Influx registry dependencies
+    - slf4j-api-1.7.36.jar
+
+----
+
+The following example shows the corresponding `server.xml` file configuration to specify the enabling Micrometer properties and provide the shared library.
+
+[source,xml]
+----
+<featureManager>  
+    <feature>mpMetrics-5.0</feature>
+    ...
+</featureManager>  
+...
+
+<mpMetrics authentication="false" libraryRef="micrometerLibrary"/>
+
+<variable name="mp.metrics.influx.enabled" value="true" />
+<variable name="mp.metrics.influx.uri" value="http://localhost:8086" />
+<variable name="mp.metrics.influx.autoCreatedDb" value="true"/>
+<variable name="mp.metrics.influx.bucket" value="bucketName"/>
+<variable name="mp.metrics.influx.org" value="orgName"/>
+<variable name="mp.metrics.influx.token" value="<auth_token>" />
+
+<library id="micrometerLibrary">
+    <fileset dir="/path/to/directory/with/micrometer/libraries" includes="*.jar" />
+</library>   
+----
+
+Note that you don't need to set the `mp.metrics.prometheus.enabled` property to true because Prometheus is enabled by default when the Prometheus registry library and its dependencies are available.
+
+== See also
+* Guide: link:/guides/microprofile-metrics.html[Providing metrics from a microservice]
+* xref:introduction-monitoring-metrics.adoc[Monitoring with metrics]
+* xref:microservice-observability-metrics.adoc[Microservice observability with metrics]
+* xref:metrics-list.adoc[Metrics reference list]
+
+

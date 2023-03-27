@@ -1,6 +1,16 @@
 
 == Examples
 
+- <<#basic,Configure a basic user registry>>
+- <<#quick,Configure a basic user registry with QuickStart security>>
+- <<#ltpa,Specify LTPA keys>>
+- <<#filter,Configure LTPA authentication for a subset of requests>>
+- <<#tai,Disable LTPA cookies for TAI>>
+////
+- <<#logout,Track logged-out LTPA tokens>>
+- <<#cahce,Configure the authentication cache>>
+////
+
 === Configure a basic user registry
 You can configure Open Liberty to authenticate and authorize users by using a basic user registry. The basic user registry contains user credentials that applications need for security-related tasks. To configure a basic user registry, the Application Security feature must be enabled in the `server.xml` file. The following example shows the configuration of a basic user registry in the `server.xml` file:
 [source,xml]
@@ -37,14 +47,43 @@ If a user ID or password contains characters other than US-ASCII, make sure that
 You can use the `securityUtility encode` command to encode the password for each user. For more information, see xref:reference:command/securityUtility-encode.adoc[securityUtility encode].
 You can also specify administrative roles for users and groups to govern access to Open Liberty administrative REST APIs. For more information, see the feature:restConnector[display=Admin REST Connector] feature.
 
+[#quick]
 === Configure a basic user registry with QuickStart security
-When you want to configure a basic user registry, you can use the `quickStartSecurity` element to automatically configure a registry that grants the administrator role to a user. The administrator role gives the user the authority to manage applications. To configure a basic user registry with the `quickStartSecurity` element, the Application Security feature must be enabled in the `server.xml` file. The following example shows the `server.xml` file configuration to define the username and password for a user that is granted the administrator role with the `quickStartSecurity` element:
+When you want to configure a basic user registry for test purposes, you can use the `quickStartSecurity` element to automatically configure a registry that grants the administrator role to a user. The administrator role gives the user the authority to manage applications. The following example shows the `server.xml` file configuration to define the username and password for a user that is granted the administrator role with the `quickStartSecurity` element:
 [source,xml]
 ----
 <quickStartSecurity userName="Bob" userPassword="bobpwd" />
 ----
-You can use QuickStart security configuration for test purposes.
+You can use QuickStart security configuration for test purposes. The registry that is configured by this option is not intended for production environments. However, it is useful in test scenarios, particularly for testing secured JMX connections that require administrator access.
 
+////
+[#cahce]
+=== Configure the authentication cache
+Because the creation of a subject might affect performance, Open Liberty provides an authentication cache to store a subject after an authentication of a user is successful. The cache is initialized with a set number of entries, which are determined by the `initialSize` attribute. It has a maximum number of entries, which are determined by the `maxSize` attribute. If the maximum size is reached, then the earliest entries are removed from the cache. If a user is inactive for longer than period that is specified by the `timeout` attribute, then the entry for that user is removed from the cache.
+
+By default, the cache size is initialized to 50 entries and a maximum of 25000 entries, with a timeout of 600 seconds. If you want to change the values for the authentication cache, you can configure the `authCache` element, as shown in the following example.
+
+[source,xml]
+----
+<authCache initialSize="100" maxSize="50000" timeout="15m"/>
+----
+
+Any change to the user registry configuration in the `server.xml` file clears the authentication cache. However, if changes are made to an external user registry, such as an LDAP user registry, the authentication cache is unaffected.
+Larger authentication cache timeout values can increase security risks. For example, a user who is revoked can still log in by using a credential that is cached in the authentication cache until the cache is refreshed.
+Smaller authentication cache timeout values can affect performance. When this value is smaller, the Liberty server accesses the user registry or repository more frequently.
+
+For more information, see the config:authCache[] element.
+
+Large numbers of entries in the authentication cache, which are caused by an increased number of users, increase the memory usage of the authentication cache, which can affect performance. You can disable the authentication cache by setting the `cachEnabled` attribute to `false` in the `authentication` element. The following example demonstrates how to disable the authentication cache for an authentication configuration that is called `Basic`.
+
+[source,xml]
+----
+<authentication id="Basic" cacheEnabled="false" />
+----
+
+You can configure the authentication to use a distributed cache, which has benefits for performance and fail-over recovery when a group of servers share the same users and groups. For more information, see xref:ROOT/distributed-authentication-cache.adoc[Configure a distributed authentication cache].
+
+[#ltpa]
 === Specify LTPA keys
 When the Application Security feature is enabled, Lightweight Third Party Authentication (LTPA) is enabled by default. You can override the default settings for the `ltpa` element by configuring the `ltpa` element in the `server.xml` file. The following example shows how to configure the `ltpa` element:
 [source,xml]
@@ -53,9 +92,10 @@ When the Application Security feature is enabled, Lightweight Third Party Authen
 ----
 
 For more information on LTPA configuration attributes, see the config:ltpa[display=LTPA] configuration element.
+////
 
+[#filter]
 === Configure LTPA authentication for a subset of requests
-
 You can configure an authentication filter to specify whether certain requests for protected resources are authenticated with LTPA.
 If the request meets the criteria that are specified in the authentication filter, then the request can authenticate with LTPA to access the protected resource.
 Conversely, if the request does not meet the criteria that are configured in the LTPA authentication filter, then the user is prompted to provide login credentials.
@@ -73,11 +113,30 @@ For more information, see xref:ROOT:authentication-filters.adoc[Authentication f
 In the example, request URLs that contain the `/SimpleServlet` pattern are authenticated by using LTPA SSO authentication.
 If the `ltpa` element does not specify the `authFilterRef` attribute, all requests that include an LTPA cookie are processed by LTPA SSO authentication.
 
+[#tai]
 === Disable LTPA cookies for TAI
-
 LTPA cookies contain secure tokens that are used to verify user credentials and enable SSO. When you don't want to rely on LTPA tokens for SSO, you can use other methods, such as a Trust Association Interceptor (TAI), for authentication. A TAI is used to validate HTTP requests between a third-party security server and an Open Liberty server to complete authentication.  The following example shows how to disable LTPA cookies for TAI by specifying the `disableLtpaCookie` attribute with a value of `true` in the `server.xml` file:
 
 [source,xml]
 ----
 <trustAssociation id="sample" disableLtpaCookie="true" />
 ----
+
+////
+[#logout]
+=== Track logged-out LTPA tokens
+When a user is logged out by using either form or programmatic logout, the token that is used for single sign-on is removed from the LTPA cookie. It is also removed from the local authentication cache and the session is invalidated. If that token is persisted and presented to the server again, it is validated based on the expiration time and the LTPA encryption keys. However, you can configure the server to track logged-out LTPA tokens so that if they are presented again on the same server, the user must authenticate again.
+
+To configure this option, both the Application Security and feature:servlet[display=Jakarta Servlet] features must be enabled. The Application Security feature version 3.0 and later enables the Jakarta Servlet feature by default.
+
+To track the tokens that are logged out on a particular Liberty server, you can add the following configuration to your `server.xml` file.
+
+[source,xml]
+----
+<webAppSecurity trackLoggedOutSSOCookies="true"/>
+----
+
+This configuration works only on the same server. The LTPA token is tracked only on the server where the user logged out. If that same unexpired LTPA token is presented to another server where the LTPA keys are shared, it is used until it is also logged out on that server.
+
+This configuration might affect your SSO scenarios. For example, when a user logs in from multiple browsers to the same server and logs out from one browser. If that user then tries to access the resource by using another browser, they must log in again.
+////

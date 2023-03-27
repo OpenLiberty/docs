@@ -204,7 +204,7 @@ The following MicroProfile Config properties can be specified when MicroProfile 
 |`mp.jwt.verify.audiences=conferenceService`
 
 |`mp.jwt.verify.clock.skew`
-|Specifies the clock skew in seconds that is used during the token expiry and age verification. The default value is `0` seconds. The `clockSkew` attribute of the `mpJwt` element has a default value of `5` minutes, which you must disable or it overrides the value of the `mp.jwt.verify.clock.skew` property. To disable the default and use the property instead, set any negative value for the `clockSkew` attribute in your `server.xml` file, for example `<mpJwt clockSkew= -1m />`. This property is available in MicroProfile JSON Web Token 2.1 and later.
+|Specifies the clock skew in seconds that is used during the token expiry and age verification. The default value is `0` seconds. The `clockSkew` attribute of the `mpJwt` element has a default value of `5` minutes, which you must disable or it overrides the value of the `mp.jwt.verify.clock.skew` property. To disable the default and use the property instead, set any negative value for the `clockSkew` attribute in your `server.xml` file, for example `mpJwt clockSkew= -1m`. This property is available in MicroProfile JSON Web Token 2.1 and later.
 |On each request to a protected resource.
 |`mp.jwt.verify.clock.skew=60`
 
@@ -250,13 +250,38 @@ The following MicroProfile Config properties can be specified when MicroProfile 
 
 |`mp.metrics.appName`
 |Passes the value of the  `_app` tag from the application server to the application. This property is used to avoid metric name collisions when multiple applications are deployed to the runtime. It is defined through a `microprofile-config.properties` file in the `META-INF` directory of the application. The value of this tag is appended to the output of each metric that originates from that application.
+
+In MicroProfile 5.0, the  `_app` tag that was defined in prior releases by the `mp.metrics.appName` MicroProfile Config property is designated as `mp_app`.
 |This value is read and evaluated during run time.
 |`mp.metrics.appName=myApp`
+
+|`mp.metrics.<registry>.enabled`
+|When this property is set to true, it enables a user-provided Micrometer registry implementation, where `<registry>` is the name of the Micrometer registry. For more information, see xref:micrometer-metrics.adoc[Choose your own monitoring tools with MicroProfile Metrics]. This property is available starting in MicroProfile Metrics 5.0 .
+|Server startup
+|`mp.metrics.elastic.enabled=true`
+
+|`mp.metrics.<registry>.<property>`
+|Specifies property values to configure for a Micrometer-implemented monitoring system. `<registry>` is the Micrometer registry value for the monitoring system, and `<property>`is the name of the property in that system that you want to specify a value for. For more information, see xref:micrometer-metrics.adoc[Choose your own monitoring tools with MicroProfile Metrics]. This property is available starting in MicroProfile Metrics 5.0 .
+|Server startup
+|`mp.metrics.elastic.index=micrometer-metrics`
+
+|`mp.metrics.smallrye.histogram.precision`
+|Specifies the percentile precision of the histogram metrics. The property accepts a value from 1 to 5 and is defaulted to 3 if no value is specified. A greater value results in more exact percentile calculations, but at a greater memory cost.
+This property is available starting in MicroProfile Metrics 5.0 .
+|Server startup
+|`mp.metrics.smallrye.histogram.precision=4`
+
+|`mp.metrics.smallrye.timer.precision`
+|Specifies the percentile precision of the timer metrics. The property accepts a value from 1 to 5 and is defaulted to 3 if no value is specified. A greater value results in more exact percentile calculations, but at a greater memory cost.
+This property is available starting in MicroProfile Metrics 5.0 .
+|Server startup
+|`mp.metrics.smallrye.timer.precision=4`
 
 |`mp.metrics.tags`
 |Specifies tags for a metric. Tag values that are set through this property must escape equal signs (`=`) and commas (`,`) with a backslash (`\`). The values of these tags are appended to the output of each metric.
 |Server startup
 |`mp.metrics.tags=app=shop,tier=integration,special=deli\=ver\,y`
+
 
 |===
 
@@ -281,7 +306,7 @@ The following MicroProfile Config properties can be specified when MicroProfile 
 |`mp.openapi.extensions.liberty.merged.exclude=app1/module2,app2`
 
 |`mp.openapi.extensions.liberty.merged.info`
-|Sets the `info` section of the final Open API document. If this property is set, the `info` section in the final OpenAPI document is replaced with the value of the property. This replacement is made after any merging is completed. The value must be a https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#infoObject[valid OpenAPI info section] in JSON format. This property is available in MicroProfile OpenAPI 2.0 and later. For more information, see xref:documentation-openapi.adoc#multi-module[Multiple application and multi-module application support with MicroProfile OpenAPI].
+|Sets the `info` section of the final Open API document. If this property is set, the `info` section in the final OpenAPI document is replaced with the value of the property. This replacement is made after any merging is completed. The value must be a https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#info-object[valid OpenAPI info section] in JSON format. This property is available in MicroProfile OpenAPI 2.0 and later. For more information, see xref:documentation-openapi.adoc#multi-module[Multiple application and multi-module application support with MicroProfile OpenAPI].
 |On each request to the `/openapi` endpoint.
 |`mp.openapi.extensions.liberty.merged.info= _valid OpenAPI info section in JSON format_`
 
@@ -295,10 +320,10 @@ The following MicroProfile Config properties can be specified when MicroProfile 
 |Application startup
 |`mp.openapi.model.reader=com.mypackage.MyModelReader`
 
-// commenting out until 3.1 release, see #5678 |`mp.openapi.scan.beanvalidation`
-// |Enables or disables the scanning and processing of Jakarta Bean Validation annotations. The default value is `true`. This property is available in MicroProfile OpenAPI 3.1 and later.
-// |Application startup
-// |`mp.openapi.scan.beanvalidation=false`
+|`mp.openapi.scan.beanvalidation`
+|Enables or disables the scanning and processing of Jakarta Bean Validation annotations. The default value is `true`. This property is available in MicroProfile OpenAPI 3.1 and later.
+|Application startup
+|`mp.openapi.scan.beanvalidation=false`
 
 |`mp.openapi.scan.classes`
 |Specifies a list of classes to scan.
@@ -321,7 +346,7 @@ The following MicroProfile Config properties can be specified when MicroProfile 
 |`mp.openapi.scan.packages=com.xyz.packageA,com.xyz.packageB`
 
 |`mp.openapi.schema`
-|Specifies a schema for a specific class, in JSON format. The remainder of the property key must be the fully qualified class name. The value must be a valid OpenAPI schema object that is specified in JSON format. This property is functionally equivalent to the @Schema annotation on a Java class. However, it can be used in cases where the application developer does not have access to the source code of a class. This property is available in MicroProfile OpenAPI 2.0 and later.
+|Specifies a schema for a specific class, in JSON format. The remainder of the property key must be the fully qualified class name. The value must be a valid OpenAPI schema object that is specified in JSON format. This property is functionally equivalent to the `@Schema` annotation on a Java class. However, it can be used in cases where the application developer does not have access to the source code of a class. This property is available in MicroProfile OpenAPI 2.0 and later.
 |Application startup
 |`mp.openapi.schema.java.util.Date= _valid OpenAPI schema in JSON format_`
 

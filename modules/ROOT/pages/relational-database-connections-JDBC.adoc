@@ -194,30 +194,6 @@ The following example shows a sample data source configuration for a PostgreSQL 
 </dataSource>
 ----
 
-To run a Postgres Docker container locally, run the following command:
-
-[source,command]
-----
-docker run -it --rm=true --memory-swappiness=0 --ulimit memlock=-1:-1 \
-           --name postgres-liberty \
-           -e POSTGRES_USER=exampleUser \
-           -e POSTGRES_PASSWORD=examplePassword \
-           -e POSTGRES_DB=myDB \
-           -p 5432:5432 \
-           postgres:10.5
-----
-
-If you use https://docs.podman.io/en/latest[Podman] to manage your containers, run the following command
-
-----
-podman run -it --rm=true --memory-swappiness=0 --ulimit memlock=-1:-1 \
-           --name postgres-liberty \
-           -e POSTGRES_USER=exampleUser \
-           -e POSTGRES_PASSWORD=examplePassword \
-           -e POSTGRES_DB=myDB \
-           -p 5432:5432 \
-           postgres:10.5
-----
 [#Db2]
 === IBM Db2
 
@@ -233,35 +209,6 @@ The following example shows a sample data source configuration for an IBM Db2 da
                 user="db2inst1"
                 password="foobar1234"/>
 </dataSource>
-----
-
-To run an IBM Db2 Docker container locally, run the following command:
-
-[source,command]
-----
-docker run --ulimit memlock=-1:-1 -it --rm=true --memory-swappiness=0 \
-           --name db2-liberty \
-           -e AUTOCONFIG=false -e ARCHIVE_LOGS=false -e LICENSE=accept \
-           -e DBNAME=test \
-           -e Db2INSTANCE=db2inst1 \
-           -e Db2INST1_PASSWORD=foobar1234 \
-           -p 50000:50000 \
-           --privileged \
-           ibmcom/db2:11.5.0.0a
-----
-
-If you use https://docs.podman.io/en/latest[Podman] to manage your containers, run the following command:
-[source,command]
-----
-podman run --ulimit memlock=-1:-1 -it --rm=true --memory-swappiness=0 \
-           --name db2-liberty \
-           -e AUTOCONFIG=false -e ARCHIVE_LOGS=false -e LICENSE=accept \
-           -e DBNAME=test \
-           -e Db2INSTANCE=db2inst1 \
-           -e Db2INST1_PASSWORD=foobar1234 \
-           -p 50000:50000 \
-           --privileged \
-           ibmcom/db2:11.5.0.0a
 ----
 
 [#Microsoft]
@@ -282,30 +229,6 @@ The following example shows a sample data source configuration for a Microsoft S
 </dataSource>
 ----
 
-To run a Microsoft SQL Server Docker container locally, run the following command:
-
-[source,command]
-----
-docker run --ulimit memlock=-1:-1 -it --rm=true --memory-swappiness=0 \
-           --name mssql-liberty \
-           -e ACCEPT_EULA=Y \
-           -e SA_PASSWORD=examplePassw0rd \
-           -p 1433:1433 \
-           mcr.microsoft.com/mssql/server:2019-GA-ubuntu-16.04
-----
-
-If you use https://docs.podman.io/en/latest[Podman] to manage your containers, run the following command:
-
-[source,command]
-----
-podman run --ulimit memlock=-1:-1 -it --rm=true --memory-swappiness=0 \
-           --name mssql-liberty \
-           -e ACCEPT_EULA=Y \
-           -e SA_PASSWORD=examplePassw0rd \
-           -p 1433:1433 \
-           mcr.microsoft.com/mssql/server:2019-GA-ubuntu-16.04
-----
-
 [#MySQL]
 === MySQL
 
@@ -321,30 +244,6 @@ The following example shows a sample data source configuration for a MySQL datab
                 user="exampleUser"
                 password="examplePassword"/>
 </dataSource>
-----
-
-To run a MySQL Docker container locally, run the following command:
-[source,command]
-----
-docker run --ulimit memlock=-1:-1 -it --rm=true --memory-swappiness=0 \
-           --name mysql-liberty \
-           -e MYSQL_DATABASE=myDB \
-           -e MYSQL_USER=exampleUser \
-           -e MYSQL_PASSWORD=examplePassword \
-           -p 3306:3306 \
-           mysql:8
-----
-
-If you use https://docs.podman.io/en/latest[Podman] to manage your containers, run the following command:
-[source,command]
-----
-podman run --ulimit memlock=-1:-1 -it --rm=true --memory-swappiness=0 \
-           --name mysql-liberty \
-           -e MYSQL_DATABASE=myDB \
-           -e MYSQL_USER=exampleUser \
-           -e MYSQL_PASSWORD=examplePassword \
-           -p 3306:3306 \
-           mysql:8
 ----
 
 [#Embedded]
@@ -376,6 +275,7 @@ The following example shows a sample data source configuration for an Oracle dat
                 password="examplePassword"/>
 </dataSource>
 ----
+
 
 [#Oracleucp]
 === Oracle UCP
@@ -447,10 +347,10 @@ For more information, see the xref:reference:feature/jdbc-4.2.adoc[Java Database
 [#types]
 == Data source types
 
-To access a database from your Open Liberty application, your application code must implement the `javax.sql.DataSource` interface. Open Liberty provides a managed implementation of this interface, which is backed by the data source or driver implementation that your JDBC driver provides. For Open Liberty, your JDBC driver must provide at least one of the following types of data sources or a `java.sql.Driver` driver implementation with the `ServiceLoader` facility:
+To access a database from your Open Liberty application, your application code must use the `javax.sql.DataSource` interface. Open Liberty provides a managed implementation of this interface, which is backed by the data source or driver implementation that your JDBC driver provides. For Open Liberty, your JDBC driver must provide at least one of the following types of data sources or a `java.sql.Driver` driver implementation with the `ServiceLoader` facility:
 
 - `javax.sql.DataSource`
-This type of data source is the basic form. It does not provide the interoperability that enhances connection pooling and cannot participate as a two-phase capable resource in transactions that involve multiple resources.
+This basic form of data source lacks functions that are used by Liberty for optimizing connection pooling, such as connection and statement event listeners. Additionally, it is not able to participate in two-phase transactions that involve multiple resources.
 
 - `javax.sql.ConnectionPoolDataSource`
 This type of data source is enabled for xref:reference:feature/jdbc-4.2.adoc#_connection_pool_configuration[connection pooling]. It cannot participate as a two-phase capable resource in transactions that involve multiple resources.
