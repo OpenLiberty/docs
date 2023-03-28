@@ -6,8 +6,6 @@
 - <<#ltpa,Specify LTPA keys>>
 - <<#filter,Configure LTPA authentication for a subset of requests>>
 - <<#tai,Disable LTPA cookies for TAI>>
-- <<#OpenIdAuthenticationMechanismDefinition,Use the OpenIdAuthenticationMechanismDefinition annotation to enable an OpenID Connect client for an application>>
-
 
 === Configure a basic user registry
 You can configure Open Liberty to authenticate and authorize users by using a basic user registry. The basic user registry contains user credentials that applications need for security-related tasks. To configure a basic user registry, the Application Security feature must be enabled in the `server.xml` file. The following example shows the configuration of a basic user registry in the `server.xml` file:
@@ -54,6 +52,14 @@ When you want to configure a basic user registry for test purposes, you can use 
 ----
 You can use QuickStart security configuration for test purposes. The registry that is configured by this option is not intended for production environments. However, it is useful in test scenarios, particularly for testing secured JMX connections that require administrator access.
 
+[#ltpa]	
+=== Specify LTPA keys	
+When the Application Security feature is enabled, Lightweight Third Party Authentication (LTPA) is enabled by default. You can override the default settings for the `ltpa` element by configuring the `ltpa` element in the `server.xml` file. The following example shows how to configure the `ltpa` element:	
+[source,xml]	
+----	
+<ltpa keysFileName="yourLTPAKeysFileName.keys" keysPassword="keysPassword" expiration="120" />	
+----	
+For more information on LTPA configuration attributes, see the config:ltpa[display=LTPA] configuration element.
 
 [#filter]
 === Configure LTPA authentication for a subset of requests
@@ -82,124 +88,3 @@ LTPA cookies contain secure tokens that are used to verify user credentials and 
 ----
 <trustAssociation id="sample" disableLtpaCookie="true" />
 ----
-
-
-[#OpenIdAuthenticationMechanismDefinition]
-=== Use the OpenIdAuthenticationMechanismDefinition annotation to enable an OpenID Connect client for an application
-You can use the `OpenIdAuthenticationMechanismDefinition` annotation in a web or JAX-RS application to enable an OpenID Connect client for that application. The following example shows a servlet with a minimal `OpenIdAuthenticationMechanismDefinition`.
-
-[source,sh]
-----
-@WebServlet("/OidcAnnotatedServlet")
-@OpenIdAuthenticationMechanismDefinition(
-                                         providerURI = "https://localhost:8920/oidc/endpoint/OP",
-                                         clientId = "clientId",
-                                         clientSecret = "clientSecret",
-                                         redirectURI = "https://localhost:8940/MyApp/Callback")
-@DeclareRoles("all")
-@ServletSecurity(@HttpConstraint(rolesAllowed = "all"))
-public class OidcAnnotatedServlet extends HttpServlet {
-…
-}
-----
-
-This minimal annotation enables an OpenID Connect client for protected resources in `MyApp` application, by using the OpenID Connect Provider (OP) at `https://localhost:8920/oidc/endpoint/OP`. When the user tries to access a protected resource in `MyApp`, the user is redirected to the OP’s authorization endpoint obtained from the OP’s discovery metadata. The OP redirects the user back to `https://localhost:8940/MyApp/Callback` with the authorization code after the user authenticates successfully.
-
-The OpenID Connect client validates the authentication response and uses the authorization code to get the `access` token, `identity` token, and the `userinfo` token. The tokens are verified and an authenticated subject is established before dispatching the request to the callback servlet. The OpenID Connect client uses the default TLS configuration that is specified by the server for requests to the OP’s token and userinfo endpoints. Therefore, the OP’s signer certificates need to be imported in the default truststore configured for the default TLS configuration.
-
-The application needs to provide an implementation for the callback servlet on using minimal annotation. The callback servlet needs to obtain the original request URL by using the new `OpenIdContext` API and redirect to the original resource as shown in the following example.
-
-[source,sh]
-----
-…
-import jakarta.security.enterprise.identitystore.openid.OpenIdContext;
-…
-
-@WebServlet("/Callback")
-public class CallbackServlet extends HttpServlet {
-
-    @Inject
-    private OpenIdContext context;
-
-    @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        …
-        if (context != null) {
-            Optional<String> originalRequest = context.getStoredValue(request, response, OpenIdConstant.ORIGINAL_REQUEST);
-            String originalRequestString = originalRequest.get();
-            response.sendRedirect(originalRequestString);
-        }
-    }
-}
-----
-
-You can avoid creating a callback servlet by setting the `redirectToOriginalResource attribute` to `true` in the annotation. The OpenID Connect client will automatically redirect to the original resource as shown in the following example.
-
-[source,sh]
-----
-@OpenIdAuthenticationMechanismDefinition(
-                                         redirectToOriginalResource = true,
-                                         …
-----
-
-You can also override the metadata that is obtained from the OP’s discovery endpoint by adding a `providerMetadata` attribute to the annotation. The following example overrides the authorization and token endpoints.
-
-[source,sh]
-----
-@OpenIdAuthenticationMechanismDefinition(
-                                         providerMetadata = @OpenIdProviderMetadata(
-                                                                                    authorizationEndpoint = "https://localhost:8920/oidc/endpoint/OP/authorize",
-                                                                                    tokenEndpoint = "https://localhost:8920/oidc/endpoint/OP/token"),
-                                         …
-----
-
-All attributes support Jakarta Expression Language 5.0 (EL). You can specify the EL expression directly in a String attribute. For example, if you do not want secrets in your annotation and you have a bean providing the secret, you can perform the following.
-
-[source,sh]
-----
-@OpenIdAuthenticationMechanismDefinition(
-                                         clientSecret = "${openIdConfig.clientSecret}",
-                                         …
-----
-
-
-You can use alternative attributes that are designed for EL expressions for attributes that are not string. The boolean result for the EL expression in the `useSessionExpression` attribute in the following example overrides the value of the `useSession` boolean attribute.
-
-[source,sh]
-----
-@OpenIdAuthenticationMechanismDefinition(
-                                         useSession = true,
-                                         useSessionExpression = "#{openIdConfig.useSessionExpression}",
-                                         …
-----
-
-You can use the `claimsDefinition` attribute whenever the OP creates tokens that do not use a `preferred_username` claim for the username or a `groups` claim for the groups. Since a Liberty OP creates an identity token with the `sub` and `groupIds` claims, you need to use the `claimsDefinition` attribute to specify the name claim, and groups claim when the `providerURI` attribute points to a Liberty OP. The following example shows how to use the `sub` claim for the caller name and the `groupIds` claim for the groups.
-
-[source,sh]
-----
-@OpenIdAuthenticationMechanismDefinition(
-                                         providerURI = "https://localhost:8920/oidc/endpoint/LibertyOP",
-                                         claimsDefinition = @ClaimsDefinition(callerNameClaim = "sub", callerGroupsClaim = "groupIds"),
-                                         …
-----
-
-If there are no role mappings for the application, role protecting the resource is automatically mapped to the corresponding group from the claim named by the `callerGroupsClaim` attribute. For example, an application that is protected with the `all` role would then require an `all` group in the `groupIds` claim.
-
-You can now check for tokens expirations and what happens when they are expired. The following example shows how to use the `logout` attribute with a `LogoutDefinition` annotation to enable checking for access token and identity token expiration and enable an RP-Initiated Logout with the OP’s `end_session_endpoint` when any of those tokens expire.
-
-[source,sh]
-----
-@OpenIdAuthenticationMechanismDefinition(
-                                         logout = @LogoutDefinition(
-                                                                notifyProvider = true,
-                                                                accessTokenExpiry = true,
-                                                                identityTokenExpiry = true),
-                                         …
-----
-
-
-For more information about the `OpenIdAuthenticationMechanismDefinition` annotation and its attributes, see https://jakarta.ee/specifications/security/3.0/jakarta-security-spec-3.0.html#openid-connect-annotation[section 2.4.4. OpenID Connect Annotation].
-
-The Jakarta Security 3.0 specification also introduces the `OpenIdContext` bean and various APIs for handling the access token, identity token, and refresh token.
-
-The JavaDoc for the Jakarta Security 3.0 APIs are available from https://github.com/jakartaee/security/tree/3.0.0-RELEASE[Jakarta Security].
