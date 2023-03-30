@@ -12,8 +12,8 @@ assignees: ''
 ### Dates
 
 - **Doc freeze date:** 
-- **GA Date:** 
-
+- **Estimnated GA Date:** 
+- 
 ### Notes
 **List any special concerns for this release that are not already tracked in anothere issue, such as release dependencies, Javadoc updates, support level changes, planned docs refresh, etc.**
 
