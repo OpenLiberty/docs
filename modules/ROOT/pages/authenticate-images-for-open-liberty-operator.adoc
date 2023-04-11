@@ -1,0 +1,119 @@
+// Copyright (c) 2023 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description:
+:seo-title: Authenticate images for Open Liberty Operator
+:seo-description: All images that are associated with the Open Liberty operator are digitally signed. Authenticate the downloaded images and ensure that the images are created by using the image signatures and uploaded by IBM.
+:page-layout:
+:page-type:
+
+= Authenticate images for Open Liberty Operator
+
+All images that are associated with the Open Liberty operator are digitally signed. Authenticate the downloaded images and ensure that the images are created by using the image signatures and uploaded by IBM.
+
+
+== Before you begin
+
+To authenticate the signatures, it is necessary that the machine has the following command-line tools installed.
+
+* GNU Privacy Guard v2
+* Skopeo
+
+Also, the Open Liberty public key needs to be present on the same machine as these command-line tools. 
+
+You can copy the following text box into a text editor and save it as a file named `wlo.gpg`.
+
+----
+
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+mQINBGC2ygABEACk5ZG9XVP5amXUeipM1KiAow0U1bOH4s1RCSEPvtjsAQB/dmD0
+C8SLvVpdxGoSRZlUl+616OdFq1TRGUg3nn13vHBm4rWacS/pcSZiISF0qIxI9Ooj
+YRdVGKjNwjk6chsG7HjzNtsa8LyM431lmH9FqVvFw0tJwaKF3nG6cXTOgHbm3v3T
+nsBk6tDpQ4ofbrZMo8uZNX3/j5+CqLiwFYkme2u0usgcL6UMHATxcyHeRiq5ZUu5
+QxnwFuhWqsEUPpJyqP7lhzcfzS+LzlID3iM0G/0gVmqK6JAR3B4gejsEGCiigEIq
+NfLTjOjDU59hsaH/SOSH6D6/ig8aGk/bSHUCcvKnhhS0+QZ2Ml8l3uRFyJiTA6IN
+PWhfAlFVphDgqmn0Kl66gQvJdebbAkiDWuan+0uNi9EYZROCmSHgzTs2UoSdeY7D
+3r3zXloWq9giCjfOA3EuOS06C1T7JsI6+1wmNywEOFU4N62UTmF0K/2S80KrSvpP
+ZQuTWlGrGR/6KFzIfSvZCu2ZD1V0dQmP7kZSzxLTVpCufunSl2MBCcIrw6CXmt7h
+s/y3/5ew6Ty/ZHn4xSUdrGeyvbdixLE/T+Aly+b2O/bPNG0YeadAIFZlD64sM1F/
+5PTvzjpMtJVEwFngavJHiDufzGKAhyYvxgVn3CxFXVZJlhw2R/O5mtI2CQARAQAB
+tBBXZWJTcGhlcmVMaWJlcnR5iQI5BBMBCAAjBQJgtsoAAhsvBwsJCAcDAgEGFQgC
+CQoLBBYCAwECHgECF4AACgkQTSEPaUYQK45GbQ/+JrMdhDUu8vZJU/Rx/irLMMF6
+1VFKmhypb1ZgV/Cewf5TdRak2P4uYaIwCvDQu57ZLa6DxB6W9ds6bZcKd+KlA7va
++yROesEnhoqHiM4S2ZON0thnB5KAYAAykRXQHMfcPg15mccFFuVisDhMUOEfRKjr
+Hx1pRli42lqBqkar6WogXPJEF0MkEHpeszfwXZqi5WRZiBF3utQMmi32tidl/KsE
+3DesTb2OD2D7qM+JekDNK9cR7QFBXjWDx9ieWHSRnAxEJSSfCJBz5c1BaXP65pkf
+3dZTMRNxd4g8uPva6nntHky0ElGVzAWEVinjmwK6shHfMZKwLXIQCHroBk6ypmyc
+xyEJbVaB+3bPzTglxjoxfVj5Sh1XeonBWm+D0KBxOI8ebI9zohOlaheDjvZUQgAm
+cKFNpgDUqw2FX7taH+NR0PDXUKO/NXarRz5WYRB1W4Shs7I3TtxYguUJsIwNse7A
+kjzqKqPPpsNfVXaGjL2IEO0R9WfttidNt14173o/luMGFayTSJ49NkcB2Srq02Ui
+Z3nJXoIvrCEo5MSvDXlsOUb0v3syxoH929icCfMbgb5E6XFjMcS+hEmHjcQItxL2
+agoIQIT4bqTTMHjk7JIqEGgAv+U3HaH6BjiX8YyuNUq2AsRaYpGTpndhaHxlMYhz
+5OtUxMfNV7CySkicPCk=
+=UQBR
+
+-----END PGP PUBLIC KEY BLOCK-----
+
+----
+
+== Procedure
+
+. Import the Open Liberty public key on the machine that you prepared in the prerequisites section.
++
+----
+sudo gpg2 --import wlo.gpg
+----
++
+. Calculate the fingerprint.
++
+----
+fingerprint=$(gpg2 -k | grep -B 1 WebSphereLiberty | head -n 1 | xargs)
+----
++
+. Create a directory for each image (for example, operator-image), then use Skopeo to pull the image into local storage.
++
+In the following example, `<image_name>` represents the name of the image and `<image_directory>` represents the name of the newly created directory.
++
+----
+skopeo copy docker://<image_name> dir:./<image_directory>
+----
++
+For example.
++
+----
+mkdir operator-image
+skopeo copy docker://icr.io/cpopen/websphere-liberty-operator:1.1.0-amd64 dir:./operator-image
+----
++
+. Repeat this step for each of the images to verify.
++
+----
+icr.io/cpopen/websphere-liberty-operator:1.1.0-amd64
+icr.io/cpopen/websphere-liberty-operator-bundle:1.1.0
+icr.io/cpopen/websphere-liberty-operator-catalog:1.1.0
+----
++
+. Run a `standalone-verify` command to verify the image using the downloaded signature and repository. In the following example, `<image_directory>` is the location of the copied image and `<x>` is `1`` for the `websphere-liberty-operator-bundle` and `websphere-liberty-operator-catalog` images and `2` for the `websphere-liberty-operator` image.
++
+----
+skopeo standalone-verify <image_directory>/manifest.json <image_name> ${fingerprint} ./<image_directory>/signature-<x>
+----
++
+For example.
++
+----
+skopeo standalone-verify ./operator-image/manifest.json icr.io/cpopen/websphere-liberty-operator:1.1.0-amd64  ${fingerprint} ./operator-image/signature-2
+----
++
+If the verification is successful, the following message is displayed.
++
+----
+Signature verified
+----
++
