@@ -1,0 +1,79 @@
+// Copyright (c) 2023 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description:
+:seo-title: Verify images for Open Liberty Operator
+:seo-description: All images that are associated with the Open Liberty operator are digitally signed. Verify the downloaded images and ensure that the images are created by using the image signatures and uploaded by Open Liberty.
+:page-layout:
+:page-type:
+
+= Verify signatures for container images in Open Liberty
+
+All the Open Liberty container images are digitally signed. You can use the Open Liberty public key to check the signature, verify that the image was created by Open Liberty, and that it was not modified since its release.
+
+== Before you begin
+
+Before you can verify image signatures, you must install the following tools:
+
+* https://gnupg.org/software/index.html[GNU Privacy Guard v2]
+* https://www.redhat.com/en/topics/containers/what-is-skopeo#overview[Skopeo]
+
+Also, the Open Liberty public key needs to be present on the same machine as these command-line tools. 
+
+Obtain the public key file by using the public key https://public.dhe.ibm.com/ibmdl/export/pub/software/openliberty/sign/public_keys/OpenLiberty_02-13-2023.pem[link]. Save the public key file from your browser as a `.pem` file.
+
+== Procedure
+
+. Run the following command to Import the Open Liberty public key file to GPG:
++
+----
+sudo gpg2 --import ol.pem
+----
++
+. Run the following command to calculate the fingerprint:
++
+----
+fingerprint=$(gpg2 -k | grep -B 1 OpenLiberty | head -n 1 | xargs)
+----
++
+. To create a directory for an image and pull the image into local storage using Skopeo, follow these steps:
+* Create a directory with a name of your choice for the image. For example:
++
+----
+mkdir operator-image
+----
++
+* Use Skopeo to copy the container image to the newly created directory. For example:
++
+----
+skopeo copy docker://icr.io/appcafe/open-liberty:kernel-slim-java17-openj9-ubi dir:./OpenLiberty-image
+----
++
+This command pulls the `icr.io/appcafe/open-liberty:kernel-slim-java17-openj9-ubi` image and store it in the `OpenLiberty-image` directory.
++
+. Repeat this command for each of the images that you need to verify.
++
+. Run the `standalone-verify` command to verify the image by using the downloaded signature and repository.
++
+----
+skopeo standalone-verify <image_directory>/manifest.json <image_name> ${fingerprint} ./<image_directory>/signature-<x>
+----
++
+The `<image_directory>` refers to the location of the copied image. Replace `<x>` with `1` for the `open-liberty-operator-bundle` and `open-liberty-operator-catalog` images, or `2` for the `open-liberty-operator` image. For example:
++
+----
+skopeo standalone-verify ./OpenLiberty-image/manifest.json icr.io/cpopen/open-liberty-operator:1.1.0-amd64  ${fingerprint} ./operator-image/signature-2
+----
+
+== Result
+
+If the verification is successful, the following message is displayed:
+----
+Signature verified
+----
+
