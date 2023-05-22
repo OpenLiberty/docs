@@ -1,0 +1,1139 @@
+// Copyright (c) 2022 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//    https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description: Open Liberty InstantOn provides incredibly fast startup times for MicroProfile and Jakarta EE applications.
+:seo-title: Open Liberty InstantOn
+:seo-description: Open Liberty InstantOn provides incredibly fast startup times for MicroProfile and Jakarta EE applications.
+:page-layout: general-reference
+:page-type: general
+= Open Liberty InstantOn
+
+Open Liberty InstantOn provides incredibly fast startup times for MicroProfile and Jakarta EE applications. 
+
+Moving to the cloud lets companies and developers focus on the things that matter the most. For companies, that’s reduced costs and more innovation; for developers, it’s less time spent on operations and more on developing applications.
+
+Where once "moving to the cloud" just meant replacing data centers with cloud-provided virtual machines, modern cloud providers manage the infrastructure for organizations and developers so they can focus on their business applications. A logical consequence of this movement is serverless.
+
+== Serverless computing’s need for rapid startup
+
+Serverless doesn’t mean there aren’t any servers; it means that the cloud user does not manage the servers. Instead, they just deploy their application to the cloud, and the cloud provider works out how to run the application and manage the servers for the application.
+
+Both cloud user and the cloud provider are now motivated to run the application only when it is needed. Unneeded application instances need to stop running -- but, as soon as activity increases again, a new application instance needs to be able to start up quickly so the application client can get a response within, for example, 500ms and application users experience no delay. This is known as scale-to-zero. 
+
+== Starting Java applications in milliseconds with Liberty InstantOn
+
+Java has a reputation of being slow to start; seconds rather than minutes, but not the milliseconds that is needed for scale-to-zero. Until recently, the Java community has focused on compile-to-native to get startup time in the milliseconds range, with Native Image from GraalVM being the most common approach. Compiling Java to a native image can radically reduce startup time to less than 100ms, but there are a number of limitations with this approach, including:
+
+- Reduced throughput because the application is not running on a JVM, so it can’t be optimized at runtime.
+- Worse memory management so memory usage tends to grow with instance lifetime.
+- Not all Java programming model features are available or easy to use.
+- Compiling to native takes a long time, so developers tend to develop in a normal JVM, but then compile to native as the application goes into production. This adds risk to the code quality by developing in a different environment from the production environment.
+
+Liberty InstantOn introduces an alternative approach for reducing startup time. Liberty InstantOn uses the Checkpoint/Restore In Userspace link:https://criu.org/[CRIU] feature of the Linux kernel to take a checkpoint of the JVM that can be restored later. With Liberty InstantOn, the application is developed as normal, then a checkpoint the application process can be done. When restored, the application is running in the same JVM, so you have complete parity between development and production. The checkpoint process takes seconds meaning your CI/CD process is barely affected. Liberty InstantOn provides the benefits of a compile-to-native approach but without the compromises.
+
+Liberty InstantOn is a technology that is intended to be used when building an application container image. Liberty InstantOn is used to create an additional image layer that contains a checkpoint of the Liberty application process. When a Liberty application image is launched, the Liberty runtime will recognized the InstantOn layer of the image and will restore checkpoint process which was created during the application container image build.
+
+Open Liberty and OpenJ9 contain hooks that participate in the checkpoint and restore process.  This allows the Liberty runtime to prepare the process for checkpoint such that it is safe to persist the checkpoint process in the container image. This preparation step ensures the process can successfully be restored from the same persistent state contained in the container image into multiple, possibly concurrent, instances of the application.
+
+== Application container image build technology
+
+Liberty InstantOn is an application container image build technology.  It is not intended to be used outside of a container image build. An application container image provides a consistent environment required to ensure a reliable restore of a Liberty application process. The Liberty InstantOn container layer should be the last layer of your application container. This ensures the resources contained in lower layers of the application container image used by the application process do not change from the time the checkpoint is taking to the time the application image is launched with InstantOn.
+
+=== Host build system prerequisites
+
+To use Liberty InstantOn during an application container image build the host machine must have the following prerequisites:
+
+- Use the Linux Operating System with kernel version 5.9 or greater
+- Use the X86-64/AMD64 processor architecture
+- Allow execution of privileged container builds using Podman or Docker
+
+The use of privileged containers in the application container image build is only required during the build. Running the resulting Liberty InstantOn application image does not require the use of privileged containers. To use Docker a version 23.0 or greater must be used. Earlier versions of Docker did not support the `CHECKPOINT_RESTORE` link:https://man7.org/linux/man-pages/man7/capabilities.7.html[Linux capability] which prevents CRIU from doing a checkpoint or restore of a process in container.
+
+=== Building an InstantOn application image
+
+xref:container-images.adoc[Open Liberty container images] are available from link:https://www.ibm.com/cloud/container-registry[IBM Container Registry] (ICR). Liberty InstantOn functionality is available in all X86-64/AMD64 UBI Open Liberty images. Starting with Open Liberty version 23.0.0.6 the UBI Open Liberty images include the necessary prerequisites for CRIU in order to checkpoint and restore Liberty application processes.
+
+Liberty InstantOn has two ways to build an InstantOn application image:
+
+1. Use an additional `RUN` instruction at end of a `Dockerfile` or `Containerfile` that runs the `checkpoint.sh` script in order to perform an application checkpoint at container image build time.
+2. Use a three step process to build the application image, run the checkpoint and commit the final result into an InstantOn application container image.
+
+When performing a Liberty InstantOn checkpoint the Liberty runtime is started up. During this startup the runtime will process the configuration, load all the enabled features and start processing the configured application. This startup sequence varies depending on the number of Liberty features required by the application as well as the size and complexity of the application itself. For very small, simple applications this can take less than 1 second. But for more typical applications this can take several seconds. Liberty InstantOn allows for a checkpoint to be taken after executing the startup of the Liberty runtime. There are two options when performing an InstantOn checkpoint.
+
+1. `beforeAppStart` - Performs a checkpoint before any application code is executed
+2. `afterAppStart` - Performs a checkpoint after the application is started
+
+Jakarta EE and MicroProfile applications may contain application code that gets executed as the application is started. The following are some examples of application code that is run when an application is starting:
+
+- A Servlet uses `loadOnStartup`
+- An EJB uses the `@Startup` annotation
+- A CDI bean using `@Observes @Initialized(ApplicationScoped.class)`
+
+In some cases application code may container code executed as the application is started which may not be ideal for performing an InstantOn checkpoint on.  The following are some examples of application code which should be avoided before performing an InstantOn checkpoint:
+
+- Accessing a remote resource, such as a database. It is not likely that the correct datasource will be available to connect to during an application container build.
+- Creating a transaction. At this time transactions are prohibited before being allowed to perform a Liberty InstantOn checkpoint.
+- Reading configuration, for example from MicroProfile config, which is expected to change when the application is deployed.
+
+Applications that do things like the above examples will likely need to use the `beforeAppStart` checkpoint option. This will ensure that the application code is only executed once the InstantOn checkpoint process has been restored. This may result in a slower restore time because it will need to execute more code before the application is ready to service requests.
+
+If the application early start code is determined to be safe and acceptable for checkpoint then the `afterAppStart` checkpoint option can be used. This will provide for the fastest startup time when restoring the application process.
+
+If an application has no code that is executed as the application is started then the `beforeAppStart` and `afterAppStart` checkpoints are equivalent. Both checkpoint options will end up doing a checkpoint of the process before enabling the configured ports for servicing requests for the application. This ensures that the transport protocols for the application are only enabled once the InstantOn checkpoint process has been restored.
+
+==== Using the checkpoint.sh script
+
+The `checkpoint.sh` script can be used to perform the application checkpoint. The following image template (`Dockerfile` or `Containerfile`) uses the `kernel-slim-java17-openj9-ubi` tag to build an image that uses the latest Open Liberty release with the OpenJ9 distribution of Java 17. This example uses the `afterAppStart` checkpoint option.
+
+[source,dockerfile]
+.Dockerfile
+----
+FROM icr.io/appcafe/open-liberty:kernel-slim-java17-openj9-ubi
+
+# Add a Liberty server configuration including all necessary features
+COPY --chown=1001:0  server.xml /config/
+
+# This script adds the requested XML snippets to enable Liberty features and grow the image to be fit-for-purpose.
+# This option is available only in the 'kernel-slim' image type. The 'full', 'beta' and 'beta-instanton' tags already include all features.
+RUN features.sh
+
+# Add interim fixes (optional)
+COPY --chown=1001:0  interim-fixes /opt/ol/fixes/
+
+# Add an application
+COPY --chown=1001:0  Sample1.war /config/dropins/
+
+# This script adds the requested server configuration, applies any interim fixes, and populates caches to optimize the runtime.
+RUN configure.sh
+
+# This script performs an InstantOn checkpoint of the application.
+# The application can use beforeAppStart or afterAppStart to do the checkpoint.
+# The default is beforeAppStart when not specified
+RUN checkpoint.sh afterAppStart
+----
+
+The execution of the `checkpoint.sh` should be the last instruction `RUN` during your container image build. This will perform the application process checkpoint and store the process data as the last layer of the application container image.
+
+Podman must be used to build the application container image when using the `checkpoint.sh` script. At this time Docker cannot be used to build the InstantOn application container image because Docker does not provide a way to grant the container build the Linux capabilities necessary to perform the application process checkpoint. Docker can be used to build an InstantOn application container image by using the three step build process.
+
+Use the following Podman command to build the InstantOn application container image. Note that this command must be run as the `root` user or using `sudo` in order to successfully grant the necessary Linux capabilities to the container image build.
+
+[source,sh]
+----
+podman build \
+   -t dev.local/liberty-app-instanton \
+   --cap-add=CHECKPOINT_RESTORE \
+   --cap-add=SYS_PTRACE\
+   --cap-add=SETPCAP \
+   --security-opt seccomp=unconfined .
+----
+
+The three `--cap-add` options grant the three Linux capabilities that are required by CRIU to perform the application process checkpoint during the container image build. The `--security-opt` option grants access to all Linux system calls to the container image build.
+
+==== Using the three step process
+
+If Podman cannot be used to run the `checkpoint.sh` during the container image build then a three step process can be used to build the InstantOn application container image. This process requires the following three steps:
+
+1. Build the application container image without the InstantOn layer
+2. Run the application container to perform a checkpoint of the application in the running container
+3. Commit the stopped container with the checkpoint process data into an InstantOn application container image
+
+These steps can be used with both Podman and Docker to build an Instanton application image. To use Docker version 23.0 or higher must be used.
+
+===== Build the application container image
+
+Set the image template (`Dockerfile` or `Containerfile`) similar to the following example, which uses the `kernel-slim-java17-openj9-ubi` tag to build an image that uses the latest Open Liberty release with the OpenJ9 distribution of Java 17.
+
+[source,dockerfile]
+.Dockerfile
+----
+FROM icr.io/appcafe/open-liberty:kernel-slim-java17-openj9-ubi
+
+# Add a Liberty server configuration including all necessary features
+COPY --chown=1001:0  server.xml /config/
+
+# This script adds the requested XML snippets to enable Liberty features and grow the image to be fit-for-purpose.
+# This option is available only in the 'kernel-slim' image type. The 'full', 'beta' and 'beta-instanton' tags already include all features.
+RUN features.sh
+
+# Add interim fixes (optional)
+COPY --chown=1001:0  interim-fixes /opt/ol/fixes/
+
+# Add an application
+COPY --chown=1001:0  Sample1.war /config/dropins/
+
+# This script adds the requested server configuration, applies any interim fixes, and populates caches to optimize the runtime.
+RUN configure.sh
+----
+
+This template does not run the `checkpoint.sh` script. To build the application container image run the following command:
+
+[source,sh]
+----
+docker build -t liberty-app .
+----
+
+The resulting application container image, tagged `liberty-app`, does not contain the InstantOn checkpoint process layer.
+
+===== Run the application container to perform a checkpoint
+
+The application container image (e.g. `liberty-app`) is run to perform an InstantOn checkpoint of the application process within the running container. The following example uses the `liberty-app` application image to run the checkpoint of the application process with the `afterAppStart` option:
+
+[source,sh]
+----
+docker run \
+  --name liberty-app-checkpoint-container \
+  --privileged \
+  --env WLP_CHECKPOINT=afterAppStart \
+  liberty-app
+----
+
+This will run the application within a container and will perform an application process checkpoint. The `--env` option sets an environment variable `WLP_CHECKPOINT` to specify the checkpoint option `afterAppStart`. When the application process checkpoint has successfully completed then the application container named `liberty-app-checkpoint-container` will be stopped and exit.
+
+===== Commit the stopped container with the checkpoint process data
+
+The stopped container from the previous step (e.g. `liberty-app-checkpoint-container`) contains the data from the InstantOn checkpoint process. The last step is to take this checkpoint process data and commit it to an application container image layer. To do this run the following commit command:
+
+[source,sh]
+----
+docker commit liberty-app-checkpoint-container liberty-app-instanton
+docker rm liberty-app-checkpoint-container
+----
+
+Now there will be two application images named `liberty-app` and `liberty-app-instanton`. Starting a container with the `liberty-app-instanton` container image will show a much faster startup time than the original `liberty-app` image. The `liberty-app-checkpoint-container` stopped container is no longer needed and can safely be removed. 
+
+== Running and deploying an InstantOn application image
+
+Additional considerations are required to run an InstantOn application image locally or when deployed to a public cloud. The following are required to successfully restore the InstantOn checkpoint process.
+
+1. The host running the container image must use Linux kernel 5.9 or greater
+2. The Linux capabilities CHECKPOINT_RESTORE and SETPCAP must be granted to the running container
+3. The necessary system calls must be granted to the running container
+
+=== Running an InstantOn application image locally
+
+If a host system is running the Linux kernel 5.9 or greater with the X86-64/AMD64 processor then an InstantOn application image may be run using Podman or Docker locally. The following command is used to run the InstantOn application image (e.g. `liberty-app-instanton`) with Podman:
+
+[source,sh]
+----
+podman run \
+  --rm \
+  --cap-add=CHECKPOINT_RESTORE \
+  --cap-add=SETPCAP \
+  --security-opt seccomp=unconfined \
+  -p 9080:9080 \
+  liberty-app-instanton
+----
+
+The following command is used to run the InstantOn application image (e.g. `liberty-app-instanton`) with Docker:
+
+[source,sh]
+----
+docker run \
+  --rm \
+  --cap-add=CHECKPOINT_RESTORE \
+  --cap-add=SETPCAP \
+  --security-opt seccomp=unconfined \
+  -p 9080:9080 \
+  liberty-app-instanton
+----
+
+In both cases the `--cap-add` option is used to grant the `CHECKPOINT_RESTORE` and `SETPCAP` capabilities. The `SYS_PTRACE` capability is not required to be able to run the InstantOn application container image. The `--security-opt` option is used to grant the running container access to all Linux system calls. Depending on the defaults of the container engine used, the `--security-opt` with the `seccomp-unconfined` setting may not be required. For CRIU to be able to successfully restore the InstantOn application process the container must have access to `clone3`, `ptrace` and as well as other system calls.  This is true even though the elevated Linux capability of `SYS_PTRACE` is not actually required to restore the process. The defaults of the container engine may be updated to include all the required system calls. 
+
+Alternatively, a file can be specified to the `--security-opt seccomp` option that specifies the policy for the container. Use the following command to specify a JSON policy file for `seccomp`:
+
+[source,sh]
+----
+podman run \
+  --rm \
+  --cap-add=CHECKPOINT_RESTORE \
+  --cap-add=NET_ADMIN \
+  --cap-add=SYS_PTRACE \
+  --security-opt seccomp=criuRequiredSysCalls.json \
+  -p 9080:9080 \
+  liberty-app-instanton
+----
+
+The following `criuRequiredSysCalls.json` can be used to grant access to all the Linux system calls required by CRIU in order to successfully restore an InstantOn application process:
+
+[source,json]
+.criuRequiredSysCalls.json
+----
+{
+	"defaultAction": "SCMP_ACT_ERRNO",
+	"defaultErrnoRet": 1,
+	"archMap": [
+		{
+			"architecture": "SCMP_ARCH_X86_64",
+			"subArchitectures": [
+				"SCMP_ARCH_X86",
+				"SCMP_ARCH_X32"
+			]
+		},
+		{
+			"architecture": "SCMP_ARCH_AARCH64",
+			"subArchitectures": [
+				"SCMP_ARCH_ARM"
+			]
+		},
+		{
+			"architecture": "SCMP_ARCH_MIPS64",
+			"subArchitectures": [
+				"SCMP_ARCH_MIPS",
+				"SCMP_ARCH_MIPS64N32"
+			]
+		},
+		{
+			"architecture": "SCMP_ARCH_MIPS64N32",
+			"subArchitectures": [
+				"SCMP_ARCH_MIPS",
+				"SCMP_ARCH_MIPS64"
+			]
+		},
+		{
+			"architecture": "SCMP_ARCH_MIPSEL64",
+			"subArchitectures": [
+				"SCMP_ARCH_MIPSEL",
+				"SCMP_ARCH_MIPSEL64N32"
+			]
+		},
+		{
+			"architecture": "SCMP_ARCH_MIPSEL64N32",
+			"subArchitectures": [
+				"SCMP_ARCH_MIPSEL",
+				"SCMP_ARCH_MIPSEL64"
+			]
+		},
+		{
+			"architecture": "SCMP_ARCH_S390X",
+			"subArchitectures": [
+				"SCMP_ARCH_S390"
+			]
+		},
+		{
+			"architecture": "SCMP_ARCH_RISCV64",
+			"subArchitectures": null
+		}
+	],
+	"syscalls": [
+		{
+			"names": [
+				"accept",
+				"accept4",
+				"access",
+				"adjtimex",
+				"alarm",
+				"bind",
+				"brk",
+				"capget",
+				"capset",
+				"chdir",
+				"chmod",
+				"chown",
+				"chown32",
+				"clock_adjtime",
+				"clock_adjtime64",
+				"clock_getres",
+				"clock_getres_time64",
+				"clock_gettime",
+				"clock_gettime64",
+				"clock_nanosleep",
+				"clock_nanosleep_time64",
+				"close",
+				"close_range",
+				"connect",
+				"copy_file_range",
+				"creat",
+				"dup",
+				"dup2",
+				"dup3",
+				"epoll_create",
+				"epoll_create1",
+				"epoll_ctl",
+				"epoll_ctl_old",
+				"epoll_pwait",
+				"epoll_pwait2",
+				"epoll_wait",
+				"epoll_wait_old",
+				"eventfd",
+				"eventfd2",
+				"execve",
+				"execveat",
+				"exit",
+				"exit_group",
+				"faccessat",
+				"faccessat2",
+				"fadvise64",
+				"fadvise64_64",
+				"fallocate",
+				"fanotify_mark",
+				"fchdir",
+				"fchmod",
+				"fchmodat",
+				"fchown",
+				"fchown32",
+				"fchownat",
+				"fcntl",
+				"fcntl64",
+				"fdatasync",
+				"fgetxattr",
+				"flistxattr",
+				"flock",
+				"fork",
+				"fremovexattr",
+				"fsetxattr",
+				"fstat",
+				"fstat64",
+				"fstatat64",
+				"fstatfs",
+				"fstatfs64",
+				"fsync",
+				"ftruncate",
+				"ftruncate64",
+				"futex",
+				"futex_time64",
+				"futex_waitv",
+				"futimesat",
+				"getcpu",
+				"getcwd",
+				"getdents",
+				"getdents64",
+				"getegid",
+				"getegid32",
+				"geteuid",
+				"geteuid32",
+				"getgid",
+				"getgid32",
+				"getgroups",
+				"getgroups32",
+				"getitimer",
+				"getpeername",
+				"getpgid",
+				"getpgrp",
+				"getpid",
+				"getppid",
+				"getpriority",
+				"getrandom",
+				"getresgid",
+				"getresgid32",
+				"getresuid",
+				"getresuid32",
+				"getrlimit",
+				"get_robust_list",
+				"getrusage",
+				"getsid",
+				"getsockname",
+				"getsockopt",
+				"get_thread_area",
+				"gettid",
+				"gettimeofday",
+				"getuid",
+				"getuid32",
+				"getxattr",
+				"inotify_add_watch",
+				"inotify_init",
+				"inotify_init1",
+				"inotify_rm_watch",
+				"io_cancel",
+				"ioctl",
+				"io_destroy",
+				"io_getevents",
+				"io_pgetevents",
+				"io_pgetevents_time64",
+				"ioprio_get",
+				"ioprio_set",
+				"io_setup",
+				"io_submit",
+				"io_uring_enter",
+				"io_uring_register",
+				"io_uring_setup",
+				"ipc",
+				"kill",
+				"landlock_add_rule",
+				"landlock_create_ruleset",
+				"landlock_restrict_self",
+				"lchown",
+				"lchown32",
+				"lgetxattr",
+				"link",
+				"linkat",
+				"listen",
+				"listxattr",
+				"llistxattr",
+				"_llseek",
+				"lremovexattr",
+				"lseek",
+				"lsetxattr",
+				"lstat",
+				"lstat64",
+				"madvise",
+				"membarrier",
+				"memfd_create",
+				"memfd_secret",
+				"mincore",
+				"mkdir",
+				"mkdirat",
+				"mknod",
+				"mknodat",
+				"mlock",
+				"mlock2",
+				"mlockall",
+				"mmap",
+				"mmap2",
+				"mprotect",
+				"mq_getsetattr",
+				"mq_notify",
+				"mq_open",
+				"mq_timedreceive",
+				"mq_timedreceive_time64",
+				"mq_timedsend",
+				"mq_timedsend_time64",
+				"mq_unlink",
+				"mremap",
+				"msgctl",
+				"msgget",
+				"msgrcv",
+				"msgsnd",
+				"msync",
+				"munlock",
+				"munlockall",
+				"munmap",
+				"nanosleep",
+				"newfstatat",
+				"_newselect",
+				"open",
+				"openat",
+				"openat2",
+				"pause",
+				"pidfd_open",
+				"pidfd_send_signal",
+				"pipe",
+				"pipe2",
+				"poll",
+				"ppoll",
+				"ppoll_time64",
+				"prctl",
+				"pread64",
+				"preadv",
+				"preadv2",
+				"prlimit64",
+				"process_mrelease",
+				"pselect6",
+				"pselect6_time64",
+				"pwrite64",
+				"pwritev",
+				"pwritev2",
+				"read",
+				"readahead",
+				"readlink",
+				"readlinkat",
+				"readv",
+				"recv",
+				"recvfrom",
+				"recvmmsg",
+				"recvmmsg_time64",
+				"recvmsg",
+				"remap_file_pages",
+				"removexattr",
+				"rename",
+				"renameat",
+				"renameat2",
+				"restart_syscall",
+				"rmdir",
+				"rseq",
+				"rt_sigaction",
+				"rt_sigpending",
+				"rt_sigprocmask",
+				"rt_sigqueueinfo",
+				"rt_sigreturn",
+				"rt_sigsuspend",
+				"rt_sigtimedwait",
+				"rt_sigtimedwait_time64",
+				"rt_tgsigqueueinfo",
+				"sched_getaffinity",
+				"sched_getattr",
+				"sched_getparam",
+				"sched_get_priority_max",
+				"sched_get_priority_min",
+				"sched_getscheduler",
+				"sched_rr_get_interval",
+				"sched_rr_get_interval_time64",
+				"sched_setaffinity",
+				"sched_setattr",
+				"sched_setparam",
+				"sched_setscheduler",
+				"sched_yield",
+				"seccomp",
+				"select",
+				"semctl",
+				"semget",
+				"semop",
+				"semtimedop",
+				"semtimedop_time64",
+				"send",
+				"sendfile",
+				"sendfile64",
+				"sendmmsg",
+				"sendmsg",
+				"sendto",
+				"setfsgid",
+				"setfsgid32",
+				"setfsuid",
+				"setfsuid32",
+				"setgid",
+				"setgid32",
+				"setgroups",
+				"setgroups32",
+				"setitimer",
+				"setpgid",
+				"setpriority",
+				"setregid",
+				"setregid32",
+				"setresgid",
+				"setresgid32",
+				"setresuid",
+				"setresuid32",
+				"setreuid",
+				"setreuid32",
+				"setrlimit",
+				"set_robust_list",
+				"setsid",
+				"setsockopt",
+				"set_thread_area",
+				"set_tid_address",
+				"setuid",
+				"setuid32",
+				"setxattr",
+				"shmat",
+				"shmctl",
+				"shmdt",
+				"shmget",
+				"shutdown",
+				"sigaltstack",
+				"signalfd",
+				"signalfd4",
+				"sigprocmask",
+				"sigreturn",
+				"socket",
+				"socketcall",
+				"socketpair",
+				"splice",
+				"stat",
+				"stat64",
+				"statfs",
+				"statfs64",
+				"statx",
+				"symlink",
+				"symlinkat",
+				"sync",
+				"sync_file_range",
+				"syncfs",
+				"sysinfo",
+				"tee",
+				"tgkill",
+				"time",
+				"timer_create",
+				"timer_delete",
+				"timer_getoverrun",
+				"timer_gettime",
+				"timer_gettime64",
+				"timer_settime",
+				"timer_settime64",
+				"timerfd_create",
+				"timerfd_gettime",
+				"timerfd_gettime64",
+				"timerfd_settime",
+				"timerfd_settime64",
+				"times",
+				"tkill",
+				"truncate",
+				"truncate64",
+				"ugetrlimit",
+				"umask",
+				"uname",
+				"unlink",
+				"unlinkat",
+				"utime",
+				"utimensat",
+				"utimensat_time64",
+				"utimes",
+				"vfork",
+				"vmsplice",
+				"wait4",
+				"waitid",
+				"waitpid",
+				"write",
+				"writev",
+				"arch_prctl",
+				"chroot",
+				"clone",
+				"clone3",
+				"fallocate",
+				"fanotify_init",
+				"fsconfig",
+				"fsmount",
+				"fsopen",
+				"guarded_storage",
+				"kcmp",
+				"lseek",
+				"mmap",
+				"mount",
+				"open",
+				"open_by_handle_at",
+				"openat",
+				"pivot_root",
+				"preadv",
+				"process_vm_readv",
+				"ptrace",
+				"readdir",
+				"s390_runtime_instr",
+				"setns",
+				"sigaction",
+				"signal",
+				"syscall",
+				"umount",
+				"umount2",
+				"unshare",
+				"userfaultfd",
+				"wait"
+			],
+			"action": "SCMP_ACT_ALLOW"
+		},
+		{
+			"names": [
+				"process_vm_readv",
+				"process_vm_writev",
+				"ptrace"
+			],
+			"action": "SCMP_ACT_ALLOW",
+			"includes": {
+				"minKernel": "4.8"
+			}
+		},
+		{
+			"names": [
+				"personality"
+			],
+			"action": "SCMP_ACT_ALLOW",
+			"args": [
+				{
+					"index": 0,
+					"value": 0,
+					"op": "SCMP_CMP_EQ"
+				}
+			]
+		},
+		{
+			"names": [
+				"personality"
+			],
+			"action": "SCMP_ACT_ALLOW",
+			"args": [
+				{
+					"index": 0,
+					"value": 8,
+					"op": "SCMP_CMP_EQ"
+				}
+			]
+		},
+		{
+			"names": [
+				"personality"
+			],
+			"action": "SCMP_ACT_ALLOW",
+			"args": [
+				{
+					"index": 0,
+					"value": 131072,
+					"op": "SCMP_CMP_EQ"
+				}
+			]
+		},
+		{
+			"names": [
+				"personality"
+			],
+			"action": "SCMP_ACT_ALLOW",
+			"args": [
+				{
+					"index": 0,
+					"value": 131080,
+					"op": "SCMP_CMP_EQ"
+				}
+			]
+		},
+		{
+			"names": [
+				"personality"
+			],
+			"action": "SCMP_ACT_ALLOW",
+			"args": [
+				{
+					"index": 0,
+					"value": 4294967295,
+					"op": "SCMP_CMP_EQ"
+				}
+			]
+		},
+		{
+			"names": [
+				"sync_file_range2",
+				"swapcontext"
+			],
+			"action": "SCMP_ACT_ALLOW",
+			"includes": {
+				"arches": [
+					"ppc64le"
+				]
+			}
+		},
+		{
+			"names": [
+				"arm_fadvise64_64",
+				"arm_sync_file_range",
+				"sync_file_range2",
+				"breakpoint",
+				"cacheflush",
+				"set_tls"
+			],
+			"action": "SCMP_ACT_ALLOW",
+			"includes": {
+				"arches": [
+					"arm",
+					"arm64"
+				]
+			}
+		},
+		{
+			"names": [
+				"arch_prctl"
+			],
+			"action": "SCMP_ACT_ALLOW",
+			"includes": {
+				"arches": [
+					"amd64",
+					"x32"
+				]
+			}
+		},
+		{
+			"names": [
+				"modify_ldt"
+			],
+			"action": "SCMP_ACT_ALLOW",
+			"includes": {
+				"arches": [
+					"amd64",
+					"x32",
+					"x86"
+				]
+			}
+		},
+		{
+			"names": [
+				"s390_pci_mmio_read",
+				"s390_pci_mmio_write",
+				"s390_runtime_instr"
+			],
+			"action": "SCMP_ACT_ALLOW",
+			"includes": {
+				"arches": [
+					"s390",
+					"s390x"
+				]
+			}
+		},
+		{
+			"names": [
+				"riscv_flush_icache"
+			],
+			"action": "SCMP_ACT_ALLOW",
+			"includes": {
+				"arches": [
+					"riscv64"
+				]
+			}
+		},
+		{
+			"names": [
+				"open_by_handle_at"
+			],
+			"action": "SCMP_ACT_ALLOW",
+			"includes": {
+				"caps": [
+					"CAP_DAC_READ_SEARCH"
+				]
+			}
+		},
+		{
+			"names": [
+				"bpf",
+				"clone",
+				"clone3",
+				"fanotify_init",
+				"fsconfig",
+				"fsmount",
+				"fsopen",
+				"fspick",
+				"lookup_dcookie",
+				"mount",
+				"mount_setattr",
+				"move_mount",
+				"name_to_handle_at",
+				"open_tree",
+				"perf_event_open",
+				"quotactl",
+				"quotactl_fd",
+				"setdomainname",
+				"sethostname",
+				"setns",
+				"syslog",
+				"umount",
+				"umount2",
+				"unshare"
+			],
+			"action": "SCMP_ACT_ALLOW",
+			"includes": {
+				"caps": [
+					"CAP_SYS_ADMIN"
+				]
+			}
+		},
+		{
+			"names": [
+				"clone"
+			],
+			"action": "SCMP_ACT_ALLOW",
+			"args": [
+				{
+					"index": 0,
+					"value": 2114060288,
+					"op": "SCMP_CMP_MASKED_EQ"
+				}
+			],
+			"excludes": {
+				"caps": [
+					"CAP_SYS_ADMIN"
+				],
+				"arches": [
+					"s390",
+					"s390x"
+				]
+			}
+		},
+		{
+			"names": [
+				"clone"
+			],
+			"action": "SCMP_ACT_ALLOW",
+			"args": [
+				{
+					"index": 1,
+					"value": 2114060288,
+					"op": "SCMP_CMP_MASKED_EQ"
+				}
+			],
+			"comment": "s390 parameter ordering for clone is different",
+			"includes": {
+				"arches": [
+					"s390",
+					"s390x"
+				]
+			},
+			"excludes": {
+				"caps": [
+					"CAP_SYS_ADMIN"
+				]
+			}
+		},
+		{
+			"names": [
+				"clone3"
+			],
+			"action": "SCMP_ACT_ERRNO",
+			"errnoRet": 38,
+			"excludes": {
+				"caps": [
+					"CAP_SYS_ADMIN"
+				]
+			}
+		},
+		{
+			"names": [
+				"reboot"
+			],
+			"action": "SCMP_ACT_ALLOW",
+			"includes": {
+				"caps": [
+					"CAP_SYS_BOOT"
+				]
+			}
+		},
+		{
+			"names": [
+				"chroot"
+			],
+			"action": "SCMP_ACT_ALLOW",
+			"includes": {
+				"caps": [
+					"CAP_SYS_CHROOT"
+				]
+			}
+		},
+		{
+			"names": [
+				"delete_module",
+				"init_module",
+				"finit_module"
+			],
+			"action": "SCMP_ACT_ALLOW",
+			"includes": {
+				"caps": [
+					"CAP_SYS_MODULE"
+				]
+			}
+		},
+		{
+			"names": [
+				"acct"
+			],
+			"action": "SCMP_ACT_ALLOW",
+			"includes": {
+				"caps": [
+					"CAP_SYS_PACCT"
+				]
+			}
+		},
+		{
+			"names": [
+				"kcmp",
+				"pidfd_getfd",
+				"process_madvise",
+				"process_vm_readv",
+				"process_vm_writev",
+				"ptrace"
+			],
+			"action": "SCMP_ACT_ALLOW",
+			"includes": {
+				"caps": [
+					"CAP_SYS_PTRACE"
+				]
+			}
+		},
+		{
+			"names": [
+				"iopl",
+				"ioperm"
+			],
+			"action": "SCMP_ACT_ALLOW",
+			"includes": {
+				"caps": [
+					"CAP_SYS_RAWIO"
+				]
+			}
+		},
+		{
+			"names": [
+				"settimeofday",
+				"stime",
+				"clock_settime"
+			],
+			"action": "SCMP_ACT_ALLOW",
+			"includes": {
+				"caps": [
+					"CAP_SYS_TIME"
+				]
+			}
+		},
+		{
+			"names": [
+				"vhangup"
+			],
+			"action": "SCMP_ACT_ALLOW",
+			"includes": {
+				"caps": [
+					"CAP_SYS_TTY_CONFIG"
+				]
+			}
+		},
+		{
+			"names": [
+				"get_mempolicy",
+				"mbind",
+				"set_mempolicy"
+			],
+			"action": "SCMP_ACT_ALLOW",
+			"includes": {
+				"caps": [
+					"CAP_SYS_NICE"
+				]
+			}
+		},
+		{
+			"names": [
+				"syslog"
+			],
+			"action": "SCMP_ACT_ALLOW",
+			"includes": {
+				"caps": [
+					"CAP_SYSLOG"
+				]
+			}
+		}
+	]
+}
+----
+
+=== Deploying an InstantOn application to Kubernetes services
+
+At this time Liberty InstantOn applications is tested and supported on the following public cloud Kubernetes services:
+
+- link:https://aws.amazon.com/eks/[Amazon Elastic Kubernetes Service (EKS)]
+- link:https://azure.microsoft.com/en-us/products/kubernetes-service[Azure Kubernetes Service (AKS)]
+
+Other public cloud Kubernetes services should work as long as they have the required prerequisites to allow CRIU to restore the Liberty InstantOn application process.
+
+When deploying to Kubernetes the container must be granted the `CHECKPOINT_RESTORE` and the `SETPCAP` Linux capabilities to allow CRIU to restore the Liberty InstantOn application process. This can be done with the deployment YAML by specifying the following `securityContext` for the container:
+
+[source,yaml]
+----
+        securityContext:
+          runAsNonRoot: true
+          privileged: false
+          capabilities:
+            add:
+            - CHECKPOINT_RESTORE
+            - SETPCAP
+            drop:
+            - ALL
+----
+
+== Open Liberty InstantOn supported features
+
+Liberty InstantOn supports a subset of the available Open Liberty features. If a feature is enabled which does not support Liberty InstantOn then a failure will occur when trying to perform a checkpoint of an application process.  Liberty InstantOn supports the following Jakarta EE and MicroProfile convenience features:
+
+- feature:webProfile[Jakarta EE Web Profile] versions feature:webProfile-8.0[8.0] and later 
+- feature:microProfile[MicroProfile] versions feature:microProfile-4.1[4.1] and later
+
+The Open Liberty public features enabled by the feature:webProfile[Jakarta EE Web Profile] and feature:microProfile[MicroProfile] features may be enabled individually depending on the needs of the application. This avoids enabling the complete set of features enabled by the convenience features. In addition to the features enabled in the feature:webProfile[Jakarta EE Web Profile] and feature:microProfile[MicroProfile] features the following are also supported by Liberty InstantOn:
+
+- feature:restConnector-2.0
+- feature:audit-1.0
+- feature:bells-1.0
+- feature:sessionDatabase-1.0
+- feature:distributedMap-1.0
+- feature:federatedRegistry-1.0
+- feature:ldapRegistry-3.0
+- feature:openidConnectClient-1.0
+- feature:passwordUtilities-1.1
+- feature:monitor-1.0
+- feature:socialLogin-1.0
+- feature:webCache-1.0
+
+
+== Limitations and known issues
