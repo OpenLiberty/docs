@@ -249,7 +249,12 @@ docker run \
   liberty-app-instanton
 ----
 
-In both cases the `--cap-add` option is used to grant the `CHECKPOINT_RESTORE` and `SETPCAP` capabilities. The `SYS_PTRACE` capability is not required to be able to run the InstantOn application container image. The `--security-opt` option is used to grant the running container access to all Linux system calls. Depending on the defaults of the container engine used, the `--security-opt` with the `seccomp-unconfined` setting may not be required. For CRIU to be able to successfully restore the InstantOn application process the container must have access to `clone3`, `ptrace` and as well as other system calls.  This is true even though the elevated Linux capability of `SYS_PTRACE` is not actually required to restore the process. The defaults of the container engine may be updated to include all the required system calls. 
+In both cases the `--cap-add` option is used to grant the `CHECKPOINT_RESTORE` and `SETPCAP` capabilities. The `SYS_PTRACE` capability is not required to be able to run the InstantOn application container image. 
+
+[#required-system-calls]
+==== Required Linux system calls
+
+The `--security-opt` option is used to grant the running container access to all Linux system calls. Depending on the defaults of the container engine used, the `--security-opt` with the `seccomp-unconfined` setting may not be required. For CRIU to be able to successfully restore the InstantOn application process the container must have access to `clone3`, `ptrace` and as well as other system calls.  This is true even though the elevated Linux capability of `SYS_PTRACE` is not actually required to restore the process. The defaults of the container engine may be updated to include all the required system calls. 
 
 Alternatively, a file can be specified to the `--security-opt seccomp` option that specifies the policy for the container. Use the following command to specify a JSON policy file for `seccomp`:
 
@@ -301,18 +306,65 @@ InstantOn supports a subset of the available Open Liberty features. If a feature
 
 The Open Liberty public features enabled by the feature:webProfile[Jakarta EE Web Profile] and feature:microProfile[MicroProfile] features may be enabled individually depending on the needs of the application. This avoids enabling the complete set of features enabled by the convenience features. In addition to the features enabled in the feature:webProfile[Jakarta EE Web Profile] and feature:microProfile[MicroProfile] features the following are also supported by InstantOn:
 
-- feature:audit-1.0[audit-1.0]
-- feature:bells-1.0[bells-1.0]
-- feature:distributedMap-1.0[distributedMap-1.0]
-- feature:federatedRegistry-1.0[federatedRegistry-1.0]
-- feature:ldapRegistry-3.0[ldapRegistry-3.0]
-- feature:monitor-1.0[monitor-1.0]
-- feature:openidConnectClient-1.0[openidConnectClient-1.0]
-- feature:passwordUtilities-1.1[passwordUtilities-1.1]
-- feature:restConnector-2.0[restConnector-2.0]
-- feature:sessionDatabase-1.0[sessionDatabase-1.0]
-- feature:socialLogin-1.0[socialLogin-1.0]
-- feature:webCache-1.0[webCache-1.0]
+- feature:audit-1.0[]
+- feature:bells-1.0[]
+- feature:distributedMap-1.0[]
+- feature:federatedRegistry-1.0[]
+- feature:ldapRegistry-3.0[]
+- feature:monitor-1.0[]
+- feature:openidConnectClient-1.0[]
+- feature:passwordUtilities-1.1[]
+- feature:restConnector-2.0[]
+- feature:sessionDatabase-1.0[]
+- feature:socialLogin-1.0[]
+- feature:webCache-1.0[]
 
 
 == Limitations and known issues
+
+The following sections describe the current limitations and known issues with using Open Liberty InstantOn.
+
+=== SELinux limitations
+If link:https://www.redhat.com/en/topics/linux/what-is-selinux[SELinux] mode is configured to be `enforcing` then SELinux may prevent CRIU from successfully performing a checkpoint of the application process when using the <<#checkpoint_script,checkpoint.sh script>> in the image template `Dockerfile` or `Containerfile`. If the SELinux setting `virt_sandbox_use_netlink` is disabled then the required `netlink` Linux system calls will get blocked. This prevents CRIU from performing a successful checkpoint of the application process during the container image build.
+
+To work around this limitation the `virt_sandbox_use_netlink` SELinux setting can be enabled with the command `setsebool virt_sandbox_use_netlink 1` or SELinux `enforcing` mode can be disabled altogether. Another option to work around this issue is to use the <<#three_step_process,three step process>>. The three step process requires the use of a `--privileged` container which grants the running container performing the application process checkpoint access to the `netlink` system calls.
+
+=== Yama Linux Security Module limitations
+If link:https://www.kernel.org/doc/Documentation/security/Yama.txt[Yama] is configured with one of the following modes then CRIU will not be able to checkpoint or restore the application process in running containers:
+
+- 2 - admin-only attach
+- 3 - no attach 
+
+For CRIU checkpoint and restore to work Yama must be configured with one of the following modes:
+
+- 0 - classic ptrace permissions
+- 1 - restricted ptrace
+
+The supported public cloud Kubernetes services have the default for Yama set to mode `1` which allows CRIU to checkpoint and restore by default:
+
+- link:https://aws.amazon.com/eks/[Amazon Elastic Kubernetes Service (EKS)]
+- link:https://azure.microsoft.com/en-us/products/kubernetes-service[Azure Kubernetes Service (AKS)]
+
+=== Access to Linux system calls
+As described in <<#required-system-calls,Required Linux system calls>> there are a number of Linux system calls that are required by CRIU in order to restore the application process. This may require additional configuration to grant the required system calls to the running container when using InstantOn. The supported public cloud Kubernetes Service environments currently allow the required system calls used by CRIU by default. No additional configuration should be required when using:
+
+- link:https://aws.amazon.com/eks/[Amazon Elastic Kubernetes Service (EKS)]
+- link:https://azure.microsoft.com/en-us/products/kubernetes-service[Azure Kubernetes Service (AKS)]
+
+=== Jakarta Transactions limitations
+Open Liberty Transaction Manager support for InstantOn has limitations with respect to updating configurations when restoring the application process. The configuration attributes for the config:transaction[display=Transaction Manager] must remain constant between the InstantOn checkpoint and restore. This is true only for the configuration attributes specified directly with the `<transaction/>` server configuration element. For example, `recoveryGroup` and `recoverIdentity`. The values for these configuration attributes must not change between checkpoint and restore.
+
+This implies that xref:transaction-service#cloud[Transaction recovery in a cloud environment] will not work as designed because the `recoverIdentity` cannot be parameterized with something like the following which gives a unique `recoverIdentity` for each instance of the application:
+
+[source,xml]
+----
+<transaction
+  ...
+  recoveryGroup="peer-group-name"
+  recoveryIdentity="${HOSTNAME}${wlp.server.name}"
+  ...
+/>
+----
+
+=== Supported processors
+At this time, the only supported processor is X86-64/AMD64. Additional processors are expected to be supported in later releases of Open Liberty InstantOn.
