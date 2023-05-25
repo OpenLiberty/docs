@@ -11,40 +11,47 @@
 :seo-description: Open Liberty InstantOn provides incredibly fast startup times for MicroProfile and Jakarta EE applications.
 :page-layout: general-reference
 :page-type: general
-= Open Liberty InstantOn
+= Start Java applications in milliseconds with Open Liberty InstantOn
 
-Open Liberty InstantOn provides incredibly fast startup times for MicroProfile and Jakarta EE applications. 
+Open Liberty InstantOn provides fast startup times for MicroProfile and Jakarta EE applications. With InstantOn, your Java applications can start up in milliseconds, without compromising on throughput, memory, development-production parity, or Java language features.
 
-Moving to the cloud lets companies and developers focus on the things that matter the most. For companies, that’s reduced costs and more innovation; for developers, it’s less time spent on operations and more on developing applications.
+InstantOn uses the Checkpoint/Restore In Userspace (link:https://criu.org/[CRIU]) feature of the Linux kernel to take a checkpoint of the JVM that can be restored later. With InstantOn, the application is developed as normal, and then a checkpoint of the application process is made when the application's container image is built. When the application is restored, it runs in the same JVM, which provides complete parity between development and production. Because the CRIU checkpoint process takes only seconds, your CI/CD process is barely affected.
 
-Where once "moving to the cloud" just meant replacing data centers with cloud-provided virtual machines, modern cloud providers manage the infrastructure for organizations and developers so they can focus on their business applications. A logical consequence of this trend is serverless.
+When you build an application container image, InstantOn creates an additional image layer that contains a checkpoint of the Open Liberty application process. When an Open Liberty application image is launched, the Open Liberty runtime recognizes the InstantOn layer of the image and restores the checkpointed application process that was created during the application container image build.
 
-== Serverless computing’s need for rapid startup
-
-Serverless doesn’t mean there aren’t any servers; it means that the cloud user does not manage the servers. Instead, they just deploy their application to the cloud, and the cloud provider works out how to run the application and manage the servers for the application. Cloud providers charge cloud users according to how many continuous resources the applications use while they are deployed.
-
-Both cloud user and the cloud provider are now motivated to run the application only when it is needed. Unneeded application instances need to stop running -- but, as soon as activity increases again, a new application instance needs to be able to start up quickly so the application client can get a response within, for example, 500ms and application users experience no delay. This is known as scale-to-zero. 
-
-== Starting Java applications in milliseconds with Open Liberty InstantOn
-
-Java has a reputation of being slow to start; seconds rather than minutes, but not the milliseconds that is needed for scale-to-zero. Until recently, the Java community has focused on compile-to-native to get startup time in the milliseconds range, with Native Image from GraalVM being the most common approach. Compiling Java to a native image can radically reduce startup time to less than 100ms, but there are a number of limitations with this approach, including:
-
-- Reduced throughput because the application is not running on a JVM, so it can’t be optimized at runtime.
-- Worse memory management so memory usage tends to grow with instance lifetime.
-- Not all Java programming model features are available or easy to use.
-- Compiling to native takes a long time, so developers tend to develop in a normal JVM, but then compile to native as the application goes into production. This adds risk to the code quality by developing in a different environment from the production environment.
-
-Open Liberty InstantOn introduces an alternative approach for reducing startup time. InstantOn uses the Checkpoint/Restore In Userspace (link:https://criu.org/[CRIU]) feature of the Linux kernel to take a checkpoint of the JVM that can be restored later. With InstantOn, the application is developed as normal, and then a checkpoint of the application process can be done when the application's container image is built. When restored, the application is running in the same JVM, so you have complete parity between development and production. The checkpoint process using CRIU takes seconds meaning your CI/CD process is barely affected. InstantOn provides the benefits of a compile-to-native approach but without the compromises.
-
-InstantOn is a technology that is intended to be used when building an application container image. InstantOn is used to create an additional image layer that contains a checkpoint of the Open Liberty application process. When an Open Liberty application image is launched, the Open Liberty runtime will recognized the InstantOn layer of the image and will restore the checkpointed application process which was created during the application container image build.
-
-Open Liberty and link:https://blog.openj9.org/2022/10/14/openj9-criu-support-a-look-under-the-hood/[OpenJ9] contain hooks that participate in the checkpoint and restore process.  This allows the Open Liberty runtime to prepare the process for checkpoint such that it is safe to persist the checkpoint process in the container image. This preparation step ensures the process can successfully be restored from the same persistent state contained in the container image into multiple, possibly concurrent, instances of the application.
-
-== Application container image build technology
+Open Liberty and link:https://blog.openj9.org/2022/10/14/openj9-criu-support-a-look-under-the-hood/[OpenJ9] contain hooks that participate in the checkpoint and restore process.  These hooks allow the Open Liberty runtime to prepare the process for checkpoint such that persisting the checkpoint process in the container image is safe. This preparation step ensures the process can be restored from the same persistent state in the container image into multiple, possibly concurrent, instances of the application.
 
 InstantOn is an application container image build technology.  It is not intended to be used outside of a container image build. An application container image provides a consistent environment required to ensure a reliable restore of an Open Liberty application process. The InstantOn container layer should be the last layer of the application container image. This ensures the resources contained in lower layers of the application container image used by the application process do not change from the time the checkpoint is taking to the time the application image is launched with InstantOn.
 
-=== Host build system prerequisites
+== When to take a checkpoint: beforeAppStart or afterAppStart
+
+When an InstantOn checkpoint occurs, the Open Liberty runtime is started up. During this startup, the runtime processes the configuration, loads all the enabled features and starts processing the configured application. This startup sequence varies depending on the size and complexity of the application and the the number of Open Liberty features it requires. For very small simple applications, this process can take less than 1 second. For more typical applications, it can take several seconds. InstantOn takes checkpoint after the Open Liberty runtime completes startup. Two options are avaialble to determine whether the checkpoint occurs before or after the application itself starts up, both of which are specified as part of the InstantOn `RUN` confioguration:
+
+- `beforeAppStart` - Performs a checkpoint before any application code is executed
+- `afterAppStart` - Performs a checkpoint after the application is started
+
+Which of these options you choose depends on the kind of code your application must execute.
+Jakarta EE and MicroProfile applications might contain application code that gets executed as the application is started, such as the following examples:
+
+- A Servlet that uses `loadOnStartup`
+- An EJB that uses the `@Startup` annotation
+- A CDI bean that uses `@Observes @Initialized(ApplicationScoped.class)`
+
+In some cases, the application code that is executed as the application is started might not be well suited for performing an InstantOn checkpoint operation. For such cases, use the `beforeAppStart` option. For example, the following application code scenrios must be avoided before performing an InstantOn checkpoint, and are therefore better suited for the `beforeAppStart` option:
+
+- Accessing a remote resource, such as a database. It is not likely that the correct datasource will be available to connect to during an application container build.
+- Creating a transaction. At this time transactions are prohibited before being allowed to perform an InstantOn checkpoint.
+- Reading configuration, for example from MicroProfile config, which is expected to change when the application is deployed.
+
+Using the `beforeAppStart` option in these cases ensures that the application code is executed only after the InstantOn checkpoint process is restored. This option might result in slower restore times because it must execute more code before the application is ready to service incoming requests.
+
+If the application early start code is determined to be safe and acceptable for checkpoint then the `afterAppStart` checkpoint option can be used. This will provide for the fastest startup time when restoring the application process.
+
+If an application has no code that is executed as the application is started then the `beforeAppStart` and `afterAppStart` checkpoints are equivalent. Both checkpoint options will end up doing a checkpoint of the process before enabling the configured ports for servicing requests. This ensures that the transport protocols for the application are only enabled once the InstantOn checkpoint process has been restored.
+
+== Runtime and host build system prerequisites
+
+Starting with Open Liberty version 23.0.0.6, all X86-64/AMD64 UBI xref:container-images.adoc[Open Liberty container images] include the necessary prerequisites for CRIU to checkpoint and restore Open Liberty application processes. InstantOn is currently supported with the IBM Semeru Java version 11.0.9+ and IBM Semeru Java version 17.0.7+. InstantOn is expected to support new versions of IBM Semeru Java as they are released, for example IBM Semeru Java 21.  At this time InstantOn is not supported on other Java vendor implementations.
 
 To use InstantOn during an application container image build the host machine must have the following prerequisites:
 
@@ -54,39 +61,15 @@ To use InstantOn during an application container image build the host machine mu
 
 The use of privileged containers in the application container image build is only required when building the container image with InstantOn. Running the resulting InstantOn application image does not require the use of privileged containers.
 
-To use Docker a version 23.0 or greater must be used. Earlier versions of Docker did not support the `CHECKPOINT_RESTORE` link:https://man7.org/linux/man-pages/man7/capabilities.7.html[Linux capability] which prevents CRIU from doing a checkpoint or restore of a process in container.
+To use Docker, a version 23.0 or greater must be used. Earlier versions of Docker did not support the `CHECKPOINT_RESTORE` link:https://man7.org/linux/man-pages/man7/capabilities.7.html[Linux capability] which prevents CRIU from doing a checkpoint or restore of a process in container.
 
-=== Building an InstantOn application image
+== Building an InstantOn application image
 
-xref:container-images.adoc[Open Liberty container images] are available from link:https://www.ibm.com/cloud/container-registry[IBM Container Registry] (ICR).  InstantOn functionality is available in all X86-64/AMD64 UBI Open Liberty images. Starting with Open Liberty version 23.0.0.6 the UBI Open Liberty images include the necessary prerequisites for CRIU in order to checkpoint and restore Open Liberty application processes. InstantOn is currently supported using the IBM Semeru Java version 11.0.9+ and IBM Semeru Java version 17.0.7+. InstantOn will support new versions IBM Semeru Java as they are release, for example IBM Semeru Java 21.  At this time InstantOn is not supported on other Java vendor implementations.
-
-There are two ways to build an application container image that uses InstantOn:
+Two options are avaialble to build an application container image that uses InstantOn:
 
 1. Use an additional `RUN` instruction at end of a `Dockerfile` or `Containerfile` that runs the <<#checkpoint_script,checkpoint.sh script>> in order to perform an application checkpoint at container image build time.
 2. Use a <<#three_step_process,three step process>> to build the application image, run the checkpoint and commit the final result into an InstantOn application container image.
 
-When performing an InstantOn checkpoint the Open Liberty runtime is started up. During this startup the runtime will process the configuration, load all the enabled features and start processing the configured application. This startup sequence varies depending on the number of Open Liberty features required by the application as well as the size and complexity of the application itself. For very small, simple applications this can take less than 1 second. But for more typical applications this can take several seconds. InstantOn allows for a checkpoint to be taken after executing the startup of the Open Liberty runtime. There are two options when performing an InstantOn checkpoint.
-
-1. `beforeAppStart` - Performs a checkpoint before any application code is executed
-2. `afterAppStart` - Performs a checkpoint after the application is started
-
-Jakarta EE and MicroProfile applications may contain application code that gets executed as the application is started. The following are some examples of application code that is run when an application is starting:
-
-- A Servlet uses `loadOnStartup`
-- An EJB uses the `@Startup` annotation
-- A CDI bean using `@Observes @Initialized(ApplicationScoped.class)`
-
-In some cases the application's code that is executed as the application is started may not be well suited when performing an InstantOn checkpoint operation.  The following are some examples of application code which should be avoided before performing an InstantOn checkpoint:
-
-- Accessing a remote resource, such as a database. It is not likely that the correct datasource will be available to connect to during an application container build.
-- Creating a transaction. At this time transactions are prohibited before being allowed to perform an InstantOn checkpoint.
-- Reading configuration, for example from MicroProfile config, which is expected to change when the application is deployed.
-
-Applications that do things like the above examples will likely need to use the `beforeAppStart` checkpoint option. This will ensure that the application code is only executed after the InstantOn checkpoint process has been restored. This may result in slower restore times because it will need to execute more code before the application is ready to service incoming requests.
-
-If the application early start code is determined to be safe and acceptable for checkpoint then the `afterAppStart` checkpoint option can be used. This will provide for the fastest startup time when restoring the application process.
-
-If an application has no code that is executed as the application is started then the `beforeAppStart` and `afterAppStart` checkpoints are equivalent. Both checkpoint options will end up doing a checkpoint of the process before enabling the configured ports for servicing requests. This ensures that the transport protocols for the application are only enabled once the InstantOn checkpoint process has been restored.
 
 [#checkpoint_script]
 ==== Using the checkpoint.sh script
