@@ -479,6 +479,14 @@ This error will occur for any configured features that are not supported for Ins
 === Update configuration with bootstrap.properties file
 When an InstantOn application container image is run the xref:reference:bootstrap-properties.adoc[bootstrap.properties] file is not read. Values that must be able to be configured when running an InstantOn application container image should come from alternative sources such as environment variables or other configuration mechanisms as described link:/guides/kubernetes-microprofile-config.html[Configuring microservices running in Kubernetes]
 
+=== Java SecurityManager is not supported
+If Open Liberty is configured to run with the `SecurityManager` then InstantOn will detect this during a checkpoint and will fail with the following message:
+
+[source,sh]
+----
+CWWKE0958E: The server checkpoint request failed because the websphere.java.security property was set in the bootstrap.properties file. This property enables the Java Security Manager and is not valid when a server checkpoint occurs.
+----
+
 === SELinux limitations
 If link:https://www.redhat.com/en/topics/linux/what-is-selinux[SELinux] mode is configured to be `enforcing` then SELinux may prevent CRIU from successfully performing a checkpoint of the application process when using the <<#checkpoint_script,checkpoint.sh script>> in the image template `Dockerfile` or `Containerfile`. If the SELinux setting `virt_sandbox_use_netlink` is disabled then the required `netlink` Linux system calls will get blocked. This prevents CRIU from performing a successful checkpoint of the application process during the container image build. Open Liberty InstantOn will detect this and log the following:
 
