@@ -67,8 +67,13 @@ There are two ways to build an application container image that uses InstantOn:
 
 When performing an InstantOn checkpoint the Open Liberty runtime is started up. During this startup the runtime will process the configuration, load all the enabled features and start processing the configured application. This startup sequence varies depending on the number of Open Liberty features required by the application as well as the size and complexity of the application itself. For very small, simple applications this can take less than 1 second. But for more typical applications this can take several seconds. InstantOn allows for a checkpoint to be taken after executing the startup of the Open Liberty runtime. There are two options when performing an InstantOn checkpoint.
 
+[#before-app-start]
 1. `beforeAppStart` - Performs a checkpoint before any application code is executed
+[#after-app-start]
 2. `afterAppStart` - Performs a checkpoint after the application is started
+
+[#early-startup-code]
+==== Considerations when an application has early startup code
 
 Jakarta EE and MicroProfile applications may contain application code that gets executed as the application is started. The following are some examples of application code that is run when an application is starting:
 
@@ -84,7 +89,7 @@ In some cases the application's code that is executed as the application is star
 
 Applications that do things like the above examples will likely need to use the `beforeAppStart` checkpoint option. This will ensure that the application code is only executed after the InstantOn checkpoint process has been restored. This may result in slower restore times because it will need to execute more code before the application is ready to service incoming requests.
 
-If the application early start code is determined to be safe and acceptable for checkpoint then the `afterAppStart` checkpoint option can be used. This will provide for the fastest startup time when restoring the application process.
+If the application early startup code is determined to be safe and acceptable for checkpoint then the `afterAppStart` checkpoint option can be used. This will provide for the fastest startup time when restoring the application process.
 
 If an application has no code that is executed as the application is started then the `beforeAppStart` and `afterAppStart` checkpoints are equivalent. Both checkpoint options will end up doing a checkpoint of the process before enabling the configured ports for servicing requests. This ensures that the transport protocols for the application are only enabled once the InstantOn checkpoint process has been restored.
 
@@ -297,6 +302,7 @@ When deploying to Kubernetes the container must be granted the `CHECKPOINT_RESTO
             - ALL
 ----
 
+[#supported-features]
 == Open Liberty InstantOn supported features
 
 InstantOn supports a subset of the available Open Liberty features. If a feature is enabled which does not support InstantOn then a failure will occur when trying to perform a checkpoint of an application process.  InstantOn supports the following Jakarta EE and MicroProfile convenience features:
@@ -324,6 +330,105 @@ The Open Liberty public features enabled by the feature:webProfile[Jakarta EE We
 
 The following sections describe the current limitations and known issues with using Open Liberty InstantOn.
 
+=== Jakarta Transactions limitations
+Open Liberty Transaction Manager support for InstantOn has limitations with respect to updating configurations when restoring the application process. The configuration attributes for the config:transaction[display=Transaction Manager] must remain constant between the InstantOn checkpoint and restore. This is true only for the configuration attributes specified directly with the `<transaction/>` server configuration element. For example, `recoveryGroup` and `recoverIdentity`. The values for these configuration attributes must not change between checkpoint and restore.
+
+This implies that xref:transaction-service#cloud[Transaction recovery in a cloud environment] will not work as designed because the `recoverIdentity` cannot be parameterized with something like the following which gives a unique `recoverIdentity` for each instance of the application:
+
+[source,xml]
+----
+<transaction
+  ...
+  recoveryGroup="peer-group-name"
+  recoveryIdentity="${HOSTNAME}${wlp.server.name}"
+  ...
+/>
+----
+
+=== Accessing MicroProfile Configuration too early
+If an application has <<#early-startup-code,early startup code>> then it is possible the application may get injected with a configuration value from MicroProfile configuration before a checkpoint is performed for the application process when using the <<#after-app-start,afterAppStart>> option. If such a configuration value changes at the time the application image container is run then it is possible that the application will be using the old, stale value that was set when the application process checkpoint was performed.
+
+The Open Liberty runtime detects this situation and will log a warning message when the application container image is run indicating that a configuration value has changed. The following example uses a configuration key `example_config` with a default value set to `"theDefault"`. When performing the checkpoint, the environment configuration source is not available to populate MicroProfile configuration values. If this `@Inject` of the configuration is contained in a CDI bean that is created and used before the checkpoint is performed then the value of `"theDefault"` will get injected.
+
+[source,java]
+----
+    @Inject
+    @ConfigProperty(name = "example_config", defaultValue = "theDefault")
+    String exampleConfig;
+----
+
+When the InstantOn application container image is run, the environment variable `EXAMPLE_CONFIG` may be used to provide an updated value. The runtime will detect this and log the following message:
+
+[source,text]
+----
+[WARNING ] CWWKC0651W: The MicroProfile configuration value for the key example_config has changed since the checkpoint action completed on the server. If the value of the key changes after the checkpoint action, the application might not use the updated value.
+
+----
+
+In this situation the checkpoint option <<#before-app-start,beforeAppStart>> can be used. Another option is to use a link:https://download.eclipse.org/microprofile/microprofile-config-3.0/microprofile-config-spec-3.0.html#_dynamic_configsource[Dynamic ConfigSource]. The above example can be modified to use a dynamic ConfigSource by using the `Provider<String>` type for the `exampleConfig` variable:
+
+[source,java]
+----
+    @Inject
+    @ConfigProperty(name = "example_config", defaultValue = "theDefault")
+    Provider<String> exampleConfig;
+----
+
+Each call to the `get()` method of the `Provider<String>` will return the current value of the `ConfigProperty`.  This allows the application to access the updated configuration value when the application process is restored during the InstantOn application container run.
+
+=== Injection of a DataSource too early
+If an application has <<#early-startup-code,early startup code>> then it is possible the application may get injected with `DataSource` before a checkpoint is performed for the application process when using the <<#after-app-start,afterAppStart>> option. It is likely, in a cloud environment, that the configuration of the `DataSource` will need to change at the time the application image container is run. Consider the following `Servlet` example:
+
+[source,java]
+----
+@WebServlet(urlPatterns = "/ExampleServlet", loadOnStartup = 1)
+public class ExampleServlet extends HttpServlet {
+    @Resource(shareable = false)
+    private DataSource exampleDataSource;
+    ...
+}
+----
+
+This `Servlet` example uses `loadOnStartup = 1` which will cause the servlet to be initialized before the checkpoint when using the  <<#after-app-start,afterAppStart>> option. The deployment information related to the `DataSource` likely will need to be configured when deploying the application to the cloud. Consider the following Open Liberty `server.xml` configuration.
+
+[source,xml]
+----
+  <!-- these are place holders so we don't have to have the env set before checkpoint -->
+  <variable name="DB2_DBNAME" defaultValue="placeholder" />
+  <variable name="DB2_HOSTNAME" defaultValue="placeholder" />
+  <variable name="DB2_PASS" defaultValue="placeholder" />
+  <variable name="DB2_PORT" defaultValue="45000" />
+  <variable name="DB2_PORT_SECURE" defaultValue="45001" />
+  <variable name="DB2_USER" defaultValue="placeholder" />
+
+
+  <dataSource id="DefaultDataSource">
+    <jdbcDriver libraryRef="DB2Lib"/>
+    <properties.db2.jcc
+      databaseName="${DB2_DBNAME}" serverName="${DB2_HOSTNAME}" portNumber="${DB2_PORT}"
+      downgradeHoldCursorsUnderXa="true"/>
+    <containerAuthData user="${DB2_USER}" password="${DB2_PASS}"/>
+    <recoveryAuthData user="${DB2_USER}" password="${DB2_PASS}"/>
+  </dataSource>
+----
+
+This configuration uses placeholder values for things like the database name, hostname, ports, user and password. This allow the values to be updated with environment variable values or other configuration mechanisms as decribed in link:/guides/kubernetes-microprofile-config.html[Configuring microservices running in Kubernetes]. These are configurations that should not be hard coded into an application image and must be able to be updated when deploying the application to the cloud.
+
+If an application is injected with a `DataSource` before the checkpoint and the configuration of the `DataSource` changes then the application will be restarted when the InstantOn application container image is run with the updated configuration. This can be avoided by using the <<#before-app-start,afterAppStart>> option or by modifying the component not to be <<#early-startup-code, early startup code>>. In this example that would be done by removing the attribute `loadOnStartup = 1`.
+
+=== Use of product extensions and user features
+Current InstantOn only supports a subset of Open Liberty features for InstantOn as described in <<#supported-features,Open Liberty InstantOn supported features>>. Any public features that are enabled outside of the supported set of features for InstantOn will cause checkpoint to fail with an error message like the following:
+
+[source,sh]
+----
+CWWKC0456E: A checkpoint cannot be taken because the following features configured in the server.xml file are not supported for checkpoint: [usr:exampleFeature-1.0]
+----
+
+This error will occur for any configured features that are not supported for InstantOn. This includes Liberty product extension and Liberty user features.
+
+=== Update configuration with bootstrap.properties file
+When an InstantOn application container image is run the xref:bootstrap-properties.adoc[Open Liberty bootstrap properties] file is not read. Values that must be able to be configured when running an InstantOn application container image should come from alternative sources such as environment variables or other configuration mechanisms as described link:/guides/kubernetes-microprofile-config.html[Configuring microservices running in Kubernetes]
+
 === SELinux limitations
 If link:https://www.redhat.com/en/topics/linux/what-is-selinux[SELinux] mode is configured to be `enforcing` then SELinux may prevent CRIU from successfully performing a checkpoint of the application process when using the <<#checkpoint_script,checkpoint.sh script>> in the image template `Dockerfile` or `Containerfile`. If the SELinux setting `virt_sandbox_use_netlink` is disabled then the required `netlink` Linux system calls will get blocked. This prevents CRIU from performing a successful checkpoint of the application process during the container image build.
 
@@ -350,21 +455,6 @@ As described in <<#required-system-calls,Required Linux system calls>> there are
 
 - link:https://aws.amazon.com/eks/[Amazon Elastic Kubernetes Service (EKS)]
 - link:https://azure.microsoft.com/en-us/products/kubernetes-service[Azure Kubernetes Service (AKS)]
-
-=== Jakarta Transactions limitations
-Open Liberty Transaction Manager support for InstantOn has limitations with respect to updating configurations when restoring the application process. The configuration attributes for the config:transaction[display=Transaction Manager] must remain constant between the InstantOn checkpoint and restore. This is true only for the configuration attributes specified directly with the `<transaction/>` server configuration element. For example, `recoveryGroup` and `recoverIdentity`. The values for these configuration attributes must not change between checkpoint and restore.
-
-This implies that xref:transaction-service#cloud[Transaction recovery in a cloud environment] will not work as designed because the `recoverIdentity` cannot be parameterized with something like the following which gives a unique `recoverIdentity` for each instance of the application:
-
-[source,xml]
-----
-<transaction
-  ...
-  recoveryGroup="peer-group-name"
-  recoveryIdentity="${HOSTNAME}${wlp.server.name}"
-  ...
-/>
-----
 
 === Supported processors
 At this time, the only supported processor is X86-64/AMD64. Additional processors are expected to be supported in later releases of Open Liberty InstantOn.
