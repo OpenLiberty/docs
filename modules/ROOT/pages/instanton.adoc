@@ -17,12 +17,13 @@ Open Liberty InstantOn provides fast startup times for MicroProfile and Jakarta 
 
 InstantOn uses the Checkpoint/Restore In Userspace (link:https://criu.org/[CRIU]) feature of the Linux kernel to take a checkpoint of the JVM that can be restored later. With InstantOn, the application is developed as normal, and then a checkpoint of the application process is made when the application container image is built. When the application is restored, it runs in the same JVM, which provides complete parity between development and production. Because the CRIU checkpoint process takes only seconds, your CI/CD process is barely affected.
 
-When you build an application container image, InstantOn creates an extra image layer that contains a checkpoint of the Open Liberty application process. When the application image starts, the Open Liberty runtime recognizes the InstantOn layer and restores the application process tot he checkpoint that was created during the application container image build.
+When you build an application container image, InstantOn creates an extra image layer that contains a checkpoint of the Open Liberty application process. When the application image starts, the Open Liberty runtime recognizes the InstantOn layer and restores the application process to the checkpoint that was created during the application container image build.
 
 Open Liberty and link:https://blog.openj9.org/2022/10/14/openj9-criu-support-a-look-under-the-hood/[OpenJ9] contain hooks that participate in the checkpoint and restore process. These hooks allow the Open Liberty runtime to prepare the process for checkpoint such that persisting the checkpoint process in the container image is safe. This preparation step ensures that the process can be restored from the same persistent state in the container image into multiple, possibly concurrent, instances of the application. For more information on the CRIU support in OpenJ9 and the IBM Semeru JVM, see the Java link:https://www.eclipse.org/openj9/docs/criusupport/[CRIU Support] documentation.
 
 InstantOn is an application container image build technology. It is not intended to be used outside of a container image build. An application container image provides a consistent environment, which is required to ensure a reliable restore of an Open Liberty application process. The InstantOn container layer is the last layer of the application container image. This configuration ensures that the resources in the lower layers of the image do not change from the time the checkpoint is taken to the time the image is started with InstantOn.
 
+[#beforeAppStart]
 == When to take a checkpoint: beforeAppStart or afterAppStart
 
 When an InstantOn checkpoint occurs, the Open Liberty runtime starts. During this startup, the runtime processes the configuration, loads all the enabled features, and starts processing the configured application. This startup sequence varies depending on the size and complexity of the application and the number of Open Liberty features it requires. For small simple applications, this process can take less than 1 second. For more typical applications, it can take several seconds. InstantOn takes a checkpoint after the Open Liberty runtime completes startup. Two options are avaialble to determine whether the checkpoint occurs before or after the application itself starts up, either of which is specified as part of the InstantOn `RUN` configuration:
@@ -317,12 +318,12 @@ When you deploy to Kubernetes, the container must be granted the `CHECKPOINT_RES
 [#supported-features]
 == Open Liberty InstantOn supported features
 
-InstantOn supports a subset of Open Liberty features. If a feature is enabled that InstantOn does not support, a failure occurs when you try to perform a checkpoint of an application process. InstantOn supports the following Jakarta EE and MicroProfile xref:reference:feature/eature-overview.adoc#conv[convenience features]:
+InstantOn supports a subset of Open Liberty features. If a feature is enabled that InstantOn does not support, a failure occurs when you try to perform a checkpoint of an application process. InstantOn supports the following Jakarta EE and MicroProfile xref:reference:feature/feature-overview.adoc#conv[convenience features]:
 
-- feature:webProfile[Jakarta EE Web Profile] versions feature:webProfile-8.0[8.0] and later 
-- feature:microProfile[MicroProfile] versions feature:microProfile-4.1[4.1] and later
+- Jakarta EE Web Profile versions feature:webProfile-8.0[display=8.0] and later 
+- MicroProfile versions feature:microProfile-4.1[display=4.1] and later
 
-The Open Liberty public features enabled by the feature:webProfile[Jakarta EE Web Profile] and feature:microProfile[MicroProfile] features can be enabled individually, depending on the needs of the application. This option avoids enabling the complete set of features that are enabled by the convenience features. 
+The Open Liberty public features enabled by the feature:webProfile[display=Jakarta EE Web Profile] and feature:microProfile[display=MicroProfile] features can be enabled individually, depending on the needs of the application. This option avoids enabling the complete set of features that are enabled by the convenience features. 
 
 In addition to the features enabled in the feature:webProfile[Jakarta EE Web Profile] and feature:microProfile[MicroProfile] features, InstantON also supports the following features:
 
@@ -339,4 +340,4 @@ In addition to the features enabled in the feature:webProfile[Jakarta EE Web Pro
 - feature:socialLogin-1.0[]
 - feature:webCache-1.0[]
 
-For more information about limitations, see xref:instanton-limitations[InstantOn limitations and known issues.]
+For more information about limitations, see xref:instanton-limitations[InstantOn limitations and known issues].
