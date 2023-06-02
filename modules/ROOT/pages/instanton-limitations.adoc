@@ -235,14 +235,27 @@ The following supported public cloud Kubernetes services have the default for Ya
 == Access to Linux system calls
 As described in xref:instanton.adoc#required-system-calls[Required Linux system calls], CRIU requires a number of Linux system calls to restore the application process. This requirement might require additional configuration to grant the required system calls to the running container when you use InstantOn.
 
-For example, if access is not granted to the system call `clone3`, then the `/logs/checkpoint/restore.log` contains the following error:
+The following examples are errors that are logged to the `/logs/checkpoint/restore.log` file when access to specific system calls are blocked.
 
 [source,sh]
+.Blocked clone3 system call
 ----
 Error (criu/kerndat.c:1377): Unexpected error from clone3: Operation not permitted
 ----
 
- The supported public cloud Kubernetes Service environments currently allow the required system calls used by CRIU by default. No additional configuration is required when using the following cloud providers:
+[source,sh]
+.Blocked to ptrace system call
+----
+Error (criu/arch/x86/kerndat.c:178): 28: ptrace(PTRACE_TRACEME) failed: Operation not permitted
+----
+
+[source,sh]
+.Blocked to vmsplice system call
+----
+Error (criu/pipes.c:184): 0x4c11a: Error splicing data: Operation not permitted
+----
+
+The supported public cloud Kubernetes Service environments currently allow the required system calls used by CRIU by default. No additional configuration is required when using the following cloud providers:
 
 - link:https://aws.amazon.com/eks/[Amazon Elastic Kubernetes Service (EKS)]
 - link:https://azure.microsoft.com/en-us/products/kubernetes-service[Azure Kubernetes Service (AKS)]
