@@ -15,7 +15,7 @@
 
 Open Liberty InstantOn provides fast startup times for MicroProfile and Jakarta EE applications. With InstantOn, your applications can start in milliseconds, without compromising on throughput, memory, development-production parity, or Java language features.
 
-InstantOn uses the Checkpoint/Restore In Userspace (link:https://criu.org/[CRIU]) feature of the Linux kernel to take a checkpoint of the JVM that can be restored later. With InstantOn, the application is developed as normal, and then InstantOn makes a checkpoint of the application process when the application container image is built. When the application is restored, it runs in the same JVM, which provides complete parity between development and production. Because the CRIU checkpoint process takes only seconds, your CI/CD process is barely affected.
+InstantOn uses the Checkpoint/Restore In Userspace (link:https://criu.org/[CRIU]) feature of the Linux kernel to take a checkpoint of the JVM that can be restored later. With InstantOn, the application is developed as normal, and then InstantOn makes a checkpoint of the application process when the application container image is built. When the application is restored, it runs in the same JVM, which provides complete parity between development and production. Because the checkpoint process takes only seconds, your CI/CD process is barely affected.
 
 When you build an application container image, InstantOn creates an extra image layer that contains a checkpoint of the Open Liberty application process. When the application image starts, the Open Liberty runtime recognizes the InstantOn layer and restores the application process to the checkpoint that was created during the application container image build.
 
@@ -63,7 +63,7 @@ For more information about limitations with early startup code annd possible wor
 [#prereq]
 == Runtime and host build system prerequisites
 
-Starting with Open Liberty version 23.0.0.6, all X86-64/AMD64 UBI xref:container-images.adoc[Open Liberty container images] include the prerequisites for CRIU to checkpoint and restore Open Liberty application processes. Currently, InstantOn is supported with the IBM Semeru Java version 11.0.9+ and IBM Semeru Java version 17.0.7+. InstantOn is expected to support new versions of IBM Semeru Java as they are released. Currently, InstantOn is not supported on other Java vendor implementations.
+Starting with Open Liberty version 23.0.0.6, all X86-64/AMD64 UBI xref:container-images.adoc[Open Liberty container images] include the prerequisites for InstantOn to checkpoint and restore Open Liberty application processes. Currently, InstantOn is supported with the IBM Semeru Java version 11.0.9+ and IBM Semeru Java version 17.0.7+. InstantOn is expected to support new versions of IBM Semeru Java as they are released. Currently, InstantOn is not supported on other Java vendor implementations.
 
 To use InstantOn during an application container image build, the host machine must satisfy the following prerequisites:
 
@@ -73,7 +73,7 @@ To use InstantOn during an application container image build, the host machine m
 
 The use of privileged containers in the application container image build is required only when you build the container image with InstantOn. Running the resulting InstantOn application image does not require the use of privileged containers.
 
-To use Docker, a version 23.0 or greater is required. Earlier versions of Docker did not support the `CHECKPOINT_RESTORE` Linux capability, which prevents CRIU from doing a checkpoint or restore of a process in container.
+To use Docker, a version 23.0 or greater is required. Earlier versions of Docker did not support the `CHECKPOINT_RESTORE` Linux capability, which prevents InstantOn from doing a checkpoint or restore of a process in container.
 
 [#linux-capabilities]
 === Linux capability prerequisites for checkpoint and restore
@@ -311,9 +311,9 @@ Currently, Open Liberty InstantOn is tested and supported on the following publi
 - link:https://aws.amazon.com/eks/[Amazon Elastic Kubernetes Service (EKS)]
 - link:https://azure.microsoft.com/en-us/products/kubernetes-service[Azure Kubernetes Service (AKS)]
 
-Other public cloud Kubernetes services might also work if they have the <<#required-to-restore,prerequisites>> to allow CRIU to restore the InstantOn application process.
+Other public cloud Kubernetes services might also work if they have the <<#required-to-restore,prerequisites>> to allow the InstantOn application process to restore.
 
-When you deploy to Kubernetes, the container must be granted the `CHECKPOINT_RESTORE` and the `SETPCAP` Linux capabilities to allow CRIU to restore the InstantOn application process. You can configure these capabilities in the deployment YAML file by specifying the following `securityContext` for the container:
+When you deploy to Kubernetes, the container must be granted the `CHECKPOINT_RESTORE` and the `SETPCAP` Linux capabilities to allow the InstantOn application process to restore. You can configure these capabilities in the deployment YAML file by specifying the following `securityContext` for the container:
 
 [source,yaml]
 ----

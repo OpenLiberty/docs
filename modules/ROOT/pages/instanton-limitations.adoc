@@ -189,11 +189,11 @@ CWWKE0958E: The server checkpoint request failed because the websphere.java.secu
 == Updating JVM options
 InstantOn does not support changing the xref:reference:config/server-configuration-overview.adoc#jvm-options[jvm.options] when you restore the InstantOn application process. Any JVM options that are required to be set for the JVM process must be defined during the InstantOn container image build.
 
-The IBM Semeru JVM does have limited support for setting JVM options on restore with the use of the `OPENJ9_RESTORE_JAVA_OPTIONS` environment variable. For more information, see the Java link:https://www.eclipse.org/openj9/docs/criusupport/[CRIU Support] documentation.
+The IBM Semeru JVM does have limited support for setting JVM options on restore with the use of the `OPENJ9_RESTORE_JAVA_OPTIONS` environment variable. For more information, see the Java link:https://www.eclipse.org/openj9/docs/criusupport/[Checkpoint/Restore In Userspace (CRIU) support] documentation.
 
 [#se]
 == SELinux limitations
-If link:https://www.redhat.com/en/topics/linux/what-is-selinux[SELinux] mode is set to `enforcing`, SELinux might prevent CRIU from performing a checkpoint of the application process when you use the xref:instanton.adoc#checkpoint_script[checkpoint.sh script] in the image template `Dockerfile` or `Containerfile`. If the `virt_sandbox_use_netlink` SELinux setting is disabled, the required `netlink` Linux system calls are blocked. This block prevents InstantOn from performing a checkpoint of the application process during the container image build. Open Liberty InstantOn detects this limitation and logs the following messages:
+If link:https://www.redhat.com/en/topics/linux/what-is-selinux[SELinux] mode is set to `enforcing`, SELinux might prevent InstantOn from performing a checkpoint of the application process when you use the xref:instanton.adoc#checkpoint_script[checkpoint.sh script] in the image template `Dockerfile` or `Containerfile`. If the `virt_sandbox_use_netlink` SELinux setting is disabled, the required `netlink` Linux system calls are blocked. This block prevents InstantOn from performing a checkpoint of the application process during the container image build. Open Liberty InstantOn detects this limitation and logs the following messages:
 
 [source,sh]
 ----
@@ -209,7 +209,7 @@ To work around this limitation, you can either enable the `virt_sandbox_use_netl
 
 [#yama]
 == Yama Linux Security Module limitations
-If link:https://www.kernel.org/doc/Documentation/security/Yama.txt[Yama] is configured with one of the following modes, CRIU cannot checkpoint or restore the application process in running containers:
+If link:https://www.kernel.org/doc/Documentation/security/Yama.txt[Yama] is configured with one of the following modes, InstantOn cannot checkpoint or restore the application process in running containers:
 
 - 2 - admin-only attach
 - 3 - no attach 
@@ -221,12 +221,12 @@ When this configuration is present, the `/logs/checkpoint/restore.log` contains 
 Error (criu/arch/x86/kerndat.c:178): 32: ptrace(PTRACE_TRACEME) failed: Operation not permitted
 ----
 
-For CRIU checkpoint and restore to work, Yama must be configured with one of the following modes:
+For InstantOn checkpoint and restore to work, Yama must be configured with one of the following modes:
 
 - 0 - classic ptrace permissions
 - 1 - restricted ptrace
 
-The following supported public cloud Kubernetes services have the default for Yama set to the `1` mode, which allows CRIU to checkpoint and restore by default:
+The following supported public cloud Kubernetes services have the default for Yama set to the `1` mode, which allows InstantOn to checkpoint and restore by default:
 
 - link:https://aws.amazon.com/eks/[Amazon Elastic Kubernetes Service (EKS)]
 - link:https://azure.microsoft.com/en-us/products/kubernetes-service[Azure Kubernetes Service (AKS)]
