@@ -8,6 +8,7 @@ The following examples demonstrate configuration options for the OpenID Connect 
 - <<#jwe,Accept tokens in JWE format>>
 - <<#third,Configure a third-party OpenID Connect provider>>
 - <<#filter,Support Multiple OpenID Connect Providers>>
+- <<#privatekey,Use Private Key JWT for client authentication>>
 - <<#ltpa,Disable LTPA cookies>>
 - <<#oauth,Accept an OAuth 2.0 bearer access token without redirecting to an OpenID Connect provider>>
 - <<#context,Modify the context root>>
@@ -282,6 +283,25 @@ In the following example, authentication requests that contain the `/mywebapp/me
 ----
 
 For more information, see xref:ROOT:authentication-filters.adoc[Authentication filters].
+
+[#privatekey]
+=== Use Private Key JWT for client authentication
+
+OpenID Connect clients in Open Liberty support the `private_key_jwt` client authentication method with OpenID Connect token endpoints. OpenID Connect clients need to provide authentication data to the OpenID Connect provider for accessing the provider's token endpoint. Clients can authenticate by using several different methods, but most of those methods require a client secret. The `private_key_jwt` authentication method allows clients to use asymmetric keys to create signed JSON Web Tokens (JWTs) to authenticate instead of client secrets. OpenID Connect clients in Open Liberty by using this authentication method are no longer need to have a client secret.
+
+Server administrators can enable this function by using the `private_key_jwt` option for the `tokenEndpointAuthMethod` attribute, and the new `tokenEndpointAuthSigningAlgorithm` and `keyAliasName` attributes in the `<openidConnectClient>` element:
+
+[source,xml]
+----
+<openidConnectClient tokenEndpointAuthMethod="private_key_jwt" 
+tokenEndpointAuthSigningAlgorithm="E512" 
+keyAliasName="privatekeyaliasES512" 
+... />
+----
+
+The `tokenEndpointAuthSigningAlgorithm` attribute specifies the signing algorithm to use to sign the JWT used for client authentication. The `keyAliasName` attribute points to the private key to use to sign the JWT. The private key must be present in the keystore that is specified by the `sslRef` attribute in the OpenID Connect client configuration. OpenID Connect providers that support Private Key JWT client authentication typically provide an interface for administrators to upload their corresponding public key.
+
+For more information on `private_key_jwt` client authentication, see the https://openid.net/specs/openid-connect-core-1_0.html#ClientAuthentication[OpenID Connect core specification] and https://datatracker.ietf.org/doc/html/rfc7523[RFC 7523].
 
 [#ltpa]
 === Disable LTPA cookies
