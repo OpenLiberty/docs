@@ -15,7 +15,7 @@
 
 In addition to the general InstantOn prerequisites, Open Liberty InstantOn is subject to certain limitations. For example, applications that must run early startup code or that rely on certain Liberty features might require modification to use InstantOn.
 
-For information about InstantOn prerequisties, see xref:instanton.adoc#prereq[Runtime and host build system prerequisites]. 
+For more information about InstantOn prerequisties, see xref:instanton.adoc#prereq[Runtime and host build system prerequisites]. 
 
 The following sections describe the limitations and known issues with using Open Liberty InstantOn.
 
@@ -35,7 +35,7 @@ The following sections describe the limitations and known issues with using Open
 
 [#transaction]
 == Jakarta Transactions configuration limitations
-Open Liberty Transaction Manager support for InstantOn has limitations with respect to updating configurations when the application process is restored. The configuration attributes for the config:transaction[display=Transaction Manager] must remain constant between the InstantOn checkpoint and restore. This limitation is true only for the configuration attributes that are specified directly with the `transaction` server configuration element, for example, `recoveryGroup` and `recoverIdentity`. The values for these configuration attributes must not change between checkpoint and restore.
+Open Liberty Transaction Manager support for InstantOn has limitations around configuration updates when the application process is restored. The configuration attributes for the config:transaction[display=Transaction Manager] must remain constant between the InstantOn checkpoint and restore. This limitation is true only for the configuration attributes that are specified directly with the `transaction` server configuration element, for example, `recoveryGroup` and `recoverIdentity`. The values for these configuration attributes must not change between checkpoint and restore.
 
 This limitation implies that xref:transaction-service#cloud[transaction recovery in a cloud environment] cannot work as designed because the `recoverIdentity` cannot be parameterized by something like the following `transaction` configuration example. This example gives a unique `recoverIdentity` for each instance of the application:
 
@@ -86,11 +86,11 @@ This warning is followed by a stacktrace that helps identify the application cod
 WTRN0154E: The server checkpoint request failed because the transaction service is unable to begin a transaction. 
 ----
 
-You can avoid this failure by using the `beforeAppStart` option or by modifying the component not to use early startup code. In this example, that modification is to  remove the `loadOnStartup = 1` attribute.
+You can avoid this failure by using the `beforeAppStart` option or by modifying the component not to use early startup code. In this example, that modification is to remove the `loadOnStartup = 1` attribute.
 
 [#mp-config]
 == Accessing MicroProfile Config too early
-If an application has early startup code and you are using the `afterAppStart` option, it might get injected with a configuration value from xref:external-configuration.adoc[MicroProfile Config] before a checkpoint is performed for the application process. If such a configuration value changes at the time the application image container is run, then the application might be using the old stale value that was set when the application process checkpoint was performed.
+If an application has early startup code and you are using the `afterAppStart` option, it might get injected with a configuration value from xref:external-configuration.adoc[MicroProfile Config] before a checkpoint is performed for the application process. If such a configuration value changes at the time the application image container runs, the application might use the stale value that was set when the application process checkpoint was performed.
 
 The Open Liberty runtime detects this situation and logs a warning message when the application container image is run that indicates that a configuration value is changed. The following example uses an `example_config` configuration key with a default value set to `"theDefault"`. When the checkpoint occurs, the environment configuration source is not available to populate MicroProfile configuration values. If this `@Inject` annotation of the configuration is contained in a CDI bean that is created and used before the checkpoint is performed, the value of `"theDefault"` is injected.
 
@@ -134,7 +134,7 @@ public class ExampleServlet extends HttpServlet {
 }
 ----
 
-This `Servlet` example uses `loadOnStartup = 1` which causes the servlet to be initialized before the checkpoint when you are using the  `afterAppStart` option. The deployment information related to the `DataSource` might need to be configured when you deploy the application to the cloud. Consider the following Open Liberty `server.xml` configuration.
+This `Servlet` example uses the `loadOnStartup = 1` attribute. When you are using the  `afterAppStart` option, this attribute initializes the servlet before the checkpoint. The deployment information related to the `DataSource` might need to be configured when you deploy the application to the cloud. Consider the following Open Liberty `server.xml` configuration.
 
 [source,xml]
 ----
@@ -157,9 +157,9 @@ This `Servlet` example uses `loadOnStartup = 1` which causes the servlet to be i
   </dataSource>
 ----
 
-This configuration uses placeholder values for things like the database name, hostname, ports, user and password. This configuration allows the values to be updated with environment variable values or other configuration mechanisms, as described in link:/guides/kubernetes-microprofile-config.html[Configuring microservices running in Kubernetes]. These are configurations that must not be hard coded into an application image and must be able to be updated when you deploy the application to the cloud.
+This configuration uses placeholder values for things like the database name, hostname, ports, user, and password. This configuration allows the values to be updated with environment variable values or other configuration mechanisms, as described in link:/guides/kubernetes-microprofile-config.html[Configuring microservices running in Kubernetes]. These configurations must not be hardcoded into an application image and must be able to be updated when you deploy the application to the cloud.
 
-If an application is injected with a `DataSource` before the checkpoint and the configuration of the `DataSource` changes, the application is restarted when the InstantOn application container image is run with the updated configuration. You can avoid this scenario  by using the `beforeAppStart` option or by modifying the component not to be early startup code. In this example, that modification is to remove the `loadOnStartup = 1` attribute.
+If an application is injected with a `DataSource` before the checkpoint and the configuration of the `DataSource` changes, the application is restarted when the InstantOn application container image is run with the updated configuration. You can avoid this scenario by using the `beforeAppStart` option or by modifying the component not to be early startup code. In this example, that modification is to remove the `loadOnStartup = 1` attribute.
 
 [#features]
 == Using product extensions, user features, or features that are not supported by InstantOn
@@ -174,7 +174,7 @@ This error occurs for any configured features that are not supported for Instant
 
 [#boot]
 == Updating configuration with a bootstrap.properties file
-When an InstantOn application container image is run the xref:reference:bootstrap-properties.adoc[bootstrap.properties] file is not read. Values that must be able to be configured when you run an InstantOn application container image must come from alternative sources, such as environment variables or other configuration mechanisms, as described link:/guides/kubernetes-microprofile-config.html[Configuring microservices running in Kubernetes].
+When an InstantOn application container image is run the xref:reference:bootstrap-properties.adoc[bootstrap.properties] file is not read. Values that must be able to be configured when you run an InstantOn application container image must come from alternative sources. For example, you might use environment variables or other configuration mechanisms, as described link:/guides/kubernetes-microprofile-config.html[Configuring microservices running in Kubernetes].
 
 [#securitymanager]
 == Java SecurityManager is not supported
@@ -233,9 +233,9 @@ The following supported public cloud Kubernetes services have the default for Ya
 
 [#linux-calls]
 == Access to Linux system calls
-As described in xref:instanton.adoc#required-system-calls[Required Linux system calls], CRIU requires a number of Linux system calls to restore the application process. This requirement might require additional configuration to grant the required system calls to the running container when you use InstantOn.
+As described in xref:instanton.adoc#required-system-calls[Required Linux system calls], CRIU requires a number of Linux system calls to restore the application process. This requirement might require extra configuration to grant the required system calls to the running container when you use InstantOn.
 
-The following examples are errors that are logged to the `/logs/checkpoint/restore.log` file when access to specific system calls are blocked.
+The following examples are errors that are logged to the `/logs/checkpoint/restore.log` file when access to specific system calls is blocked.
 
 [source,sh]
 .Blocked clone3 system call
@@ -255,7 +255,7 @@ Error (criu/arch/x86/kerndat.c:178): 28: ptrace(PTRACE_TRACEME) failed: Operatio
 Error (criu/pipes.c:184): 0x4c11a: Error splicing data: Operation not permitted
 ----
 
-The supported public cloud Kubernetes Service environments currently allow the required system calls used by CRIU by default. No additional configuration is required when using the following cloud providers:
+The supported public cloud Kubernetes Service environments currently allow the required system calls used by CRIU by default. No additional configuration is required when you use the following cloud providers:
 
 - link:https://aws.amazon.com/eks/[Amazon Elastic Kubernetes Service (EKS)]
 - link:https://azure.microsoft.com/en-us/products/kubernetes-service[Azure Kubernetes Service (AKS)]
@@ -281,7 +281,7 @@ Error: building at STEP "RUN checkpoint.sh afterAppStart": while running runtime
 
 To avoid this error, grant the container image build the `CHECKPOINT_RESTORE`, `SYS_PTRACE`, and `SETPCAP Linux capabilities`. If you use the xref:instanton.adoc#three_step_process[three-step process] to build the container image, make sure the container that is running the checkpoint step is a `--privileged` container.
 
-If the required capabilities are not granted for restore then the following error occurs when you try to run the InstantOn application container image:
+If the required capabilities are not granted for restore, the following error occurs when you try to run the InstantOn application container image:
 
 [source,sh]
 ----
@@ -293,5 +293,5 @@ The `Operation not permitted` message is an indication that the required Linux c
 
 [#processors]
 == Supported processors
-At this time, the only supported processor is X86-64/AMD64. Additional processors are expected to be supported in later releases of Open Liberty InstantOn.
+Currently, the only supported processor is X86-64/AMD64. Other processors are expected to be supported in later releases of Open Liberty InstantOn.
 
