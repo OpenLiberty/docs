@@ -16,13 +16,13 @@
 :seo-description:  MicroShed testing helps you to write integration tests by using Testcontainers for Java microservice applications. With MicroShed testing, you can test your Open Liberty application from outside the container so you are testing the exact same image that runs in production.
 = True-to-production integration testing
 
-TestContainers is a Java library that facilitates the creation of integration tests that closely resemble production environments. It enables developers to test their applications within the same container used in production, thus reducing discrepancies between development and deployment settings.
+Testcontainers is a Java library that facilitates the creation of integration tests that closely resemble production environments. It enables developers to test their applications within the same container used in production, thus reducing discrepancies between development and deployment settings.
 
 By using the https://www.testcontainers.org/[Testcontainers] framework, developers can analyze their applications externally, without accessing internal application details. This approach ensures that integration tests accurately evaluate various test classes and components. Although integration tests require more setup and configuration time compared to unit tests, they provide a comprehensive assessment of the application’s behavior in a realistic environment.
 
-Unit tests focus on testing individual modules or components of an application and are quicker to run. Due to shorter development cycles and time constraints, developers often prioritize running unit tests. However, with TestContainers, developers can efficiently write and run integration tests that closely resemble real-world production scenarios.
+Unit tests focus on testing individual modules or components of an application and are quicker to run. Due to shorter development cycles and time constraints, developers often prioritize running unit tests. However, with Testcontainers, developers can efficiently write and run integration tests that closely resemble real-world production scenarios.
 
-TestContainers enables developers to create integration tests that closely resemble production environments. Integrating with the TestContainers framework streamlines the process of writing and running true-to-production integration tests, enabling a more efficient workflow.
+Testcontainers enables developers to create integration tests that closely resemble production environments. Integrating with the Testcontainers framework streamlines the process of writing and running true-to-production integration tests, enabling a more efficient workflow.
 
 ----
 This will be removed
@@ -47,7 +47,7 @@ The idea behind development and production parity is to keep the development, st
 To simplify the development process, developers often use tools in development that are different from production.
 For example, you might use a local Maven build to build a project for your application in development, but the application might be deployed to a container in production.
 Differences between the environments can cause a test to fail in production, though the test passes in the development environment.
-TestContainers helps achieve development and production parity by testing the application in an environment similar to production.
+Testcontainers helps achieve development and production parity by testing the application in an environment similar to production.
 
 ----
 This will be replaced
@@ -57,9 +57,8 @@ MicroShed Testing helps achieve development and production parity by testing the
 
 == Writing integration tests with the Testcontainers framework
 
-You can write integration tests by using the Testcontainers framework and deploy your applications in different environments by using containers. Testcontainers provides a powerful way to create and manage containers within a test environment. 
-Testcontainers is a Java library for MicroProfile and https://jakarta.ee/[Jakarta EE] developers to test their applications in an environment similar to production.
-Testcontainers enables developers to achieve development and production parity by testing their applications in an environment similar to production.
+By using the Testcontainers framework, you can generate integration tests, and deploy your applications across various environments by using containers. Testcontainers offers a robust solution for creating and handling containers within a test environment. 
+Designed for MicroProfile and https://jakarta.ee/[Jakarta EE] developers, Testcontainers serves as a Java library that facilitates the testing of applications within a production-like environment. It effectively enables developers to ensure development and production parity by thoroughly testing their applications in an environment that closely resembles the production setup.
 
 ----
 This will be removed
@@ -71,37 +70,99 @@ Microshed Testing is a Java library for MicroProfile and https://jakarta.ee/[Jak
 Microshed Testing implements the Testcontainers framework to support development and production parity in testing.
 ----
 
-With MicroShed Testing, you can write an integration test that looks like the following example:
-
+With Testcontainers, you can write an integration test. In the following example, Testcontainers are used to spin up a Docker container that is running an Open Liberty server with a test application deployed. It uses RestAssured to send HTTP requests to the service. This test case adds a person, retrieves all people, and verifies the correctness of the data.
 
 ```java
 
-@MicroShedTest
-public class BasicJAXRSServiceTest {
+@Testcontainers
+public class ServiceTest {
 
+    // Latest liberty image
+    static final DockerImageName libertyImage = DockerImageName.parse("open-liberty:23.0.0.4-full-java11-openj9");
+
+    // Create container and copy application + server.xml
     @Container
-    public static ApplicationContainer app = new ApplicationContainer()
-                    .withAppContextRoot("/myservice");
+    static final GenericContainer<?> liberty = new GenericContainer<>(libertyImage)
+            .withExposedPorts(9080, 9443)
+            .withCopyFileToContainer(MountableFile.forHostPath("build/libs/testapp.war"), "/config/dropins/testapp.war")
+            .withCopyFileToContainer(MountableFile.forHostPath("build/resources/main/liberty/config/server.xml"), "/config/server.xml")
+            .waitingFor(Wait.forLogMessage(".*CWWKZ0001I: Application .* started in .* seconds.*", 1))
+            .withLogConsumer(new LogConsumer(ServiceTest.class, "liberty"));
 
-    @RESTClient
-    public static PersonService personSvc;
+    // Setup RestAssured query our service
+    static RequestSpecification requestSpecification;
 
-    @Test
-    public void testGetPerson() {
-        Long bobId = personSvc.createPerson("Bob", 24);
-        Person bob = personSvc.getPerson(bobId);
-
-        assertEquals("Bob", bob.name);
-        assertEquals(24, bob.age);
-        assertNotNull(bob.id);
+    @BeforeAll
+    static void getServiceURL() {
+        String baseUri = "http://" + liberty.getHost() + ":" + liberty.getMappedPort(9080) + "/testapp/people";
+        requestSpecification = new RequestSpecBuilder()
+                .setBaseUri(baseUri)
+                .build();
     }
 
+    // Run our test
+    Jsonb jsonb = JsonbBuilder.create();
     @Test
-    public void testGetUnknownPerson() {
-        assertThrows(NotFoundException.class, () -> personSvc.getPerson(-1L));
+    public void testAddPerson() {
+        // Add new person to service
+        given(requestSpecification)
+            .header("Content-Type", "application/json")
+            .queryParam("name", "bob")
+            .queryParam("age", "24")
+        .when()
+            .post("/")
+        .then()
+            .statusCode(200);
+
+        // Get and verify only one person exists
+        List<Long> allIDs = given(requestSpecification)
+            .accept("application/json")
+        .when()
+            .get("/")
+        .then()
+            .statusCode(200)
+        .extract().body()
+            .jsonPath().getList("id");
+
+        assertEquals(1, allIDs.size());
+
+        // Verify person is bob
+        String actual = given(requestSpecification)
+            .accept("application/json")
+        .when()
+            .get("/" + allIDs.get(0))
+        .then()
+            .statusCode(200)
+        .extract().body()
+            .jsonPath(x).getString("name");
+
+        assertEquals("bob", actual);
     }
-}
 ```
+
+The `@Testcontainers` annotation indicates that this test class uses Docker containers for testing.
+
+The `ServiceTest` class starts with a static field `libertyImage`, which represents the Docker image to be used for the test.
+
+The liberty field is annotated with `@Container` and creates a Docker container by using the `libertyImage` image. It makes ports `9080` and `9443` accessible and copies the application and server configuration files into the container. It waits for a log message that indicates that the application started successfully and assigns a log consumer for logging container logs.
+
+In the `@BeforeAll` annotated method `getServiceURL(), the base URL for the service is constructed by using the host and mapped port of the liberty container. The request specification is created with the base URL.
+
+The `testAddPerson()` method is annotated with `@Test` and runs a series of tests on the service.
+
+Inside the test method, a new person is added to the service by sending a POST request with JSON payload that contains the name and age parameters.
+
+Upon adding the person, a GET request is sent to retrieve all people from the service. The response is validated to ensure a successful status code (200). The IDs of all the people are extracted from the response by using JSONPath.
+
+The number of IDs is checked to ensure that only one person exists in the service.
+
+Another `GET` request is sent to retrieve the details of the person with the extracted ID. The response is validated to ensure a successful status code `(200)`. The name of the person is extracted from the response by using JSONPath.
+
+Finally, the extracted name is compared with the expected value `bob` using the `assertEquals()` method.
+
+----
+
+This will be removed
 
 The `@MicroShedTest` annotation searches for a `Dockerfile` or `Containerfile` file in the repository, starts the application in a container, and waits for the application to be ready before the test starts.
 The `@Container` annotation injects a REST Client proxy of the PersonService class, which helps you send HTTP requests on the running application container.
@@ -110,6 +171,9 @@ By using the generated ID, you can send an HTTP GET request to read the record t
 The JSON response automatically converts to a Person object by using a JSON-B token.
 The `@Test` annotation sends an HTTP GET request to find a Person object with the `-1` ID, which does not exist.
 The annotation asserts that the application container returns an HTTP 404 exception.
+
+----
+
 
 == See also
 
