@@ -15,7 +15,7 @@
 
 In addition to the general InstantOn prerequisites, Open Liberty InstantOn is subject to certain limitations. For example, applications that must run early startup code or that rely on certain Liberty features might require modification to use InstantOn.
 
-For more information about InstantOn prerequisties, see xref:instanton.adoc#prereq[Runtime and host build system prerequisites]. 
+For more information about InstantOn prerequisites, see xref:instanton.adoc#prereq[Runtime and host build system prerequisites]. 
 
 The following sections describe the limitations and known issues with using Open Liberty InstantOn.
 
@@ -92,7 +92,7 @@ You can avoid this failure by using the `beforeAppStart` option or by modifying 
 == Accessing MicroProfile Config too early
 If an application has early startup code and you are using the `afterAppStart` option, it might get injected with a configuration value from xref:external-configuration.adoc[MicroProfile Config] before a checkpoint is performed for the application process. If such a configuration value changes at the time the application image container runs, the application might use the stale value that was set when the application process checkpoint was performed.
 
-The Open Liberty runtime detects this situation and logs a warning message when the application container image is run that indicates that a configuration value is changed. The following example uses an `example_config` configuration key with a default value set to `"theDefault"`. When the checkpoint occurs, the environment configuration source is not available to populate MicroProfile configuration values. If this `@Inject` annotation of the configuration is contained in a CDI bean that is created and used before the checkpoint is performed, the value of `"theDefault"` is injected.
+The Open Liberty runtime detects this situation and logs a warning message when the application container image is run that indicates that a configuration value is changed. The following example uses an `example_config` configuration key with a default value set to `theDefault`. When the checkpoint occurs, the environment configuration source is not available to populate MicroProfile configuration values. If this `@Inject` annotation of the configuration is contained in a CDI bean that is created and used before the checkpoint is performed, the value of `theDefault` is injected.
 
 [source,java]
 ----
@@ -163,7 +163,7 @@ If an application is injected with a `DataSource` before the checkpoint and the 
 
 [#features]
 == Using product extensions, user features, or features that are not supported by InstantOn
-InstantOn supports only a subset of Open Liberty features, as described in xref:instanton.adoc#supported-feature[Open Liberty InstantOn supported features]. Any public features that are enabled outside of the supported set of features for InstantOn cause checkpoint to fail with an error message like the following example:
+InstantOn supports only a subset of Open Liberty features, as described in xref:instanton.adoc#supported-features[Open Liberty InstantOn supported features]. Any public features that are enabled outside of the supported set of features for InstantOn cause checkpoint to fail with an error message like the following example:
 
 [source,sh]
 ----
@@ -174,7 +174,7 @@ This error occurs for any configured features that are not supported for Instant
 
 [#boot]
 == Updating configuration with a bootstrap.properties file
-When an InstantOn application container image is run the xref:reference:bootstrap-properties.adoc[bootstrap.properties] file is not read. Values that must be able to be configured when you run an InstantOn application container image must come from alternative sources. For example, you might use environment variables or other configuration mechanisms, as described link:/guides/kubernetes-microprofile-config.html[Configuring microservices running in Kubernetes].
+When an InstantOn application container image is run, the xref:reference:bootstrap-properties.adoc[bootstrap.properties] file is not read. Values that must be able to be configured when you run an InstantOn application container image must come from alternative sources. For example, you might use environment variables or other configuration mechanisms, as described link:/guides/kubernetes-microprofile-config.html[Configuring microservices running in Kubernetes].
 
 [#securitymanager]
 == Java SecurityManager is not supported
@@ -211,8 +211,8 @@ To work around this limitation, you can either enable the `virt_sandbox_use_netl
 == Yama Linux Security Module limitations
 If link:https://www.kernel.org/doc/Documentation/security/Yama.txt[Yama] is configured with one of the following modes, InstantOn cannot checkpoint or restore the application process in running containers:
 
-- 2 - admin-only attach
-- 3 - no attach 
+- `2` - admin-only attach
+- `3` - no attach 
 
 When this configuration is present, the `/logs/checkpoint/restore.log` contains the following error:
 
@@ -223,8 +223,8 @@ Error (criu/arch/x86/kerndat.c:178): 32: ptrace(PTRACE_TRACEME) failed: Operatio
 
 For InstantOn checkpoint and restore to work, Yama must be configured with one of the following modes:
 
-- 0 - classic ptrace permissions
-- 1 - restricted ptrace
+- `0` - classic ptrace permissions
+- `1` - restricted ptrace
 
 The following supported public cloud Kubernetes services have the default for Yama set to the `1` mode, which allows InstantOn to checkpoint and restore by default:
 
@@ -233,7 +233,7 @@ The following supported public cloud Kubernetes services have the default for Ya
 
 [#linux-calls]
 == Access to Linux system calls
-As described in xref:instanton.adoc#required-system-calls[Required Linux system calls], CRIU requires a number of Linux system calls to restore the application process. This requirement might require extra configuration to grant the required system calls to the running container when you use InstantOn.
+As described in xref:instanton.adoc#required-system-calls[Required Linux system calls], CRIU requires several Linux system calls to restore the application process. This requirement might require extra configuration to grant the required system calls to the running container when you use InstantOn.
 
 The following examples are errors that are logged to the `/logs/checkpoint/restore.log` file when access to specific system calls is blocked.
 
@@ -257,8 +257,8 @@ Error (criu/pipes.c:184): 0x4c11a: Error splicing data: Operation not permitted
 
 The supported public cloud Kubernetes Service environments currently allow the required system calls used by CRIU by default. No additional configuration is required when you use the following cloud providers:
 
-- link:https://aws.amazon.com/eks/[Amazon Elastic Kubernetes Service (EKS)]
-- link:https://azure.microsoft.com/en-us/products/kubernetes-service[Azure Kubernetes Service (AKS)]
+- Amazon Elastic Kubernetes Service (EKS)
+- Azure Kubernetes Service (AKS)
 
 [#linux]
 == Running without the necessary Linux capabilities
