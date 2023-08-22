@@ -1,10 +1,10 @@
 
 # Writing and publishing Docs on OpenLiberty.io
 
-* [Overview](#Overview)
-* [Publishing a new topic](#Publishing-a-new-topic)
-* [Updating an existing topic](#Updating-an-existing-topic)
-* [Editing the Docs navigation](#Editing-the-docs-navigation)
+* [Overview](#overview)
+* [Publishing a new topic](#publishing-a-new-topic)
+* [Updating an existing topic](#updating-an-existing-topic)
+* [Editing the Docs navigation](#editing-the-docs-navigation)
 
 ## Overview
 
