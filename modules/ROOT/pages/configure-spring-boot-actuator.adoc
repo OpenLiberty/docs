@@ -1,0 +1,191 @@
+// Copyright (c) 2023 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description: You can change the HTTP endpoint, virtual host, and other settings for the Spring Boot Actuator so that it uses values other than the defaults for Liberty.
+:seo-title: Configuring non-default settings for the Spring Boot Actuator
+:page-layout: general-reference
+:page-type: general
+= Configuring non-default settings for the Spring Boot Actuator
+
+You can change the HTTP endpoint, virtual host, and other settings for the  so that it uses values other than the defaults for Liberty. When you are not using the default HTTP endpoint and default virtual host, Open Liberty provides a set of configuration IDs to configure a web server for a Spring Boot application.
+
+By default, the main web server for a Spring Boot application uses the Open Liberty default HTTP endpoint and the virtual host when the Spring Boot application is deployed to Open Liberty. Open Liberty defines the main web server as the first server that is created for the root Spring Boot `ApplicationContext` class. When the Spring Boot application uses the default HTTP endpoint and virtual host, the Spring Boot application properties that are used to configure the main web server are ignored. The Open Liberty configuration settings for the default HTTP endpoint and default virtual host are used instead. All other Spring Boot application web server instances use the settings that are specified by the application. For example, you can use link:https://docs.spring.io/spring-boot/docs/current/reference/html/actuator.html[Spring Boot Actuators] on a different port than the main web server port by configuring the `management.server.port` application property.
+
+You can override the use of the Open Liberty default HTTP endpoint and default virtual host for the main web server by setting the `server.liberty.use-default-host application` property to `false` in the `applicationArgument` element.
+
+[source,xml]
+----
+<springBootApplication location="hellospringboot.jar">
+    <applicationArgument>--server.liberty.use-default-host=false</applicationArgument>
+</springBootApplication>
+----
+
+This configuration uses the Spring Boot application properties to configure the main web server instead of the Open Liberty defaults.
+
+== Open Liberty Spring Boot configuration IDs
+
+When you are not using the default HTTP endpoint and default virtual host, Open Liberty provides a set of configuration IDs to configure a web server for a Spring Boot application. Use these configuration IDs in the`server.xml`file to override application settings for the web server. The IDs are ordered by precedence by using the `springBootVirtualHost-<requested port>` ID that overrides all server endpoint settings with configuration from the server `server.xml` file. You can specify these IDs on different `server.xml` configuration elements to define the values for the web server for a Spring Boot application. The `<requested port>` value is the HTTP port that the Spring Boot application requests.
+
+
+springBootVirtualHost--<requested port>::
+Set this ID on the config:virtualHost element to configure the virtual host host for the server to use a specified alias.
+
+springBootHttpEndpoint-<requested port>::
+Set this ID on the config:httpEndpoint element to configure the HTTP endpoint for the server to use a specified host address and HTTP port.
+
+springBootSsl-<requested port>::
+Set this ID on the config:ssl element to configure SSL settings for the HTTP endpoint.
+
+springBootKeyStore-<requested port>::
+Set this ID on the config:keyStore element to configure the keystore for the SSL settings.
+
+springBootTrustStore-<requested port>::
+Set this ID on the config:keyStore element to configure the truststore for the SSL settings.
+
+The examples in the following sections demonstrate how to specify these configuration IDs.
+
+== Configuration examples
+
+The following  examples use the sample `hellospringboot.jar` application that you deploy to Open Liberty in xref:deploy-spring-boot.adoc[Configure and Deploy Spring Boot applications to Open Liberty]. Spring Boot properties sometimes change between versions. The following examples use Spring Boot 3.x properties.
+
+- <<#nondefault, Configuring a non-default virtual host and HTTP endpoint for a Spring Boot application and the Spring Boot Actuator>>
+- <<#port, Configuring an HTTP port for the Spring Boot Actuator>>
+- <<#http, Configure the HTTP endpoint for the Actuator and enable access logging>>
+- <<#tls,Override the default Transport Layer Security (TLS) settings for the Spring Boot Actuator>>
+
+[#nondefault]
+=== Configuring a non-default virtual host and HTTP endpoint for a Spring Boot application and the Spring Boot Actuator
+
+In the example, the `hellospringboot.jar` application that is deployed to Liberty is configured so that it does not use the Liberty default HTTP endpoint or default virtual host. From the application HTTP port, you configure the application to use a different HTTP port for the actuator. Then, use the `server.xml file` to override the server settings for the actuator.
+
+1. Configure the `springBootApplication` element in the `server.xml` file to override the default HTTP endpoint and default virtual host.
++
+a. Add a command line argument for the application by using the `applicationArgument` element. Pass the `--server.liberty.use-default-host=false` argument.
++
+[source,xml]
+----
+<springBootApplication location="hellospringboot.jar">
+    <applicationArgument>--server.liberty.use-default-host=false</applicationArgument>
+</springBootApplication>
+----
+b. Start the server in the foreground by running the `server run helloserver` command.
+c. Test the application in a browser by going to the http://localhost:8080 URL.
+d. Test the actuator health endpoint at the http://localhost:8080/health URL.
+
+2. To configure a non-default port for the actuator input, pass the `--management.server.port=9999` argument.
++
+[source,xml]
+----
+<springBootApplicationlocation="hellospringboot.jar">
+    <applicationArgument>--server.liberty.use-default-host=false</applicationArgument>
+    <applicationArgument>--management.server.port=9999</applicationArgument>
+</springBootApplication>
+----
++
+a. Test the application at the http://localhost:8080 URL.
+b. Test the actuator health endpoint at the http://localhost:9999/health URL.
+c. Stop the server with the `server stop helloserver` command.
+
+[#port]
+=== Configuring an HTTP port for the Spring Boot Actuator
+
+1. For the actuator to use the HTTP port 9080 endpoint by default, configure a `virtualHost` element with the `springBootVirtualHost-9999` configuration ID.
++
+[source,xml]
+----
+<virtualHost id="springBootVirtualHost-9999">
+    <hostAlias>*:9080</hostAlias>
+</virtualHost>
+----
+2. Start the server in the foreground with the server run helloserver command.
+3. Test the application at the http://localhost:8080 URL.
+4. Test the actuator health endpoint at the http://localhost:9080/health URL.
+5. Stop the server with the `server stop helloserver` command.
+6. Remove the `virtualHost` configuration from the `server.xml` file.
+
+[#http]
+=== Configure the HTTP endpoint for the Actuator and enable access logging
+
+1. Specify the `springBootHttpEndpoint` configuration ID for the `httpEndpoint` element and add the `accessLogging` element.
++
+[source,xml]
+----
+<httpEndpoint id="springBootHttpEndpoint-9999"httpPort="9999"httpsPort="-1">
+    <accessLogging/>
+</httpEndpoint>
+----
+2. Start the server in the foreground by running the  the `server run` command from the `wlp/bin` directory.
++
+----
+server run helloserver
+----
+
+3. Test the application in a browser by going to the http://localhost:8080 URL.
+4. Test the actuator health endpoint in a browser by going to the http://localhost:9999/health URL.
+5. Check the `/usr/servers/helloserver/logs/http_access.log` file for reports about accessing the health actuator.
+6. Stop the server with the server stop helloserver command.
+
+[#tls]
+=== Override the default Transport Layer Security (TLS) settings for the Spring Boot Actuator
+
+You can use the `springBootVirtualHost-8080` and `springBootHttpEndpoint-8080` configuration IDs to override the server settings for the main server of the application. Similarly, you can override the TLS settings that the actuator endpoints use, but overriding requires that the application includes configured TLS settings for the actuator server. Assume that the actuator TLS settings are set with the following values in the `server.xml` file and that the application contains a `server-keystore.p12` keystore file and a `server-truststore.p12` truststore file on the class path.
+
+[source,xml]
+----
+<featureManager>
+    <feature>pages-3.1</feature>
+    <feature>springBoot-3.0</feature>
+    <feature>transportSecurity-1.0</feature>
+</featureManager>
+
+<springBootApplication location="hellospringboot.jar">
+    <applicationArgument>--server.liberty.use-default-host=false</applicationArgument>
+    <applicationArgument>--management.server.port=9999</applicationArgument>
+    <applicationArgument>--management.server.ssl.key-store=classpath:server-keystore.p12</applicationArgument>
+    <applicationArgument>--management.server.ssl.key-store-password=secret</applicationArgument>
+    <applicationArgument>--management.server.ssl.key-password=secret</applicationArgument>
+    <applicationArgument>--management.server.ssl.trust-store=classpath:server-truststore.p12</applicationArgument>
+    <applicationArgument>--management.server.ssl.trust-store-password=secret</applicationArgument>
+</springBootApplication>
+---
+
+- Override the SSL settings by specifying the `springBootSsl-9999` configuration ID.
+a. If the `httpEndpoint` element exists, remove it from the `server.xml` file with the `springBootHttpEndpoint-9999` ID.
+b. Override the SSL settings that the actuator uses.
++
+[source,xml]
+----
+<ssl keyStoreRef="mykeystore" trustStoreRef="mytruststore" id="springBootSsl-9999"/>
+<keyStore location="override-keystore.p12" password="secret" id="mykeystore"/>
+<keyStore location="override-truststore.p12" password="secret" id="mytruststore"/>
+----
+
+c. Start the server in the foreground with the server run helloserver command.
+d. Test the application at the http://localhost:8080 URL.
+e. Test the actuator health endpoint at the secure http://localhost:9999/health URL.
+f. Stop the server with the `server stop helloserver` command.
++
+If the application was configured to use SSL, you can use the `springBootSsl-9999` ID in the previous steps to override the SSL settings for the main server of the application.
+
+- Override the individual keystore or truststore by specifying the `springBootKeyStore-9999` or `springBootTrustStore-9999` IDs.
+a. If the `httpEndpoint` element exists, remove it from the `server.xml` file with the `springBootHttpEndpoint-9999` ID.
+b. If the `ssl` and `keyStore` elements exist, remove them from the `server.xml` file with the `springBootSsl-9999` ID.
+c. Add one or both lines of code to override the keystore or truststore that the actuator uses.
++
+[source,xml]
+----
+<keyStore location="override-keystore.p12" password="secret" id="springBootKeyStore-9999"/>
+<keyStore location="override-truststore.p12" password="secret" id="springBootTrustStore-9999"/>
+----
+
+d. Start the server in the foreground with the `server run helloserver` command.
+e. Test the application at the http://localhost:8080 URL.
+f. Test the actuator health endpoint at the secure https://localhost:9999/health URL.
+g. Stop the server with the `server stop helloserver` command.
++
+If the server was configured to use SSL, you can use the `springBootKeyStore-8080` and `springBootTrustStore-8080` IDs in the previous steps to override the TLS settings for the main server of the application.
