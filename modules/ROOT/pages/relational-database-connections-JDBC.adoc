@@ -16,11 +16,11 @@
 
 Java applications connect to and interact with relational databases through the Java Database Connectivity (JDBC) API. You can configure a data source and a JDBC driver so an application that is running on your Open Liberty server can connect with a relational database.
 
-Applications communicate with relational databases to retrieve different kinds of information, such as flight schedules, product inventories, and customer purchase histories. The https://docs.oracle.com/javase/tutorial/jdbc/overview/index.html[JDBC API] provides an adapter layer between applications and relational databases by providing details about a database to an application in a standardized way. In Open Liberty, interactions with the JDBC API are configured by the xref:reference:feature/jdbc-4.2.adoc[Java Database Connectivity feature].
+Applications communicate with relational databases to retrieve different kinds of information, such as flight schedules, product inventories, and customer purchase histories. The https://docs.oracle.com/javase/tutorial/jdbc/overview/index.html[JDBC API] provides an adapter layer between applications and relational databases by providing details about a database to an application in a standardized way. In Open Liberty, interactions with the JDBC API are configured by the feature:jdbc[Java Database Connectivity] feature.
 
 == JDBC driver library configuration
 
-To connect with a relational database, you need a JDBC driver, which is typically provided by the database vendor. You can configure JDBC drivers to define data sources, from which you obtain connections to the database. To configure a JDBC data source in your Open Liberty server configuration, you must enable the Java Database Connectivity feature and specify a library that contains your JDBC driver. In the following example, the `library` element specifies the location of the directory that contains a JDBC driver JAR file:
+To connect with a relational database, you need a JDBC driver, which is typically provided by the database vendor. You can configure JDBC drivers to define data sources, from which you obtain connections to the database. To configure a JDBC data source in your Open Liberty server configuration, you must enable the Java Database Connectivity feature and specify a library that contains your JDBC driver. In the following `server.xml` file example, the `library` element specifies the location of the directory that contains a JDBC driver JAR file:
 
 
 [source,xml]
@@ -90,7 +90,7 @@ task copyJDBC(type: Copy) {
 deploy.dependsOn 'copyJDBC'
 ----
 
-In this `build.gradle` file example, a `configurations` instance that is called `jdbcLib` is declared with a dependency for the driver. The `copyJDBC` task specifies that the driver JAR files are copied into the `jdbc` folder in the server configuration directory. Finally, a `deploy` dependency specifies that the driver must be copied to the server before the application is deployed so it can be available at run time.
+In this `build.gradle` file example, a `configurations` instance that is called `jdbcLib` is declared with a dependency for the driver. The `copyJDBC` task specifies that the driver JAR files are copied into the `jdbc` folder in the server configuration directory. Finally, a `deploy.dependsOn` dependency specifies that the driver must be copied to the server before the application is deployed so it can be available at run time.
 
 == Data source configuration
 
@@ -112,7 +112,7 @@ You can configure any JDBC driver with Open Liberty, which includes built-in con
 
 In this example, the `dataSource` element references the library that contains the JDBC driver JAR file and specifies several JDBC vendor properties with the `properties` attribute.
 
-Every JDBC driver provides a different collection of properties that can be configured on its `dataSource` implementation classes. If the JDBC driver data source has setter methods with a String or primitive parameter, you can configure these properties by specifying either a single `properties` or `properties.{_JDBC_VENDOR_TYPE_}` subelement under the `dataSource` element. Use a `properties.{_JDBC_VENDOR_TYPE_}` subelement if Liberty provides one for the JDBC driver that you are using. Otherwise, use a `properties` subelement. For more information about the vendor-specific `properties.{_JDBC_VENDOR_TYPE_}` subelements that Liberty provides, see the config:dataSource[] element.
+Every JDBC driver provides a different collection of properties that you can configure on its `dataSource` implementation classes. If the JDBC driver data source has setter methods with a String or primitive parameter, you can configure these properties by specifying either a single `properties` or `properties.{_JDBC_vendor_type_}` subelement under the `dataSource` element. Use a `properties.{_JDBC_vendor_type_}` subelement if Liberty provides one for the JDBC driver that you are using. Otherwise, use a `properties` subelement. For more information about the vendor-specific `properties.{_JDBC_vendor_type_}` subelements that Liberty provides, see the config:dataSource[] element.
 
 The following example shows the basic configuration to specify JDBC vendor properties in the `properties` subelement:
 
@@ -280,7 +280,7 @@ The following example shows a sample data source configuration for an Oracle dat
 [#Oracleucp]
 === Oracle UCP
 
-https://docs.oracle.com/cd/E11882_01/java.112/e12265/intro.htm#BABHFGCA[Oracle Universal Connection Pool] (UCP) is a stand-alone JDBC connection pool. When you use Oracle UCP with Open Liberty, you are using the Oracle UCP connection pool instead of the Open Liberty built-in connection pooling functions. Some of the https://www.oracle.com/database/technologies/high-availability.html[Oracle high availability database] functions require the use of Oracle UCP. Support for Oracle UCP was added in Open Liberty version 19.0.0.4.
+https://docs.oracle.com/cd/E11882_01/java.112/e12265/intro.htm#BABHFGCA[Oracle Universal Connection Pool] (UCP) is a stand-alone JDBC connection pool. When you use Oracle UCP with Open Liberty, you are using the Oracle UCP connection pool instead of the Open Liberty built-in connection pooling functions. Some of the https://www.oracle.com/database/technologies/high-availability.html[Oracle high availability database] functions require the use of Oracle UCP.
 
 Oracle UCP might require some properties, such as `user` and `password`, to be set in the `properties.oracle.ucp` element.
 Because the Open Liberty connection pool is unavailable, some of the Open Liberty data source and connection manager configuration values are ignored. For most of those data source and connection manager properties, Oracle UCP provides equivalent functions. For more information, see the xref:reference:config/dataSource.adoc#dataSource/properties.oracle.ucp[properties.oracle.ucp element documentation].
@@ -322,7 +322,7 @@ The following example shows a sample data source configuration for an Oracle RAC
 </library>
 ----
 
-In this example, `example-host-1` and `example-port-1` represent the host and port values for the first node, and `example-host-2` and `example-port-2` represent host and port values for the second node. The `FAILOVER` and `LOAD_BALANCE` Oracle parameters specify global configuration for both nodes. For more information about Oracle database parameters, see https://docs.oracle.com/cd/B28359_01/rac.111/b28254/admcon.htm#i1058057[the Oracle RAC documentation]. If you are not using Oracle services, then the value for `SERVICE_NAME` is your database name. If you are using Oracle services, then the value for `SERVICE_NAME` is the name of the service. You are not required to specify the Oracle login credentials as Oracle properties, xref:reference:feature/jdbc-4.3.adoc#_provide_security_credentials_for_data_source_authentication[other methods of database authentication] also work. Some Oracle RAC functions require the use of Oracle UCP, which is available only in Open Liberty version 19.0.0.4 and later.
+In this example, `example-host-1` and `example-port-1` represent the host and port values for the first node, and `example-host-2` and `example-port-2` represent host and port values for the second node. The `FAILOVER` and `LOAD_BALANCE` Oracle parameters specify global configuration for both nodes. For more information about Oracle database parameters, see https://docs.oracle.com/cd/B28359_01/rac.111/b28254/admcon.htm#i1058057[the Oracle RAC documentation]. If you are not using Oracle services, then the value for `SERVICE_NAME` is your database name. If you are using Oracle services, then the value for `SERVICE_NAME` is the name of the service. You are not required to specify the Oracle login credentials as Oracle properties, xref:reference:feature/jdbc-4.3.adoc#_provide_security_credentials_for_data_source_authentication[other methods of database authentication] also work. Some Oracle RAC functions require the use of Oracle UCP.
 
 == Configuration of databases that are unknown to Open Liberty
 
@@ -342,7 +342,7 @@ The following example shows a sample data source configuration for a relational 
 
 
 
-For more information, see the xref:reference:feature/jdbc-4.2.adoc[Java Database Connectivity feature].
+For more information, see the feature:jdbc[display=Java Database Connectivity] feature.
 
 [#types]
 == Data source types
@@ -356,7 +356,7 @@ This basic form of data source lacks functions that are used by Liberty for opti
 This type of data source is enabled for xref:reference:feature/jdbc-4.2.adoc#_connection_pool_configuration[connection pooling]. It cannot participate as a two-phase capable resource in transactions that involve multiple resources.
 
 - `javax.sql.XADataSource`
-This type of data source is enabled for connection pooling and is able to participate as a two-phase capable resource in transactions that involve multiple resources. The `javax.sql.XADataSource` data source type is essentially a superset of the capabilities that are provided by the `javax.sql.DataSource` and `javax.sql.ConnectionPoolDataSource` data source types. However, some JDBC vendors might have subtle differences in behavior or limitations that are not spelled out in the JDBC specification.
+This type of data source is enabled for connection pooling and is able to participate as a two-phase capable resource in transactions that involve multiple resources. The `javax.sql.XADataSource` data source type is a superset of the capabilities that are provided by the `javax.sql.DataSource` and `javax.sql.ConnectionPoolDataSource` data source types. However, some JDBC vendors might have subtle differences in behavior or limitations that are not spelled out in the JDBC specification.
 
 - `java.sql.Driver`
 The `java.sql.Driver` driver implementation provides a basic way to connect to a database. This implementation requires a URL and is typically used in Java SE applications. Like `javax.sql.DataSource`, it does not provide interoperability that enhances connection pooling and cannot participate as a two-phase capable resource in transactions that involve multiple resources. To work with Open Liberty, this implementation must provide the `ServiceLoader` facility, which Open Liberty uses to discover JDBC driver implementations for a URL.
