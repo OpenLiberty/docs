@@ -77,6 +77,23 @@ You deployed a Spring Boot sample application to Open Liberty. When you finish t
 server stop helloserver
 ----
 
+[#dropins]
+=== Deploying a Spring Boot application from the dropins directory
+
+Alternatively, you can deploy a Spring Boot application without configuring the server.xml file by using the Open Liberty `dropins` directory. You can use these steps to deploy either a JAR file or a WAR file.
+
+1. Complete steps 1 and 2 of <<#deploy,Deploying a Spring Boot application to Open Liberty from the command line>>.
+2. Create a `/spring` subdirectory in the ``/usr/servers/helloserver/dropins/` directory.
+3. Copy the `hellospringboot.jar` or `hellospringboot.war` file to the `/usr/servers/helloserver/dropins/spring/` directory.
+4. Start the server in the foreground by running the `server run` command:
++
+----
+server run helloserver
+----
+5. Test the application in a browser by going to the `http://localhost:9080` URL.
++
+The default HTTP endpoint is used to service the application. When you finish testing the application, run the `server stop helloserver` command.
+
 [#define]
 == Defining Spring Boot application arguments
 
@@ -162,31 +179,35 @@ The following example uses the `springBootUtility thin` command to separate the 
 
 1. Configure the thin Spring Boot application JAR file and the library dependencies.
 +
-a. Deploy the `hellospringboot.jar` application as explained in the <<#deploy,Deploying a Spring Boot application to Open Liberty>> section.
+a. Deploy the `hellospringboot.jar` application as explained in the <<#deploy,Deploying a Spring Boot application to Open Liberty from the command line>> section.
 b. Deploy the library dependencies to the `wlp/usr/shared/resources/lib.index.cache/` directory.
 
-2. Run the `springBootUtility thin` command with the necessary options to create the thin Spring Boot application in the correct `dropins` folder of the `helloserver` server configuration and to cache the dependencies to the `usr/shared/resources/lib.index.cache` directory.
+2. Remove the `springBootApplication location="hellospringboot.jar"` element from the `server.xml` file.
 +
-The following example assumes you are running the command from the directory that contains the top-level `wlp` Open Liberty runtime directory.
+The thinned application is deployed to the `dropins/spring` directory and you don't need to define the application location in the `server.xml` file.
+
+3. Run the `springBootUtility thin` command with the necessary options to create the thin Spring Boot application in the  `dropins/spring` directory of the `helloserver` server configuration and to cache the dependencies to the `usr/shared/resources/lib.index.cache` directory.
 +
+[subs=+quotes]
 ----
 wlp/bin/springBootUtility thin \
-    --sourceAppPath=hellospringboot.jar \
-    --targetLibCachePath=wlp/usr/shared/resources/lib.index.cache \
-    --targetThinAppPath=wlp/usr/servers/helloserver/dropins/spring/hellospringboot.jar
+    --sourceAppPath=_full_path_to_/wlp/usr/servers/helloserver/apps/hellospringboot.jar \
+    --targetLibCachePath=_full_path_to_/wlp/usr/shared/resources/lib.index.cache \
+    --targetThinAppPath=_full_path_to_/wlp/usr/servers/helloserver/dropins/spring/hellospringboot.jar
 ----
 +
 For more information about the available command-line options, see the xref:reference:command/springbootUtility-thin.adoc[springBootUtility thin] command.
 
-3. Start the server in the foreground by running the `server run` command.
+4. Start the server in the foreground by running the `server run` command.
 +
 [source,xml]
 ----
 server run helloserver
 ----
 
-4. Test the application in a browser by going to the `http://localhost:9080` URL.
-The default HTTP endpoint is used to service the application.
+5. Test the application in a browser by going to the `http://localhost:9090` URL.
++
+When you finish testing the application, run the `server stop helloserver` command.
 
 == See also
 - Guide: link:/guides/spring-boot.html[Containerizing, packaging, and running a Spring Boot application]
