@@ -16,14 +16,17 @@ You can enable Open Liberty to configure and deploy Spring Boot applications. Op
 
 To enable Liberty to support a Spring Boot application, add one of the feature:springBoot[display=Spring Boot Support] features to your `server.xml` file. When you deploy a Spring Boot application, Liberty disables the web container that is embedded in the application and uses the Liberty web container instead. You can deploy one Spring Boot application for each server configuration. Open Liberty supports deploying Spring Boot applications as JAR files or as WAR files.
 
-The examples in the following sections use a sample application that is called `hellospringboot.jar` that is based on the finished application from the Spring Boot link:https://spring.io/guides/gs/spring-boot/[Building an Application with Spring Boot] guide. If you are not familiar with Spring Boot, complete that guide first. The guide includes instructions to build the application as an executable JAR, which is the file format that is used in these examples.
+The examples in the following sections use a sample application that is called `hellospringboot.jar` that is similar to the finished application from the Spring Boot link:https://spring.io/guides/gs/spring-boot/[Building an Application with Spring Boot] guide. If you are not familiar with Spring Boot, complete that guide first. The guide includes instructions to build the application as an executable JAR, which is the file format that is used in these examples.
 
-- <<#deploy,Deploying a Spring Boot application to Open Liberty from the command line>>
-- <<#define,Defining Spring Boot application argument>>
+Although the examples in the following sections use an example JAR application file, the Open Liberty configuration applies equally to JAR and WAR files.
+
+
+- <<#deploy,Deploying a Spring Boot JAR or WAR application to Open Liberty from the command line>>
+- <<#define,Defining Spring Boot application arguments>>
 - <<#thin,Configuring thin Spring Boot applications>>
 
 [#deploy]
-== Deploying a Spring Boot application to Open Liberty from the command line
+== Deploying a Spring Boot JAR or WAR application to Open Liberty from the command line
 
 This procedure uses an example application to show how to deploy a Spring Boot application by manually configuring your `server.xml` file and running the server from the command line. To deploy a Spring Boot application to Open Liberty by using Maven, see the link:/guides/spring-boot.html[Containerizing, packaging, and running a Spring Boot application] Open Liberty guide.
 
@@ -64,6 +67,15 @@ For more information about the Open Liberty features that are required to suppor
 <springBootApplication location="hellospringboot.jar"/>
 <httpEndpoint id="defaultHttpEndpoint" host="*" httpPort="9090" />
 ----
++
+Alternatively, if you are deploying a Spring Boot WAR file instead of a JAR file, the `server.xml` file configuration is the same except for the file extension.
++
+[source,xml]
+----
+<springBootApplication location="hellospringboot.war"/>
+<httpEndpoint id="defaultHttpEndpoint" host="*" httpPort="9090" />
+----
+
 5. Start the server in the foreground by running the `server run` command:
 +
 ----
@@ -78,12 +90,12 @@ server stop helloserver
 ----
 
 [#dropins]
-=== Deploying a Spring Boot application from the dropins directory
+=== Deploying a Spring Boot JAR or WAR application from the dropins directory
 
 Alternatively, you can deploy a Spring Boot application without configuring the server.xml file by using the Open Liberty `dropins` directory. You can use these steps to deploy either a JAR file or a WAR file.
 
 1. Complete steps 1 and 2 of <<#deploy,Deploying a Spring Boot application to Open Liberty from the command line>>.
-2. Create a `/spring` subdirectory in the ``/usr/servers/helloserver/dropins/` directory.
+2. Create a `/spring` subdirectory in the `/usr/servers/helloserver/dropins/` directory.
 3. Copy the `hellospringboot.jar` or `hellospringboot.war` file to the `/usr/servers/helloserver/dropins/spring/` directory.
 4. Start the server in the foreground by running the `server run` command:
 +
@@ -176,10 +188,12 @@ Open Liberty can create efficient Docker layers for your application updates and
 
 The following example uses the `springBootUtility thin` command to separate the Spring Boot application content from the dependencies that are packaged inside of the Spring Boot application, which creates a thin Spring Boot application.
 
+The examples in this section use a `hellospringboot.jar` file, but the procedure is the same for Spring Boot WAR applications.
 
-1. Configure the thin Spring Boot application JAR file and the library dependencies.
+
+1. Configure the thin Spring Boot application JAR or WAR file and the library dependencies.
 +
-a. Deploy the `hellospringboot.jar` application as explained in the <<#deploy,Deploying a Spring Boot application to Open Liberty from the command line>> section.
+a. Deploy the `hellospringboot.jar` or  application as explained in the <<#deploy,Deploying a Spring Boot application to Open Liberty from the command line>> section.
 b. Deploy the library dependencies to the `wlp/usr/shared/resources/lib.index.cache/` directory.
 
 2. Remove the `springBootApplication location="hellospringboot.jar"` element from the `server.xml` file.
