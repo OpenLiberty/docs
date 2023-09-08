@@ -18,6 +18,13 @@ Java applications connect to and interact with relational databases through the 
 
 Applications communicate with relational databases to retrieve different kinds of information, such as flight schedules, product inventories, and customer purchase histories. The https://docs.oracle.com/javase/tutorial/jdbc/overview/index.html[JDBC API] provides an adapter layer between applications and relational databases by providing details about a database to an application in a standardized way. In Open Liberty, interactions with the JDBC API are configured by the feature:jdbc[display=Java Database Connectivity] feature.
 
+- <<#driver,JDBC driver library configuration>>
+- <<#data,Data source configuration>>
+- <<#examples,Common data source configuration examples>>
+- <<#types,Data source types>>
+- <<#app,Application configuration for relational database connections>>
+
+[#driver]
 == JDBC driver library configuration
 
 To connect with a relational database, you need a JDBC driver, which is typically provided by the database vendor. You can configure JDBC drivers to define data sources, from which you obtain connections to the database. To configure a JDBC data source in your Open Liberty server configuration, you must enable the Java Database Connectivity feature and specify a library that contains your JDBC driver. In the following `server.xml` file example, the `library` element specifies the location of the directory that contains a JDBC driver JAR file:
@@ -92,6 +99,7 @@ deploy.dependsOn 'copyJDBC'
 
 In this `build.gradle` file example, a `configurations` instance that is called `jdbcLib` is declared with a dependency for the driver. The `copyJDBC` task specifies that the driver JAR files are copied into the `jdbc` folder in the server configuration directory. Finally, a `deploy.dependsOn` dependency specifies that the driver must be copied to the server before the application is deployed so it can be available at run time.
 
+[#data]
 == Data source configuration
 
 You can configure any JDBC driver with Open Liberty, which includes built-in configuration for many common vendor databases. The following example shows the basic pattern to configure a data source in your `server.xml` file:
@@ -163,7 +171,7 @@ If you enable any Java EE or Jakarta EE features in Open Liberty, you can config
 </dataSource>
 ----
 
-
+[#examples]
 == Common data source configuration examples
 
 The following examples show sample configurations for commonly used vendor databases. For applicable vendors, examples are provided for how to configure the database locally in a container for testing and development purposes:
@@ -176,6 +184,7 @@ The following examples show sample configurations for commonly used vendor datab
 - <<#Oracle,Oracle>>
 - <<#Oracleucp,Oracle UCP>>
 - <<#Oraclerac,Oracle RAC>>
+- <<#unknown,Configuration of databases that are unknown to Open Liberty>>
 
 [#PostgreSQL]
 === PostgreSQL configuration
@@ -324,7 +333,8 @@ The following example shows a sample data source configuration for an Oracle RAC
 
 In this example, `example-host-1` and `example-port-1` represent the host and port values for the first node, and `example-host-2` and `example-port-2` represent host and port values for the second node. The `FAILOVER` and `LOAD_BALANCE` Oracle parameters specify global configuration for both nodes. For more information about Oracle database parameters, see https://docs.oracle.com/cd/B28359_01/rac.111/b28254/admcon.htm#i1058057[the Oracle RAC documentation]. If you are not using Oracle services, then the value for `SERVICE_NAME` is your database name. If you are using Oracle services, then the value for `SERVICE_NAME` is the name of the service. You are not required to specify the Oracle login credentials as Oracle properties, xref:reference:feature/jdbc-4.3.adoc#_provide_security_credentials_for_data_source_authentication[other methods of database authentication] also work. Some Oracle RAC functions require the use of Oracle UCP.
 
-== Configuration of databases that are unknown to Open Liberty
+[#unknown]
+=== Configuration of databases that are unknown to Open Liberty
 
 The following example shows a sample data source configuration for a relational database that Open Liberty does not recognize by default. Specify the type of the data source by using the `type` attribute of the `dataSource` element. The value for the `type` attribute can be one of the interface class names that are described in the <<#types,Data source types>> section. Then, specify the mapping of the interface class name to the driver implementation of that class on the `jdbcDriver` element, as shown in the following example:
 
@@ -375,6 +385,7 @@ If you use the Java Database Connectivity feature xref:reference:feature/jdbc-4.
 . `javax.sql.DataSource`
 . `javax.sql.XADataSource`
 
+[#app]
 == Application configuration for relational database connections
 
 To use a data source that is configured in your `server.xml` file, you can either inject the data source or specify a lookup in your application code. The following examples assume that a `jndiName` value of `jdbc/myDB` is specified in the `dataSource` element in the `server.xml` file.
