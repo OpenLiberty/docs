@@ -41,9 +41,9 @@ server create helloserver
 This command creates the `/usr/servers/helloserver/apps` directory.
 2. Enable the version of the Open Liberty Spring Boot Support feature that your application requires by adding it to the `featureManager` element of the `server.xml` file.
 +
-- If your application uses Spring Boot 1.5.8, enable the feature:springBoot-1.5[] feature.
-- If your application uses Spring Boot 2.0.1, enable the feature:springBoot-2.0[] feature.
-- If your application uses Spring Boot 3.0.4, enable the feature:springBoot-3.0[] feature.
+- If your application uses Spring Boot 1.5.8+, enable the feature:springBoot-1.5[] feature.
+- If your application uses Spring Boot 2.0.1+, enable the feature:springBoot-2.0[] feature.
+- If your application uses Spring Boot 3.0.4+, enable the feature:springBoot-3.0[] feature.
 +
 The `hellospringboot.jar` application uses the `spring-boot-starter-web` dependency, which also requires you to enable a feature:servlet[display=Jakarta Servlet] feature, as shown in the following `server.xml` file example:
 +
@@ -194,22 +194,26 @@ The examples in this section use a `hellospringboot.jar` file, but the procedure
 a. Deploy the `hellospringboot.jar` or application as explained in the <<#deploy,Deploying a Spring Boot application to Open Liberty from the command line>> section.
 b. Deploy the library dependencies to the `wlp/usr/shared/resources/lib.index.cache/` directory.
 
-2. Remove the `springBootApplication location="hellospringboot.jar"` element from the `server.xml` file.
-+
-The thinned application is deployed to the `dropins/spring` directory and you don't need to define the application location in the `server.xml` file.
-
-3. Run the `springBootUtility thin` command with the necessary options to create the thin Spring Boot application in the  `dropins/spring` directory of the `helloserver` server configuration and to cache the dependencies to the `usr/shared/resources/lib.index.cache` directory.
+2. Run the `springBootUtility thin` command with the necessary options to create the `hellospringboot-thin.jar` thin Spring Boot application in the  `dropins/spring` directory of the `helloserver` server configuration and to cache the dependencies to the `usr/servers/helloserver/apps/` directory.
 +
 [subs=+quotes]
 ----
 wlp/bin/springBootUtility thin \
     --sourceAppPath=_full_path_to_/wlp/usr/servers/helloserver/apps/hellospringboot.jar \
     --targetLibCachePath=_full_path_to_/wlp/usr/shared/resources/lib.index.cache \
-    --targetThinAppPath=_full_path_to_/wlp/usr/servers/helloserver/dropins/spring/hellospringboot.jar
+    --targetThinAppPath=_full_path_to_/wlp/usr/servers/helloserver/apps/hellospringboot-thin.jar
 ----
 +
 For more information about the available command-line options, see the xref:reference:command/springbootUtility-thin.adoc[springBootUtility thin] command.
 
+3. Update the `server.xml` file to specify the location of the thin application
++
+Replace the value of the `springBootApplication location` element to specify the `hellospringboot-thin.jar` application
++
+[source,xml]
+----
+<springBootApplication location="hellospringboot-thin.jar"/>
+----
 4. Start the server in the foreground by running the `server run` command.
 +
 [source,xml]
