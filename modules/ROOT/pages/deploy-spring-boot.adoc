@@ -18,7 +18,7 @@ To enable Open Liberty to support a Spring Boot application, add one of the feat
 
 The examples in the following sections use a sample `hellospringboot.jar` application that is similar to the finished application from the Spring Boot link:https://spring.io/guides/gs/spring-boot/[Building an Application with Spring Boot] guide. If you are not familiar with Spring Boot, complete that guide first. The guide includes instructions to build the application as an executable JAR, which is the primary file format that is used in these examples.
 
-Although the examples in the following sections use an example JAR application file, the Open Liberty configuration applies equally to JAR and WAR files.
+Although the examples in the following sections use an example JAR application file, the Open Liberty configuration is the same for JAR and WAR files.
 
 
 - <<#deploy,Deploying a Spring Boot JAR or WAR application to Open Liberty from the command line>>
@@ -28,7 +28,7 @@ Although the examples in the following sections use an example JAR application f
 [#deploy]
 == Deploying a Spring Boot JAR or WAR application to Open Liberty from the command line
 
-This procedure uses an example application to show how to deploy a Spring Boot application by manually configuring your `server.xml` file and running the server from the command line. To deploy a Spring Boot application to Open Liberty by using Maven, see the link:/guides/spring-boot.html[Containerizing, packaging, and running a Spring Boot application] Open Liberty guide.
+Complete the following steps to deploy a sample Spring Boot application by manually configuring your `server.xml` file and running the server from the command line. To deploy a Spring Boot application to Open Liberty by using Maven, see the link:/guides/spring-boot.html[Containerizing, packaging, and running a Spring Boot application] Open Liberty guide.
 
 In the following steps, you create a Liberty server instance, deploy your Spring Boot JAR or WAR application, and specify the default HTTP port for the server instance. By default, Liberty deploys the Spring Boot application with the default host configuration. The example uses a `hellospringboot.jar` sample application and `9090` for the default HTTP port.
 
@@ -57,9 +57,10 @@ The `hellospringboot.jar` application uses the `spring-boot-starter-web` depende
 For more information about the Open Liberty features that are required to support certain link:https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#using.build-systems.starters[Spring Boot Starters], see the feature:springBoot[display=Spring Boot Support] feature.
 
 3. Copy the `hellospringboot.jar` application into the `/usr/servers/helloserver/apps` directory that the `server create` command created.
-4. Configure the application by updating the `server.xml` file.
+
+4. Configure the JAR or WAR application by updating the `server.xml` file.
 +
-- Specify the application location by using the config:springBootApplication[] element. Configure the HTTP port for the default host to `9090` by replacing the `httpPort="9080"` attribute value with an `httpPort="9090"` attribute value.
+- Specify the JAR application location by using the config:springBootApplication[] element. Configure the HTTP port for the default host to `9090` by replacing the `httpPort="9080"` attribute value with an `httpPort="9090"` attribute value.
 +
 [source,xml]
 ----
@@ -67,7 +68,7 @@ For more information about the Open Liberty features that are required to suppor
 <httpEndpoint id="defaultHttpEndpoint" host="*" httpPort="9090" />
 ----
 +
-Alternatively, if you are deploying a Spring Boot WAR file instead of a JAR file, the `server.xml` file configuration is the same except for the file extension.
+- Alternatively, specify the WAR application location by using the config:springBootApplication[] element. Configure the HTTP port for the default host to `9090` by replacing the `httpPort="9080"` attribute value with an `httpPort="9090"` attribute value.
 +
 [source,xml]
 ----
@@ -160,7 +161,7 @@ server run helloserver
 
 6. Test the application in a browser by going to the http://localhost:9090/testpath2 URL.
 
-7. Without stopping the server, add another application argument in a new `applicationArgument` element to configure the Spring dispatcher servlet path, as shown in the following example.
+7. Without stopping the server, add another `applicationArgument` element to configure the Spring dispatcher servlet path, as shown in the following example.
 +
 [source,xml]
 ----
@@ -181,11 +182,11 @@ You can thin a Spring Boot application to create more efficient container layers
 
 A Spring Boot application JAR or WAR file is a self-contained artifact. It packages all of the application dependencies inside the final artifact alongside the application content, including an embedded server implementation, such as Tomcat, Jetty, or Undertow. The result is a fat artifact that is easy to run on any server that has a JVM. However, this result is a large artifact, even for the smallest `hello world` Spring Boot web application.
 
-With a microservices architecture, the application content that is included in a Spring Boot application JAR file can be much smaller than the Spring Boot framework dependencies. A large application JAR file might be costly to deploy if your application needs frequent updates. For example, if you use Docker to deploy your application to the cloud, you need to build a new Docker layer that includes your updated application content and all of the Spring Boot framework dependencies. This process results in large Docker layers when you update your application in the cloud.
+With a microservices architecture, the application content that is included in a Spring Boot application JAR file can be much smaller than the Spring Boot framework dependencies. A large application JAR file might be costly to deploy if your application needs frequent updates. For example, if you use Docker to deploy your application to the cloud, each time you update your application, you need to build a new Docker layer. This layer includes both your updated application content and all the Spring Boot framework dependencies. This process results in large Docker layers when you update your application in the cloud.
 
 Open Liberty can create Docker layers that use resources efficiently when you deploy frequent updates to your microservice applications in the cloud.
 
-The following example uses the `springBootUtility thin` command to separate the Spring Boot application content from the dependencies that are packaged inside of the Spring Boot application, which creates a thin Spring Boot application.
+The following example uses the `springBootUtility thin` command. This command separates the Spring Boot application content from its packaged dependencies, resulting in a thin Spring Boot application.
 
 The examples in this section use a `hellospringboot.jar` file, but the procedure is the same for thinning Spring Boot WAR applications. However, after you thin a Spring Boot WAR application by using the `springBootUtility thin` command, the thin application must run on the Open Liberty server and can no longer run as a stand-alone WAR. Furthermore, any configuration details that are specified in the `server.xml` file must be defined in a config:springBootApplication[] element. The thin WAR application  does not read configuration that is specified in a generic `webApplication` element in the `server.xml` file.
 
@@ -194,7 +195,7 @@ The examples in this section use a `hellospringboot.jar` file, but the procedure
 a. Deploy the `hellospringboot.jar` or `hellospringboot.war` application as explained in the <<#deploy,Deploying a Spring Boot application to Open Liberty from the command line>> section.
 b. Deploy the library dependencies to the `wlp/usr/shared/resources/lib.index.cache/` directory.
 
-2. Run the `springBootUtility thin` command with the necessary options to create the `hellospringboot-thin.jar` thin Spring Boot application in the  `dropins/spring` directory of the `helloserver` server configuration and to cache the dependencies to the `usr/servers/helloserver/apps/` directory.
+2. Run the `springBootUtility thin` command with the necessary options to create the `hellospringboot-thin.jar` thin application in the  `dropins/spring` directory of the `helloserver` server configuration and to cache the dependencies to the `usr/servers/helloserver/apps/` directory.
 +
 [subs=+quotes]
 ----
