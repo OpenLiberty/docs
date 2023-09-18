@@ -1,0 +1,234 @@
+// Copyright (c) 2023 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description: You can enable Open Liberty to support a Spring Boot application. Open Liberty can also configure Spring Boot application arguments and properties and can also thin Spring Boot applications to use resources efficiently.
+:seo-title: Deploy Spring Boot applications to Open Liberty
+:page-layout: general-reference
+:page-type: general
+= Configure and Deploy Spring Boot applications to Open Liberty
+
+You can enable Open Liberty to configure and deploy Spring Boot applications. Open Liberty also provides tools that optimize the deployment of Spring Boot applications to containers.
+
+To enable Open Liberty to support a Spring Boot application, add one of the feature:springBoot[display=Spring Boot Support] features to your `server.xml` file. When you deploy a Spring Boot application, Open Liberty disables the web container that is embedded in the application and uses the Open Liberty web container instead. You can deploy one Spring Boot application for each server configuration. Open Liberty supports deploying Spring Boot applications as JAR files or as WAR files.
+
+The examples in the following sections use a sample `hellospringboot.jar` application that is similar to the finished application from the Spring Boot link:https://spring.io/guides/gs/spring-boot/[Building an Application with Spring Boot] guide. If you are not familiar with Spring Boot, complete that guide first. The guide includes instructions to build the application as an executable JAR, which is the primary file format that is used in these examples.
+
+Although the examples in the following sections use an example JAR application file, the Open Liberty configuration is the same for JAR and WAR files.
+
+
+- <<#deploy,Deploying a Spring Boot JAR or WAR application to Open Liberty from the command line>>
+- <<#define,Defining Spring Boot application arguments>>
+- <<#thin,Configuring thin Spring Boot applications>>
+
+[#deploy]
+== Deploying a Spring Boot JAR or WAR application to Open Liberty from the command line
+
+Complete the following steps to deploy a sample Spring Boot application by manually configuring your `server.xml` file and running the server from the command line. To deploy a Spring Boot application to Open Liberty by using Maven, see the link:/guides/spring-boot.html[Containerizing, packaging, and running a Spring Boot application] Open Liberty guide.
+
+In the following steps, you create a Liberty server instance, deploy your Spring Boot JAR or WAR application, and specify the default HTTP port for the server instance. By default, Liberty deploys the Spring Boot application with the default host configuration. The example uses a `hellospringboot.jar` sample application and `9090` for the default HTTP port.
+
+1. Run the `server create helloserver` command from the `wlp/bin` directory to create a server and name it `helloserver`.
++
+----
+server create helloserver
+----
++
+This command creates the `/usr/servers/helloserver/apps` directory.
+2. Enable the version of the Open Liberty Spring Boot Support feature that your application requires by adding it to the `featureManager` element of the `server.xml` file.
++
+- If your application uses Spring Boot 1.5.8+, enable the feature:springBoot-1.5[] feature.
+- If your application uses Spring Boot 2.0.1+, enable the feature:springBoot-2.0[] feature.
+- If your application uses Spring Boot 3.0.4+, enable the feature:springBoot-3.0[] feature.
++
+The `hellospringboot.jar` application uses the `spring-boot-starter-web` dependency, which also requires you to enable a feature:servlet[display=Jakarta Servlet] feature, as shown in the following `server.xml` file example:
++
+[source,xml]
+----
+<featureManager>
+  <feature>springBoot-3.0</feature>
+  <feature>servlet-6.0</feature>
+</featureManager>
+----
+For more information about the Open Liberty features that are required to support certain link:https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#using.build-systems.starters[Spring Boot Starters], see the feature:springBoot[display=Spring Boot Support] feature.
+
+3. Copy the `hellospringboot.jar` application into the `/usr/servers/helloserver/apps` directory that the `server create` command created.
+
+4. Configure the JAR or WAR application by updating the `server.xml` file.
++
+- Specify the JAR application location by using the config:springBootApplication[] element. Configure the HTTP port for the default host to `9090` by replacing the `httpPort="9080"` attribute value with an `httpPort="9090"` attribute value.
++
+[source,xml]
+----
+<springBootApplication location="hellospringboot.jar"/>
+<httpEndpoint id="defaultHttpEndpoint" host="*" httpPort="9090" />
+----
++
+- Alternatively, specify the WAR application location by using the config:springBootApplication[] element. Configure the HTTP port for the default host to `9090` by replacing the `httpPort="9080"` attribute value with an `httpPort="9090"` attribute value.
++
+[source,xml]
+----
+<springBootApplication location="hellospringboot.war"/>
+<httpEndpoint id="defaultHttpEndpoint" host="*" httpPort="9090" />
+----
+
+5. Start the server in the foreground by running the `server run` command:
++
+----
+server run helloserver
+----
+6. Test the application in a browser at the http://localhost:9090 URL.
+
+You deployed a Spring Boot sample application to Open Liberty. When you finish testing the application, run the `server stop` command.
+
+----
+server stop helloserver
+----
+
+[#dropins]
+=== Deploying a Spring Boot JAR or WAR application from the dropins directory
+
+Alternatively, you can deploy a Spring Boot application without configuring the `server.xml` file by using the Open Liberty `dropins` directory. You can use these steps to deploy either a JAR file or a WAR file.
+
+1. Complete steps 1 and 2 of <<#deploy,Deploying a Spring Boot application to Open Liberty from the command line>>.
+2. Create a `/spring` subdirectory in the `/usr/servers/helloserver/dropins/` directory.
+3. Copy the `hellospringboot.jar` or `hellospringboot.war` file to the `/usr/servers/helloserver/dropins/spring/` directory.
+4. Start the server in the foreground by running the `server run` command:
++
+----
+server run helloserver
+----
+5. Test the application in a browser by going to the `http://localhost:9080` URL.
++
+The default HTTP endpoint is used to service the application. When you finish testing the application, run the `server stop helloserver` command.
+
+[#define]
+== Defining Spring Boot application arguments
+
+When you deploy a Spring Boot application to Open Liberty, you can configure application arguments to override the application property defaults. The following example uses the sample `hellospringboot.jar` application that you deployed to Open Liberty in <<#deploy,the previous section>>.
+
+When you start a Spring Boot application from the command line as an executable JAR file, you start with a list of command-line arguments, as shown in the following example.
+
+----
+java -jar hellospringboot.jar --server.servlet.context-path=/mypath --myapp.arg=true
+----
+
+By default, the `SpringApplication` Spring Boot class converts any command-line argument that starts with dashes (`--`) to a property and adds it to the Spring environment.
+
+When you deploy a Spring Boot application to Open Liberty, you can configure the command-line argument for the application with the `applicationArgument` element within the `springBootApplication` element. Use these elements when you want to override application property defaults that are included in the Spring Boot application.
+
+In the following example, the `hellospringboot.jar` Spring Boot application deployment to Open Liberty is configured to pass multiple command-line arguments. The two properties that are used in the example are the Spring Boot application properties for configuring the `server.servlet.context-path` application context path and the `spring.mvc.servlet.path` Spring dispatcher servlet path.
+
+For more information about these and other Spring Boot application properties, see link:https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#appendix.application-properties[Spring Boot common application properties].
+
+1. Find the `springBootApplication` element in the `server.xml` file of the `helloserver` server that you created in the previous section.
++
+[source,xml]
+----
+<springBootApplication location="hellospringboot.jar"/>
+----
+
+2. Add a command-line argument for the application with the `applicationArgument` element and pass the `--server.servlet.context-path=/testpath1` argument to change the application context root to `/testpath1`, as shown in the following example.
++
+[source,xml]
+----
+<springBootApplication location="hellospringboot.jar">
+    <applicationArgument>--server.servlet.context-path=/testpath1</applicationArgument>
+</springBootApplication>
+----
+
+3. Start the server in the foreground by running the `server run` command.
++
+[source,xml]
+----
+server run helloserver
+----
+
+4. Test the application in a browser by going to the http://localhost:9090/testpath1 URL.
+
+5. Without stopping the server, change the context path to `testpath2`.
++
+[source,xml]
+----
+<springBootApplication location="hellospringboot.jar">
+    <applicationArgument>--server.servlet.context-path=/testpath2</applicationArgument>
+</springBootApplication>
+----
+
+6. Test the application in a browser by going to the http://localhost:9090/testpath2 URL.
+
+7. Without stopping the server, add another `applicationArgument` element to configure the Spring dispatcher servlet path, as shown in the following example.
++
+[source,xml]
+----
+<springBootApplication location="hellospringboot.jar">
+    <applicationArgument>--server.context-path=/testpath2</applicationArgument>
+    <applicationArgument>--server.servlet-path=/mydispatcher</applicationArgument>
+</springBootApplication>
+----
++
+The Spring Boot application stops and restarts with the same context path.
+
+8. Test the application in a browser by going to the http://localhost:9090/testpath2/mydispatcher URL.
+
+[#thin]
+== Configuring thin Spring Boot applications
+
+You can thin a Spring Boot application to create more efficient container layers and optimize resource usage.
+
+A Spring Boot application JAR or WAR file is a self-contained artifact. It packages all of the application dependencies inside the final artifact alongside the application content, including an embedded server implementation, such as Tomcat, Jetty, or Undertow. The result is a fat artifact that is easy to run on any server that has a JVM. However, this result is a large artifact, even for the smallest `hello world` Spring Boot web application.
+
+With a microservices architecture, the application content that is included in a Spring Boot application JAR file can be much smaller than the Spring Boot framework dependencies. A large application JAR file might be costly to deploy if your application needs frequent updates. For example, if you use Docker to deploy your application to the cloud, each time you update your application, you need to build a new Docker layer. This layer includes both your updated application content and all the Spring Boot framework dependencies. This process results in large Docker layers when you update your application in the cloud.
+
+Open Liberty can create Docker layers that use resources efficiently when you deploy frequent updates to your microservice applications in the cloud.
+
+The following example uses the `springBootUtility thin` command. This command separates the Spring Boot application content from its packaged dependencies, resulting in a thin Spring Boot application.
+
+The examples in this section use a `hellospringboot.jar` file, but the procedure is the same for thinning Spring Boot WAR applications. However, after you thin a Spring Boot WAR application by using the `springBootUtility thin` command, the thin application must run on the Open Liberty server and can no longer run as a stand-alone WAR. Furthermore, any configuration details that are specified in the `server.xml` file must be defined in a config:springBootApplication[] element. The thin WAR application  does not read configuration that is specified in a generic `webApplication` element in the `server.xml` file.
+
+1. Configure the thin Spring Boot application JAR or WAR file and the library dependencies.
++
+a. Deploy the `hellospringboot.jar` or `hellospringboot.war` application as explained in the <<#deploy,Deploying a Spring Boot application to Open Liberty from the command line>> section.
+b. Deploy the library dependencies to the `wlp/usr/shared/resources/lib.index.cache/` directory.
+
+2. Run the `springBootUtility thin` command with the necessary options to create the `hellospringboot-thin.jar` thin application in the  `dropins/spring` directory of the `helloserver` server configuration and to cache the dependencies to the `usr/servers/helloserver/apps/` directory.
++
+[subs=+quotes]
+----
+wlp/bin/springBootUtility thin \
+    --sourceAppPath=_full_path_to_/wlp/usr/servers/helloserver/apps/hellospringboot.jar \
+    --targetLibCachePath=_full_path_to_/wlp/usr/shared/resources/lib.index.cache \
+    --targetThinAppPath=_full_path_to_/wlp/usr/servers/helloserver/apps/hellospringboot-thin.jar
+----
++
+For more information about the available command-line options, see the xref:reference:command/springbootUtility-thin.adoc[springBootUtility thin] command.
+
+3. Update the `server.xml` file to specify the location of the thin application.
++
+Replace the value of the `springBootApplication location` element to specify the `hellospringboot-thin.jar` application.
++
+[source,xml]
+----
+<springBootApplication location="hellospringboot-thin.jar"/>
+----
+
+4. Start the server in the foreground by running the `server run` command.
++
+[source,xml]
+----
+server run helloserver
+----
+
+5. Test the application in a browser by going to the `http://localhost:9090` URL.
++
+When you finish testing the application, run the `server stop helloserver` command.
+After you create the `hellospringboot-thin.jar` thin application, you can delete the original `hellospringboot.jar` application.
+
+== See also
+- Guide: link:/guides/spring-boot.html[Containerizing, packaging, and running a Spring Boot application]
+- xref:configure-spring-boot-actuator.adoc[Configuring non-default settings for the Spring Boot Actuator]
+- xref:reference:command/springbootUtility-commands.adoc[springBootUtility commands]
