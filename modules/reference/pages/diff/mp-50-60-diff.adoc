@@ -16,16 +16,16 @@
 :page-type: general
 = Differences between MicroProfile 6.0 and 5.0
 
-MicroProfile 6.0 is a major release. It includes Jakarta EE 10 Core Profile and replaces MicroProfile OpenTracing with MicroProfile Telemetry. 
+MicroProfile 6.0 is a major release. It includes Jakarta EE 10 Core Profile and replaces MicroProfile OpenTracing with MicroProfile Telemetry.
 
 Therefore, MicroProfile OpenTracing moves out of the umbrella release and becomes a stand-alone specification. For more information about Jakarta EE 10 Core Profile, see the link:https://jakarta.ee/specifications/coreprofile/10/[Core Profile specification].
 
 If you are updating your application from using MicroProfile 5.0 features to using link:https://github.com/eclipse/microprofile/releases/tag/6.0[MicroProfile 6.0] features, changes in API behavior might require you to update your application code. The following sections provide details about migrating your applications from MicroProfile 5.0 to 6.0:
 
 - <<#openapi, Differences between MicroProfile OpenAPI 3.1 and 3.0>>
-- <<#jwt, Differences between MicroProfile JSON Web Token 2.1 and 2.0>> 
+- <<#jwt, Differences between MicroProfile JSON Web Token 2.1 and 2.0>>
 - <<#metrics, Differences between MicroProfile Metrics 5.0 and 4.0>>
-- <<#telemetry, Differences between MicroProfile Telemetry 1.0 and MicroProfile OpenTracing 3.0>> 
+- <<#telemetry, Differences between MicroProfile Telemetry 1.0 and MicroProfile OpenTracing 3.0>>
 
 [#openapi]
 == Differences between MicroProfile OpenAPI 3.1 and 3.0
@@ -46,9 +46,9 @@ The MicroProfile Metrics 5.0 release introduces many changes to the specificatio
 
 In previous versions, Open Liberty implemented the specification in its own codebase. However, starting in MicroProfile Metrics 5.0, Open Liberty consumes the SmallRye implementation of the specification to produce the feature:mpMetrics-5.0[display=mpMetrics-5.0] feature.
 
-=== Removed metric types 
+=== Removed metric types
 
-The following metric types are removed from the MicroProfile Metrics 5.0 release: 
+The following metric types are removed from the MicroProfile Metrics 5.0 release:
 
 - Concurrent gauge
 - Simple timer
@@ -79,7 +79,7 @@ In earlier releases of MicroProfile Metrics, the `REST.Request` metric was instr
 
 === Metadata
 
-Starting in MicroProfile Metrics 5.0, the metric metadata no longer supports the display name (`displayName`) and metric type (`metricType`) attributes. 
+Starting in MicroProfile Metrics 5.0, the metric metadata no longer supports the display name (`displayName`) and metric type (`metricType`) attributes.
 
 === User-defined Metric Registry scope
 
@@ -91,7 +91,7 @@ In previous releases, tags could be used to instrument multiple metrics with the
 
 Scope and application name tags::
 In MicroProfile 5.0, the  `_app` tag that was defined in prior releases by the `mp.metrics.appName` MicroProfile Config property is now designated as `mp_app`.
-The metric registry scope is also identified with a `mp_scope` tag. 
+The metric registry scope is also identified with a `mp_scope` tag.
 Both of these tags are reserved and if they are used when you instrument metrics, an `IllegalArgumentException` occurs.
 
 === REST endpoints
@@ -107,7 +107,7 @@ The MicroProfile Metrics 5.0 specification removes the explicit requirement for 
 
 The Prometheus-formatted output is also updated, including the following changes.
 
-Metric registry scope:: 
+Metric registry scope::
 The Metric Registry scope that a metric is associated to was indicated with a prefix of `base_` or `vendor_` in the Prometheus-formatted name. In MicroProfile Metrics 5.0, this information is displayed with an `mp_scope` tag, for example, `{mp_scope="base"}`.
 
 Histogram metric::
@@ -130,10 +130,11 @@ In MicroProfile 6.0, MicroProfile Telemetry 1.0 replaces MicroProfile OpenTracin
 
 === Configuration changes
 
-In addition to replacing the `mpOpenTracing-3.0` feature with the `mpTelemtry-1.0` feature in your `server.xml` file, you must provide configuration to allow the MicroProfile Telemetry feature to connect to your distributed trace service. For more information, see xref:ROOT:microprofile-telemetry.adoc[Enable distributed tracing with MicroProfile Telemetry]. 
+In addition to replacing the `mpOpenTracing-3.0` feature with the `mpTelemtry-1.0` feature in your `server.xml` file, you must provide configuration to allow the MicroProfile Telemetry feature to connect to your distributed trace service. For more information, see xref:ROOT:microprofile-telemetry.adoc[Enable distributed tracing with MicroProfile Telemetry].
 
 You do not need to package a client for your particular tracing service. MicroProfile Telemetry includes exporters for Zipkin, the OpenTelemetry Protocol (OTLP) (which is used by Jaeger since v1.35), and the older Jaeger protocol. If you need to export to a different service, you can provide a custom exporter by using the link:https://www.javadoc.io/doc/io.opentelemetry/opentelemetry-sdk-extension-autoconfigure-spi/1.19.0/io/opentelemetry/sdk/autoconfigure/spi/traces/ConfigurableSpanExporterProvider.html[ConfigurableSpanExporterProvider service provider interface (SPI)].
 
+[#select]
 ==== Selecting a compatible propagator
 
 Several different standards are available to propagate span information between microservices by using HTTP headers. If you're upgrading microservices one at a time, you must enable a propagation method that is compatible with your other microservices.
@@ -202,7 +203,7 @@ import jakarta.enterprise.inject.Produces;
 
 @ApplicationScoped
 public class ShimProvider {
-    
+
     @Produces
     @ApplicationScoped
     private Tracer provideTracer(OpenTelemetry openTelemetry) {
@@ -250,6 +251,22 @@ For more information about the OpenTelemetry API, see the link:https://www.javad
 For more information about migrating to the OpenTelemetry API, see link:https://opentelemetry.io/docs/migration/opentracing/#step-2-progressively-replace-instrumentation[the OpenTelemetry documentation].
 
 
+=== Combining OpenTelemetry with OpenTracing
+
+If you are not ready to migrate your trace system from OpenTracing to OpenTelemetry in a service, you can combine OpenTracing with  OpenTelemetry so your other services are not restricted. To combine OpenTracing with OpenTelemetry, you need to add configuration to set a compatible propagator.
+
+Propagators are mechanisms that make moving telemetry data between different services possible.
+
+Several different standards are available to propagate span information between microservices by using HTTP headers. By default, OpenTelemetry uses Trace-Context headers. The `otel.propagators` configuration property configures which propagators are used.
+
+For a list of the propagation protocols that OpenTelemetry supports, see the <<#select,Selecting a compatible propagator>> section.
+
+.Microservice tracing example
+image::mptel.png[diagram that shows the flow of traces to Zipkin from two microservices]
 
 
+The preceding diagram shows two microservices that enable tracing, with traces that are collected and exported to Zipkin. The services can collect traces with either MicroProfile OpenTracing or MicroProfile Telemetry without losing the parent-child relationship in the spans.
 
+In this example, service A is traced with MicroProfile OpenTracing, while service B is traced with MicroProfile Telemetry. To export distributed traces successfully to the Zipkin backend exporter, service B must specify either the `OTEL_PROPAGATORS=b3` environment variable or the `otel.propagators=b3` configuration property and include the B3 propagation header for Zipkin.
+
+If more than one propagator is enabled, then headers are added to outgoing requests and any header is accepted for incoming requests. For example, if you are migrating from using a Jaeger client, you might set the `otel.propagators=jaeger` configuration property to use the Jaeger propagation protocol. Alternatively, you might set the `otel.propagators=jaeger,tracecontext,baggage` configuration property to allow use of both the Jaeger and W3C protocols.
