@@ -253,18 +253,16 @@ For more information about migrating to the OpenTelemetry API, see link:https://
 
 === Combining OpenTelemetry with OpenTracing
 
-If you are not ready to migrate your trace system from OpenTracing to OpenTelemetry in a service, you can combine OpenTracing with  OpenTelemetry so your other services are not restricted. To combine OpenTracing with OpenTelemetry, you need to add configuration to set a compatible propagator. Propagators are mechanisms that enable the movement of telemetry data among different services.
+If a service in your microservice application is not ready to migrate the trace system from OpenTracing to OpenTelemetry, you can combine OpenTracing with OpenTelemetry so your other services are not restricted. To combine OpenTracing with OpenTelemetry, you need to set a compatible propagator. Propagators are mechanisms that enable the movement of telemetry data among different services by using HTTP headers.
 
-Several propagator standards are available to move span information among microservices by using HTTP headers. By default, OpenTelemetry uses Trace-Context headers. The `otel.propagators` configuration property configures which propagators are used.
-
-For a list of the propagation protocols that OpenTelemetry supports, see the <<#select,Selecting a compatible propagator>> section.
+Several propagator standards are available to move span information among microservices. The `otel.propagators` configuration property configures which propagators are used. For a list of the propagators that OpenTelemetry supports, see the <<#select,Selecting a compatible propagator>> section.
 
 .Microservice tracing example
 image::mptel.png[diagram that shows the flow of traces to Zipkin from two microservices]
 
 
-The preceding diagram shows two microservices that enable tracing, with traces that are collected and exported to Zipkin. The services can collect traces with either MicroProfile OpenTracing or MicroProfile Telemetry without losing the parent-child relationship in the spans.
+The preceding diagram shows two services that produce traces that are collected and exported to Zipkin. Service A is traced with MicroProfile OpenTracing, while service B is traced with MicroProfile Telemetry. Both services can collect traces with without losing the parent-child relationship in the spans.
 
-In this example, service A is traced with MicroProfile OpenTracing, while service B is traced with MicroProfile Telemetry. To export distributed traces successfully to the Zipkin backend exporter, service B must specify either the `OTEL_PROPAGATORS=b3` environment variable or the `otel.propagators=b3` configuration property and include the B3 propagation header for Zipkin.
+By default, OpenTelemetry uses Trace-Context headers. To export distributed traces successfully to the Zipkin backend exporter, service B must include the B3 propagation header for Zipkin by specifying either the `OTEL_PROPAGATORS=b3` environment variable or the `otel.propagators=b3` configuration property.
 
-If more than one propagator is enabled, then headers are added to outgoing requests and any header is accepted for incoming requests. For example, if you are migrating from using a Jaeger client, you might set the `otel.propagators=jaeger` configuration property to use the Jaeger propagation protocol. Alternatively, you might set the `otel.propagators=jaeger,tracecontext,baggage` configuration property to allow use of both the Jaeger and W3C protocols.
+If more than one propagator is enabled, then all headers are added to outgoing requests and any header is accepted for incoming requests. For example, if you are migrating from using a Jaeger client, you might set the `otel.propagators=jaeger` configuration property to use the Jaeger propagation protocol. Alternatively, you might set the `otel.propagators=jaeger,tracecontext,baggage` configuration property to allow use of both the Jaeger and W3C protocols.
