@@ -9,7 +9,7 @@ assignees: ''
 
 ### Feature epic details 
 
-- For the title of this issue, enter _Documentation:<Development epic name>_ 
+- For the title of this issue, type: Documentation, _Development epic name_ 
 - Link to development epic:
 - Target GA release:
 
