@@ -1,4 +1,4 @@
-// Copyright (c) 2022 IBM Corporation and others.
+// Copyright (c) 2022, 2023 IBM Corporation and others.
 // Licensed under Creative Commons Attribution-NoDerivatives
 // 4.0 International (CC BY-ND 4.0)
 //   https://creativecommons.org/licenses/by-nd/4.0/
@@ -251,9 +251,15 @@ The following MicroProfile Config properties can be specified when MicroProfile 
 |`mp.metrics.appName`
 |Passes the value of the  `_app` tag from the application server to the application. This property is used to avoid metric name collisions when multiple applications are deployed to the runtime. It is defined through a `microprofile-config.properties` file in the `META-INF` directory of the application. The value of this tag is appended to the output of each metric that originates from that application.
 
-In MicroProfile 5.0, the  `_app` tag that was defined in prior releases by the `mp.metrics.appName` MicroProfile Config property is designated as `mp_app`.
+In MicroProfile Metrics 5.0, the  `_app` tag that was defined in prior releases by the `mp.metrics.appName` MicroProfile Config property is designated as `mp_app`. When running in an MicroProfile Metrics 5.x environment, if the `mp.metrics.appName` property is defined, the `mp.metrics.defaultAppName` property must be defined as well.
 |This value is read and evaluated during run time.
 |`mp.metrics.appName=myApp`
+
+|`mp.metrics.defaultAppName`
+|This MP config value is defined on the server level and is used in conjunction with the `mp.metrics.appName` config value when running under a MicroProfile Metrics 5.x environment. The value of `mp.metrics.defaultAppName` passes the value of the `mp_app` tag to metrics created on the server level. There exists vendor metrics (i.e., servlet metrics) that can be created both under the server and application context. Due to restriction introduced in MicroProfile Metrics 5.0 where the set of tag names must be the same, it is important to use the `mp.metrics.defaultAppName` with `mp.metrics.appName` name to avoid any registration exceptions.
+
+|Server startup
+|`mp.metrics.defaultAppName=serverContext`
 
 |`mp.metrics.<registry>.enabled`
 |When this property is set to true, it enables a user-provided Micrometer registry implementation, where `<registry>` is the name of the Micrometer registry. For more information, see xref:micrometer-metrics.adoc[Choose your own monitoring tools with MicroProfile Metrics]. This property is available starting in MicroProfile Metrics 5.0 .
@@ -282,6 +288,109 @@ This property is available starting in MicroProfile Metrics 5.0 .
 |Server startup
 |`mp.metrics.tags=app=shop,tier=integration,special=deli\=ver\,y`
 
+|`mp.metrics.distribution.percentiles`
+a|Specifies a custom set of percentiles for matching Histogram and Timer metrics to track and output. Can be used to disable percentile output.
+
+* The property accepts a semi-colon separated set of values that consist of a metric name followed by an equals sign (`=`) and comma separated percentile values.
+* The asterisk (`*`) can be used as a wildcard at the end of the metric name.
+* The percentile values are float values between 0.0 and 1.0 inclusively. Invalid values will be ignored.
+* Setting the property with a metric name but no percentile values disables percentile output for that metric.
+* Setting the property without any value disables percentiles for all histogram and timer metrics.
+* Values defined later take precedence over values before (i.e., right to left precedence).
+
+This property is available starting in MicroProfile Metrics 5.1.
+|Server startup
+|`mp.metrics.distribution.percentiles=test.histogram=0.8,0.86,0.95;test.timer=0.9,0.99;test.*=0.5,0.6;other.*=`
+
+|`mp.metrics.distribution.histogram.buckets`
+a| Specifies a custom set of histogram buckets for matching Histogram metrics to track and output.
+
+* The property accepts a semi-colon separated set of values that consist of a metric name followed by an equals sign (`=`) and comma separated bucket values:
+* Accepts a comma separated list of float and integer values greater than 0.
+* The asterisk (`*`) can be used as a wildcard at the end of the metric name.
+* Defining a metric name with no bucket values or invalid values provides no effect.
+* Values defined later take precedence over values before (i.e., right to left precedence).
+
+This property is available starting in MicroProfile Metrics 5.1.
+|Server startup
+|`mp.metrics.distribution.histogram.buckets=test.alpha.histogram=10.0,50.0,100.0;test.beta.histogram=30.0,50.0,123`
+
+|`mp.metrics.distribution.timer.buckets`
+a| Specifies a custom set of histogram buckets for matching Timer metrics to track and output.
+
+* The property accepts a semi-colon separated set of values that consist of a metric name followed by an equals sign (`=`) and comma separated bucket values:
+* Accepts a comma separated list of integers with an appended time unit (valid time units are `ms` for milliseconds, `s` for seconds, `m` for minutes and `h` for hours). Float values will not be accepted. Values with no time unit default to milliseconds.
+* The asterisk (`*`) can be used as a wildcard at the end of the metric name.
+* Defining a metric name with no bucket values or invalid values provides no effect.
+* Values defined later take precedence over values before (i.e., right to left precedence).
+
+This property is available starting in MicroProfile Metrics 5.1.
+|Server startup
+|`mp.metrics.distribution.timer.buckets=test.*=50s,100s;test.alpha.timer=100,500ms,1s`
+
+|`mp.metrics.distribution.percentiles-histogram.enabled`
+a| Specifies whether the the matching Histogram or Timer metric is to provide a default set of histogram buckets.
+
+* The property accepts a semi-colon separated set of values that consist of a metric name followed by an equals sign (`=`) and either `true` or `false.
+* The asterisk (`*`) can be used as a wildcard at the end of the metric name.
+* Defining a metric name with no values or invalid values has no effect.
+* Values defined later take precedence over values before (i.e., right to left precedence).
+
+This property is available starting in MicroProfile Metrics 5.1.
+|Server startup
+| `mp.metrics.distribution.percentiles-histogram.enabled=test.timer=true;test.histogram=false`
+
+|`mp.metrics.distribution.histogram.min-value`
+a| When the `mp.metrics.distribution.percentiles-histogram.enabled` is configured for a matching Histogram metric to provide a default set of histogram buckets, this MP config property is used to configure a lower bound for the set of buckets for the matching Histogram metric.
+
+* The property accepts a semi-colon separated set of values that define a metric name followed by an equals sign (`=`) and a value:
+* Properties accept float or integer values greater than 0.
+* The asterisk (`*`) can be used as a wildcard at the end of the metric name.
+* Defining a metric name with no value or an invalid value provides no effect.
+* Values defined later take precedence over values before (i.e., right to left precedence).
+
+This property is available starting in MicroProfile Metrics 5.1.
+|Server startup
+| `mp.metrics.distribution.histogram.min-value=test.histogram=50`
+
+|`mp.metrics.distribution.histogram.max-value`
+a| When the `mp.metrics.distribution.percentiles-histogram.enabled` is configured for a matching Histogram metric to provide a default set of histogram buckets, this MP config property is used to configure an upper bound for the set of buckets for the matching Histogram metric.
+
+* The property accepts a semi-colon separated set of values that define a metric name followed by an equals sign (`=`) and a value:
+* Properties accept float or integer values greater than 0.
+* The asterisk (`*`) can be used as a wildcard at the end of the metric name.
+* Defining a metric name with no value or an invalid value provides no effect.
+* Values defined later take precedence over values before (i.e., right to left precedence).
+
+This property is available starting in MicroProfile Metrics 5.1.
+|Server startup
+| `mp.metrics.distribution.histogram.max-value=test.histogram=120`
+
+|`mp.metrics.distribution.timer.min-value`
+a| When the `mp.metrics.distribution.percentiles-histogram.enabled` is configured for a matching Timer metric to provide a default set of histogram buckets, this MP config property is used to configure a lower bound for the set of buckets for the matching Timer metric.
+
+* The property accepts a semi-colon separated set of values that define a metric name followed by an equals sign (`=`) and a value:
+* Properties accept float or integer values greater than 0.
+* The asterisk (`*`) can be used as a wildcard at the end of the metric name.
+* Defining a metric name with no value or an invalid value provides no effect.
+* Values defined later take precedence over values before (i.e., right to left precedence).
+
+This property is available starting in MicroProfile Metrics 5.1.
+|Server startup
+| `mp.metrics.distribution.histogram.min-value=test.timer=200`
+
+|`mp.metrics.distribution.timer.max-value`
+a| When the `mp.metrics.distribution.percentiles-histogram.enabled` is configured for a matching Timer metric to provide a default set of histogram buckets, this MP config property is used to configure an upper bound for the set of buckets for the matching Timer metric.
+
+* The property accepts a semi-colon separated set of values that define a metric name followed by an equals sign (`=`) and a value:
+* Properties accept float or integer values greater than 0.
+* The asterisk (`*`) can be used as a wildcard at the end of the metric name.
+* Defining a metric name with no value or an invalid value provides no effect.
+* Values defined later take precedence over values before (i.e., right to left precedence).
+
+This property is available starting in MicroProfile Metrics 5.1.
+|Server startup
+| `mp.metrics.distribution.histogram.max-value=test.timer=5s`
 
 |===
 
