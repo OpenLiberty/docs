@@ -1,5 +1,5 @@
 ---
-name: Open an issue to document an new development feature
+name: Open an issue to document a new development feature
 about: Development or doc teams only- open an issue to specify documentation requirements for an Open Liberty feature epic
 title: ''
 labels: ''
