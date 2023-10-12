@@ -1,0 +1,91 @@
+// Copyright (c) 2023 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-layout: general-reference
+:page-type: general
+= JSON Web Token (JWT)
+
+A JSON Web Token (JWT) is a compact, URL-safe means of representing claims to be transferred between two parties.
+
+For more information see the link:https://datatracker.ietf.org/doc/html/rfc7519[JSON Web Token specification (RFC 7519)].
+
+== JSON Web Keys (JWKs)
+
+JWT builders and JWT consumers can use JSON Web Keys to sign and verify, respectively, JSON Web Tokens. A JSON Web Key (JWK) is a JSON data structure that represents a cryptographic key. More information about JSON Web Keys can be found in https://datatracker.ietf.org/doc/html/rfc7517[RFC 7517].
+
+=== JWT Builder
+
+A JWT builder can use JWKs two different ways to sign tokens:
+
+. Dynamically generate a JWK.
+. Generate a JWK based on a key in the keystore that is configured for the builder.
+
+In both cases, the JWT builder uses the key represented by the JWK to sign tokens that it creates.
+
+==== Dynamic JWK generation
+
+JWT builders will dynamically generate JWKs to use when the `jwkEnabled` attribute for the `jwtBuilder` element is set to `true`.
+
+[source, xml]
+----
+<jwtBuilder id="myBuilder" jwkEnabled="true" />
+----
+
+A new key is generated when the JWT builder creates its first token, or when the JWK endpoint for the builder is invoked, whichever happens first. After creation, the key is rotated automatically every 12 hours.
+
+Dynamically generated JWKs are useful for server administrators that do not want to be concerned with setting up a keystore and signing key for the JWT builder. Server administrators only need to set the `jwkEnabled` attribute to `true`, and Liberty will handle creation and maintenance of the key. Note that when `jwkEnabled` is set to `true`, the `keyStoreRef` and `keyAlias` attributes will be ignored.
+
+[source, xml]
+----
+<!-- Note: The keystoreRef and keyAlias attributes will be ignored when jwkEnabled="true" -->
+<jwtBuilder id="myBuilder" jwkEnabled="true" keyStoreRef="willBeIgnored" keyAlias="willBeIgnored" />
+----
+
+JWKs that are dynamically generated will be lost if the Liberty server reboots because these keys are stored only in memory. Dynamically generated JWKs cannot be shared between Liberty servers, so Liberty servers running in a cluster environment that need to build JWTs might consider using static JWKs instead.
+
+==== Static JWK generation
+
+JWT builders can use an existing asymmetric key from a keystore to generate a static JWK. The JWK will remain the same after server reboots, and will be identical across Liberty servers that use the same keystore. The JWK will remain the same until the key within the keystore changes.
+
+To use static JWKs, server administrators must configure the `keyStoreRef` and `keyAlias` attributes in the `jwtBuilder` element to point to a specific key to sign tokens. The `jwkEnabled` attribute must be set to `false`.
+
+[source, xml]
+----
+<jwtBuilder id="myBuilder" jwkEnabled="false" keyStoreRef="myKeyStore" keyAlias="signingKey" />
+
+<keyStore id="myKeyStore" ... />
+----
+
+Note that in this case, the JWK endpoint for the JWT builder (https://<host>:<port>/jwt/ibm/api/myBuilder/jwk) will still be active and will produce a JSON Web Key Set (JWKS) document that includes the key referenced by the `keyStoreRef` and `keyAlias` attributes, similar to what is shown here:
+
+[source, json]
+----
+{
+    "keys": [
+        {
+            "kty": "RSA",
+            "e": "AQAB",
+            "use": "sig",
+            "kid": "lYQxCgL6-n7usn_xm5jtY_DsN4V2D0r0lqqhcE6qaVE",
+            "alg": "RS256",
+            "n": "6OJVoJz...<trimmed for clarity>...xwPVE"
+        }
+    ]
+}
+----
+
+=== JWT Consumer
+
+JWT consumers can retrieve JSON Web Key Set (JWKS) documents to reconstruct public keys to use for verifying token signatures. JWKS documents are particularly useful for JWT consumers that receive tokens from issuers that frequently rotate their signing keys, and for server administrators who do not want to manually maintain a keystore.
+
+The `jwkEnabled` attribute in the `jwtConsumer` element must be set to `true`, and the `jwkEndpointUrl` attribute must be set to a URI that provides the JWKS document containing the public keys to use to verify the signatures of the tokens received by this JWT consumer.
+
+[source, xml]
+----
+<jwtConsumer id="myConsumer" jwkEnabled="true" jwkEndpointUrl="https://example.com/jwt/ibm/api/myBuilder/jwk" />
+----
