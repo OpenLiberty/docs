@@ -251,12 +251,14 @@ The following MicroProfile Config properties can be specified when MicroProfile 
 |`mp.metrics.appName`
 |Passes the value of the  `_app` tag from the application server to the application. This property is used to avoid metric name collisions when multiple applications are deployed to the runtime. It is defined through a `microprofile-config.properties` file in the `META-INF` directory of the application. The value of this tag is appended to the output of each metric that originates from that application.
 
-In MicroProfile Metrics 5.0, the  `_app` tag that was defined in prior releases by the `mp.metrics.appName` MicroProfile Config property is designated as `mp_app`. When running in an MicroProfile Metrics 5.x environment, if the `mp.metrics.appName` property is defined, the `mp.metrics.defaultAppName` property must be defined as well.
+In MicroProfile Metrics 5.0 and later, the  `_app` tag that is defined in prior releases by the `mp.metrics.appName` MicroProfile Config property is designated as `mp_app`. In a MicroProfile Metrics 5.x environment, if the `mp.metrics.appName` property is defined, you must also define the `mp.metrics.defaultAppName` property. See the `mp.metrics.defaultAppName` property description for more information.
 |This value is read and evaluated during run time.
 |`mp.metrics.appName=myApp`
 
 |`mp.metrics.defaultAppName`
-|This MP config value is defined on the server level and is used in conjunction with the `mp.metrics.appName` config value when running under a MicroProfile Metrics 5.x environment. The value of `mp.metrics.defaultAppName` passes the value of the `mp_app` tag to metrics created on the server level. There exists vendor metrics (i.e., servlet metrics) that can be created both under the server and application context. Due to restriction introduced in MicroProfile Metrics 5.0 where the set of tag names must be the same, it is important to use the `mp.metrics.defaultAppName` with `mp.metrics.appName` name to avoid any registration exceptions.
+|The value for this property is defined at the server level and is used in conjunction with the `mp.metrics.appName` property when you run in a MicroProfile Metrics 5.x environment. The value of the  `mp.metrics.defaultAppName` property passes the value of the `mp_app` tag to metrics that are created on the server level. 
+
+This property is necessary to use with the `mp.metrics.appName` property due to the restriction introduced in MicroProfile Metrics 5 .0 that metrics of the same name must contain the same set of tag names. Certain vendor metrics, such as servlet metrics, can create metrics in both the application and server context. The `mp.metrics.appName` property creates the `mp_app` tag for the servlet metrics that are created in the application context. However, without a similar tag value provided for servlet metrics that are created in the server context, a registration exception is thrown. The `mp.metrics.defaultAppName` property that is defined at the server level provides the necessary `mp_app` tag for metrics that are created at the server level. 
 
 |Server startup
 |`mp.metrics.defaultAppName=serverContext`
@@ -289,7 +291,7 @@ This property is available starting in MicroProfile Metrics 5.0 .
 |`mp.metrics.tags=app=shop,tier=integration,special=deli\=ver\,y`
 
 |`mp.metrics.distribution.percentiles`
-a|Specifies a custom set of percentiles for matching Histogram and Timer metrics to track and output. Can be used to disable percentile output.
+a|Specifies a list of metric names that are paired with custom sets of percentiles for the metric to track and output. This property is applicable only to histogram and timer metrics.
 
 * The property accepts a semicolon-separated set of values that consist of a metric name followed by an equals sign (`=`) and comma-separated percentile values.
 * The asterisk (`*`) can be used as a wildcard at the end of the metric name.
@@ -303,7 +305,7 @@ This property is available starting in MicroProfile Metrics 5.1.
 |`mp.metrics.distribution.percentiles=test.histogram=0.8,0.86,0.95;test.timer=0.9,0.99;test.*=0.5,0.6;other.*=`
 
 |`mp.metrics.distribution.histogram.buckets`
-a| Specifies a custom set of histogram buckets for matching Histogram metrics to track and output.
+a| Specifies a list of metric names that are paired with custom sets of histogram buckets for the metric to track and output. This property is applicable only to histogram metrics.
 
 * The property accepts a semicolon-separated set of values that consist of a metric name followed by an equals sign (`=`) and comma-separated bucket values.
 * Accepts a comma-separated list of float and integer values greater than 0.
