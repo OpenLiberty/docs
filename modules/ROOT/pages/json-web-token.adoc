@@ -8,51 +8,45 @@
 //
 :page-layout: general-reference
 :page-type: general
-= JSON Web Token (JWT)
+= Sign and verify JSON Web Tokens with JSON Web Keys
 
-A JSON Web Token (JWT) is a compact, URL-safe means of representing claims to be transferred between two parties.
+A JSON Web Key (JWK) is a JSON data structure that represents a cryptographic key. You can use JWKs to sign and verify JSON Web Tokens (JWT).
 
-For more information see the link:https://datatracker.ietf.org/doc/html/rfc7519[JSON Web Token specification (RFC 7519)].
+A JWT is a compact, URL-safe means of representing claims to be transferred between two parties. The Open Liberty runtime can both build and consume JWTs. You can configure Open Liberty to use JWKs to sign the JWTs it builds and to verify the JWTs it consumes.
 
-== JSON Web Keys (JWKs)
+Although Open Liberty supports JWTs and JWKs through various features, the following configuration examples focus on configuring the feature:jwt[display= JSON Web Token] feature.
 
-JWT builders and JWT consumers can use JSON Web Keys to sign and verify, respectively, JSON Web Tokens. A JSON Web Key (JWK) is a JSON data structure that represents a cryptographic key. More information about JSON Web Keys can be found in https://datatracker.ietf.org/doc/html/rfc7517[RFC 7517].
+When the JSON Web Token feature is enabled in your `server.xml` file, you can use the config:jwtBuilder[] configuration element to specify how the runtime generates and signs JWTs. Similarly, you can use the config:jwtConsumer configuration element to specify how the runtime verifies and consumes JWTs. Both these configuration elements accept the `jwkEnabled` attribute to enable the runtime to sign or verify JWTs with JWKs.
 
-=== JWT Builder
+== Sign JWTs with JWKs
 
-A JWT builder can use JWKs two different ways to sign tokens:
+JWT builders can generate JWKs to sign tokens either dynamically or based on a key in the keystore that is configured for the builder. In both cases, the JWT builder uses the key that is represented by the JWK to sign the tokens that it creates.
 
-. Dynamically generate a JWK.
-. Generate a JWK based on a key in the keystore that is configured for the builder.
+=== Dynamic JWK generation
 
-In both cases, the JWT builder uses the key represented by the JWK to sign tokens that it creates.
-
-==== Dynamic JWK generation
-
-JWT builders will dynamically generate JWKs to use when the `jwkEnabled` attribute for the `jwtBuilder` element is set to `true`.
+When the `jwkEnabled` attribute for the `jwtBuilder` element is set to `true` in the `server.xml` file, the JWT builder dynamically generates JWKs to sign JWTs.
 
 [source, xml]
 ----
 <jwtBuilder id="myBuilder" jwkEnabled="true" />
 ----
 
-A new key is generated when the JWT builder creates its first token, or when the JWK endpoint for the builder is invoked, whichever happens first. After creation, the key is rotated automatically every 12 hours.
+A new key is generated when the JWT builder creates the first token, or when the JWK endpoint for the builder is invoked, whichever happens first. After creation, the key is rotated automatically every 12 hours.
 
-Dynamically generated JWKs are useful for server administrators that do not want to be concerned with setting up a keystore and signing key for the JWT builder. Server administrators only need to set the `jwkEnabled` attribute to `true`, and Liberty will handle creation and maintenance of the key. Note that when `jwkEnabled` is set to `true`, the `keyStoreRef` and `keyAlias` attributes will be ignored.
+Dynamically generated JWKs are useful for server administrators that do not want to be concerned with setting up a keystore and signing key for the JWT builder. Server administrators need only to set the `jwkEnabled` attribute to `true`, and Open Liberty handles the creation and maintenance of the key. When `jwkEnabled` is set to `true`, any `keyStoreRef` and `keyAlias` attributes are ignored, as shown in the following example:
 
 [source, xml]
 ----
-<!-- Note: The keystoreRef and keyAlias attributes will be ignored when jwkEnabled="true" -->
-<jwtBuilder id="myBuilder" jwkEnabled="true" keyStoreRef="willBeIgnored" keyAlias="willBeIgnored" />
+<jwtBuilder id="myBuilder" jwkEnabled="true" keyStoreRef="Ignored" keyAlias="Ignored" />
 ----
 
-JWKs that are dynamically generated will be lost if the Liberty server reboots because these keys are stored only in memory. Dynamically generated JWKs cannot be shared between Liberty servers, so Liberty servers running in a cluster environment that need to build JWTs might consider using static JWKs instead.
+JWKs that are dynamically generated are lost if the Open Liberty runtime restarts because these keys are stored only in memory. Dynamically generated JWKs cannot be shared between Open Liberty servers. If your Open Liberty server runs in a cluster environment and you need to build JWTs, consider using static JWKs instead.
 
-==== Static JWK generation
+=== Static JWK generation
 
-JWT builders can use an existing asymmetric key from a keystore to generate a static JWK. The JWK will remain the same after server reboots, and will be identical across Liberty servers that use the same keystore. The JWK will remain the same until the key within the keystore changes.
+JWT builders can use an existing asymmetric key from a keystore to generate a static JWK. The JWK remains the same after server restarts, and is identical across Liberty servers that use the same keystore. The JWK remains the same until the key within the keystore changes.
 
-To use static JWKs, server administrators must configure the `keyStoreRef` and `keyAlias` attributes in the `jwtBuilder` element to point to a specific key to sign tokens. The `jwkEnabled` attribute must be set to `false`.
+To use static JWKs, configure the `keyStoreRef` and `keyAlias` attributes in the `jwtBuilder` element to point to a specific key to sign tokens. The `jwkEnabled` attribute must be set to `false`, as shown in the following example:
 
 [source, xml]
 ----
@@ -61,7 +55,7 @@ To use static JWKs, server administrators must configure the `keyStoreRef` and `
 <keyStore id="myKeyStore" ... />
 ----
 
-Note that in this case, the JWK endpoint for the JWT builder (https://<host>:<port>/jwt/ibm/api/myBuilder/jwk) will still be active and will produce a JSON Web Key Set (JWKS) document that includes the key referenced by the `keyStoreRef` and `keyAlias` attributes, similar to what is shown here:
+In this case, the JWK endpoint for the JWT builder (\https://<host>:<port>/jwt/ibm/api/myBuilder/jwk) is still active. The endpoint produces a JSON Web Key Set (JWKS) document that includes the key that is referenced by the `keyStoreRef` and `keyAlias` attributes, similar to the following example:
 
 [source, json]
 ----
@@ -79,13 +73,18 @@ Note that in this case, the JWK endpoint for the JWT builder (https://<host>:<po
 }
 ----
 
-=== JWT Consumer
+=== Verify JWTs with JWKs
 
-JWT consumers can retrieve JSON Web Key Set (JWKS) documents to reconstruct public keys to use for verifying token signatures. JWKS documents are particularly useful for JWT consumers that receive tokens from issuers that frequently rotate their signing keys, and for server administrators who do not want to manually maintain a keystore.
+JWT consumers can retrieve JSON Web Key Set (JWKS) documents to reconstruct public keys to verify token signatures. JWKS documents are useful for JWT consumers that receive tokens from issuers that frequently rotate their signing keys, and for server administrators who do not want to manually maintain a keystore.
 
-The `jwkEnabled` attribute in the `jwtConsumer` element must be set to `true`, and the `jwkEndpointUrl` attribute must be set to a URI that provides the JWKS document containing the public keys to use to verify the signatures of the tokens received by this JWT consumer.
+To configure Open Liberty to verify token signatures with JWKs, set the `jwkEnabled` attribute in the `jwtConsumer` element to `true`. Furthermore, The `jwkEndpointUrl` attribute must be set to a URI that provides the JWKS document that contains the public keys to use to verify the signatures of the tokens that received by this JWT consumer.
 
 [source, xml]
 ----
 <jwtConsumer id="myConsumer" jwkEnabled="true" jwkEndpointUrl="https://example.com/jwt/ibm/api/myBuilder/jwk" />
 ----
+
+== See also
+- feature:jwt[display= JSON Web Token] feature
+- link:https://datatracker.ietf.org/doc/html/rfc7519[JSON Web Token specification (RFC 7519)].
+- link:https://datatracker.ietf.org/doc/html/rfc7517[JSON Web Token Key specification (RFC 7517)].
