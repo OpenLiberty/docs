@@ -1,5 +1,5 @@
 ---
-name: Open a feature issue
+name: Open an issue to document a new development feature
 about: Development or doc teams only- open an issue to specify documentation requirements for an Open Liberty feature epic
 title: ''
 labels: ''
@@ -17,7 +17,7 @@ assignees: ''
 
 Does the documentation apply to all operating systems? 
 - [ ] Yes  
-- [ ] No Specify operating systems: ______
+- [ ] No; specify operating systems: ______
 
 ### Summary
 Provide a concise summary of your feature. What is the update, why does it matter, and to whom? What do 80% of target users need to know to be most easily productive using your runtime update?
@@ -30,7 +30,7 @@ List any new or changed properties, parameters, elements, attributes, etc. Inclu
 
 
 ### Updates to existing  topics
-To udpate existing topics, specify a link to the topics that are affected.  Include a copy of the current text and the exact text to which it will change. For example: Change ABC to XYZ
+To update existing topics, specify a link to the topics that are affected.  Include a copy of the current text and the exact text to which it will change. For example: Change ABC to XYZ
 
 
 ### Create a new topic
