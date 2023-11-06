@@ -63,7 +63,7 @@ For more information about limitations with early startup code and possible work
 [#prereq]
 == Runtime and host build system prerequisites
 
-Starting with Open Liberty version 23.0.0.6, all X86-64/AMD64 UBI xref:container-images.adoc[Open Liberty container images] include the prerequisites for InstantOn to checkpoint and restore Open Liberty application processes. Open Liberty Ubuntu container images are not enabled for InstantOn. 
+Starting with Open Liberty version 23.0.0.6, all X86-64/AMD64 UBI xref:container-images.adoc[Open Liberty container images] include the prerequisites for InstantOn to checkpoint and restore Open Liberty application processes. Open Liberty Ubuntu container images are not enabled for InstantOn.
 
 Currently, InstantOn is supported with IBM Semeru Java version 11.0.19+ and IBM Semeru Java version 17.0.7+. InstantOn is expected to support new versions of IBM Semeru Java as they are released. Currently, InstantOn is not supported on other Java vendor implementations.
 
@@ -85,8 +85,8 @@ Unprivileged (non-root) users are supported by CRIU for checkpointing and restor
 To perform an application process checkpoint, CRIU requires the following Linux capabilities:
 
 - `CHECKPOINT_RESTORE` - This capability was added in Linux 5.9 to separate checkpoint/restore functions from the overloaded `SYS_ADMIN` capability.
-- `SETPCAP` - This capability is required for the subsequent restore. 
-- `SYS_PTRACE` - CRIU uses this powerful capability to capture and record the full process state. It is necessary only when CRIU is checkpointing an application process. 
+- `SETPCAP` - This capability is required for the subsequent restore.
+- `SYS_PTRACE` - CRIU uses this powerful capability to capture and record the full process state. It is necessary only when CRIU is checkpointing an application process.
 
 To perform an application process restore, CRIU requires the following Linux capabilities:
 
@@ -224,7 +224,7 @@ docker commit liberty-app-checkpoint-container liberty-app-instanton
 docker rm liberty-app-checkpoint-container
 ----
 
-You now have two application images: `liberty-app` and `liberty-app-instanton`. Starting a container with the `liberty-app-instanton` container image shows a faster startup time than the original `liberty-app` image. The `liberty-app-checkpoint-container` stopped container is no longer needed and can safely be removed. 
+You now have two application images: `liberty-app` and `liberty-app-instanton`. Starting a container with the `liberty-app-instanton` container image shows a faster startup time than the original `liberty-app` image. The `liberty-app-checkpoint-container` stopped container is no longer needed and can safely be removed.
 
 [#run]
 == Running and deploying an InstantOn application image
@@ -235,7 +235,7 @@ Special considerations are required to run an InstantOn application image locall
 1. The host that is running the container image must use Linux kernel 5.9 or greater
 2. The Linux capabilities CHECKPOINT_RESTORE and SETPCAP must be granted to the running container
 3. The necessary system calls must be granted to the running container
-4. The host processor must be X86-64/AMD64 
+4. The host processor must be X86-64/AMD64
 
 === Running an InstantOn application image locally
 
@@ -265,12 +265,12 @@ docker run \
   liberty-app-instanton
 ----
 
-In both cases, the `--cap-add` option grants the `CHECKPOINT_RESTORE` and `SETPCAP` capabilities. The `SYS_PTRACE` capability is not required to run the InstantOn application container image. 
+In both cases, the `--cap-add` option grants the `CHECKPOINT_RESTORE` and `SETPCAP` capabilities. The `SYS_PTRACE` capability is not required to run the InstantOn application container image.
 
 [#required-system-calls]
 ==== Required Linux system calls
 
-The `--security-opt` option grants the running container access to all Linux system calls. Depending on the defaults of the container engine, the `--security-opt` with the `seccomp-unconfined` setting might not be required. For CRIU to restore the InstantOn application process, the container must have access to `clone3`, `ptrace`, and other system calls. This requirement is true even though the elevated Linux capability of `SYS_PTRACE` is not required to restore the process. You can update the defaults of the container engine to include all the required system calls. 
+The `--security-opt` option grants the running container access to all Linux system calls. Depending on the defaults of the container engine, the `--security-opt` with the `seccomp-unconfined` setting might not be required. For CRIU to restore the InstantOn application process, the container must have access to `clone3`, `ptrace`, and other system calls. This requirement is true even though the elevated Linux capability of `SYS_PTRACE` is not required to restore the process. You can update the defaults of the container engine to include all the required system calls.
 
 Alternatively, you can specify a file with the `--security-opt seccomp` option that specifies the policy for the container. Use the following command to specify a JSON policy file for `seccomp`:
 
@@ -342,12 +342,12 @@ When you deploy to Kubernetes, the container must be granted the `CHECKPOINT_RES
 
 InstantOn supports a subset of Open Liberty features. If a feature is enabled that InstantOn does not support, a failure occurs when you try to perform a checkpoint of an application process. InstantOn supports the following Jakarta EE and MicroProfile xref:reference:feature/feature-overview.adoc#conv[convenience features]:
 
-- Jakarta EE Web Profile versions feature:webProfile-8.0[display=8.0] and later 
+- Jakarta EE Web Profile versions feature:webProfile-8.0[display=8.0] and later
 - MicroProfile versions feature:microProfile-4.1[display=4.1] and later
 
-You can individually enable the Open Liberty public features that ae enabled by the feature:webProfile[display=Jakarta EE Web Profile] and feature:microProfile[display=MicroProfile] features, depending on the needs of your application. This option avoids enabling the complete set of features that are enabled by the convenience features. 
+You can individually enable the Open Liberty public features that are enabled by the feature:webProfile[display=Jakarta EE Web Profile] and feature:microProfile[display=MicroProfile] features, depending on the needs of your application. This option avoids enabling the complete set of features that are enabled by the convenience features. However, InstantOn currently does not support standalone MicroProfile features, which are MicroProfile features that are not enabled by any of the convenience features.
 
-In addition to the features that are enabled in the convenience features, InstantOn also supports the following features:
+In addition to the features that are enabled in the MicroProfile and Jakarta convenience features, InstantOn also supports the following features:
 
 - feature:audit-1.0[]
 - feature:bells-1.0[]
