@@ -441,8 +441,11 @@ The first application is `myapp.war`, which has a context root of `myawesomeapp`
 
 [#include-processing]
 == Include processing
+
 In addition to the default locations, you can bring in additional configuration files by using the config:include[] element.
 When a server configuration file contains an include reference to another file, the server processes the contents of the referenced file as if they were included inline in place of the `include` element.
+
+You can set the `location` attribute to a relative or absolute file path, a directory, or to a URI for a remote resource.
 
 In the following example, the server processes the contents of the `other.xml` file before it processes the contents of the `other2.xml` file:
 
@@ -454,21 +457,9 @@ In the following example, the server processes the contents of the `other.xml` f
 </server>
 ----
 
-By default, the include file must exist.
-If the include file might not be present, set the `optional` attribute to `true`, as shown in the following example:
-
-[source,xml]
-----
-<server>
-    <include location="other.xml" optional="true" />
-</server>
-----
-
-When you are specifying a directory in the `include` location, make sure that you append a slash (`/`). For example, (location="./common/"). Omitting the slash (`/`) after the directory name (location="./common") results in an error and incorrect processing.
+When you are specifying a directory in the `include` location, make sure that you append a slash (`/`). For example, (`location="./common/"`). Omitting the slash (`/`) after the directory name (`location="./common"`) results in an error and incorrect processing.
 
 When you specify a directory as the `location` value, the server processes only the files that are directly within the specified directory and ignores any subdirectories. The server processes the files within the directory in alphabetical order.
-
-You can set the `location` attribute to a relative or absolute file path, a directory, or to a URI for a remote resource.
 
 [source,xml]
 ----
@@ -479,9 +470,19 @@ You can set the `location` attribute to a relative or absolute file path, a dire
 
 In this example, configuration files within the `./common/` directory are processed alphabetically on server startup.
 
+When the server processes configuration files within directories, it switches the file names into lowercase and sorts them alphabetically, making sure that the file processing order is consistent and predictable. This means that if two files are specified in the same directory that have the same name except for case variations (such as `extraConfig.xml` and `ExtraConfig.xml`), the ordering behavior is indeterminate.
+
 When you are including a configuration from a URI for a remote resource, it must point to a single remote resource file and cannot be a directory. For example, https://website.com/path/to/server.xml[] is supported, but including https://website.com/path/to/directory[] is not.
 
-When the server processes configuration files within directories, it switches the file names into lowercase and sorts them alphabetically, making sure that the file processing order is consistent and predictable. This means that if two files are specified in the same directory that have the same name except for case variations (such as `extraConfig.xml` and `ExtraConfig.xml`), the ordering behavior is indeterminate.
+
+By default, the include file must exist. If the include file might not be present, set the `optional` attribute to `true`, as shown in the following example:
+
+[source,xml]
+----
+<server>
+    <include location="other.xml" optional="true" />
+</server>
+----
 
 When you include a file, you can specify the `onConflict` attribute to change the normal merge rules.
 You can set the value of the `onConflict` attribute to `IGNORE` or `REPLACE` any conflicting config:
@@ -494,7 +495,7 @@ You can set the value of the `onConflict` attribute to `IGNORE` or `REPLACE` any
 </server>
 ----
 
-For more configuration files that are brought from a directory by using the `include` element, the `onConflict` attribute is applied to each file in that directory separately. For example:
+For configuration files that are brought in from a directory by using the `include` element, the `onConflict` attribute is applied to each file in that directory separately. For example:
 
 [source,xml]
 ----
@@ -512,7 +513,6 @@ Functionally, this configuration is the same as including each file separately w
     <include location="b.xml" onConflict="REPLACE" />
 </server>
 ----
-
 
 [#configuration-references]
 == Configuration references
