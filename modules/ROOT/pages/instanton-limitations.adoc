@@ -1,4 +1,4 @@
-// Copyright (c) 2022 IBM Corporation and others.
+// Copyright (c) 2022, 2023 IBM Corporation and others.
 // Licensed under Creative Commons Attribution-NoDerivatives
 // 4.0 International (CC BY-ND 4.0)
 //    https://creativecommons.org/licenses/by-nd/4.0/
@@ -23,6 +23,7 @@ The following sections describe the limitations and known issues with using Open
 - <<#trans-before, Jakarta Transaction before checkpoint>>
 - <<#mp-config, Accessing MicroProfile Configuration too early>>
 - <<#datasource, Injecting a DataSource too early>>
+- <<#mp-config-no-default, Accessing microprofile config with no default value at Checkpoint>>
 - <<#features, Using product extensions, user features, or features that are not supported by InstantOn>>
 - <<#boot,Updating configuration with a bootstrap.properties file>>
 - <<#securitymanager, Java SecurityManager is not supported>>
@@ -160,6 +161,72 @@ This `Servlet` example uses the `loadOnStartup = 1` attribute. When you are usin
 This configuration uses placeholder values for things like the database name, hostname, ports, user, and password. This configuration allows the values to be updated with environment variable values or other configuration mechanisms, as described in link:/guides/kubernetes-microprofile-config.html[Configuring microservices running in Kubernetes]. These configurations must not be hardcoded into an application image and must be able to be updated when you deploy the application to the cloud.
 
 If an application is injected with a `DataSource` before the checkpoint and the configuration of the `DataSource` changes, the application is restarted when the InstantOn application container image is run with the updated configuration. You can avoid this scenario by using the `beforeAppStart` option or by modifying the component not to be early startup code. In this example, that modification is to remove the `loadOnStartup = 1` attribute.
+
+[#mp-config-no-default]
+== Accessing microprofile config with no default value at Checkpoint
+The configuration property can be introduced inside the application either statically through `<T>` or `Optional<T>`, or dynamically using a `Provider<T>`. The following example shows ways to inject static, static-optional, dynamic and dynamic-optional config property. 
+[source,java]
+----
+  @Inject
+  @ConfigProperty(name = "static_config")
+  String staticConfig;
+
+  @Inject
+  @ConfigProperty(name = "static_optional_config")
+  Optional<String> staticOptionalConfig;
+
+  @Inject
+  @ConfigProperty(name = "dynamic_config")
+  Provider<String> dynamicConfig;
+
+  @Inject
+  @ConfigProperty(name = "dynamic_optional_config")
+  Provider<Optional<String>> dynamicOptionalConfig;
+----
+The injected `static_config` will cause an error like the following example if there is no value found in an existing config source during checkpoint.
+
+[source,sh]
+----
+SRCFG02000: Failed to Inject @ConfigProperty for key static_config into io.example.Example.staticConfig since the config property could not be found in any config source.
+----
+
+This error can be avoided by providing a default value for the configuration key in one of the following ways:
+
+Specify the default value on the @ConfigProperty annotation like the following:
+[source,java]
+----
+  @Inject
+  @ConfigProperty(name = "static_config", defaultValue = "defaultValue")
+  String staticConfig;
+----
+
+Specify the default value in the application `META-INF/microprofile-config.properties` resource.
+[source,sh]
+----
+  static_config=defaultValue
+----
+
+Specify a default value in a server.xml variable.
+[source,xml]
+----
+  <variable name="static_config" defaultValue="defaultValue" />
+----
+
+The `defaultValue` can then be overridden on restore by configuring the value with an environment variable or values from the variable source directory.
+
+However, if no default value is set, we can still avoid the above error by injecting config using `static_optional_config`, `dynamic_config`, `dynamic_optional_config`. But caution is needed for CDI beans that are `@ApplicationScoped` which are created during application startup when using the afterAppStart checkpoint option. Trying to access the `dynamic_config` early during the application startup at checkpoint can cause the following error:
+[source,sh]
+----
+java.util.NoSuchElementException: SRCFG00014: The config property dynamic_config is required but it could not be found in any config source.
+----
+While accessing the `static_optional_config` and `dynamic_optional_config` can cause the following error:
+[source,sh]
+----
+java.util.NoSuchElementException: No value present
+----
+
+Therefore, it is advisable to have a default value set for injected config properties in order to avoid the above mentioned errors. Furthermore, if the @ConfigProperty injection site is not using dynamic config then any default value injected into the application scoped bean before checkpoint will not be updated on restore. This is already mentioned in the docs at xref:#mp-config[Accessing MicroProfile Config too early]
+
 
 [#features]
 == Using product extensions, user features, or features that are not supported by InstantOn
