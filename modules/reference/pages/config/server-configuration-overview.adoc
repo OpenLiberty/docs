@@ -93,7 +93,7 @@ The following restrictions apply to the `server.env` files:
 * Empty lines are ignored.
 * Lines that start with the number sign ( # ) are ignored, except for the `# enable_variable_expansion` line, which enables variable expansion on Linux.
 * Ensure no white space surrounds the equal sign ( = ).
-* All characters are literal except when expansion variables are enabled. 
+* All characters are literal except when expansion variables are enabled.
 
 // comment needed to solve weird formatting problem
 
@@ -221,7 +221,7 @@ Files are read in alphabetical order in each of the two `configDropins` director
 [#variable-syntax]
 == Configuration variable syntax
 
-Variables define reusable values that are substituted with actual values at runtime. 
+Variables define reusable values that are substituted with actual values at runtime.
 In Open Liberty server configuration files, you can reference variables by using the `${variable.name}` syntax. The dollar sign (`$`) indicates the start of a variable reference. Curly brackets (`{}`) enclose the name of the variable.
 
 For example, if you define a variable that is named `database.url` with the value `jdbc:mysql://localhost:3306/mydb`, you can reference it in your server configuration files by using `${database.url}`. At runtime, Open Liberty replaces `${database.url}` with the actual value `jdbc:mysql://localhost:3306/mydb`.
@@ -441,8 +441,9 @@ The first application is `myapp.war`, which has a context root of `myawesomeapp`
 
 [#include-processing]
 == Include processing
-In addition to the default locations, you can bring in additional configuration files by using the config:include[] element.
-When a server configuration file contains an include reference to another file, the server processes the contents of the referenced file as if they were included inline in place of the `include` element.
+
+You can include additional configuration resources in your server configuration by using the config:include[] element.
+When a server configuration file contains an include reference to another resource, the server processes the contents of the referenced resource as if they were included inline in place of the `include` element.
 
 In the following example, the server processes the contents of the `other.xml` file before it processes the contents of the `other2.xml` file:
 
@@ -454,8 +455,27 @@ In the following example, the server processes the contents of the `other.xml` f
 </server>
 ----
 
-By default, the include file must exist.
-If the include file might not be present, set the `optional` attribute to `true`, as shown in the following example:
+You can set the `location` attribute for the `include` element to a relative or absolute file path, a directory, or to a URI for a remote resource.
+
+When you specify a directory as the `location` value, the server processes only the files that are directly within the specified directory and ignores any subdirectories. The server processes the files within the directory in alphabetical order.
+
+[source,xml]
+----
+<server>
+    <include location="./common/"/>
+</server>
+----
+
+In this example, configuration files within the `./common/` directory are processed alphabetically on server startup.
+
+When the server processes configuration files within directories, it switches the file names into lowercase and sorts them alphabetically to ensure that the file processing order is consistent and predictable. However, if two files are specified in the same directory with the same name except for case variations (such as `extraConfig.xml` and `ExtraConfig.xml`), the ordering behavior is indeterminate.
+
+When you specify a directory in the `include` location, you must append a slash (`/`) to the directory name. For example, `location="./common/"`. Omitting the slash after the directory name (`location="./common"`) results in an error.
+
+When you include configuration from a URI for a remote resource, the `location` attribute must point to a single remote resource file and not a directory. For example, `\https://website.com/path/to/server.xml` is supported, but `\https://website.com/path/to/directory` is not.
+
+
+By default, the include resource must exist. If the resource might not be available, set the `optional` attribute to `true`, as shown in the following example:
 
 [source,xml]
 ----
@@ -464,7 +484,7 @@ If the include file might not be present, set the `optional` attribute to `true`
 </server>
 ----
 
-When you include a file, you can specify the `onConflict` attribute to change the normal merge rules.
+When you include a resource, you can specify the `onConflict` attribute to change the normal merge rules.
 You can set the value of the `onConflict` attribute to `IGNORE` or `REPLACE` any conflicting config:
 
 [source,xml]
@@ -475,19 +495,24 @@ You can set the value of the `onConflict` attribute to `IGNORE` or `REPLACE` any
 </server>
 ----
 
-You can set the `location` attribute to a relative or absolute file path, a directory, or to an HTTP URL.
-
-When you specify a directory as the `location` value, the server processes only the files that are directly within the specified directory and ignores any subdirectories. The server processes the files within the directory in alphabetical order.
+For configuration files that are brought in from a directory by using the `include` element, the `onConflict` attribute is applied to each file in that directory separately. For example:
 
 [source,xml]
 ----
 <server>
-<include location="./common/"/>
+    <include location="/directory/" onConflict="REPLACE" />
 </server>
 ----
 
-In this example, configuration files within the `./common/` directory are processed alphabetically on server startup.
+Functionally, this configuration is the same as including each file separately with its own `onConflict` attribute, as shown in the following example:
 
+[source,xml]
+----
+<server>
+    <include location="a.xml" onConflict="REPLACE" />
+    <include location="b.xml" onConflict="REPLACE" />
+</server>
+----
 
 [#configuration-references]
 == Configuration references
