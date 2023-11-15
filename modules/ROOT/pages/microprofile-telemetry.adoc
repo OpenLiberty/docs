@@ -171,12 +171,12 @@ The OpenTelemetry Java agent is a tool that is provided by the OpenTelemetry pro
 * Open Liberty uses many open source libraries internally. Some of these libraries might be automatically instrumented by the agent.
 
 == Troubleshooting
+The following information can help you determine the cause of common problems and error messages.
+Previous spans are incorrectly shown as current or parent spans::
 
-=== Previous spans are incorrectly shown as current or parent spans
+If the `Scope` instance is not closed correctly, the context and baggage values of previous spans might remain when the next operation executes. Alternatively, the current span might remain and be picked up as the parent of the next operation that executes.
 
-If the `Scope` is not closed correctly, the context and baggage values of previous spans may remain when the next operation executes. Alternatively, the current span may remain and be picked up as the parent of the next operation that executes.
-
-It is important to always close the `Scope` when exiting an operation. This stops the span from being current and makes the previous span current again. Use a `try-with-resources` block, which automatically closes the `Scope` at the end of the block. For example:
+Always close the `Scope` instance when you exit an operation. This configuration stops the span from being current and makes the previous span current again. Use a `try-with-resources` block, which automatically closes the `Scope` instance at the end of the block, as shown in the following example:
 
 [source, java]
 ----
@@ -188,14 +188,10 @@ try (Scope scope = span.makeCurrent()) {
 }
 ----
 
-=== You recieve the CWMOT5100I message that tracing is disabled
+You receive the `CWMOT5100I` message that tracing is disabled::
 
-If you enable the `mpTelemetry-1.1` or `mpTelemetry-1.0` feature, you also need to set `otel.sdk.disabled=false` in any of the configuration sources accessible through MicroProfile Config to enable tracing.
-
-=== You recieve the CWMOT5100I message that tracing is disabled
-
-If you enable the `mpTelemetry-1.1` or `mpTelemetry-1.0` feature, you also need to set `otel.sdk.disabled=false` in any of the configuration sources accessible through MicroProfile Config to enable tracing.
+If you enable the `mpTelemetry-1.1` or `mpTelemetry-1.0` feature, you must also set  the `otel.sdk.disabled=false`  property in any of the configuration sources that are accessible through MicroProfile Config to enable tracing.
 
 === You receive the CWMOT5003W message that the application attempted to acquire MicroProfile Telemetry after shut down
 
-Review the application to see why it attempted to use MicroProfile Telemetry after shutting down. Actions that can trigger the use of MicroProfile Telemetry include calling a method that is annotated with `@WithSpan`` or making a request with a JAX-RS Client or MP Rest Client.
+Review the application to see why it attempted to use MicroProfile Telemetry after it shut down. Actions that might trigger the use of MicroProfile Telemetry include calling a method that is annotated with `@WithSpan`` or making a request with a JAX-RS Client or MP Rest Client.
