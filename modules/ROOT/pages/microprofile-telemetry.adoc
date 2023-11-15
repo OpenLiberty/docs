@@ -174,4 +174,28 @@ The OpenTelemetry Java agent is a tool that is provided by the OpenTelemetry pro
 * The agent is not compatible with https://www.ibm.com/docs/en/was-liberty/base?topic=security-java-2[Java 2 security].
 * Open Liberty uses many open source libraries internally. Some of these libraries might be automatically instrumented by the agent.
 
+== Troubleshooting
+The following information can help you determine the cause of common problems and error messages.
+Previous spans are incorrectly shown as current or parent spans::
 
+If the `Scope` instance is not closed correctly, the context and baggage values of previous spans might remain when the next operation executes. Alternatively, the current span might remain and be picked up as the parent of the next operation that executes.
+
+Always close the `Scope` instance when you exit an operation. This configuration stops the span from being current and makes the previous span current again. Use a `try-with-resources` block, which automatically closes the `Scope` instance at the end of the block, as shown in the following example:
+
+[source, java]
+----
+Span span = tracer.spanBuilder("PerformingOperation").startSpan();
+try (Scope scope = span.makeCurrent()) {
+    ...
+} finally {
+    span.end();
+}
+----
+
+You receive the `CWMOT5100I` message that tracing is disabled::
+
+If you enable the `mpTelemetry-1.1` or `mpTelemetry-1.0` feature, you must also set  the `otel.sdk.disabled=false`  property in any of the configuration sources that are accessible through MicroProfile Config to enable tracing.
+
+You receive the CWMOT5003W message that the application attempted to acquire MicroProfile Telemetry after shut down::
+
+Review the application to see why it attempted to use MicroProfile Telemetry after it shut down. Actions that might trigger the use of MicroProfile Telemetry include calling a method that is annotated with `@WithSpan`` or making a request with a JAX-RS Client or MP Rest Client.
