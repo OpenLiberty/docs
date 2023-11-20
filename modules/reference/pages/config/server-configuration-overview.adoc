@@ -43,6 +43,7 @@ The following sections provide more details on configuring a server.
 * <<#variable-substitution,Variable substitution precedence>>
 * <<#configuration-merging,Configuration merging>>
 * <<#include-processing,Include processing>>
+* <<#configDropins-directory,Using the configuration dropins folder to specify server sonfiguration>>
 * <<#configuration-references,Configuration references>>
 * <<#dynamic-updates,Dynamic updates>>
 * <<#log-messages,Log messages>>
@@ -513,6 +514,32 @@ Functionally, this configuration is the same as including each file separately w
     <include location="b.xml" onConflict="REPLACE" />
 </server>
 ----
+
+[#configDropins-directory]
+== Using the configuration dropins folder to specify server configuration
+
+In Open Liberty, the `configDropins` directory is a convenient method for adding or modifying server configuration without directly altering the `server.xml` file. This directory is located under `usr/servers/server_name`.
+
+=== Types of subdirectories within configDropins
+
+* Overrides (`usr/servers/server_name/configDropins/overrides`): This directory is used to override configurations in the `server.xml` file. For example, to change port configurations defined in `server.xml`, place the relevant configuration files in this directory.
+
+* Defaults (`usr/servers/server_name/configDropins/defaults`): This directory is for setting defaults for configuration elements that are not specified in `server.xml`. It allows the `server.xml` file to remain the primary configuration source, with additional default settings provided through this directory.
+
+Configuration files placed in either the `configDropins/overrides` or `configDropins/defaults` directories are dynamically monitored. Changes, including additions, removals, or updates, are reflected in the runtime configuration automatically.
+
+=== Conflict Resolution and Precedence
+
+* Configurations in the `configDropins/overrides` directory take precedence over the configurations in the `server.xml` file.
+
+* Configurations in the `server.xml` file take precedence over the configurations in the `configDropins/defaults` directory.
+
+* Both `configDropins/defaults` and `configDropins/overrides` configurations supersede any default settings that are specified by a feature.
+
+* The configuration files in these directories are processed in alphabetical order. 
+
+To ensure consistency across different platforms, file names are converted to lowercase before sorting alphabetically. If two files have the same name with case variations (like `extraConfig.xml` and `ExtraConfig.xml`), the order of processing might be unpredictable.
+
 
 [#configuration-references]
 == Configuration references
