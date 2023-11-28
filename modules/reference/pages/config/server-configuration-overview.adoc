@@ -6,7 +6,6 @@
 // Contributors:
 //     IBM Corporation
 //
-//
 :page-layout: general-reference
 :page-type: general
 = Server configuration overview
@@ -217,6 +216,18 @@ The `${server.config.dir}/server.xml` file must be present, but the other files 
 You can flexibly compose configuration by dropping server-formatted XML files into directories.
 Files are read in alphabetical order in each of the two `configDropins` directories.
 
+The `configDropins` directory offers a convenient method for adding or modifying server configuration without directly altering the `server.xml` file. Located under `usr/servers/server_name`, it includes two types of subdirectories:
+
+* Overrides (`usr/servers/server_name/configDropins/overrides`): This directory is used to override configurations in the `server.xml` file. For example, to change port configurations defined in `server.xml`, place the relevant configuration files here.
+
+* Defaults (`usr/servers/server_name/configDropins/defaults`): This directory is for setting defaults for configuration elements that are not specified in `server.xml`. It allows `server.xml` to remain the primary configuration source, with other default settings provided through this directory.
+
+Changes to the configuration files placed in either the `configDropins/overrides` or `configDropins/defaults` directories are dynamically monitored. Additions, removals, or updates are reflected in the runtime configuration automatically. 
+
+Configurations in the `configDropins/overrides` directory take precedence over configurations in the `server.xml` file, which in turn take precedence over configurations in the `configDropins/defaults` directory. The configurations in `configDropins/overrides` and `configDropins/defaults` supersede any default settings a feature specifies.
+
+To maintain consistency across different platforms, file names are first converted to lowercase and then sorted. In scenarios where two files share an identical name but differ in case (such as `extraConfig.xml` and `ExtraConfig.xml`), their order of processing might be inconsistent.
+
 
 [#variable-syntax]
 == Configuration variable syntax
@@ -338,6 +349,7 @@ The default is `${wlp.user.dir}/servers/${wlp.server.name}`.
 * `server.output.dir` - the directory where the server writes the workarea, logs, and other runtime-generated files.
 The default is `${server.config.dir}`.
 
+
 [#configuration-merging]
 == Configuration merging
 Since the configuration can consist of multiple files, it is possible that two files provide the same configuration.
@@ -345,6 +357,7 @@ In these situations, the server configuration is merged according to a set of si
 In Open Liberty, configuration is separated into singleton and factory configuration each of which has its own rules for merging.
 Singleton configuration is used to configure a single element (for example, logging).
 Factory configuration is used to configure multiple entities, such as an entire application or data source.
+
 
 [#merging-singleton-configuration]
 === Merging singleton configuration
@@ -419,6 +432,7 @@ is treated as:
 </server>
 ----
 
+
 [#merging-factory-configuration]
 === Merging factory configuration
 Factory configuration merges use the same rules as singleton configuration except elements are not automatically merged just because the element names match.
@@ -441,7 +455,6 @@ The first application is `myapp.war`, which has a context root of `myawesomeapp`
 
 [#include-processing]
 == Include processing
-
 You can include additional configuration resources in your server configuration by using the config:include[] element.
 When a server configuration file contains an include reference to another resource, the server processes the contents of the referenced resource as if they were included inline in place of the `include` element.
 
@@ -473,7 +486,6 @@ When the server processes configuration files within directories, it switches th
 When you specify a directory in the `include` location, you must append a slash (`/`) to the directory name. For example, `location="./common/"`. Omitting the slash after the directory name (`location="./common"`) results in an error.
 
 When you include configuration from a URI for a remote resource, the `location` attribute must point to a single remote resource file and not a directory. For example, `\https://website.com/path/to/server.xml` is supported, but `\https://website.com/path/to/directory` is not.
-
 
 By default, the include resource must exist. If the resource might not be available, set the `optional` attribute to `true`, as shown in the following example:
 
@@ -514,6 +526,7 @@ Functionally, this configuration is the same as including each file separately w
 </server>
 ----
 
+
 [#configuration-references]
 == Configuration references
 Most configuration in Open Liberty is self-contained, but it is often useful to share configuration.
@@ -530,6 +543,7 @@ The configuration element that makes the reference uses an attribute that always
   <jdbcDriver id="myDriver" />
 </server>
 ----
+
 
 [#dynamic-updates]
 == Dynamic updates
@@ -549,6 +563,7 @@ To disable file system polling and reload only when an MBean is notified, specif
 ----
 <config updateTrigger="mbean" />
 ----
+
 
 [#log-messages]
 == Log messages
