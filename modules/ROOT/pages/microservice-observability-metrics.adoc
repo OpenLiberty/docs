@@ -16,9 +16,9 @@
 Open Liberty uses MicroProfile Metrics to provide metrics that describe the internal state of many Open Liberty components.
 MicroProfile Metrics provides a `/metrics` endpoint from which you can access all metrics that are emitted by an Open Liberty runtime and deployed applications.
 
-When MicroProfile Metrics is enabled and an application is running, you can view metric data from any browser by accessing the `/metrics` endpoint. An example of this endpoint is `\https://localhost:9443/metrics`, where `9443` is the port number for your application. 
+When MicroProfile Metrics is enabled and an application is running, you can view metric data from any browser by accessing the `/metrics` endpoint. An example of this endpoint is `\https://localhost:9443/metrics`, where `9443` is the port number for your application.
 
-You can narrow the scope of the metrics by using the `scope` query parameter with the `/metrics` endpoint to specify the metric registry scope. For example, to view the metric data for the `base` metric registry, use the `/metrics?scope=base` endpoint. This pattern is used to access all runtime-provided scopes  (`base`, `application`, and `vendor`) and any <<customscope, user-defined metric registry scopes>>. 
+You can narrow the scope of the metrics by using the `scope` query parameter with the `/metrics` endpoint to specify the metric registry scope. For example, to view the metric data for the `base` metric registry, use the `/metrics?scope=base` endpoint. This pattern is used to access all runtime-provided scopes  (`base`, `application`, and `vendor`) and any <<customscope, user-defined metric registry scopes>>.
 
 For feature:mpMetrics-4.0[display=MicroProfile Metrics 4.0] and earlier, only runtime-provided scopes are available and path parameters are used to narrow the scope of metric data. The endpoints are `/metrics/base`, `/metrics/application`, and `/metrics/vendor`.
 
@@ -62,7 +62,7 @@ MetricRegistry customMetricRegistry;
 
 === Metric Tags
 
-With MicroProfile metrics, you can logically group metrics that track similar statistics by instrumenting the metrics with tags. Tags consist of a name and a value. You can group multiple metrics of the same type together by instrumenting them with tags of the same name but different values to group them together. 
+With MicroProfile metrics, you can logically group metrics that track similar statistics by instrumenting the metrics with tags. Tags consist of a name and a value. You can group multiple metrics of the same type together by instrumenting them with tags of the same name but different values to group them together.
 
 For example, when you use counters, you can create multiple counters that are named `methodCounter` that return the count of the method that is identified by the tag.
 
@@ -106,14 +106,14 @@ The following sections describe metric types that are available and how their co
 
 * <<timer,Timer>>
 * <<histogram,Histogram>>
-* <<counter,Counter>> 
-* <<gauge,Gauge>> 
+* <<counter,Counter>>
+* <<gauge,Gauge>>
 * <<meter,Meter>> (MicroProfile Metrics 1.0-4.0 only)
 * <<concurrentgauge,Concurrent gauge>> (MicroProfile Metrics 2.0-4.0 only)
 * <<simpletimer,Simple timer>> (MicroProfile Metrics 2.3-4.0 only)
 
 [#timer]
-=== Timer 
+=== Timer
 A timer metric aggregates timing durations in nanoseconds and provides duration statistics.
 
 Use the `@Timed` annotation to mark a constructor or method as a timer.
@@ -147,7 +147,7 @@ For more information, see xref:microprofile-config-properties.adoc#metrics[Micro
 
 
 [#histogram]
-=== Histogram 
+=== Histogram
 A histogram is a metric that calculates the distribution of a value. It provides the following information:
 
 - Maximum, median, and mean values
@@ -196,15 +196,6 @@ donationDistribution_Dollars_sum{mp_scope="application",tier="integration",} 918
 donationDistribution_Dollars_max{mp_scope="application",tier="integration",} 1000.0
 ----
 
-==== Fine-Tuning with MicroProfile Config properties
-
-Starting in MicroProfile Metrics 5.0, you can adjust the percentile precision of the `Histogram` metrics by using the `mp.metrics.smallrye.histogram.precision` MicroProfile Config property. The property accepts a value from 1 to 5 and is defaulted to 3 if no value is specified. A greater value results in more exact percentile calculations, but at a greater memory cost. 
-
-Starting in MicroProfile Metrics 5.1, you can customize the set of percentiles that are tracked and reported by using the `mp.metrics.distribution.percentiles` MicroProfile config property. You can also use the `mp.metrics.distribution.histogram.buckets` property to enable a customized set of histogram buckets to be tracked and reported. Alternatively, you can use the `mp.metrics.distribution.percentiles-histogram.enabled` property to enable the histogram metric to output and track a default set of histogram buckets. Performance might decrease if a large set of buckets are enabled for numerous histogram or timer metrics.
-
-For more information, see xref:microprofile-config-properties.adoc#metrics[MicroProfile Config properties: MicroProfile Metrics].
-
-
 In MicroProfile 4.0 and earlier, the following JSON response is also available from the REST endpoints:
 
 [source,json]
@@ -227,8 +218,16 @@ In MicroProfile 4.0 and earlier, the following JSON response is also available f
 }
 ----
 
+==== Fine-Tuning with MicroProfile Config properties
+
+Starting in MicroProfile Metrics 5.0, you can adjust the percentile precision of the `Histogram` metrics by using the `mp.metrics.smallrye.histogram.precision` MicroProfile Config property. The property accepts a value from 1 to 5 and is defaulted to 3 if no value is specified. A greater value results in more exact percentile calculations, but at a greater memory cost.
+
+Starting in MicroProfile Metrics 5.1, you can customize the set of percentiles that are tracked and reported by using the `mp.metrics.distribution.percentiles` MicroProfile config property. You can also use the `mp.metrics.distribution.histogram.buckets` property to enable a customized set of histogram buckets to be tracked and reported. Alternatively, you can use the `mp.metrics.distribution.percentiles-histogram.enabled` property to enable the histogram metric to output and track a default set of histogram buckets. Performance might decrease if a large set of buckets are enabled for numerous histogram or timer metrics.
+
+For more information, see xref:microprofile-config-properties.adoc#metrics[MicroProfile Config properties: MicroProfile Metrics].
+
 [#counter]
-=== Counter 
+=== Counter
 A counter metric keeps an incremental count.
 The initial value of the counter is set to zero, and the metric increments each time that an annotated element is started.
 
@@ -246,7 +245,7 @@ public String noDonation() {
 ----
 
 [#gauge]
-=== Gauge 
+=== Gauge
 You implement a gauge metric so that the gauge can be sampled to obtain a particular value.
 For example, you might use a gauge to measure CPU temperature or disk usage.
 
@@ -313,7 +312,7 @@ A simple timer metric tracks the elapsed timing duration and invocation counts.
 This type of metric is available link:/blog/2020/04/09/microprofile-3-3-open-liberty-20004.html#mra[beginning in MicroProfile Metrics 2.3]. It is removed starting in MicroProfile Metrics 5.0.
 The simple timer is a lightweight alternative to the performance-heavy timer metric.
 Beginning in MicroProfile Metrics 3.0, the simple timer metric also tracks the largest and smallest recorded duration of the previous complete minute.
-A complete minute is defined as `00:00:00.000` seconds to `00:00:59.999` seconds. 
+A complete minute is defined as `00:00:00.000` seconds to `00:00:59.999` seconds.
 
 Use the `@SimplyTimed` annotation to mark a method, constructor, or type as a simple timer.
 The simple timer tracks how frequently the annotated object is started and how long the invocations take to complete:
@@ -335,5 +334,3 @@ public JSON getWeatherData() {
 * Guide: link:/guides/microprofile-metrics.html[Providing metrics from a microservice]
 * xref:introduction-monitoring-metrics.adoc[Monitoring with metrics]
 * xref:metrics-list.adoc[Metrics reference list]
-
-
