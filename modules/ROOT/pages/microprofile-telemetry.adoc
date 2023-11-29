@@ -27,7 +27,7 @@ To enable MicroProfile Telemetry in your Open Liberty runtime, you must add the 
 
 . Add a version of the feature:mpTelemetry[display=MicroProfile Telemetry] feature to your `server.xml` file.
 +
-Different versions of the MicroProfile Telemetry feature are compatible with different MicroProfile versions Jakarta and Java Enterprise Editions and the Open Liberty umbrella features that support them. Both feature:mpTelemetry-1.0[] and feature:mpTelemetry-1.1[] are compatible with feature:jakartaee-10.0[] and feature:microProfile-6.0[]. However, `mpTelemetry-1.1` is also compatible with the following earlier umbrella features:
+Different versions of the MicroProfile Telemetry feature are compatible with different MicroProfile versions, Jakarta and Java Enterprise Editions, and the Open Liberty umbrella features that support them. Both feature:mpTelemetry-1.0[] and feature:mpTelemetry-1.1[] are compatible with feature:jakartaee-10.0[] and feature:microProfile-6.0[]. However, `mpTelemetry-1.1` is also compatible with the following earlier umbrella features:
 +
 *  feature:javaee-7.0[] and feature:microProfile-1.4[]
 *  feature:jakartaee-8.0[] and feature:microProfile-4.1[]
@@ -37,10 +37,8 @@ Different versions of the MicroProfile Telemetry feature are compatible with dif
 +
 You can configure how MicroProfile Telemetry collects and exports traces by specifying configuration properties in any of the xref:external-configuration.adoc#default[config sources that are available to MicroProfile Config]. If you choose to set these configuration properties by using environment variables, make the key name uppercase and convert any punctuation to underscores. For example, the `otel.sdk.disabled=false` property is equivalent to the `OTEL_SDK_DISABLED=false` environment variable.
 
-.. Enable the generation of traces by setting the `otel.sdk.disabled` property to `false`.
+.. OpenTelemetry is disabled by default. To enable the generation of traces, set the `otel.sdk.disabled=false` property.
 +
-OpenTelemetry is disabled by default. To enable the generation of traces, set the `otel.sdk.disabled=false` property.
-
 .. Configure a trace storage system by specifying an exporter definition that includes the exporter type and the endpoint to connect to.
 +
 For example, to use a Jaeger server, you might add configuration similar to the following example to your `bootstrap.properties` file:
@@ -87,7 +85,7 @@ After you enable MicroProfile Telemetry and configure a trace server, you can in
 [#auto]
 === Automatic instrumentation
 
-With automatic instrumentation, you can observe traces without modifying the source code in your applications. All you need to do is configure your server, as described in <<#ol-config,Configuring Open Liberty to use MicroProfile Telemetry>>. However, automatic instrumentation is available only for JAX-RS and Jakarta RESTful web service applications.
+With automatic instrumentation, you can observe traces without modifying the source code in your applications. All you need to do is configure runtime as described in <<#ol-config,Configuring Open Liberty to use MicroProfile Telemetry>>. However, automatic instrumentation is available only for JAX-RS and Jakarta RESTful web service applications.
 
 In Open Liberty version 23.0.0.11 and later, spans are automatically generated for incoming HTTP requests, including static files, servlets, and JSPs.
 
@@ -120,7 +118,7 @@ Automatic instrumentation is available only for JAX-RS and Jakarta RESTful web s
 
 . Enable MicroPRofile Telemetry, as described in <<#ol-config,Configuring Open Liberty to use MicroProfile Telemetry>>.
 
-. Enable third-party APIs for your application by adding the following code in your `server.xml` file:
+. xref:class-loader-library-configuration.adoc#3rd-party[Enable third-party APIs] for your application by adding the following code in your `server.xml` file:
 +
 [source,xml]
 ----
@@ -247,9 +245,9 @@ The following information can help you determine the cause of common problems an
 Previous spans are incorrectly shown as current or parent spans::
 
 If the `Scope` instance is not closed correctly, the context and baggage values of previous spans might remain when the next operation executes. Alternatively, the current span might remain and be picked up as the parent of the next operation that executes.
-
++
 Always close the `Scope` instance when you exit an operation. This configuration stops the span from being current and makes the previous span current again. Use a `try-with-resources` block, which automatically closes the `Scope` instance at the end of the block, as shown in the following example:
-
++
 [source, java]
 ----
 Span span = tracer.spanBuilder("PerformingOperation").startSpan();
