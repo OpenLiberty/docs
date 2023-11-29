@@ -16,14 +16,19 @@ In microservice applications, sources of latency or inaccuracy can be difficult 
 
 One way to increase observability of an application is by emitting traces. Traces represent requests and consist of multiple spans. A span represents a single operation in a request and contains a name, time-related data, log messages, and metadata to gather data about what occurs during a transaction.
 
-link:https://projects.eclipse.org/projects/technology.microprofile/releases/microprofile-telemetry-1.0/plan%E2%80%A8%E2%80%A822.0.0.10-bet[MicroProfile Telemetry] is based on the https://opentelemetry.io/[OpenTelemetry project], which is a collection of open source vendor-agnostic tools, APIs, and SDKs for creating and managing trace data. You can enable MicroProfile Telemetry for Open Liberty by adding the feature:mpTelemetry[display=MicroProfile Telemetry] feature to your `server.xml` file and configuring the feature to connect to your distributed trace service.
+link:https://projects.eclipse.org/projects/technology.microprofile/releases/microprofile-telemetry-1.0/plan%E2%80%A8%E2%80%A822.0.0.10-bet[MicroProfile Telemetry] is based on the https://opentelemetry.io/[OpenTelemetry project], which is a collection of open source vendor-independent tools, APIs, and SDKs for creating and managing trace data. You can enable MicroProfile Telemetry for Open Liberty by adding the feature:mpTelemetry[display=MicroProfile Telemetry] feature to your `server.xml` file and configuring the feature to connect to your distributed trace service.
 
 MicroProfile Telemetry replaces MicroProfile OpenTracing. For information about migrating your applications from MicroProfile OpenTracing to MicroProfile Telemetry, see xref:reference:diff/mp-50-60-diff.adoc#telemetry[Differences between MicroProfile Telemetry 1.0 and MicroProfile OpenTracing 3.0].
 
-== OpenTelemetry configuration
+[#ol-config]
+== Configuring Open Liberty to use MicroProfile Telemetry
 
-To enable OpenTelemetry, you must add the feature:mpTelemetry[display=MicroProfile Telemetry] feature to your `server.xml` file. Different versions of the MicroProfile Telemetry feature are compatible with different MicroProfile versions Jakarta and Java Enterprise Editions and the Open Liberty umbrella features that support them.
+To enable MicroProfile Telemetry in your Open Liberty runtime, you must add the MicroProfile Telemetry feature to your `server.xml` file and specify MicroProfile Config properties to configure how MicroProfile Telemetry collects and exports traces.
 
+. Add a version of the feature:mpTelemetry[display=MicroProfile Telemetry] feature to your `server.xml` file.
++
+Different versions of the MicroProfile Telemetry feature are compatible with different MicroProfile versions Jakarta and Java Enterprise Editions and the Open Liberty umbrella features that support them.
++
 * feature:mpTelemetry-1.0[] is compatible with feature:jakartaee-10.0[] and feature:microProfile-6.0[].
 * featutre:mpTelemetry-1.1[] is compatible with the following features:
 ** feature:javaee-7.0[] and feature:microProfile-1.4[]
@@ -31,25 +36,27 @@ To enable OpenTelemetry, you must add the feature:mpTelemetry[display=MicroProfi
 ** feature:jakartaee-9.1[] and feature:microProfile-5.0[]
 ** `jakartaee-10.0` and `microProfile-6.1`
 
-=== Configuration properties
-
+. Enable tracing and configure a trace storage system by specifying MicroProfile Config properties.
++
 You can configure how MicroProfile Telemetry collects and exports traces by specifying configuration properties in any of the xref:external-configuration.adoc#default[config sources that are available to MicroProfile Config]. If you choose to set these configuration properties by using environment variables, make the key name uppercase and convert any punctuation to underscores. For example, the `otel.sdk.disabled=false` property is equivalent to the `OTEL_SDK_DISABLED=false` environment variable.
 
+.. Enable the generation of traces by setting the `otel.sdk.disabled` property to `false`.
++
 OpenTelemetry is disabled by default. To enable the generation of traces, set the `otel.sdk.disabled=false` property.
 
-To store the generated traces, you need an OpenTelemetry storage solution, such as link:https://www.jaegertracing.io/[Jaeger] or link:https://zipkin.io/[Zipkin]. To export the generated traces to these systems, you must specify an exporter definition that includes the exporter type and the endpoint to connect to.
-
+.. Configure a trace storage system by specifying an exporter definition that includes the exporter type and the endpoint to connect to.
++
 For example, to use a Jaeger server, you might add configuration similar to the following example to your `bootstrap.properties` file:
-
++
 [source,properties]
 ----
 otel.sdk.disabled=false
 otel.traces.exporter=otlp
 otel.exporter.otlp.endpoint=http://localhost:4317/
 ----
-
-Alternatively, to use a Zipkin server, you might add configuration similar to following example to your `bootstrap.properties`:
-
++
+Alternatively, to use a Zipkin server, you might add configuration similar to the following example to your `bootstrap.properties` file:
++
 [source,properties]
 ----
 otel.sdk.disabled=false
@@ -57,31 +64,38 @@ otel.traces.exporter=zipkin
 otel.exporter.zipkin.endpoint=http://localhost:9411/api/v2/spans
 ----
 
-If you want to export traces to Open Liberty log files, set the following property:
-
+.. Optionally, set other MicroProfile Config properties to configure trace details.
++
+For example, if you want to export traces to Open Liberty log files, set the following property:
++
 [source,properties]
 ----
 otel.traces.exporter=logging
 ----
-
++
 For more information about the available properties, see xref:microprofile-config-properties.adoc#telemetry[MicroProfile Config properties: MicroProfile Telemetry].
+
+. Depending on how you choose to instrument your application code for tracing, further configuration might be required.
++
+For more information, see the following section.
 
 == Code instrumentation
 
-After you enable OpenTelemetry and configure a trace server, you can instrument tracing by using one of the following methods:
+After you enable MicroProfile Telemetry and configure a trace server, you can instrument tracing in your application code by using one of the following methods:
 
-* <<#auto, automatic instrumentation>>, which automatically traces your RESTful web services (JAX-RS).
+* <<#auto, automatic instrumentation>>, which automatically traces your JAX-RS or RESTful web services.
 * <<#manual, manual instrumentation>>, which allows you to start and end telemetry spans manually.
 * <<#agent, agent instrumentation>>, which automatically adds telemetry to popular open source libraries. However, agent instrumentation also imposes certain <<#limit, limitations>>.
 
 [#auto]
 === Automatic instrumentation
 
-With automatic instrumentation, you can observe traces without modifying the source code in your JAX-RS or Jakarta RESTful web service applications.
+With automatic instrumentation, you can observe traces without modifying the source code in your applications. However, automatic instrumentation is available only for JAX-RS and Jakarta RESTful web service applications.
 
 From Open Liberty version 23.0.0.11 onwards, spans are automatically generated for incoming HTTP requests, including static files, servlets, and JSPs.
 
-To start emitting traces with automatic instrumentation, enable the MicroProfile Telemetry feature in your `server.xml` file by adding `<feature>mpTelemetry-1.0</feature>` or `<feature>mpTelemetry-1.1</feature>` to your server.xml file. By default, MicroProfile Telemetry tracing is off. To enable tracing, specify the `otel.sdk.disabled=false` MicroProfile Config property and any exporter configuration that your tracing service service requires.
+////
+To start emitting traces with automatic instrumentation, enable the MicroProfile Telemetry feature in your `server.xml` file by adding `<feature>mpTelemetry-1.0</feature>` or `<feature>mpTelemetry-1.1</feature>` to your server.xml file. By default, MicroProfile Telemetry tracing is off. To enable tracing, specify the `otel.sdk.disabled=false` MicroProfile Config property and any exporter configuration that your tracing service requires.
 
 For example, to export traces to a Jaeger server with the OpenTelemetry Protocol (OTLP) enabled, add the following entries to your `bootstrap.properties` file.
 
@@ -100,21 +114,18 @@ otel.sdk.disabled=false
 otel.traces.exporter=zipkin
 otel.exporter.zipkin.endpoint=http://localhost:9411/api/v2/spans
 ----
+////
 
 [#manual]
 === Manual instrumentation
+
 Automatic instrumentation is available only for JAX-RS and Jakarta RESTful web service applications. To create spans for other operations, such as database calls, you can add manual instrumentation to the source code for those operations by using the https://www.javadoc.io/doc/io.opentelemetry/opentelemetry-api/1.19.0/io/opentelemetry/api/trace/package-summary.html[OpenTelemetry API]. However, before you manually instrument your code, you must complete the following prerequisites.
 
-- Enable OpenTelemetry by setting `otel.sdk.disabled=false` and configure an exporter. For example, to export traces to a Jaeger server with the OpenTelemetry Protocol (OTLP) enabled, add the following entries to your `bootstrap.properties` file. As with automatic instrumentation, you can instead set `otel.traces.exporter` to `zipkin` or `logging`.
+. Enable OpenTelemetry by setting `otel.sdk.disabled=false` and configure an exporter.
++
+For more information, see <<#ol-config,Configuring Open Liberty to use MicroProfile Telemetry>>.
 
-[source,properties]
-----
-otel.sdk.disabled=false
-otel.traces.exporter=otlp
-otel.exporter.otlp.endpoint=http://localhost:4317/
-----
-
-- Enable third-party APIs for your application by adding the following code in your `server.xml` file:
+. Enable third-party APIs for your application by adding the following code in your `server.xml` file:
 +
 [source,xml]
 ----
@@ -123,7 +134,7 @@ otel.exporter.otlp.endpoint=http://localhost:4317/
 </webApplication>
 ----
 
-- Add the `opentelemetry` API and OpenTelemetry instrumentation annotations as a provided dependency to your build path. For example, with Maven, add the following code to your `pom.xml` file.
+. Add the `opentelemetry` API and OpenTelemetry instrumentation annotations as a provided dependency to your build path. For example, with Maven, add the following code to your `pom.xml` file.
 +
 [source,xml]
 ----
@@ -159,7 +170,7 @@ public String myMethod() {
 }
 ----
 
-- Create a subspan around a particular operation, such as querying a database. This subspan allows you to see how long it took and the order in which it occurred relative to other spans.
+- Create a subspan around a particular operation, such as querying a database. This subspan shows you how long it took and the order in which it occurred relative to other spans.
 +
 [source,java]
 ----
@@ -202,9 +213,9 @@ class SpanBean {
 The following important considerations apply to manual instrumentation.
 
 - You must call the `.end()` method on any span you create, otherwise the span is not recorded.
-- The current span is used as the parent for any new spans that are created. Therefore, when you create a span, you usually also want to make it current. However, you must close the `Scope` instance that is returned by the  `Span.makeCurrent()` method. You can close a `Scope` instance by specifying  a try-with-resources block, as shown in the previous example for creating a subspan.
-- Becuase Liberty supports per-application configuration it does not support `GlobalOpenTelemetry`. Using that class will not produce any telemetry data.
-- If you set any properties by using environment variables, including the `server.env` file, the keys must be in upper case and all punctuation must be replaced by an underscore. Values must be written normally.
+- The current span is used as the parent for any new spans that are created. Therefore, when you create a span, you usually also want to make it current. However, you must close the `Scope` instance that is returned by the  `Span.makeCurrent()` method. You can close a `Scope` instance by specifying a try-with-resources block, as shown in the previous example for creating a subspan.
+- Because Liberty supports per-application configuration, it does not support `GlobalOpenTelemetry`. Using that class will not produce any telemetry data.
+- If you set any properties by using environment variables, including the `server.env` file, the keys must be in uppercase and all punctuation must be replaced by an underscore. Values must be written normally.
 
 For more information, see the https://opentelemetry.io/docs/instrumentation/java/manual[OpenTelemetry manual instrumentation documentation]. However, remember when you use the MicroProfile Telemetry feature in Open Liberty, you must obtain the `OpenTelemetry` and `Tracer` objects by injecting them, not by creating your own. Furthermore, be aware that this documentation includes information for the OpenTelemetry Metrics and Logging APIs, which are not supported by MicroProfile Telemetry.
 
@@ -256,8 +267,8 @@ try (Scope scope = span.makeCurrent()) {
 
 You receive the `CWMOT5100I` message that tracing is disabled::
 
-If you enable the `mpTelemetry-1.1` or `mpTelemetry-1.0` feature, you must also set  the `otel.sdk.disabled=false`  property in any of the configuration sources that are accessible through MicroProfile Config to enable tracing.
+If you enable the `mpTelemetry-1.1` or `mpTelemetry-1.0` feature, you must also set the `otel.sdk.disabled=false`  property in any of the configuration sources that are accessible through MicroProfile Config to enable tracing.
 
 You receive the CWMOT5003W message that the application attempted to acquire MicroProfile Telemetry after shut down::
 
-Review the application to see why it attempted to use MicroProfile Telemetry after it shut down. Actions that might trigger the use of MicroProfile Telemetry include calling a method that is annotated with `@WithSpan`` or making a request with a JAX-RS Client or MP Rest Client.
+Review the application to see why it attempted to use MicroProfile Telemetry after it shut down. Actions that might trigger MicroProfile Telemetry include calling a method that is annotated with `@WithSpan`` or making a request with a JAX-RS Client or MP Rest Client.
