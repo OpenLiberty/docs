@@ -13,7 +13,7 @@ The following examples demonstrate configuration options for the OpenID Connect 
 - <<#oauth,Accept an OAuth 2.0 bearer access token without redirecting to an OpenID Connect provider>>
 - <<#context,Modify the context root>>
 - <<#params,Pass request parameters to OpenID Connect>>
-
+- <<#access-token,Check the access token for user and group information>>
 
 [#minimal]
 === Minimal configuration for Open Liberty to act as an OpenID Connect client
@@ -360,3 +360,19 @@ To provide extra authorization parameters to the OP, configure `authzParameter` 
 ----
 
 To configure parameters for the token endpoint, use the `tokenParameter` element.
+
+[#access-token]
+=== Check the access token for user and group information
+
+If `userIdentifier` or `groupIdentifier` values are not found in the ID token, Open Liberty can also check in the access token and the `UserInfo` endpoint.
+
+Set the `tokensOrderToFetchCallerClaims` attribute to `AccessToken IDToken Userinfo`, as shown in the following example.
+
+[source,xml]
+----
+<openidConnectClient tokensOrderToFetchCallerClaims="AccessToken IDToken Userinfo"  userIdentifier="unique_name" groupIdentifier="aud" ... />
+----
+
+In this example, Open Liberty checks for `userIdentifier` and `groupIdentifier` values first in the access token, then the ID token, and lastly, calls the `UserInfo` endpoint. If the values are not found in any of those locations, an unauthorized response code is returned.
+
+If the `tokensOrderToFetchCallerClaims` attribute is not specified, the default value is `IDToken` and Open Liberty checks only the ID token for user and group information.
