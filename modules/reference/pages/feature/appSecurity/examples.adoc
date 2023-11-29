@@ -103,38 +103,38 @@ To rotate LTPA keys without requiring reauthentication, copy the primary keys to
 
 1. Configure Open Liberty to use validation keys.
 +
-To enable Open Liberty to use both primary keys and validation keys, specify the `monitorDirectory` and `monitorInterval` attributes for the `ltpa` element in your `server.xml` file, as shown in the following example:
+To enable Open Liberty to use both primary keys and validation keys, specify the `monitorValidationKeysDir` and `monitorInterval` attributes for the `ltpa` element in your `server.xml` file, as shown in the following example:
 +
 [source,xml]
 ----
-<ltpa monitorDirectory="true" monitorInterval="5m"/>
+<ltpa monitorValidationKeysDir="true" monitorInterval="5m"/>
 ----
 +
 The directory monitor looks for any LTPA keys files with the `*.keys` extension in the `${server.config.dir}/resources/security/` directory. Open Liberty reads the LTPA keys in these files and uses them to validate LTPA tokens.
 +
-The `monitorDirectory` attribute monitors the `${server.config.dir}/resources/security/` directory by default, but can monitor any directory the primary keys file is specified in. If the `monitorInterval` attribute is set to 0, the default value, the directory is not monitored.
+The `monitorValidationKeysDir` attribute monitors the `${server.config.dir}/resources/security/` directory by default, but can monitor any directory the primary keys file is specified in. If the `monitorInterval` attribute is set to 0, the default value, the directory is not monitored.
 +
-Alternatively, you can specify the `validationKeys` subelement to specify a particular validation keys file. You can also remove the validation keys in this file from use at a particular date and time with the optional `notUseAfterDate` attribute. In the following example, a validation keys file is specified with an expiration date, after which the keys in the file are removed from use automatically:
+Alternatively, you can specify the `validationKeys` subelement to specify a particular validation keys file. You can also remove the validation keys in this file from use at a particular date and time with the optional `validUntilDate` attribute. In the following example, a validation keys file is specified with an expiration date, after which the keys in the file are removed from use automatically:
 +
 [source,xml]
 ----
 <ltpa>
-    <validationKeys fileName="validation1.keys" password="{xor}Lz4sLCgwLTs=" notUseAfterDate="2024-01-02T12:30:00Z"/>
+    <validationKeys fileName="validation1.keys" password="{xor}Lz4sLCgwLTs=" validUntilDate="2024-01-02T12:30:00Z"/>
 <ltpa/>
 ----
 +
-The `fileName` and `password` attributes are required in the `validationKeys` element, but the `notUseAfterDate` attribute is optional.
+The `fileName` and `password` attributes are required in the `validationKeys` element, but the `validUntilDate` attribute is optional.
 +
-When you specify the `validationKeys` subelement, the `monitorDirectory` element is not required. However, you can use both elements in combination so that any `*.keys` files in the primary keys file directory are used to validate LTPA tokens and not just the file that is specified by the `validationKeys fileName` attribute.
+When you specify the `validationKeys` subelement, the `monitorValidationKeysDir` element is not required. However, you can use both elements in combination so that any `*.keys` files in the primary keys file directory are used to validate LTPA tokens and not just the file that is specified by the `validationKeys fileName` attribute.
 +
 [source,xml]
 ----
-<ltpa monitorDirectory="true" monitorInterval="5m">
-    <validationKeys fileName="validation1.keys" password="{xor}Lz4sLCgwLTs=" notUseAfterDate="2024-01-02T12:30:00Z"/>
+<ltpa monitorValidationKeysDir="true" monitorInterval="5m">
+    <validationKeys fileName="validation1.keys" password="{xor}Lz4sLCgwLTs=" validUntilDate="2024-01-02T12:30:00Z"/>
 <ltpa/>
 ----
 +
-In this case, any validation keys in files other than the file that is specified by the `validationKeys` subelement remain in use until you delete the corresponding `.keys` file or set the `monitorDirectory` attribute to `false`.
+In this case, any validation keys in files other than the file that is specified by the `validationKeys` subelement remain in use until you delete the corresponding `.keys` file or set the `monitorValidationKeysDir` attribute to `false`.
 
 2. Copy the primary keys to a validation keys file.
 +
@@ -144,6 +144,6 @@ If you copy the primary keys to a validation keys file in the same directory, or
 +
 Open Liberty automatically generates a new primary keys file to validate new LTPA tokens, while it continues to use the validation keys files to validate existing LTPA tokens. In this way, you can rotate the LTPA keys without requiring existing users to reauthenticate.
 
-4. Optionally, when you no longer need the validation keys, remove them by deleting the validation keys file or by setting the `monitorDirectory` attribute to `false`.
+4. Optionally, when you no longer need the validation keys, remove them by deleting the validation keys file or by setting the `monitorValidationKeysDir` attribute to `false`.
 +
 Removing unused validation keys can improve performance.
