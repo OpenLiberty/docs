@@ -27,14 +27,11 @@ To enable MicroProfile Telemetry in your Open Liberty runtime, you must add the 
 
 . Add a version of the feature:mpTelemetry[display=MicroProfile Telemetry] feature to your `server.xml` file.
 +
-Different versions of the MicroProfile Telemetry feature are compatible with different MicroProfile versions Jakarta and Java Enterprise Editions and the Open Liberty umbrella features that support them.
+Different versions of the MicroProfile Telemetry feature are compatible with different MicroProfile versions Jakarta and Java Enterprise Editions and the Open Liberty umbrella features that support them. Both feature:mpTelemetry-1.0[] and feature:mpTelemetry-1.1[] are compatible with feature:jakartaee-10.0[] and feature:microProfile-6.0[]. However, `mpTelemetry-1.1` is also compatible with the following earlier umbrella features:
 +
-* feature:mpTelemetry-1.0[] is compatible with feature:jakartaee-10.0[] and feature:microProfile-6.0[].
-* featutre:mpTelemetry-1.1[] is compatible with the following features:
-** feature:javaee-7.0[] and feature:microProfile-1.4[]
-** feature:jakartaee-8.0[] and feature:microProfile-4.1[]
-** feature:jakartaee-9.1[] and feature:microProfile-5.0[]
-** `jakartaee-10.0` and `microProfile-6.1`
+*  feature:javaee-7.0[] and feature:microProfile-1.4[]
+*  feature:jakartaee-8.0[] and feature:microProfile-4.1[]
+*  feature:jakartaee-9.1[] and feature:microProfile-5.0[]
 
 . Enable tracing and configure a trace storage system by specifying MicroProfile Config properties.
 +
@@ -84,15 +81,15 @@ For more information, see the following section.
 After you enable MicroProfile Telemetry and configure a trace server, you can instrument tracing in your application code by using one of the following methods:
 
 * <<#auto, automatic instrumentation>>, which automatically traces your JAX-RS or RESTful web services.
-* <<#manual, manual instrumentation>>, which allows you to start and end telemetry spans manually.
+* <<#manual, manual instrumentation>>, which allows you to start and end telemetry spans manually for applications that are not JAX-RS or RESTful web services.
 * <<#agent, agent instrumentation>>, which automatically adds telemetry to popular open source libraries. However, agent instrumentation also imposes certain <<#limit, limitations>>.
 
 [#auto]
 === Automatic instrumentation
 
-With automatic instrumentation, you can observe traces without modifying the source code in your applications. However, automatic instrumentation is available only for JAX-RS and Jakarta RESTful web service applications.
+With automatic instrumentation, you can observe traces without modifying the source code in your applications. All you need to do is configure your server, as described in <<#ol-config,Configuring Open Liberty to use MicroProfile Telemetry>>. However, automatic instrumentation is available only for JAX-RS and Jakarta RESTful web service applications.
 
-From Open Liberty version 23.0.0.11 onwards, spans are automatically generated for incoming HTTP requests, including static files, servlets, and JSPs.
+In Open Liberty version 23.0.0.11 and later, spans are automatically generated for incoming HTTP requests, including static files, servlets, and JSPs.
 
 ////
 To start emitting traces with automatic instrumentation, enable the MicroProfile Telemetry feature in your `server.xml` file by adding `<feature>mpTelemetry-1.0</feature>` or `<feature>mpTelemetry-1.1</feature>` to your server.xml file. By default, MicroProfile Telemetry tracing is off. To enable tracing, specify the `otel.sdk.disabled=false` MicroProfile Config property and any exporter configuration that your tracing service requires.
@@ -121,9 +118,7 @@ otel.exporter.zipkin.endpoint=http://localhost:9411/api/v2/spans
 
 Automatic instrumentation is available only for JAX-RS and Jakarta RESTful web service applications. To create spans for other operations, such as database calls, you can add manual instrumentation to the source code for those operations by using the https://www.javadoc.io/doc/io.opentelemetry/opentelemetry-api/1.19.0/io/opentelemetry/api/trace/package-summary.html[OpenTelemetry API]. However, before you manually instrument your code, you must complete the following prerequisites.
 
-. Enable OpenTelemetry by setting `otel.sdk.disabled=false` and configure an exporter.
-+
-For more information, see <<#ol-config,Configuring Open Liberty to use MicroProfile Telemetry>>.
+. Enable MicroPRofile Telemetry, as described in <<#ol-config,Configuring Open Liberty to use MicroProfile Telemetry>>.
 
 . Enable third-party APIs for your application by adding the following code in your `server.xml` file:
 +
@@ -214,8 +209,8 @@ The following important considerations apply to manual instrumentation.
 
 - You must call the `.end()` method on any span you create, otherwise the span is not recorded.
 - The current span is used as the parent for any new spans that are created. Therefore, when you create a span, you usually also want to make it current. However, you must close the `Scope` instance that is returned by the  `Span.makeCurrent()` method. You can close a `Scope` instance by specifying a try-with-resources block, as shown in the previous example for creating a subspan.
-- Because Liberty supports per-application configuration, it does not support `GlobalOpenTelemetry`. Using that class will not produce any telemetry data.
-- If you set any properties by using environment variables, including the `server.env` file, the keys must be in uppercase and all punctuation must be replaced by an underscore. Values must be written normally.
+- Because Liberty supports per-application configuration, it does not support `GlobalOpenTelemetry`. Using that class does not produce any telemetry data.
+- If you set any properties by using environment variables, including the in the `server.env` file, the keys must be in uppercase and all punctuation must be replaced by an underscore. Values must be written normally.
 
 For more information, see the https://opentelemetry.io/docs/instrumentation/java/manual[OpenTelemetry manual instrumentation documentation]. However, remember when you use the MicroProfile Telemetry feature in Open Liberty, you must obtain the `OpenTelemetry` and `Tracer` objects by injecting them, not by creating your own. Furthermore, be aware that this documentation includes information for the OpenTelemetry Metrics and Logging APIs, which are not supported by MicroProfile Telemetry.
 
@@ -246,7 +241,7 @@ The OpenTelemetry Java agent is a tool that is provided by the OpenTelemetry pro
 * The agent is not compatible with https://www.ibm.com/docs/en/was-liberty/base?topic=security-java-2[Java 2 security].
 * Open Liberty uses many open source libraries internally. Some of these libraries might be automatically instrumented by the agent.
 
-== Troubleshooting Microprofile Telemetry
+== Troubleshooting MicroProfile Telemetry
 The following information can help you determine the cause of common problems and error messages.
 
 Previous spans are incorrectly shown as current or parent spans::
