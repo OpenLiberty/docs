@@ -318,7 +318,7 @@ Currently, Open Liberty InstantOn is tested and supported on the following publi
 
 - link:https://aws.amazon.com/eks/[Amazon Elastic Kubernetes Service (EKS)]
 - link:https://azure.microsoft.com/en-us/products/kubernetes-service[Azure Kubernetes Service (AKS)]
-- link:https://www.redhat.com/en/technologies/cloud-computing/openshift[Red Hat OpenShift] (version 4.14 and later)
+- link:https://www.redhat.com/en/technologies/cloud-computing/openshift[Red Hat OpenShift (version 4.14 and later)]
 
 Other public cloud Kubernetes services might also work if they have the <<#required-to-restore,prerequisites>> to allow the InstantOn application process to restore.
 
@@ -337,6 +337,36 @@ When you deploy to Kubernetes, the container must be granted the `CHECKPOINT_RES
             drop:
             - ALL
 ----
+
+==== Red Hat OpenShift security context constraints
+
+To deploy applications to Red Hat OpenShift with InstantOn, you must specify a security context constraint (SCC) that, at a minimum, specifies a list of additional capabilities that are added to any pod. The following SSC yaml file example defines an SCC with the required capabilities by using the `defaultAddCapabilities` parameter:
+
+[source,yaml]
+----
+defaultAddCapabilities:
+- CHECKPOINT_RESTORE
+- SETPCAP
+----
+
+The applications you deploy must be associated with an SCC that adds the required capabilities. For example, you might deploy an SCC called `liberty-instanton-scc` that adds the required capabilities. In the following example, the deployment yaml file specifies the `serviceAccountName` parameter to set the SCC name to `liberty-instanton-scc`:
+
+[source,yaml]
+----
+  serviceAccountName: liberty-instanton-scc
+  securityContext:
+    allowPrivilegeEscalation: true
+    privileged: false
+    runAsNonRoot: true
+    capabilities:
+      add:
+      - CHECKPOINT_RESTORE
+      - SETPCAP
+      drop:
+      - ALL
+----
+
+For more information, see the Red Hat documentation for link:https://docs.openshift.com/container-platform/latest/authentication/managing-security-context-constraints.html[Managing security context constraints].
 
 [#supported-features]
 == Open Liberty InstantOn supported features
