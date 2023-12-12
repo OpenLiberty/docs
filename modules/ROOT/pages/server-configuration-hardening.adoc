@@ -14,13 +14,13 @@
 = Server configuration security hardening
 
 Operating system intrusions occur when unauthorized users log in to the operating system and gain access to sensitive resources.
-Employ best practices with Open Liberty to harden your server configuration and Docker images against potential operating system attacks.
+Employ best practices with Open Liberty to harden your server configuration and container images against potential operating system attacks.
 
 [#basic-best-practices]
 == Basic best practices
 
 The following list of best practices outlines basic guidelines to harden your server configuration and ensure that it is fit for production.
-These best practices also apply to hardening Open Liberty Docker images if you're working with containers:
+These best practices also apply to hardening Open Liberty container images if you're working with containers:
 
 * Make the Open Liberty server configuration file system, which is the path where the `WLP_USER_DIR` environment variable points, writable only to authorized server administrators.
 * Confirm that the Open Liberty server identity doesn’t own the directory where the server configuration is stored and has only read access to it.
@@ -33,26 +33,26 @@ Set the `WLP_OUTPUT_DIR` environment variable to point to the server logs with t
 * Add the `httpOptions removeServerHeader="true"` statement to the `server.xml` file.
 * Add the `webContainer disableXPoweredBy="true"` statement to the `server.xml` file.
 
-[#ol-docker-images]
-== Open Liberty Docker images
+[#ol-images]
+== Open Liberty container images
 A container that runs in production must have only the tools and packages that you need to run your application.
 Before you run a container in production, harden the container image to remove any potential vulnerabilities that might allow exploitation of your server configuration or installation.
 
-The simplest way to securely run Open Liberty is to start with an existing Open Liberty Docker image, which is already set up with basic security protocols.
-Then, if you intend to use an Open Liberty Docker image in production, harden it by following the best practices in this topic.
-You can https://hub.docker.com/_/open-liberty[find Open Liberty Docker images and related information] in Docker Hub.
+The simplest way to securely run Open Liberty is to start with an existing Open Liberty container image, which is already set up with basic security protocols.
+Then, if you intend to use an Open Liberty image in production, harden it by following the best practices in this topic.
+For more information, see xref:container-images.adoc[Open Liberty container images].
 
 If you extend an Open Liberty image for use in production, opt for the leanest possible configuration by adding only tools and packages that are essential to your application.
 Using a minimal image reduces the number of operating system vulnerabilities that you bundle with your application.
 
 [#current-version]
-== Latest Open Liberty versions and Docker images
+== Latest Open Liberty versions and container images
 Keep your version of Open Liberty up to date.
 The zero migration policy of Open Liberty means that you can move to a later version without changing anything in your server configuration.
 Staying on the latest version also ensures that you get the latest xref:security-vulnerabilities.adoc[security fixes] because updates are first released in the current version.
 After security fixes are released for the current version of Open Liberty, they are rolled back to older releases.
-Container images in Docker Hub are updated every time a new version of Open Liberty is released.
-Use the most recent images from Docker Hub for the containers that you run in production.
+Container images in official repositories are updated every time a new version of Open Liberty is released.
+Use the most recent Open Liberty container images in your applications in production.
 
 [#installation-validation]
 == Installation validation
@@ -72,7 +72,7 @@ For example, a `7` represents that all 3 bits are on for an attribute, which ind
 A file with `770` permissions indicates that the file owner and any user in the group have read, write, and execute access, but all others have no permissions.
 
 Generally, the last digit in the file permissions ends in `0` so that others don't have access to protected information.
-By default, Open Liberty Docker images run with `USER 1001`, a non-root user, as part of group `0`.
+By default, Open Liberty container images run with `USER 1001`, a non-root user, as part of group `0`.
 This setting ensures that these images don't run as root by default.
 
 When you configure file permissions, ensure that users who require access to the server configuration have no more than the required capability.
@@ -104,19 +104,23 @@ Some of these users need read access to view the logs, while other users might n
 * *Unauthorized users*:
 These users are treated as part of the *other* group, so they don't have access to the configuration or product file systems.
 
-* *User registries that are safe for production*:
-Basic and Quick Start Security user registries are useful for development environments, but they are not acceptable for readiness testing, quality assurance, or production use.
-For production, use an LDAP user registry, federated registries, or create a custom user registry.
-+
-If you use an LDAP user registry, maintain your bind password in a separate include file, not in the `server.xml` file.
-If you use a custom user registry, use the `UserRegistry` class to implement the registry, and make sure that the registry is thoroughly reviewed before you use it in production.
-For more information about user registries, see xref:user-registries-application-security.adoc[User registries for application security].
-
 * *Single-sign on*:
 Rather than directly accessing user registries from Open Liberty, use single-sign on (SSO) technologies, such as SAML, JWT, or OpenID Connect.
 SSO provides better security and regulatory compliance.
 If you use SSO, maintain your SSO configuration in a separate include file, not in the `server.xml` file.
 For more information about SSO, see xref:single-sign-on.adoc[Single sign-on].
+
+[#user-registries]
+== User registries
+
+To ensure that information in your user registry is secure, choose a user registry option that is safe for production environments.
+
+* Basic and Quick Start Security user registries are useful for development environments, but they are not acceptable for readiness testing, quality assurance, or production use.
+For production, use an LDAP user registry, federated registries, or create a custom user registry.
++
+* If you use an LDAP user registry, maintain your bind password in a separate include file, not in the `server.xml` file.
+If you use a custom user registry, use the `UserRegistry` class to implement the registry, and make sure that the registry is thoroughly reviewed before you use it in production.
+For more information about user registries, see xref:user-registries-application-security.adoc[User registries for application security].
 
 [#include-file-processing]
 == Include file processing
@@ -143,8 +147,8 @@ By default, each server contains a monitored application directory that's named 
 When an application is placed in this directory, the server automatically deploys and starts the application.
 If you update the configuration in the `server.xml` file or the `/dropins` directory, the server automatically deploys the configuration changes.
 
-Each server also contains a monitored directory that's named `/dropins/configDropins` for configuration snippets.
-If you update the configuration in this directory, the server automatically deploys the configuration changes.
+Each server also contains a directory named `/configDropins` with monitored subdirectories `/configDropins/defaults` and `/configDropins/overrides` for configuration snippets.
+If you update the configuration in either of these two subdirectories, the server automatically deploys the configuration changes.
 
 To ensure that you deploy only explicitly pre-configured applications where their configuration is in the `server.xml` file, disable monitoring of the `/dropins` directory:
 
@@ -160,11 +164,15 @@ You can also disable automatic configuration updates in the `server.xml` file by
 <config updateTrigger="mbean" />
 ----
 
+[#client-data]
+== Client data at rest
+Ensure that client data at rest, such as a password, is encrypted. For more information, see <<#password-encryption,Password encryption>>.
+
 [#password-encryption]
 == Password encryption
 Use AES encryption for passwords instead of Base64 encoding.
 You can use the xref:reference:command/securityUtility-encode.adoc[securityUtility encode command] with Open Liberty for plain text obfuscation.
-AES encryption is also preferable to XOR encryption because an XOR-encoded password is visible to any administrator.
+AES encryption is also preferable to XOR encryption because an XOR-encoded password is visible to any administrator. Currently, Open Liberty supports AES-128 encryption.
 For more information, see xref:password-encryption.adoc[Password encryption limitations].
 
 With AES encryption, the default encryption key that is used for decryption can be overridden by setting the `wlp.password.encryption.key` property.

@@ -7,15 +7,15 @@
 //     IBM Corporation
 //
 :page-description:
-:seo-title: Data persistence with the Java Persistence API (JPA)
+:seo-title: Data persistence with the Jakarta Persistence API (JPA)
 :seo-description:
 :page-layout: general-reference
 :page-type: general
-= Data persistence with the Java Persistence API
+= Data persistence with the Jakarta Persistence API
 
-The Java Persistence API (JPA) simplifies data persistence and object relational mapping for Java applications. With JPA, applications can efficiently create, read, update, and delete objects from a relational database.
+The Jakarta Persistence API (JPA) simplifies data persistence and object relational mapping for Java applications. With JPA, applications can efficiently create, read, update, and delete objects from a relational database.
 
-Persistent data is data that outlives the application process that created it. Applications commonly persist data in relational databases, which organize data in sets of tables with columns and rows. Many different types of relational databases exist, and their configurations vary. JPA provides a standard for applications to interact with relational databases so that developers don't need to worry about vendor-specific differences among databases or writing time-consuming boilerplate code to persist data.
+JPA provides a standard for applications to interact with relational databases so that developers don't need to worry about vendor-specific differences among databases or writing time-consuming boilerplate code to persist data.
 
 == What is JPA?
 
@@ -23,19 +23,29 @@ Enterprise applications require efficient access to relational databases. For ex
 
 JPA is a https://jakarta.ee/specifications/persistence/[Jakarta EE specification] to represent data in relational database tables as Plain Old Java Objects (POJO), a process that is known as object-relational mapping (ORM). JPA simplifies and standardizes ORM by using Java annotations or XML to map Java objects into one or more tables of a relational database. The JPA specification explicitly defines ORM, rather than relying on vendor-specific mapping implementations. JPA is based on the Java programming model that applies to Jakarta EE environments, but it can function within a Java SE environment for testing purposes.
 
-=== JPA and JDBC
+JPA simplifies the persistence programming model by providing the following functions:
 
-xref:relational-database-connections-JDBC.adoc[The Java Database Connectivity API (JDBC)] handles the actual communication between an application and the tables in a relational database by managing SQL queries and commands. JPA provides a level of abstraction between the application and JDBC layers, allowing developers to manage persistence with Java annotations or XML, without having to worry about the details of SQL functions. Although managing persistence at the JDBC level provides more flexibility and fine-grained control over how data is persisted, it is much more complex to configure and maintain.
+- The EntityManager API can persist, update, retrieve, or remove objects from a database.
+- The EntityManager API and object-relational mapping metadata handle most of the database operations without requiring you to write JDBC or SQL code to maintain persistence.
+- JPA provides the JPQL query language, which extends the independent EJB querying language. You can use JPQL to retrieve objects without writing SQL queries specific to the database that you are working with.
 
-Whether you manage persistence through JPA or directly with JDBC depends on the needs of your application. Developers might prefer to work directly with JDBC if their application doesn't have much interaction with a database or doesn't need to support many different database vendors. However, working directly with JDBC requires familiarity with SQL. Developers who are not familiar with SQL, or whose applications need to support complex data models or multiple database vendors, might choose to manage persistence with JPA.
+JPA is designed to operate both inside and outside of a Jakarta EE container. When you run JPA inside a container, the applications can use the container to manage the persistence context. If no container exists to manage JPA, the application must handle the persistence context management itself. Applications that are designed for container-managed persistence do not require as much code implementation to handle persistence, but these applications cannot be used outside of a container. Applications that manage their own persistence can function in a container environment or a Java SE environment.
 
 == JPA configuration with Open Liberty
 
-JPA for Open Liberty is supported by the feature:jpa[display=JPA feature] and the feature:jpaContainer[display=JPA Container feature]. The JPA feature includes JPA specification interfaces and container-managed JPA integration. EclipseLink is included as the default JPA provider implementation. If you want to use a different provider implementation, such as Hibernate, enable the JPA Container feature. The JPA Container feature provides the same capabilities as the JPA feature but does not include a default provider implementation. If you enable the JPA feature, you do not need to explicitly enable the JPA Container feature. The JPA feature automatically enables the JPA Container feature.
+JPA for Open Liberty is supported by the feature:persistence[display=Jakarta Persistence] feature and the feature:persistenceContainer[display=Jakarta Persistence Container] feature. The JPA feature includes JPA specification interfaces and container-managed JPA integration. EclipseLink is included as the default JPA provider implementation. If you want to use a different provider implementation, such as Hibernate, enable the JPA Container feature. The JPA Container feature provides the same capabilities as the JPA feature but does not include a default provider implementation. If you enable the JPA feature, you do not need to explicitly enable the JPA Container feature. The JPA feature automatically enables the JPA Container feature.
 
-For examples of how to configure a provider implementation other than the default, see the feature:jpaContainer[display=JPA Container feature].
+For examples of how to configure a provider implementation other than the default, see the feature:persistenceContainer[display=Jakarta Persistence Container] feature.
 
+=== JPA and local transaction contexts in Open Liberty
 
+JPA transactions can take place in a local transaction context (LTC), which is associated with a single resource manager, and a global transaction context (GTC), which spans multiple resource managers. Open Liberty provides both global and local transaction contexts to managed components. As a result, when threads service a managed component, a transaction is always active, whether within a GTC or an LTC.
+
+This processing has no effect on application-managed persistence contexts, which are JPA entity managers that are acquired through `EntityManagerFactory` instances that are injected into an application with the `@PersistenceUnit` annotation. However, it can affect container-managed persistence contexts (CMTS), which are JPA entity managers that are injected through the `@PersistenceContext` annotation.
+
+JPA API methods that are required to throw a `TransactionRequiredException` exception when they are called outside of the boundaries of a GTC still throw this exception as expected. However, the LTC remains active until a new GTC is started or the end of the component service invocation is reached. And while the LTC remains active, the CMTS persistence context also remains active.
+
+Therefore, within the bounds of an LTC, entities that a CMTS entity manager fetches by using either find or query are still managed by that persistence context, instead of becoming immediately detached. As a result, the persistence context that is kept alive by the LTC is disposed of after the GTC starts, and entities that are managed by that persistence context become detached. This outcome might be unexpected and a difference in behavior compared with some JPA programming guides.
 
 == See also
 

@@ -1,6 +1,12 @@
 
 == Examples
 
+- <<#basic,Configure a basic user registry>>
+- <<#quick,Configure a basic user registry with QuickStart security>>
+- <<#ltpa,Specify LTPA keys>>
+- <<#filter,Configure LTPA authentication for a subset of requests>>
+- <<#tai,Disable LTPA cookies for TAI>>
+
 === Configure a basic user registry
 You can configure Open Liberty to authenticate and authorize users by using a basic user registry. The basic user registry contains user credentials that applications need for security-related tasks. To configure a basic user registry, the Application Security feature must be enabled in the `server.xml` file. The following example shows the configuration of a basic user registry in the `server.xml` file:
 [source,xml]
@@ -32,25 +38,31 @@ To configure a basic user registry with multiple users, you can create groups fo
 </basicRegistry>
 ----
 
+User and group names must be unique and cannot contain any trailing or leading spaces.
+If a user ID or password contains characters other than US-ASCII, make sure that the `server.xml` file is saved by using UTF-8 character encoding.
+You can use the `securityUtility encode` command to encode the password for each user. For more information, see xref:reference:command/securityUtility-encode.adoc[securityUtility encode].
+You can also specify administrative roles for users and groups to govern access to Open Liberty administrative REST APIs. For more information, see the feature:restConnector[display=Admin REST Connector] feature.
+
+[#quick]
 === Configure a basic user registry with QuickStart security
-When you want to configure a basic user registry, you can use the `quickStartSecurity` element to automatically configure a registry that grants the administrator role to a user. The administrator role gives the user the authority to manage applications. To configure a basic user registry with the `quickStartSecurity` element, the Application Security feature must be enabled in the `server.xml` file. The following example shows the `server.xml` file configuration to define the username and password for a user that is granted the administrator role with the `quickStartSecurity` element:
+When you want to configure a basic user registry for test purposes, you can use the `quickStartSecurity` element to automatically configure a registry that grants the administrator role to a user. The administrator role gives the user the authority to manage applications. The following example shows the `server.xml` file configuration to define the username and password for a user that is granted the administrator role with the `quickStartSecurity` element:
 [source,xml]
 ----
 <quickStartSecurity userName="Bob" userPassword="bobpwd" />
 ----
-QuickStart security configuration is intended for test purposes.
+You can use QuickStart security configuration for test purposes. The registry that is configured by this option is not intended for production environments. However, it is useful in test scenarios, particularly for testing secured JMX connections that require administrator access.
 
-=== Specify LTPA keys
-When the Application Security feature is enabled, Lightweight Third Party Authentication (LTPA) is enabled by default. The following example shows the configuration of the `ltpa` element in the `server.xml` file:
-[source,xml]
-----
-<ltpa keysFileName="yourLTPAKeysFileName.keys" keysPassword="keysPassword" expiration="120" />
-----
+[#ltpa]	
+=== Specify LTPA keys	
+When the Application Security feature is enabled, Lightweight Third Party Authentication (LTPA) is enabled by default. You can override the default settings for the `ltpa` element by configuring the `ltpa` element in the `server.xml` file. The following example shows how to configure the `ltpa` element:	
+[source,xml]	
+----	
+<ltpa keysFileName="yourLTPAKeysFileName.keys" keysPassword="keysPassword" expiration="120" />	
+----	
+For more information on LTPA configuration attributes, see the config:ltpa[display=LTPA] configuration element.
 
-LTPA configuration can provide Single Sign-on (SSO) to secure applications. For more information, see link:/docs/ref/general/#single-sign-on.html[Single sign-on (SSO)].
-
+[#filter]
 === Configure LTPA authentication for a subset of requests
-
 You can configure an authentication filter to specify whether certain requests for protected resources are authenticated with LTPA.
 If the request meets the criteria that are specified in the authentication filter, then the request can authenticate with LTPA to access the protected resource.
 Conversely, if the request does not meet the criteria that are configured in the LTPA authentication filter, then the user is prompted to provide login credentials.
@@ -68,47 +80,11 @@ For more information, see xref:ROOT:authentication-filters.adoc[Authentication f
 In the example, request URLs that contain the `/SimpleServlet` pattern are authenticated by using LTPA SSO authentication.
 If the `ltpa` element does not specify the `authFilterRef` attribute, all requests that include an LTPA cookie are processed by LTPA SSO authentication.
 
+[#tai]
 === Disable LTPA cookies for TAI
-
-LTPA cookies contain secure tokens that are used to verify user credentials and enable SSO. When you don't want to rely on LTPA tokens for SSO, you can use other methods, such as a Trust Association Interceptor (TAI), for authentication. A TAI is used to validate HTTP requests between a third-party security server and an Open Liberty server to complete authentication.  The following example shows how to disable LTPA cookies for TAI by specifying `disableLtpaCookie` with a value of `true` in the `server.xml` file:
+LTPA cookies contain secure tokens that are used to verify user credentials and enable SSO. When you don't want to rely on LTPA tokens for SSO, you can use other methods, such as a Trust Association Interceptor (TAI), for authentication. A TAI is used to validate HTTP requests between a third-party security server and an Open Liberty server to complete authentication.  The following example shows how to disable LTPA cookies for TAI by specifying the `disableLtpaCookie` attribute with a value of `true` in the `server.xml` file:
 
 [source,xml]
 ----
 <trustAssociation id="sample" disableLtpaCookie="true" />
-----
-
-
-
-=== Configure REST API management roles
-
-You can configure management roles for your Open Liberty server to grant users and groups that are defined in a user registry access to select administrative REST APIs. The administrator role (`administrator-role`) provides read and write access to administrative REST APIs. The reader role (`reader-role`) provides read-only access to administrative REST APIs. Users who are in the reader role can monitor the server but do not have permission to modify it in any way.
-
-In the following example, a user who is named Bob and a group that is named employees are granted the reader role. A user who is named Wanda and a group that is named managers are granted the administrator role:
-
-[source,xml]
-----
-<reader-role>
-    <user>Bob</user>
-    <group>employees</group>
-</reader-role>
-
-<administrator-role>
-    <user>Wanda</user>
-    <group>managers</group>
-</administrator-role>
-----
-
-If you prefer to use access IDs to identify users or groups, you can use the `user-access-id` or `group-access-id` elements, as shown in the following example:
-
-[source,xml]
-----
-<reader-role>
-    <user-access-id>user:BasicRealm/Bob</user-access-id>
-    <group-access-id>group:BasicRealm/employees</group-access-id>
-</reader-role>
-
-<administrator-role>
-    <user-access-id>user:BasicRealm/Wanda</user-access-id>
-    <group-access-id>group:BasicRealm/managers</group-access-id>
-</administrator-role>
 ----

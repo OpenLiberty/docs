@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020 IBM Corporation and others.
+// Copyright (c) 2022 IBM Corporation and others.
 // Licensed under Creative Commons Attribution-NoDerivatives
 // 4.0 International (CC BY-ND 4.0)
 //   https://creativecommons.org/licenses/by-nd/4.0/
@@ -30,28 +30,33 @@ securityUtility createSSLCertificate --server=myserver --password=mypassword --v
 
 == Syntax
 
-Run the command from the `path_to_liberty/bin` directory.
+Run the command from the `_path_to_liberty_/wlp/bin` directory. You must specify either the `server` or `client` option or the command fails. The keystore password must be at least six characters long. If the `password` option is not specified, you’re prompted for a password value when you run this command.
 
+Use the following syntax to create a keystore and certificate for an Open Liberty server.
+
+[subs=+quotes]
 ----
-securityUtility createSSLCertificate --password=pwd [options]
+securityUtility createSSLCertificate --server=_serverName_ --password=_pwd_ [_options_]
 ----
 
---password=__pwd__::
-The keystore password, which must be at least six characters long. If no value is specified, then you’re prompted for a value.
+Use the following syntax to create a keystore and certificate for an Open Liberty client
 
-options::
-One or more optional parameters.
+[subs=+quotes]
+----
+securityUtility createSSLCertificate --client=_clientName_ --password=_pwd_ [_options_]
+----
 
 == Options
 
+.Options for the securityUtility createSSLCertificate command
 [%header,cols=2*]
 |===
 |Option
 |Description
 
-|--client=name
+|--client=_name_
 |Specifies the name of the Open Liberty client for which the keystore and certificate are created.
-This option can't be used if the `--server` option is specified.
+This option can't be used if the `--server` option is specified. This option is required when the `--server` option is not specified.
 
 |--extInfo
 |Specifies any X.509 certificate extension information that is used to create the default certificate.
@@ -64,11 +69,11 @@ Use the syntax of the `--ext` flag on the `keytool` command.
 {empty} +
 You can use more than one `--extInfo` option with a single command, for example, `--extInfo="san=dns:laptop" --extInfo="ExtendedKeyUsage=serverAuth,clientAuth"`.
 
-|--keySize=size
+|--keySize=_size_
 |Specifies the certificate key bit size.
 The default value is `2048`.
 
-|--keyType=keystore_type
+|--keyType=_keystore_type_
 |Specifies the keystore type to generate.
 By default, a PKCS12 keystore is generated.
 To generate a JKS keystore, specify this option with the value of `JKS`.
@@ -79,22 +84,25 @@ A PKCS12 keystore has advantages over a JKS keystore.
 The PKCS12 keystore is more extensible, supports stronger cryptographic algorithms, and is widely adopted.
 Certificate authorities frequently issue certificates in the PKCS12 format.
 
-|--passwordEncoding=password_encoding_type
+|--password=_password_
+|Specifies the keystore password, which must be at least six characters long. If this option is not specified, you’re prompted for a value when you run the command.
+
+|--passwordEncoding=_password_encoding_type_
 |Specifies how to encode the keystore password.
 Supported encoding types are `xor` and `aes`.
 If this option isn't specified, a default encoding type of `xor` is used.
 
-|--passwordKey=password_encryption_key
+|--passwordKey=_password_encryption_key_
 |Specifies the key to use when you encode a password with AES encryption.
 This string is hashed to produce an encryption key that is used to encrypt and decrypt the password.
 You can provide the key by defining the `wlp.password.encryption.key` variable as the key value.
 If this option isn't specified, a default key is used.
 
-|--server=name
+|--server=_name_
 |Specifies the name of the Open Liberty server for which the keystore and certificate are created.
-This option can't be used if the `--client` option is specified.
+This option can't be used if the `--client` option is specified. This option is required when the `--client` option is not specified.
 
-|--sigAlg=signature_algorithm
+|--sigAlg=_signature_algorithm_
 |Specifies the signature algorithm that is used to sign the self-signed certificate.
 By default, the signature algorithm is SHA256withRSA.
 The signature algorithm that is supported depends on what is supported by the underlying Java Runtime Environment (JRE).
@@ -108,7 +116,7 @@ The signature algorithms that end with ECDSA create certificates with Elliptical
 {empty} +
 If you use certificates that are created with EC keys, then include a customized ciphers list that includes EC ciphers in your Transport Layer Security (TLS) configuration.
 
-|--subject=DN
+|--subject=_DN_
 |Specifies the distinguished name (DN) for the certificate subject and issuer.
 If this option isn't specified, a default value of `CN=<hostname>,OU=<server or client name>,O=ibm,C=us` is used.
 {empty} +
@@ -116,8 +124,38 @@ If this option isn't specified, a default value of `CN=<hostname>,OU=<server or 
 The DN value is retrieved by using a Java method to get the machine's local hostname.
 If the hostname can't be resolved, the IP address is returned.
 
-|--validity=days
+|--validity=_days_
 |Specifies the number of days that the certificate is valid, which must be equal to or greater than 365.
 If this option isn't specified, a default value of `365` is used.
 
+|===
+
+== Exit codes
+
+The following exit codes are available for the `securityUtility createSSLCertificate` command:
+
+.Exit codes for the securityUtility createSSLCertificate command
+[%header,cols="2,9"]
+|===
+
+|Code
+|Explanation
+
+|0
+|This code indicates successful completion of the requested operation.
+
+|1
+|This code indicates a generic error.
+
+|2
+|This code indicates that the server is not found.
+
+|3
+|This code indicates that the client is not found.
+
+|4
+|This code indicates that the path can not be created.
+
+|5
+|This code indicates that the file already exists.
 |===

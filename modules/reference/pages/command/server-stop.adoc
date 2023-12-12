@@ -9,16 +9,14 @@
 //
 :page-layout: server-command
 :page-type: command
+
 = server stop command
 
-Stops the named Open Liberty server.
+The `server stop` command stops the named Open Liberty server.
 
-This command triggers the server to enter a quiesce phase before stopping. The quiesce phase prevents new application requests from entering the server and allows existing requests time to complete. After that time, the server shuts down and the server process exits.
+Normal server stop includes a quiesce stage before the server shuts down. This quiesce stage allows time for shutdown preparation, such as stopping inbound listeners but allowing existing requests to complete. The maximum length for the quiesce stage is 30 seconds. Applying the `--force` option to the stop command skips the quiesce stage. The `--force` option has no effect if server stop was already initiated. If you use the `--force` option, you might see unexpected exceptions in the `messages.log` file that occur after the server received the `server stop` command.
 
-//* Equivalent command for Maven.
-//* Equivalent command for Gradle.
-* xref:command/server-run.adoc[Start an Open Liberty server in the foreground.]
-* xref:command/server-start.adoc[Start an Open Liberty server in the background.]
+The `server stop` command also includes a 30 second waiting period for confirmation that the server is stopped. You can customize this waiting period with the `--timeout` option.
 
 == Usage examples
 
@@ -34,12 +32,21 @@ Force the `myserver` server to stop without the quiesce stage:
 server stop myserver --force
 ----
 
-== Syntax
 
-Run the command from the `path_to_liberty/bin` directory.
+Set the amount of time to wait for the `myserver` server to stop. This sets the timeout value to 1 minute. The default timeout value is 30 seconds.
 
 ----
-server stop serverName [options]
+server stop myserver --timeout=1m
+----
+
+
+== Syntax
+
+Run the command from the `_path_to_liberty_/wlp/bin` directory.
+
+[subs=+quotes]
+----
+server stop _serverName_ [_options_]
 ----
 
 serverName::
@@ -50,35 +57,70 @@ One or more optional parameters.
 
 == Options
 
-[%header,cols=2*]
+.Options for the server stop command
+[cols="a,a",width="100%"]
 |===
-|Option
-|Description
+|Option |Description
 
 |--force
-|Skips the quiesce stage before the server is shut down.
-{empty} +
-{empty} +
-Normal server stop includes a quiesce stage before the server is shut down. The quiesce stage, a period of 30 seconds, allows services to perform pre-shutdown work; for example, inbound listeners are stopped but existing requests are allowed to complete.
-{empty} +
-{empty} +
-The `--force` option has no effect if server stop was already invoked. If you use the `--force` option, you might see unexpected exceptions in the `messages.log` file that occur after the `server stop` command was received by the server.
+
+|  Skips the quiesce stage before the server is shut down.
+   {empty} +
+   {empty} +
+   Normal server stop includes a quiesce stage before the server is shut down. The quiesce stage, a period of 30 seconds, allows services to perform pre-shutdown work; for example, inbound listeners are stopped but existing requests are allowed to complete.
+   {empty} +
+   {empty} +
+   The `--force` option has no effect if server stop was already invoked. If you use the `--force` option, you might see unexpected exceptions in the `messages.log` file that occur after the `server stop` command was received by the server.
+   {empty} +
+   {empty} +
+
+|--timeout
+
+|  Specifies the maximum amount of time that the `server stop` command waits for confirmation that the server is stopped. The default value is 30 seconds.
+   {empty} +
+   {empty} +
+   This timeout is separate from the quiesce stage, which is the maximum amount of time the server waits for pre-shutdown work to complete before it starts to shut down the runtime. However, do not configure the `--timeout` option for a duration less than the default of 30 seconds because confirmation of server stop might be delayed by the quiesce process during that time. The quiesce stage timer is not configurable, though it can be skipped by using the `--force` option.
+   {empty} +
+   {empty} +
+   The format for the duration is `XXmXXs`, where `m` stands for minutes and `s` stands for seconds.
+   {empty} +
+   {empty} +
+   The following example shows how to set the timeout value to 45 seconds. If no units are specified, the value is assumed to be seconds.
+
+   server stop --timeout=45
+
+The following example shows how to set the timeout value to 3 minutes and 20 seconds.
+
+   server stop --timeout=3m20s
+
+|===
+
+== Exit codes
+
+The following exit codes are available for the `server stop` command and the equivalent executable JAR file `ws-server.jar`:
+
+.Exit codes for the server stop command
+[%header,cols="2,9"]
+|===
+
+|Code
+|Explanation
+
+|0
+|This code indicates successful completion of the requested operation.
+
+|1
+|This code indicates invocation of a redundant operation, such as starting a started server or stopping a stopper server.
+1 might also be returned if the JVM options that were used are not valid.
+
+|2
+|This code indicates that the server does not exist.
+
+|>=20
+|Exit codes that are greater than or equal to 20 indicate that an error occurred while performing the request. Messages are printed and captured in log files with more information about the error.
 |===
 
 == See also
 
 * xref:command/server-run.adoc[server run]
 * xref:command/server-start.adoc[server start]
-
-== Exit codes
-
-The following exit codes are available for the `server stop` command and the equivalent executable JAR file `ws-server.jar`:
-
-0::
-    OK. 0 indicates successful completion of the requested operation.
-1::
-    1 indicates invocation of a redundant operation, such as starting a started server or stopping a stopper server. 1 might also be returned if the JVM options that were used are not valid.
-2::
-    2 indicates that the server does not exist.
->=20::
-    Exit codes greater than or equal to 20 indicate that an error occurred while performing the request. Messages are printed and captured in log files with more information about the error.

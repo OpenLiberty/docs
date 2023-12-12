@@ -1,4 +1,4 @@
-// Copyright (c) 2020 IBM Corporation and others.
+// Copyright (c) 2020,2022 IBM Corporation and others.
 // Licensed under Creative Commons Attribution-NoDerivatives
 // 4.0 International (CC BY-ND 4.0)
 //   https://creativecommons.org/licenses/by-nd/4.0/
@@ -6,8 +6,7 @@
 // Contributors:
 //     IBM Corporation
 //
-// This doc is hosted in the Red Hat Runtimes documentation. Any changes made to this doc also need to be made to the version that's located in the PurpleLiberty GitHub repo (https://github.com/PurpleLiberty/docs).
-//
+
 :page-description: When you run Open Liberty in dev mode, you can rapidly code, deploy, test, and debug applications directly in your IDE or text editor.
 :seo-title: Dev mode
 :seo-description: When you run Open Liberty in dev mode, you can rapidly code, deploy, test, and debug applications directly in your IDE or text editor.
@@ -18,13 +17,13 @@
 When you run Open Liberty in dev mode, you can rapidly code, deploy, test, and debug applications directly from your integrated development environment (IDE) or text editor. You can enable dev mode to work with either Maven or Gradle build automation tools.
 
 With dev mode, you can quickly iterate on changes to your code and get immediate feedback from on-demand or automatic unit and integration tests. You can also attach a debugger to step through your code at any time.
-Dev mode is available as a goal of https://github.com/OpenLiberty/ci.maven[the Open Liberty Maven plug-in] or as a task of https://github.com/OpenLiberty/ci.gradle[the Liberty Gradle plug-in].
+Dev mode is available as a goal of https://github.com/OpenLiberty/ci.maven[the Liberty Maven plug-in] or as a task of https://github.com/OpenLiberty/ci.gradle[the Liberty Gradle plug-in].
 It integrates a set of capabilities for Open Liberty so that you can edit and monitor your application in real time, without restarting your running server.
 Dev mode addresses three primary focus areas: deploying changes, running tests, and debugging.
 
 == Run Open Liberty in dev mode
 
-To run Open Liberty in dev mode, https://github.com/OpenLiberty/ci.maven#configuration[enable the Open Liberty Maven plug-in] or https://github.com/OpenLiberty/ci.gradle#usage[the Open Liberty Gradle plug-in] and run one of the following commands:
+To run Open Liberty in dev mode, https://github.com/OpenLiberty/ci.maven#configuration[enable the Liberty Maven plug-in] or https://github.com/OpenLiberty/ci.gradle#usage[the Liberty Gradle plug-in] and run one of the following commands:
 
 Maven: `mvn liberty:dev`
 
@@ -43,7 +42,8 @@ Dev mode automatically detects the following changes to your application source:
 
 Resource file, configuration file, and configuration directory changes are copied into your target directory.
 New dependencies in your `pom.xml` file or `build.gradle` file are added to your class path.
-New features are installed and started.
+
+When you <<#auto,turn on automatic feature generation>>, Liberty features that your application requires are automatically generated in your server configuration. New features, whether added manually or generated, are installed and enabled automatically. Automatic feature generation is turned off by default.
 
 Some changes, such as adding certain configuration directories or files, do not take effect until you restart dev mode.
 To enable these changes, restart dev mode when prompted.
@@ -51,8 +51,25 @@ To restart, first exit dev mode by pressing `CTRL+C`, or by typing `q` and press
 Then, run the `mvn liberty:dev` command or the `gradle libertyDev` command to restart.
 After the server restarts, the changes are detected, recompiled, and picked up by the running server.
 
-You can configure how dev mode handles changes to your code by specifying parameters when you start dev mode.
-For more information about configuration parameters, see https://github.com/OpenLiberty/ci.maven/blob/master/docs/dev.md#dev[the dev goal of the Open Liberty Maven plug-in] or https://github.com/OpenLiberty/ci.gradle/blob/master/docs/libertyDev.md#libertydev-task[the libertyDev task of the Open Liberty Gradle plug-in].
+You can configure how dev mode handles changes to your code by specifying parameters when you start dev mode. After you start dev mode, you can also view a help menu of dev mode console actions by typing `h` and pressing `Enter`.
+For more information about configuration parameters and console actions, see https://github.com/OpenLiberty/ci.maven/blob/main/docs/dev.md#dev[the dev goal of the Liberty Maven plug-in] or https://github.com/OpenLiberty/ci.gradle/blob/main/docs/libertyDev.md#libertydev-task[the libertyDev task of the Liberty Gradle plug-in].
+
+[#auto]
+=== Automatically generate Liberty features in your server configuration
+
+When you turn on automatic feature generation, dev mode detects the Liberty features that your application requires based on API usage and generates a feature list in a new server configuration file. The file is named `generated-features.xml` and is created in the `src/main/liberty/config/configDropins/overrides` directory. Java source file changes, server configuration changes, and build file changes might result in new Liberty features being generated. Generated features are installed and enabled automatically.
+
+Automatic feature generation is turned off by default. When dev mode is running, you can toggle the automatic generation of features on and off by typing `g` and pressing `Enter`.
+
+Alternatively, when you start dev mode from the command line, you can set the `generateFeatures` parameter to `true`. This setting, as shown in the following examples, enables automatic feature generation from dev mode startup.
+
+Maven: `mvn liberty:dev -DgenerateFeatures=true`
+
+Gradle: `gradle libertyDev --generateFeatures=true`
+
+When automatic feature generation is turned on, dev mode has a runtime dependency on IBM WebSphere Application Server Migration Toolkit for Application Binaries, which is separately licensed under IBM License Agreement for Non-Warranted Programs. For more information, see https://public.dhe.ibm.com/ibmdl/export/pub/software/websphere/wasdev/license/wamt[the IBM License Agreement].
+
+You do not need to purchase a license or install IBM WebSphere Application Server Migration Toolkit for Application Binaries to use automatic feature generation.
 
 === Run unit and integration tests on demand
 
@@ -70,7 +87,7 @@ Gradle: `gradle libertyDev --hotTests`
 
 You can also add parameters to specify whether to skip tests.
 For Maven, you can add parameters to skip unit tests, skip integration tests, or skip all tests. For Gradle, you can add a parameter to skip all tests.
-For more information about configuration parameters, see https://github.com/OpenLiberty/ci.maven/blob/master/docs/dev.md#dev[the dev goal of the Open Liberty Maven plug-in] or https://github.com/OpenLiberty/ci.gradle/blob/master/docs/libertyDev.md#libertydev-task[the libertyDev task of the Open Liberty Gradle plug-in].
+For more information about configuration parameters, see https://github.com/OpenLiberty/ci.maven/blob/main/docs/dev.md#dev[the dev goal of the Liberty Maven plug-in] or https://github.com/OpenLiberty/ci.gradle/blob/main/docs/libertyDev.md#libertydev-task[the libertyDev task of the Liberty Gradle plug-in].
 
 === Attach a debugger to the running server
 
@@ -80,49 +97,21 @@ The default port for debugging is `7777`.
 If the default port is not available, dev mode selects a random port to use as the port for debugging.
 
 
-== Open Liberty Tools for VS Code and IntelliJ
+== Liberty Tools for Eclipse, VS Code, and IntelliJ IDEA
 
-The Open Liberty Tools extensions for VS Code and IntelliJ integrate dev mode functions directly into your chosen IDE. After you install either of these extensions and enable either the Maven or Gradle plug-in, you can find your project name in the Liberty Dev Dashboard window in VS Code or IntelliJ IDEA. You can access dev mode functions by right-clicking your project name and selecting a command from the drop-down menu.
+Liberty Tools for Eclipse, VS Code, and IntelliJ IDEA integrate dev mode functions directly into your chosen development environment. When you install these tools and enable either the Maven or Gradle plug-in, you can find your project name in the Liberty dashboard view in Eclipse IDE or Visual Studio Code, or to the Liberty Tools window in IntelliJ IDEA. You can access dev mode functions by right-clicking your project name and selecting a command from the drop-down menu. Liberty Tools also provides core language support for Liberty configuration files, MicroProfiles APIs, and Jakarta EE APIs.
 
-You can https://marketplace.visualstudio.com/items?itemName=Open-Liberty.liberty-dev-vscode-ext[download Open Liberty Tools for VS Code from the Visual Studio Marketplace]. For more information, see https://github.com/OpenLiberty/open-liberty-tools-vscode[Open Liberty Tools for VS Code on GitHub].
-
-You can https://plugins.jetbrains.com/plugin/14856-open-liberty-tools[download Open Liberty Tools for IntelliJ from the JetBrains Marketplace]. For more information, see https://github.com/OpenLiberty/open-liberty-tools-intellij[Open Liberty Tools for IntelliJ on GitHub].
-
+For more information, see xref:develop-liberty-tools.adoc[Develop with Liberty Tools].
 
 == Container support for dev mode
 
-If you are developing an application locally in a container, you can minimize differences between your development and production environments by running your containerized server in dev mode. With container support for dev mode, you can use the same Dockerfile for both development and production. You use the same base image and customizations, and specify the same configuration files in your Dockerfile that you use for your application in production.
+If you are developing an application locally in a container, you can minimize differences between your development and production environments by running your containerized server in dev mode. With container support for dev mode, you can use the same `Dockerfile` file for both development and production. You use the same base image and customizations, and specify the same configuration files in the `Dockerfile` file  that you use for your application in production.
 
 === Start dev mode with container support
 
-For Maven projects, specify the Liberty Maven plug-in with version `3.3` in your project `pom.xml` file, as shown in the following example:
+Like regular dev mode, the first step to enable dev mode with container support is to https://github.com/OpenLiberty/ci.maven#configuration[enable the Liberty Maven plug-in] or https://github.com/OpenLiberty/ci.gradle#usage[the Liberty Gradle plug-in].
 
-[source,xml]
-----
-<plugin>
-    <groupId>io.openliberty.tools</groupId>
-    <artifactId>liberty-maven-plugin</artifactId>
-    <version>3.3</version>
-</plugin>
-----
-
-For Gradle projects, specify the Liberty Gradle plug-in with version `3.1` in your project `build.gradle` file, as shown in the following example:
-
-[source,java]
-----
-apply plugin: 'liberty'
-
-buildscript {
-    repositories {
-        mavenCentral()
-    }
-    dependencies {
-        classpath 'io.openliberty.tools:liberty-gradle-plugin:3.1'
-    }
-}
-----
-
-Create a Dockerfile in your project root directory that includes `COPY` commands for your application and configuration files. For more information, see https://github.com/OpenLiberty/ci.docker#building-an-application-image[the Open Liberty Docker image documentation].
+Next, create a `Dockerfile` file in your project root directory that includes `COPY` commands for your application and configuration files. For more information, see xref:container-images.adoc[Open Liberty container images].
 
 To start dev mode with container support, run one of following commands in your project:
 
@@ -132,8 +121,17 @@ Gradle: `gradle libertyDevc`
 
 These commands compile your application, build the development image, and run the server in the container. You can edit your source code or configuration files while dev mode is running. For a comprehensive demo of dev mode with container support, see https://github.com/OpenLiberty/demo-devmode/tree/devc[the devc branch of the demo-devmode project].
 
-For more information, see the documentation for the https://github.com/OpenLiberty/ci.maven/blob/master/docs/dev.md#devc-container-mode[devc goal of the Liberty Maven plug-in] or the https://github.com/OpenLiberty/ci.gradle/blob/master/docs/libertyDev.md#libertydevc-task-container-mode[libertyDevc task of the Liberty Gradle plug-in].
+For more information, see the documentation for the https://github.com/OpenLiberty/ci.maven/blob/main/docs/dev.md#devc-container-mode[devc goal of the Liberty Maven plug-in] or the https://github.com/OpenLiberty/ci.gradle/blob/main/docs/libertyDev.md#libertydevc-task-container-mode[libertyDevc task of the Liberty Gradle plug-in].
 
+== Run multi-module Maven projects in dev mode
+
+A multi-module Maven project is a project that consists of multiple modules that are specified in the `modules` section of its `pom.xml` file. You can run a multi-module Maven project in dev mode or dev mode with container support.
+
+To start a multi-module project in dev mode, you can define the Liberty Maven plug-in in either the parent `pom.xml` file of every module or in the `pom.xml` of every module. Then, run the `mvn liberty:dev` or `mvn liberty:devc` command from the directory that contains the multi-module `pom.xml` file. When you run a multi-module Maven project in dev mode, changes in all modules are detected and hot deployed according to the Maven Reactor build order.
+
+Any modules that other modules rely on as a compile dependency must have a Java source folder that contains Java files before you start dev mode. Otherwise, the dependent modules might fail to compile. Open Liberty server configuration files, such as the `server.xml`, are used from the module that does not have any other dependent modules. If more than one module without any dependent modules exists, you can specify which module configuration files to use by including the `-pl <_module-with-liberty-config_> -am` parameters  in your `mvn liberty:dev` command. For example, to use Open Liberty configuration files from a module that is named `ear`, you can run the `mvn liberty:dev -pl ear -am` command.
+
+For more information, see https://github.com/OpenLiberty/ci.maven/blob/main/docs/dev.md#multiple-modules[Multiple Modules].
 
 == See also
 

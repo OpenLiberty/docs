@@ -10,8 +10,19 @@
 :seo-title:
 :page-layout: general-reference
 :page-type: general
-= Troubleshooting ACME certificates
+= Troubleshooting Security
 
+If you want to find solutions to security related issues , the following information can help determine the cause of common problems and the associated error messages.
+
+* <<#Troubleshooting_ACME, Troubleshooting ACME certificates>>
+* <<#Troubleshooting_LDAP, Troubleshooting LDAP>>
+- <<#Troubleshooting_Kerberos, Troubleshooting Kerberos authentication to LDAP servers>>
+* <<#Troubleshooting_SSO, Troubleshooting SSO>>
+* <<#Troubleshooting_SSL, Troubleshooting SSL and TLS>>
+* <<#Other_troubleshooting, Other troubleshooting issues>>
+
+[#Troubleshooting_ACME]
+== Troubleshooting ACME certificates
 If you experience problems with ACME certificate authority (CA) certificates, you can refer to error messages from your Open Liberty server or HTTP error messages to debug the problem. The following information can help determine the cause of common problems and error messages that are associated with ACME CA certificates.
 
 
@@ -22,16 +33,19 @@ ACMECA=all
 
 The following sections describe common problems that you might encounter with ACME CA accounts and connections. For more information, see xref:acme-cert-management.adoc[Automated certificate management with ACME] and the feature:acmeCA[display=ACME Support] feature.
 
-== The certificate request times out
+=== The certificate request times out
+
 If the certificate request times out, you can set a longer timeout value by using the  `challengePollTimeout` and `orderPollTimeout` properties.
 
-== You received an HTTP code 429 message on a renew request
+=== You received an HTTP code 429 message on a renew request
 To prevent too many immediate certificate-renew requests and a possible negative impact on the server, certificate-renew requests are blocked for a small window of time. After this window expires, new requests can be made. The 429 message indicates when new requests can be made.
 
-== You received message that indicates the rate limit was exceeded
+=== You received message that indicates the rate limit was exceeded
+
 Some CA, such as LetsEncrypt, enforce a rate limit on requesting new certificates. If you are testing and request several certificates in a short amount of time, use an appropriate testing server. For example, https://letsencrypt.org/docs/staging-environment/[LetsEncrypt provides a staging server with higher rate limits].
 
-== The certificate is renewed at startup when it isn't expired
+=== The certificate is renewed at startup when it isn't expired
+
 The following conditions can cause an unexpired certificate to be automatically renewed at startup:
 
 * The certificate is marked as revoked
@@ -39,7 +53,7 @@ The following conditions can cause an unexpired certificate to be automatically 
 * The directory URI, the domain, or other account information was changed and a new certificate is required.
 * The server was started with the `--clean` option and historical information on the certificate was removed.
 
-== The authorization challenge fails with a CWPKI2001E message
+=== The authorization challenge fails with a CWPKI2001E message
 
 If the server fails to fetch a certificate, you might see an error message like the following example:
 ----
@@ -55,7 +69,7 @@ CWWKT0016I: Web application available (default_host): http://mydomainname.com:80
 To configure the hostname used for web applications, add or update the `host` attribute for the `httpEndpoint` configuration in your `server.xml` file.
 
 
-== After a failure to fetch the certificate, the keystore produces errors
+=== After a failure to fetch the certificate, the keystore produces errors
 
 If the server cannot fetch a certificate, an empty keystore is created. In older versions of Java, an empty keystore can cause an exception. Examples of this error include the following messages:
 ----
@@ -67,19 +81,261 @@ CWWKS9582E: The [defaultSSLConfig] sslRef attributes required by the orb element
 
 To work around this error after a failure to fetch the initial certificate, remove the empty keystore.
 
-== You received a CWPKI2058W warning message during a revocation check
+=== You received a CWPKI2058W warning message during a revocation check
 
-When you run containerized versions of ACME CA servers, the OCSP responder URL that is defined in the certificate might not be reachable. You can override the OCSP responder URL in the certificate by specifying the 'ocspResponderUrl' attribute in the 'acmeRevocationChecker' element. If this URL is not configured, the following  warning can occur during revocation checks:
+When you run containerized versions of ACME CA servers, the OCSP responder URL that is defined in the certificate might not be reachable. You can override the OCSP responder URL in the certificate by specifying the 'ocspResponderUrl' attribute in the 'acmeRevocationChecker' element. If this URL is not configured, the following warning can occur during revocation checks:
 
 ----
 CWPKI2058W: Certificate revocation status checking ignored soft failures. Revocation checking might be incomplete. The failures are: '[java.security.cert.CertPathValidatorException: Unable to determine revocation status due to network error, java.security.cert.CertPathValidatorException: Unable to determine revocation status due to network error]'
 ----
 
-If you see this network error warning and you are running with a test CA server, you can add a custom `ocspResponderUrl` URL. If the test CA does not support revocation testing, you can disable revocation testing by setting the `enabled` attribute on the `acmeRevocationChecker` element `false`, as shown in the following example:
+If you see this network error warning and you are running with a test CA server, you can add a custom `ocspResponderUrl` URL. If the test CA does not support revocation testing, you can it by setting the `enabled` attribute on the `acmeRevocationChecker` element `false`, as shown in the following example:
 
 ----
 <acmeCA>
    ...
    <acmeRevocationChecker enabled="false" />
 </acmeCA>
+----
+
+[#Troubleshooting_LDAP]
+== Troubleshooting LDAP
+
+=== You received an FFDC1015I error message that the configured LDAP server cannot be reached
+
+If you are unable to reach the configured LDAP server, you might see an error message in the `messages.log` file that is similar to the following example:
+
+----
+FFDC1015I: An FFDC Incident has been created: javax.naming.ServiceUnavailableException: myldapserver.mycompany.com:636; socket closed com.ibm.ws.security.registry.ldap.internal.LdapRegistry 298
+----
+
+If you see this message, check your LDAP server to verify that it is running and that the IP address of the LDAP server can be accessed the host machine for the Open Liberty server..
+
+=== Connection with the LDAP server fails with an SSL handshake error.
+
+If you enable SSL on your LDAP server without copying the signer certificate of the LDAP server into the truststore, a connection with the LDAP server fails with an SSL handshake error.
+The truststore is referenced in the `LDAPSSLSettings` element in the `server.xml` file.
+You might see the following message:
+
+----
+The javax.naming.CommunicationException: simple bind failed: myldapserver.mycompany.com:636 [Root exception is javax.net.ssl.SSLHandshakeException: com.ibm.jsse2.util.g: PKIX path building failed: java.security.cert.CertPathBuilderException: unable to find valid certification path to requested target]
+----
+
+Make sure that you copy the signer certificate from the LDAP server into your truststore file.
+
+=== Login, authentication, or authorization is slow for LDAP or a federated repository.
+
+Several reasons can exist for a slow login.
+Review the following list for some common causes.
+
+- If the LDAP configuration for referrals is set to `follow`, then any referrals to other LDAP instances are followed on LDAP requests.
+This situation can result in contacting one or more LDAP servers, depending on your LDAP configuration, and thus, additional time is spent.
+For example, the LDAP1 server might follow a referral to the LDAP2 server, which could follow a referral to the LDAP3 server.
+If you do not need to acquire more information from other LDAP servers, set referrals to `ignore`.
+
+- One LDAP server might be experiencing a problem and error that might not display in the JVM logs.
+Examples include a TCP read timeout or a DNS issue when the LDAP server talks to a referred LDAP server.
+To diagnose these situations, you can capture packets to see how many calls are being made and if any delays or errors exist due to an LDAP server that is following a referral.
+A firewall or other software closes connections to LDAP.
+
+- With federated repositories, all repositories and registries are checked to ensure that a unique user is in the realm.
+If a repository or registry is responding slowly, every call is slow even if the user is not in the slow registry.
+Ensure that all participating base entries in the federated repository are responding promptly.
+
+
+=== Occasional connection exceptions when you access the LDAP server. For example, java.net.SocketException: Connection reset
+
+A firewall or other software closes connections to LDAP. By default, a pool of LDAP connections is maintained to improve performance.
+If a cached connection is closed remotely, a new connection is made and put back in the context pool.
+This process can cause a delay and can cause errors to be logged in the JVM logs.
+For example, you might receive the following error:
+
+----
+java.net.SocketException: Connection reset
+----
+
+To avoid this situation, set the context pool timeout to less than the remote connection closure time.
+For example, if a firewall closes the connection at 10 minutes, the connection pool timeout can be set for 9 minutes.
+Instead of encountering a failed connection and creating a new connection, the expiration is checked on a connection from the pool and a new connection is created, skipping the failure step.
+
+[#Troubleshooting_Kerberos]
+=== Troubleshooting Kerberos authentication to LDAP servers
+
+If you experience problems with Kerberos authentication to an LDAP server, refer to error messages from your Open Liberty server or HTTP error messages to debug the problem.
+The following information can help determine the causes of common problems and error messages that are associated with Kerberos authentication to LDAP servers.
+
+Performance is slow when Kerberos is configured for a federated user registry::
+
+Enabling the `allowOpIfRepoDown` attribute on the `federatedRepository` element can help avoid failures if one or more user registries in a federated user registry are unavailable.
+However, this configuration might result in slower overall performance if Kerberos credentials are specified in a `ccache` file with the `krb5TicketCache` attribute.
+When Kerberos credentials are in a `ccache` file, Open Liberty attempts to auto-renew credentials that are nearing the expiration time or expired.
+This auto-renewal attempt can result in a slower performance.
+
+To avoid this problem, you can specify Kerberos credentials in a `keytab` file with the `kerberos` element. Credentials in a `keytab` file do not expire so auto-renewal is not necessary. For more information, see xref:kerberos-authentication.adoc[Kerberos authentication for Open Liberty].
+
+Users cannot log in, even if non-Kerberos enabled registries are available::
+
+If multiple user registries are configured for an Open Liberty server, all basic, custom, and LDAP user registries are combined into a single federated user registry. By default, the server must successfully search for the user in all participating user registries to verify that the user is unique within the federated user registry. If a Kerberos-enabled LDAP server in a federated registry uses a Kerberos ticket cache to hold user credentials and the credentials expire, a search of the LDAP registry fails. To resolve the problem, renew the Kerberos ticket cache. For example, you can renew the Kerberos ticket cache by using https://docs.oracle.com/en/java/javase/11/tools/kinit.html#GUID-8AA6A058-419A-41D4-A61E-E5E1911E51E6[the Java kinit tool].
+
+To avoid failures if a user registry is unavailable, configure the `allowOpIfRepoDown` attribute in your `server.xml` file. Set the `allowOpIfRepoDown` attribute to `true` on the `primaryRealm` subelement of the `federatedRepository` element, as shown in the following example:
+
+[source,xml]
+----
+<federatedRepository>
+        <primaryRealm name="FederatedRealm" allowOpIfRepoDown="true">
+            <participatingBaseEntry name="o=SampleBasicRealm"/>
+            <participatingBaseEntry name="o=ibm,c=us"/>
+        </primaryRealm>
+</federatedRepository>
+----
+
+For more information, see the feature:federatedRegistry[display=Federated User Registry feature].
+
+The Kerberos principal name is not in the Kerberos ticket cache file::
+
+If the Kerberos principal name is not found in the Kerberos ticket cache file, Open Liberty logs the `CWIML` message type. A missing Kerberos principal name can occur for the following reasons:
+
+- No credential was generated for the Kerberos principal name, which results in an incorrect Kerberos configuration.
+- The Kerberos ticket cache contains an expired credential.
+
+In either case, renew the Kerberos ticket cache to resolve the problem. For example, you can renew the Kerberos ticket cache by using https://docs.oracle.com/en/java/javase/11/tools/kinit.html#GUID-8AA6A058-419A-41D4-A61E-E5E1911E51E6[the Java kinit tool].
+
+Depending on the type of Java SDK, the message that you can receive is similar to one of the following examples:
+
+----
+CWIML4507E: Kerberos login failed with the user1@SAMPLE.COM Kerberos principal and the C:\krb5\krb5-user1.cc Kerberos credential cache (ccache). javax.security.auth.login.LoginException: Unable to obtain password from user
+
+CWIML4520E: The LDAP operation could not be completed. The LDAP naming exception javax.naming.AuthenticationException: GSSAPI [Root exception is javax.security.sasl.SaslException: GSS initiate failed [Caused by GSSException: No valid credentials provided (Mechanism level: Ticket expired (32))]] occurred during processing.
+
+CWIML4520E: The LDAP operation could not be completed. The LDAP naming exception javax.naming.NamingException: CWIML4507E: Kerberos login failed with the user1@SAMPLE.COM Kerberos principal and the C:\krb5\krb5-user1.cc Kerberos credential cache (ccache). javax.security.auth.login.LoginException: Unable to obtain password from user
+----
+
+To review the expiration time of the Kerberos principal user, run https://docs.oracle.com/en/java/javase/11/tools/klist.html#GUID-205BCE0D-F5D4-4A9C-ACBC-46423BAF616F[the Java klist tool].
+
+For more information, see link:/docs/latest/reference/feature/ldapRegistry-3.0.html#krb5[Configure Kerberos authentication for LDAP servers].
+
+[#Troubleshooting_SSO]
+== Troubleshooting SSO
+
+=== Single sign-on (SSO) does not work as servers don't share the Coordinated Universal Time and user registry
+
+Different Open Liberty servers share LTPA keys, password, and `ssoCookieName` attribute of `webAppSecurity` element.
+If these servers don't share the Coordinated Universal Time and user registry, SSO might not work.
+Make sure that these servers share the Coordinated Universal Time and user registry.
+
+=== You are prompted to enter the credential information again
+
+
+The SSO might not work if the token expires.
+Also, SSO can fail if the cookie is sent from a web browser after you change the user registry in an inconsistent manner.
+For example, you modify the realm or remove the user that the cookie represents.
+You might be prompted to enter the credential information again.
+Make sure that the token is not expired and that you make consistent changes to the user registry.
+
+[#Troubleshooting_SSL]
+== Troubleshooting SSL and TLS
+
+Before the wide adoption of the TLS protocol, SSL was the standard protocol to secure web communications.
+Over time, many security vulnerabilities were identified for SSL and it is no longer in widespread use.
+However, for historical reasons, the term SSL is often used to refer to encrypted network connections even when TLS is in use.
+In Open Liberty, the term SSL is still used in feature and configuration names, even though TLS is the underlying protocol.
+Effectively, SSL is now a synonym for TLS.
+
+[#ssl-tls]
+=== After you migrate from Java EE to Jakarta EE, or from the ssl-1.0 feature to the transportSecurity-1.0, the certificate is not found.
+
+When the feature:ssl-1.0[display=Secure Sockets Layer] (`ssl-1.0`) feature is enabled, you acquire the Liberty default `SSLContext` class by using the `SSLContext.getDefault()` method. However, when the feature:transportSecurity[display=Transport Security] feature is enabled, the `SSLContext.getDefault()` method returns the Java Secure Socket Extension (JSSE) `SSLContext` class. Therefore, changing from one feature to the other might require you to update your application code. To obtain the default Liberty `SSLContext` class when the Transport Security feature is enabled, use the `JSSEHelper.getInstance().getSSLContext(null, null, null)` method instead of the `SSLContext.getDefault()` method.
+
+=== You receive the CWWKS9105E message that the TLS port can't be determined for redirection
+
+If you try to access an application that redirects to an TLS port that is unavailable, you might see the following messages
+
+----
+ CWWKS9105E: Could not determine the TLS port for automatic redirection.
+----
+
+The port might be unavailable because of a missing TLS configuration or some error in the TLS configuration definition.
+Check that the TLS configuration exists in the `server.xml` file and is correct.
+
+=== A keystore element exists in the configuration without an ID field and gives you an FFDC1015I error
+
+When a keystore element exists in the configuration without an ID field, you might receive the following errors
+
+----
+FFDC1015I: An FFDC Incident has been created: "java.lang.IllegalArgumentException: Unknown, incomplete configuration: missing id field com.ibm.ws.config.internal.cm.ManagedServiceFactoryTracker aSyncReadNupdate.
+----
+
+----
+Exception thrown while trying to read configuration and update ManagedServiceFactory. Exception = java.lang.IllegalArgumentException: Unknown, incomplete configuration: missing id field" at ffdc_12.04.18_16.09.42.0.log
+----
+
+This error occurs when a keystore element exists in the configuration without an ID field.
+If you use a minimal TLS configuration, set the `ID` field to `defaultKeyStore`.
+
+[#Other_troubleshooting]
+== Other troubleshooting issues
+
+=== You receive a SESN0008E message that an anonymous user attempted to access a session owned by an authenticated user.
+
+When an unauthenticated user tries to access a session that is created
+by an authenticated user, you might see the following message:
+
+----
+SESN0008E: A user authenticated as anonymous has attempted to access a session owned by
+user:LdapRegistry/cn=steven,o=myCompany,c=US.
+----
+
+This error might occur when you use a JSP (Jakarta Server Page), for example, a `login.jsp` file, for your form-login and the SSO token that is sent by the browser is expired. The
+user is then prompted to log in again using the `login.jsp` page that is configured for the form-login. By default, the JSP page, tries to get a session that was originally created by the user whose token is expired. Thus the user is not
+authenticated and no credentials are established when you access this session, which results
+in this error.
+
+To avoid this error, restart the browser that starts a new session, or configure the `login.jsp`
+file to not create the session by default. If you choose to update the `login.jsp` file, set `<%@
+page session="false" %>`.
+
+=== You receive a CWWKS9104A message that the user is not granted access to any of the required roles
+
+When a user doesn't have authorization to the roles required by the application, you might see the following message:
+
+----
+CWWKS9104A: Authorization failed for user {0} while invoking {1} on {2}. The user is not
+granted access to any of the required roles: {3}.
+----
+
+Make sure that the user or the group that the user belongs to is mapped to at least one of the roles that are mentioned in the error message. A user-to-role mapping that is defined
+in the `ibm-application-bnd.xmi/xml` file takes precedence over a mapping that is defined
+in the `server.xml` file. Check both resources to ensure that the correct mapping is defined.
+For more information, see xref:authorization.adoc[Authorization].
+
+=== Authorization fails for the user
+
+If the user authorization fails, you might see the following message:
+
+----
+CWWKS9104A: Authorization failed for user {0}.
+----
+
+This error can occur if you specify both an `application` and `webApplication` for the
+same context root. If a conflict happens the latest configuration that is defined is ignored
+and causes an unexpected error, such as CWWKS9104A.
+
+=== Application installation causes unexpected security behavior
+
+If you specify your application in the `server.xml` file by using both the application element and in the dropins folder, the application installation is attempted twice and the security configuration in the `server.xml` file might or might
+not take effect.
+
+You might see the following message:
+
+----
+CWWKZ0013E: It is not possible to start two applications called {0}.
+----
+
+This message might be followed by unexpected security behavior and error messages such as CWWKS9104A.
+To fix this problem, you must remove your application from the dropins
+folder and copy it to another directory. If you must leave it in the dropins folder, you
+must disable the application monitoring by using the following code in your `server.xml` file:
+
+----
+<applicationMonitor dropinsEnabled="false"/>
 ----

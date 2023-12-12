@@ -1,29 +1,205 @@
 == Examples
 
+- <<#default,Default configuration>>
+- <<#custom,Customize the default configuration>>
+- <<#custsp,Specify a custom service provider instance>>
+- <<#authfilter,Configure SAML authentication for a subset of requests>>
+- <<#pkix,Configure a PKIX trust engine>>
+- <<#inbound,Configure SAML Web inbound propagation>>
+- <<#idpsso,Configure identity provider-initiated unsolicited single sign-on>>
+- <<#spsso,Configure service provider-initiated unsolicited single sign-on>>
+- <<#ltpa,Configure an SP authentication session and session cookie>>
+- <<#slo,Configure the service provider for Single Logout>>
+
+
+[#default]
 === Default configuration
 
-Open Liberty provides a default configuration of the SAML Web Single Sign-on feature after the feature is enabled.
-The SAML Web Single Sign-on feature activates the following two endpoints:
+When the SAML Web Single Sign-on feature is enabled, Open Liberty provides a default SAML configuration with an ID value of `defaultSP`.
+The SAML Web Single Sign-on feature activates the following two endpoints.
 
-- `https://<hostname>:<sslport>/ibm/saml20/defaultSP/acs`
+- The `AssertionConsumerService` URL endpoint: `\https://<hostname>:<sslport>/ibm/saml20/defaultSP/acs`
 +
-The AssertionConsumerService URL endpoint on the service provider point of contact server receives assertions from the identity provider.
+This endpoint on the service provider (SP) point of contact server receives assertions from the identity provider (IdP).
 
-- `https://<hostname>:<sslport>/ibm/saml20/defaultSP/samlmetadata`
+- The service provider metadata URL endpoint: `\https://<hostname>:<sslport>/ibm/saml20/defaultSP/samlmetadata`
 +
-The service provider metadata URL endpoint provides configuration information for the service provider.
-You can download the metadata for the service provider on a browser with the service provider metadata URL.
-Further, you can provide the service provider metadata URL to the SAML identity provider to establish a federation between the service provider and identity provider.
+This endpoint provides configuration information for the service provider.
+You can download the metadata for the service provider from a browser with the service provider metadata URL.
+You can also provide the service provider metadata URL to the SAML IdP to establish a federation between the SP and IdP.
 
-=== Custom configuration
+The IdP metadata file must be named `idpMetadata.xml` and copied to the `resources/security` directory on the server.
 
-You can disable the default service provider instance when you add the following code to the `server.xml` file:
+The issuer name from the SAML assertion is used as the security realm. The `NameID` value is used as the principal to create an authenticated subject from the SAML assertion.
 
-[source, xml]
+The SAML `AuthnRequest` instance is signed with a private key in either the default keystore of the server or a keystore that is specified by the `KeyStoreRef` attribute in the SAML configuration. The default key alias is `samlsp`. This alias is used unless the `keyAlias` attribute is specified ion the SAML configuration. If the `keyAlias` attribute is not configured and the keystore contains only one private key, that private key is used in the signature.
+
+[#custom]
+=== Customize the default configuration
+
+You can customize the `defaultSP` service provider by adding a `samlWebSso20` element to your `server.xml` file and specifying a custom attribute configuration, as shown in the following example.
+
+[source,xml]
+----
+<samlWebSso20  id="defaultSP"
+       idpMetadata="${server.config.dir}/customizedidpMetadata.xml"
+       keyStoreRef="samlKeyStore"
+       keyAlias="samlKey"
+       ... />
+----
+
+For more information about the available configuration attributes, see config:samlWebSso20[display=SAML Web SSO 2.0 Authentication].
+
+[#custsp]
+=== Specify a custom service provider instance
+
+If you create a new SP instance and the `defaultSP` default instance is no longer required, you must explicitly disable the `defaultSP` instance. To disable the default SP instance and specify a new instance, add code that is similar to the following example to your `server.xml` file.
+
+[source,xml]
 ----
 <samlWebSso20 id="defaultSP" enabled="false"/>
 
 <samlWebSso20 id="newSP" allowCustomCacheKey="false"/>
 ----
 
-Thus, you can disable the default `defaultSP` service provider instance, and configure the new `newSP` service provider instance.
+You must specify a non-null URL-safe string as the ID value. If the `id` attribute is missing, the configuration element is ignored.
+
+You can create one or more  `samlWebSso20` elements with different ID values. For example, if you create a new element with `mySP` as the ID, you effectively create a new SAML SP instance that has the following `AssertionConsumerService` URL: `\https://<hostname>:<sslport>/ibm/saml20/mySP/acs`. You can also configure multiple SP and IdP federation partners by creating multiple `samlWebSso20` elements and associating each of them with a unique authentication filter. For more information, see <<#authfilter,Configure SAML authentication for a subset of requests>>.
+
+[#authfilter]
+=== Configure SAML authentication for a subset of requests
+
+You can configure an authentication filter to specify whether certain requests for protected resources are authenticated with SAML.
+If the request meets the criteria that are specified in the authentication filter, then the request can authenticate with SAML to access the protected resource.
+
+[source, xml]
+----
+<samlWebSso20 id="mySP" authFilterRef="myAuthFilter".../>
+
+<authFilter id="myAuthFilter">
+    <requestUrl id="myRequestUrl" urlPattern="/SimpleServlet" matchType="contains"/>
+</authFilter>
+----
+
+In this example, request URLs that contain the `/SimpleServlet` pattern are authenticated by using SAML SSO authentication.
+If the SAML Web Single Sign-On feature is enabled but no authentication filter is configured, all unauthenticated requests are processed by SAML authentication.
+
+You can also configure multiple SP and IdP federation partners by creating multiple `samlWebSso20` elements and associating each of them with a  unique config:authFilter[] element. In this case, all `authFilters` must exclude each other. When multiple `samlWebSso20` elements are configured, each element can implement single-sign-on with its specified federated IdP and according to its own authentication policy and rules. The following example shows a two mutually exclusive SAML configurations, each of which uses a different authentication filter to control the kinds of requests that it processes.
+
+[source, xml]
+----
+<samlWebSso20 id="mySP" authFilterRef="myAuthFilter".../>
+<samlWebSso20 id="altSP" authFilterRef="altAuthFilter".../>
+
+<authFilter id="myAuthFilter">
+      <requestUrl id="myRequestUrl" urlPattern="/SimpleServlet" matchType="contains"/>
+      <requestUrl id="excludeRequestUrl" urlPattern="/example" matchType="notContain"/>
+</authFilter>
+
+<authFilter id="altAuthFilter">
+      <requestUrl id="altRequestUrl" urlPattern="/example" matchType="contains"/>
+      <requestUrl id="exclude2RequestUrl" urlPattern="/SimpleServlet" matchType="notContain"/>
+</authFilter>
+----
+
+For more information, see xref:ROOT:authentication-filters.adoc[Authentication filters].
+
+[#pkix]
+=== Configure a PKIX trust engine
+
+The default trust engine for SAML on Open Liberty is the metadata trust engine, which validates a signature against information that is provided in the configured IdP metadata. Alternatively, you can use a Public Key Infrastructure X.509 (PKIX) trust engine by specifying the `PKIXTrustEngine` element and defining the proper `trustAnchor` value, as shown in the following example.
+
+[source,xml]
+----
+<samlWebSso20  id="defaultSP">
+  <PKIXTrustEngine trustAnchor="samlKeyStore" />
+</samlWebSso20>
+----
+
+The `trustAnchor` attribute specifies a reference to top-level `keyStore` element for a keystore that contains the public key to verify the signature of the SAML response and assertion.
+
+[#inbound]
+=== Configure SAML Web inbound propagation
+
+You can configure an Open Liberty server to accept a SAML token in an HTTP header as an authentication token. This feature is commonly used for a proxy or RESTful client that uses SAML on behalf of an authenticated user. You must also <<#pkix,configure the PKIX trust engine>> to validate the trustworthiness of the certificate in the signature through PKIX validation. Certificates that pass this validation are assumed to be trusted.
+
+The following example configuration demonstrates how to configure inbound propagation for the `defaultSP` SAML configuration by specifying the `inboundPropagation` attribute and the `pkixTrustEngine` element.
+
+[source,xml]
+----
+<samlWebSso20 id="defaultSP"
+   inboundPropagation="required"
+   headerName="saml_token"
+   signatureMethodAlgorithm="SHA1">
+   <pkixTrustEngine trustAnchor="serverStore" />
+</samlWebSso20>
+----
+
+[#idpsso]
+=== Configure identity provider-initiated unsolicited single sign-on
+Open Liberty SAML SP supports IdP-initiated unsolicited SSO with and without the requirement of IdP metadata on-premises. If you do not have IdP metadata, or if you intend to use unsolicited SSO to federate with multiple identity providers with one Liberty SP, you must add the following configurations.
+
+- Configure the `PKIXTrustEngine` subelement and import all the IdP signer certificates to the default truststore of the Liberty server, or to the trustAnchor of the PKIXTrustEngine.
+- Configure the `trustedIssuers` attribute to list the issuer name of the IdP as it appears in the SAML assertion. The issuer name is used as the EntityID in the metadata.
+
+The following example demonstrates the `server.xml` file configuration to specify IdP-initiated SSO, where the IdP signer certificates are in a file that is specified in the `serverStore` keystore configuration.
+
+[source,xml]
+----
+<samlWebSso20 id="libertysp"
+  ...
+  <pkixTrustEngine trustAnchor="serverStore" trustedIssuers="xyz" />
+</samlWebSso20>
+
+<keyStore id="serverStore" password="xxxxxxx" type="jks" location="${server.config.dir}/sslTrust.jks" />
+----
+
+If you intend to support only unsolicited SSO, you can <<#spsso,configure SP-initiated unsolicited SSO>>. This scenario is useful if the user's security context in the SP that is associated with SAML becomes invalid. The SP can redirect the user back to the IdP to start unsolicited SSO again automatically.
+
+[#spsso]
+=== Configure service provider-initiated unsolicited single sign-on
+
+The Open Liberty SAML SP uses the configured IdP metadata to service a solicited SAML `AuthnRequest` instance. An Open Liberty SP can also redirect unauthenticated requests to a preconfigured login application without using an `AuthnRequest` instance. This scenario is useful if an application performs pre-authentication processing before a user can authenticate to the SAML IdP, or if the SAML IdP must be hidden from the Open Liberty SP.
+
+To configure this scenario, set the `loginPageURL` attribute to a URL that can instruct a user to authenticate to the SAML IdP, as shown in the following example.
+
+[source,xml]
+----
+<samlWebSso20  id="defaultSP" loginPageURL="https://example.com"/>
+----
+
+
+[#ltpa]
+=== Configure an SP authentication session and session cookie
+
+After SAML assertion is verified and processed, the Liberty SAML SP maintains an authenticated session between the browser and the SP without using an LTPA cookie. The authenticated session timeout is set to `SessionNotOnOrAfter` value from  the  `saml:AuthnStatement` element, if one is presented, or to the `sessionNotOnOrAfter` attribute as configured in the server.xml file. The default value is 120 minutes.
+The session cookie name is automatically generated, and you can customize the cookie name by using the attribute `spCookieName`, as shown in the following example.
+
+[source,xml]
+----
+<samlWebSso20  id="defaultSP" sessionNotOnOrAfter="60m" spCookieName="samlCookie"/>
+----
+
+
+If you want the Open Liberty SP to create an LTPA cookie from the SAML assertion and use the LTPA cookie for subsequent authentication requests, set the  `disableLtpaCookie` attribute to `false`. If you want to share this LTPA cookie with other servers, you must also set the `allowCustomCacheKey` attribute to `false`, as shown in the following example.
+
+[source,xml]
+----
+<samlWebSso20  id="defaultSP" disableLtpaCookie="false" allowCustomCacheKey="false"/>
+----
+
+If you set both these attributes to `false`, ensure that no SAML username is directly authenticating to an on-premises user registry that prevents a user from having two accounts.
+
+[#slo]
+=== Configure the service provider for Single Logout
+
+The Open Liberty SAML Single Logout Service URL takes the following format: `\https://<hostname>:<sslport>/ibm/saml20/<SP configuration ID>/slo`. You can find this URL from the Open Liberty SP metadata URL, which is `\https://<hostname>:<sslport>/ibm/saml20/<SP configuration ID>/samlmetadata`.
+
+For IdP-initiated single logout, no additional configuration step is required. The Open Liberty SP listens on the Single Logout Service URL and automatically responds to any single logout request.
+
+However, Open Liberty also supports service provider-initiated single logout. When you set the `spLogout` attribute to `true` both the `ibm_security_logout` URL and the `HttpServletRequest.logout()` method are upgraded to implement SAML single logout.
+
+[source,xml]
+----
+<samlWebSso20  id="sp2" ... spLogout="true"/>
+----

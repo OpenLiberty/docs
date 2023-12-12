@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2020 IBM Corporation and others.
+// Copyright (c) 2019, 2023 IBM Corporation and others.
 // Licensed under Creative Commons Attribution-NoDerivatives
 // 4.0 International (CC BY-ND 4.0)
 //   https://creativecommons.org/licenses/by-nd/4.0/
@@ -6,14 +6,11 @@
 // Contributors:
 //     IBM Corporation
 //
-// This doc is hosted in the Red Hat Runtimes documentation. Any changes made to this doc also need to be made to the version that's located in the PurpleLiberty GitHub repo (https://github.com/PurpleLiberty/docs).
-//
-:projectName: Open Liberty
-:page-layout: config
-:page-type: overview
+:page-layout: general-reference
+:page-type: general
 = Server configuration overview
 
-The {projectName} server configuration is made up of one mandatory file, the `server.xml` file, and a set of optional files.
+The Open Liberty server configuration is made up of one mandatory file, the `server.xml` file, and a set of optional files.
 The `server.xml` file must be well-formed XML and the root element must be `server`.
 When the `server.xml` file is processed, any elements or attributes that are not understood are ignored.
 
@@ -35,38 +32,51 @@ This example `server.xml` file configures the server to do the following things:
 * The `httpPort` attribute is set to `9080`, which configures Open Liberty to listen to incoming traffic to `localhost` on port `9080`.
 * The `autoExpand` attribute is set to `true` so that WAR files are automatically expanded when they are deployed.
 
-The term _server  configuration_ can be used to refer to all of the files that make up the server  configuration or specifically to the configuration that's in the XML files.
-If it's not clear in context, the term _server XML  configuration_ might be used to refer to the configuration in the XML files.
+The term _server configuration_ can be used to refer to all of the files that make up the server configuration or specifically to the configuration that's in the XML files.
+If it's not clear in context, the term _server XML configuration_ might be used to refer to the configuration in the XML files.
 
+The following sections provide more details on configuring a server.
+
+* <<#configuration-files,Configuration files>>
+* <<#variable-syntax,Configuration variable syntax>>
+* <<#variable-substitution,Variable substitution precedence>>
+* <<#configuration-merging,Configuration merging>>
+* <<#include-processing,Include processing>>
+* <<#configuration-references,Configuration references>>
+* <<#dynamic-updates,Dynamic updates>>
+* <<#log-messages,Log messages>>
+
+
+[#configuration-files]
 == Configuration files
 The server configuration files are processed in the following order:
 
-. <<server-configuration-overview.adoc#server-env,`server.env`>> - Environment variables are specified in this file.
-. <<server-configuration-overview.adoc#jvm-options,`jvm.options`>> - JVM options are set in this file.
-. <<server-configuration-overview.adoc#bootstrap-properties,`bootstrap.properties`>> - This file influences the startup of the {projectName} server.
-. <<server-configuration-overview.adoc#server-xml,`server.xml`>> - This mandatory file specifies the server configuration and features.
+. <<#server-env,server.env>> - Environment variables are specified in this file.
+. <<#jvm-options,jvm.options>> - JVM options are set in this file.
+. <<#bootstrap-properties,bootstrap.properties>> - This file influences the startup of the Open Liberty server.
+. <<#server-xml,server.xml>> - This mandatory file specifies the server configuration and features.
 
 [#server-env]
 === server.env
-The `server.env` files are optional.
-These files are read by the `bin/server` shell script and specify environment variables that are primarily used to influence the behavior of the `bin/server` script.
-`server.env` files are read from the following locations in order:
+The `server.env` files are optional. These files are read by the `bin/server` shell script and specify the environment variables that are primarily used to influence the behavior of the `bin/server` script.
+The `server.env` files are read from the following locations in order:
 
 . `${wlp.install.dir}/etc/`
 . `${wlp.user.dir}/shared/`
 . `${server.config.dir}/`
 
-If the same property is set in multiple locations, then the last value found is used.
+If the same property is set in multiple locations, then the last value that is found is used. You can also specify these environment variables in the shell environment, but the `server.env` files take precedence over those variables.
 
 The most common use of these files is to set the following environment variables:
 
-* `JAVA_HOME` - Indicates which JVM to use.
-If this is not set, the system default is used.
-* `WLP_USER_DIR` - Indicates the location of the `usr` directory that contains the server  configuration
-This can only be set in the `etc/server.env` file because the other locations are relative to the `usr` directory.
-* `WLP_OUTPUT_DIR` - Indicates where the server writes files to.
-By default, the server writes to the directory structure that the configuration is read from.
-However, in some secure profiles the server configuration needs to be read-only so the server must write files to another location.
+* `JAVA_HOME` - Indicates which JVM to use. If the JVM is not set, the system default is used.
+
+* `WLP_USER_DIR` - Indicates the location of the `usr` directory that contains the server configuration.
+Set this environment variable only in the `etc/server.env` file, because other locations are relative to the `usr` directory.
+
+* `WLP_OUTPUT_DIR` - Indicates where the server writes files.
+By default, the server writes to the directory structure from which the configuration is read.
+However, in some secure profiles, the server configuration is read-only so the server must write files to another location.
 
 The `server.env` file is in `KEY=value` format, as shown in the following example:
 
@@ -76,14 +86,74 @@ JAVA_HOME=/opt/ibm/java
 WLP_USER_DIR=/opt/wlp-usr
 ----
 
-Key values must not contain spaces.
-The values are interpreted literally so you don’t need to escape special characters, such as spaces.
-These files don't support variable substitution.
+The following restrictions apply to the `server.env` files:
+
+* Key values must not contain any spaces.
+* Empty lines are ignored.
+* Lines that start with the number sign ( # ) are ignored, except for the `# enable_variable_expansion` line, which enables variable expansion on Linux.
+* Ensure no white space surrounds the equal sign ( = ).
+* All characters are literal except when expansion variables are enabled.
+
+// comment needed to solve weird formatting problem
+
+For more information, see xref:reference:default-environment-variables.adoc[Default environment variables].
+
+[#exp-var-windows]
+==== Expansion variables
+Expansion variables are environment or shell variables that are replaced by their values. You can specify expansion variables in the value definition of other variables.
+The values that these expansion variables supply can be defined as environment variables in your server configuration or shell variables in your shell environment.
+The caret sign ( ^ ) is used to escape a variable expansion character like the exclamation point (!) on Windows.
+The syntax for specifying expansion variables is operating system dependent.
+
+Variable expansion support is enabled by default on Windows. You specify expansion variables by using the Windows delayed expansion syntax: `!variable_name!`, which is replaced by the value of the variable.
+
+The following `server.env` file example shows the syntax for expansion variables on Windows.
+
+[source,properties]
+----
+IBM_DIR=!ProgramFiles!\IBM
+JAVA_HOME=!IBM_DIR!\java
+WLP_USER_DIR=!USERPROFILE!\wlp-usr
+----
+
+[#exp-var-linux]
+In version 22.0.0.1 and later, Open Liberty supports expansion variables in the `server.env` file on Linux systems. Expansion variables are prefixed by a dollar sign ( $ ) and the variable name can optionally be enclosed in curly braces ( {} ), for example, `$variable_name` or `${variable_name}`.
+
+When you enable expansion variables for Linux, single quotation marks ( ' ), double quotation marks ( " ), and backslash ( \ ) behave the same as in the shell environment. For example, placing a string in single quotation marks prevents the expansion of variables.
+Placing a string in double quotation marks does not prevent the expansion of variables, and the backslash is an escape character that removes the meaning of a special character.
+
+By default, `server.env` files do not support variable expansion on Linux. The value in each `KEY=value` pair is interpreted literally and you do not need to escape special characters, such as spaces.
+However, when you enable support for variable expansion, you must escape special characters.
+
+To enable support for variable expansion, add the following comment at the beginning of the `server.env` file.
+
+[source,properties]
+----
+# enable_variable_expansion
+----
+
+When expansion variables are enabled, you must enclose any values that contain spaces in quotation marks. You must also escape inner quotation marks.
+For example, the inner quotation mark is escaped in the following value:
+
+[source,properties]
+----
+MESSAGE1='Don\'t do that'
+----
+
+The following `server.env` file example shows the syntax for expansion variables on Linux. The values for the `WLP_USER_DIR` and `LOG_DIR` environment variables contain expansion variables.
+
+[source,properties]
+----
+# enable_variable_expansion
+JAVA_HOME=/opt/ibm/java
+WLP_USER_DIR=/home/${USER}/wlp-usr
+LOG_DIR=${WLP_USER_DIR}/logs
+----
 
 [#jvm-options]
 === jvm.options
 The `jvm.options` files are optional.
-These files are read by the `bin/server` shell script to determine what options to use when the JVM is launched for {projectName}.
+These files are read by the `bin/server` shell script to determine what options to use when the JVM is launched for Open Liberty.
 `jvm.options` files are read from the following locations in order:
 
 . `${wlp.user.dir}/shared/jvm.options`
@@ -116,8 +186,8 @@ These files do not support variable substitution.
 === bootstrap.properties
 The `bootstrap.properties` file is optional.
 
-This file is read during {projectName} bootstrap to provide configuration for the earliest stages of the server startup.
-It is read by the server earlier than the `server.xml` file so it can affect the startup and behavior of the {projectName} kernel from the start.
+This file is read during Open Liberty bootstrap to provide configuration for the earliest stages of the server startup.
+It is read by the server earlier than the `server.xml` file so it can affect the startup and behavior of the Open Liberty kernel from the start.
 The `bootstrap.properties` file is a simple Java properties file and is located in `${server.config.dir}`.
 A common use of the `bootstrap.properties` file is to configure logging because it can affect logging behavior before the `server.xml` file is read.
 
@@ -131,20 +201,44 @@ The most important and only required configuration file is the `server.xml` file
 The `server.xml` file must be well-formed XML and the root element must be `server`.
 The exact elements that are supported by a server depend on which features are configured, and any unknown configuration is ignored.
 
-{projectName} uses a principle of configuration by exception, which allows for succinct configuration files.
+Open Liberty uses a principle of configuration by exception, which allows for succinct configuration files.
 The runtime environment operates from a set of built-in configuration default settings.
 You only specify configuration that overrides those default settings.
 
 Server configuration files are read from the following locations in order:
 
-. `${server.config.dir}/configDropins/defaults/`
-. `${server.config.dir}/server.xml`
-. `${server.config.dir}/configDropins/overrides/`
+* `${server.config.dir}/configDropins/defaults/`
+* `${server.config.dir}/server.xml`
+* `${server.config.dir}/configDropins/overrides/`
 
 The `${server.config.dir}/server.xml` file must be present, but the other files are optional.
 
 You can flexibly compose configuration by dropping server-formatted XML files into directories.
 Files are read in alphabetical order in each of the two `configDropins` directories.
+
+The `configDropins` directory offers a convenient method for adding or modifying server configuration without directly altering the `server.xml` file. Located under `usr/servers/server_name`, it includes two types of subdirectories:
+
+* Overrides (`usr/servers/server_name/configDropins/overrides`): This directory is used to override configurations in the `server.xml` file. For example, to change port configurations defined in `server.xml`, place the relevant configuration files here.
+
+* Defaults (`usr/servers/server_name/configDropins/defaults`): This directory is for setting defaults for configuration elements that are not specified in `server.xml`. It allows `server.xml` to remain the primary configuration source, with other default settings provided through this directory.
+
+Changes to the configuration files placed in either the `configDropins/overrides` or `configDropins/defaults` directories are dynamically monitored. Additions, removals, or updates are reflected in the runtime configuration automatically. 
+
+Configurations in the `configDropins/overrides` directory take precedence over configurations in the `server.xml` file, which in turn take precedence over configurations in the `configDropins/defaults` directory. The configurations in `configDropins/overrides` and `configDropins/defaults` supersede any default settings a feature specifies.
+
+To maintain consistency across different platforms, file names are first converted to lowercase and then sorted. In scenarios where two files share an identical name but differ in case (such as `extraConfig.xml` and `ExtraConfig.xml`), their order of processing might be inconsistent.
+
+
+[#variable-syntax]
+== Configuration variable syntax
+
+Variables define reusable values that are substituted with actual values at runtime.
+In Open Liberty server configuration files, you can reference variables by using the `${variable.name}` syntax. The dollar sign (`$`) indicates the start of a variable reference. Curly brackets (`{}`) enclose the name of the variable.
+
+For example, if you define a variable that is named `database.url` with the value `jdbc:mysql://localhost:3306/mydb`, you can reference it in your server configuration files by using `${database.url}`. At runtime, Open Liberty replaces `${database.url}` with the actual value `jdbc:mysql://localhost:3306/mydb`.
+
+For more information about specifying variables, see <<#variable-substitution,Variable substitution precedence>>.
+
 
 [#variable-substitution]
 == Variable substitution precedence
@@ -155,6 +249,7 @@ To resolve variable references to their values, the following sources are consul
 . environment variables
 . `bootstrap.properties`
 . Java system properties
+. Variables loaded from files in the `${server.config.dir}/variables` directory or other directories as specified by the `VARIABLE_SOURCE_DIRS` environment variable
 . variable values declared in the `server.xml` file
 . variables declared on the command line
 
@@ -182,7 +277,7 @@ server run myserver -- --variableName=variableValue
 ----
 
 Environment variables can be accessed as variables.
-As of version 19.0.0.3, you can reference the environment variable name directly.
+You can reference the environment variable name directly.
 If the variable cannot be resolved as specified, the `server.xml` file looks for the following variations on the environment variable name:
 
 * Replace all non-alphanumeric characters with the underscore character (`_`)
@@ -194,14 +289,25 @@ For example, if you enter `${my.env.var}` in the `server.xml` file, it looks for
 . my_env_var
 . MY_ENV_VAR
 
-For versions 19.0.0.3 and earlier, you can access environment variables by adding `env.` to the start of the environment variable name, as shown in the following example:
+The `VARIABLE_SOURCE_DIRS` environment variable specifies directories from which variables can be loaded.
+If this environment variable is not specified, the default location for the variable directory is `${server.config.dir}/variables`.
+To define a list of directories as the value for this variable, separate each directory with the path separator for your operating system. For Windows, the path separator is a semicolon (`;`). For Unix-based systems, the path separator is a colon (`:`).
 
-[source,xml]
+The name of the file is used as the variable name, and the contents of the file are used as the variable value.
+For example, you can create a file in the variables directory that is named `httpPort` with the text string `9080` as the only content.
+You can then use the variable `${httpPort}` in the `server.xml` file and it resolves to `9080`.
+
+If you create a file in a directory within the variables directory, then the parent directory is added to the variable name.
+For example, you can create a `${httpPort}` file in the `ports` subdirectory within the variable directory, the variable name is `${ports/httpPort}`.
+
+Variables in the `VARIABLE_SOURCE_DIRS` directories can also be defined in properties files.
+If the name of the file ends in `.properties`, each property in the file is used to create a variable.
+For example, you can create a file that is named `ports.properties` with the following contents:
 ----
-<httpEndpoint id="defaultHttpEndpoint"
-              host="${env.HOST}"
-              httpPort="9080" />
+httpPort=9080
+httpsPort=9443
 ----
+With this configuration, you can specify the `${httpPort}` and `${httpsPort}` variables in your `server.xml` file and their values resolve to `9080` and `9443`.
 
 Variable values are always interpreted as a string with simple type conversion.
 Therefore, a list of ports (such as `80,443`) might be interpreted as a single string rather than as two port numbers.
@@ -226,9 +332,9 @@ The operator can be `+`, `-`, `*`, or `/`, as shown in the following example:
 <variable name="threeagain" value="${six/two}" />
 ----
 
-There are a number of predefined variables:
+The following predefined variables exist:
 
-* `wlp.install.dir` - the directory where the {projectName} runtime is installed.
+* `wlp.install.dir` - the directory where the Open Liberty runtime is installed.
 * `wlp.server.name` - the name of the server.
 * `wlp.user.dir` - the directory of the `usr` folder.
 The default is `${wlp.install.dir}/usr`.
@@ -243,13 +349,17 @@ The default is `${wlp.user.dir}/servers/${wlp.server.name}`.
 * `server.output.dir` - the directory where the server writes the workarea, logs, and other runtime-generated files.
 The default is `${server.config.dir}`.
 
+
+[#configuration-merging]
 == Configuration merging
 Since the configuration can consist of multiple files, it is possible that two files provide the same configuration.
 In these situations, the server configuration is merged according to a set of simple rules.
-In {projectName}, configuration is separated into singleton and factory configuration each of which has its own rules for merging.
+In Open Liberty, configuration is separated into singleton and factory configuration each of which has its own rules for merging.
 Singleton configuration is used to configure a single element (for example, logging).
 Factory configuration is used to configure multiple entities, such as an entire application or data source.
 
+
+[#merging-singleton-configuration]
 === Merging singleton configuration
 For singleton configuration elements that are specified more than once, the configuration is merged.
 If two elements exist with different attributes, both attributes are used.
@@ -322,6 +432,8 @@ is treated as:
 </server>
 ----
 
+
+[#merging-factory-configuration]
 === Merging factory configuration
 Factory configuration merges use the same rules as singleton configuration except elements are not automatically merged just because the element names match.
 With factory  configuration it is valid to configure the same element and mean two different logical objects.
@@ -341,9 +453,10 @@ The first application is `myapp.war`, which has a context root of `myawesomeapp`
 </server>
 ----
 
+[#include-processing]
 == Include processing
-In addition to the default locations, additional configuration files can be brought in by using the `include` element.
-When a server configuration file contains an include reference to another file, the server processes the contents of the referenced file as if they were included inline in place of the `include` element.
+You can include additional configuration resources in your server configuration by using the config:include[] element.
+When a server configuration file contains an include reference to another resource, the server processes the contents of the referenced resource as if they were included inline in place of the `include` element.
 
 In the following example, the server processes the contents of the `other.xml` file before it processes the contents of the `other2.xml` file:
 
@@ -355,8 +468,26 @@ In the following example, the server processes the contents of the `other.xml` f
 </server>
 ----
 
-By default, the include file must exist.
-If the include file might not be present, set the `optional` attribute to `true`, as shown in the following example:
+You can set the `location` attribute for the `include` element to a relative or absolute file path, a directory, or to a URI for a remote resource.
+
+When you specify a directory as the `location` value, the server processes only the files that are directly within the specified directory and ignores any subdirectories. The server processes the files within the directory in alphabetical order.
+
+[source,xml]
+----
+<server>
+    <include location="./common/"/>
+</server>
+----
+
+In this example, configuration files within the `./common/` directory are processed alphabetically on server startup.
+
+When the server processes configuration files within directories, it switches the file names into lowercase and sorts them alphabetically to ensure that the file processing order is consistent and predictable. However, if two files are specified in the same directory with the same name except for case variations (such as `extraConfig.xml` and `ExtraConfig.xml`), the ordering behavior is indeterminate.
+
+When you specify a directory in the `include` location, you must append a slash (`/`) to the directory name. For example, `location="./common/"`. Omitting the slash after the directory name (`location="./common"`) results in an error.
+
+When you include configuration from a URI for a remote resource, the `location` attribute must point to a single remote resource file and not a directory. For example, `\https://website.com/path/to/server.xml` is supported, but `\https://website.com/path/to/directory` is not.
+
+By default, the include resource must exist. If the resource might not be available, set the `optional` attribute to `true`, as shown in the following example:
 
 [source,xml]
 ----
@@ -365,7 +496,7 @@ If the include file might not be present, set the `optional` attribute to `true`
 </server>
 ----
 
-When you include a file, you can specify the `onConflict` attribute to change the normal merge rules.
+When you include a resource, you can specify the `onConflict` attribute to change the normal merge rules.
 You can set the value of the `onConflict` attribute to `IGNORE` or `REPLACE` any conflicting config:
 
 [source,xml]
@@ -376,10 +507,29 @@ You can set the value of the `onConflict` attribute to `IGNORE` or `REPLACE` any
 </server>
 ----
 
-You can set the `location` attribute to a relative or absolute file path, or to an HTTP URL.
+For configuration files that are brought in from a directory by using the `include` element, the `onConflict` attribute is applied to each file in that directory separately. For example:
 
+[source,xml]
+----
+<server>
+    <include location="/directory/" onConflict="REPLACE" />
+</server>
+----
+
+Functionally, this configuration is the same as including each file separately with its own `onConflict` attribute, as shown in the following example:
+
+[source,xml]
+----
+<server>
+    <include location="a.xml" onConflict="REPLACE" />
+    <include location="b.xml" onConflict="REPLACE" />
+</server>
+----
+
+
+[#configuration-references]
 == Configuration references
-Most configuration in {projectName} is self-contained, but it is often useful to share configuration.
+Most configuration in Open Liberty is self-contained, but it is often useful to share configuration.
 For example, the JDBC driver configuration might be shared by multiple data sources.
 You can refer to any factory configuration element that is defined as a direct child of the `server` element.
 
@@ -394,6 +544,8 @@ The configuration element that makes the reference uses an attribute that always
 </server>
 ----
 
+
+[#dynamic-updates]
 == Dynamic updates
 The server monitors the server XML configuration for updates and dynamically reloads when changes are detected.
 Changes to non-XML files (`server.env`, `bootstrap.properties`, and `jvm.options`) are not dynamic because they are only read at startup.
@@ -412,6 +564,8 @@ To disable file system polling and reload only when an MBean is notified, specif
 <config updateTrigger="mbean" />
 ----
 
+
+[#log-messages]
 == Log messages
 When the server runs, it might output log messages that reference configuration.
 The references in the log use an XPath-like structure to specify configuration elements.

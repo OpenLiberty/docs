@@ -1,0 +1,118 @@
+// Copyright (c) 2021 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description:
+:seo-title: OpenID Connect Admin Center tools
+:page-layout: general-reference
+:page-type: general
+= Admin Center OpenID Connect tools
+
+The Admin Center is a web-based graphical user interface (GUI) for Open Liberty servers. You can use the OpenID Connect (OIDC) Admin Center tools to manage OIDC clients, application tokens, and application passwords from a web browser.
+
+The xref:admin-center.adoc[Admin Center] provides the following tools to help manage OIDC authentication on your Open Liberty server:
+
+- <<#client,OIDC Client Management>>
+- <<#personal,OIDC Personal Token Management>>
+- <<#users,OIDC Users Token Management>>
+
+These tools appear in your Admin Center Toolbox if OIDC is configured for your server. To use a tool, select it from the Toolbox.
+
+== Prerequisites
+
+To use any of the OIDC Admin Center tools, you must enable the feature:adminCenter[display=Admin Center] and feature:openidConnectServer[display=OpenID Connect Provider] features in your `server.xml` file and link:https://openliberty.io/blog/2019/09/13/microprofile-reactive-messaging-19009.html#oidc[configure OIDC].
+
+You must also set the value for the `invalidateOnUnauthorizedSessionRequestException` attribute of the xref:reference:config/httpSession.adoc[httpSession] element to `true` in your `server.xml` file, as shown in the following example:
+
+[source,xml]
+----
+<httpSession invalidateOnUnauthorizedSessionRequestException="true" />
+----
+
+In addition to the management roles that are required for the Admin Center, the OIDC Client Management and the OIDC Users Token Management tools each require an xref:reference:config/oauth-roles.adoc[OAuth role]. OIDC Client Management requires the `clientManager` OAuth role and OIDC Users Token Management requires the `tokenManager` OAuth role.
+
+In the following `server.xml` file example, the `admin` user is granted the administrator management role and the `clientManager` and `tokenManager` OAuth roles:
+
+[source,xml]
+----
+<administrator-role>
+    <user>admin</user>
+</administrator-role>
+<oauth-roles>
+   <clientManager>
+      <user name="admin" />
+   </clientManager>
+   <tokenManager>
+      <user name="admin" />
+   </tokenManager>
+</oauth-roles>
+----
+
+For more information about setting up the Admin Center, see xref:admin-center.adoc[Manage Open Liberty with Admin Center].
+
+[#client]
+== OIDC Client Management
+
+You can use this tool to add, modify, and delete an OAuth client and to regenerate a client secret on an OIDC provider.
+
+If you have existing clients on the OIDC provider, the tool displays a list of clients, as shown in the following screen capture:
+
+image::oidccmt.png[screen capture of the OIDC Client Management tool,align="center"]
+
+* The table rows are unsorted. Click the **Client name** column header to sort the table rows in ascending or descending order. Alternatively, use the filter box to look for clients with a matching client name.
+
+* To add a new client, click the **Add New** button to display the Register New OAuth Client window. All fields in this window are optional. Some fields are already populated with default values. Change the values as needed and  click the **Register** button to create a new client. The subsequent OAuth Registration Saved window displays the new client ID and secret.
+
+* To edit an existing client, click **Edit** on the table row to display the Edit OAuth Client window. Update the client field values as needed and click the **Update** button to save the changes.
+** To generate a new client secret in the Edit OAuth Client window, delete the value of the **Client secret** field and click the **Update** button. The OAuth Registration Updated window appears with the new client secret. You can copy the new client secret by clicking the copy icon.
+
+* To delete a client, click **Delete** on the table row to display the delete confirmation window. Click the **Delete** button in the window to confirm the deletion.
+
+[#personal]
+== OIDC Personal Token Management
+
+You can use this tool to create, delete, and regenerate application passwords and application tokens on an OIDC provider.
+
+The tool displays a list of your existing application passwords and application tokens, as shown in the following screen capture:
+
+image::oidcptmt.png[screen capture of the OIDC Personal Token Management tool,align="center"]
+
+* The table rows are unsorted. Click the **Name** column header to sort the table rows in ascending or descending order.
+
+* If an OAuth client is defined in the `server.xml` file to allow application passwords or application tokens, the **Add New** button is enabled.
+
+** Click the **Add New** button to display the Register New Authentication window. Provide a name, select an authentication type, and click the **Generate** button. The window updates with the newly generated application password or application token. Click the copy icon to copy it.
+
+* If an OAuth client is defined in the `server.xml` file to allow application passwords or application tokens, **Regenerate** is enabled on the table row for the allowed authentication type.
+** Click **Regenerate** on the table row to display the Regenerate Application Password or Regenerate Application Token window. Click the **Generate** button to regenerate the authentication. The window updates with the newly generated application password or application token. Click the copy icon to copy it.
+
+* To delete a client, click **Delete** on the table row to display the delete confirmation window. Click the **Delete** button in the window to confirm the deletion.
+
+[#users]
+== OIDC Users Token Management
+
+You can use this tool to revoke application passwords and application tokens of other users on an OIDC provider.
+
+// Configure an OAuth provider to set the internalClientId and internalClientSecret to the ID and secret of an OAuth client which is setup to allow the use of application passwords and/or application tokens. See Configuring and Using an OIDC Provider to use Application Passwords, Configuring and Using an OIDC Provider to use Application Tokens, and web pages for users and administrators (these three links should point to the doc pointed by Bruce).
+
+To get a list of application passwords or application tokens for the specified user, enter a username in the search field and press Enter, as shown in the following screen capture:
+
+image::oidcutmt.png[screen capture of the OIDC User Token Management tool,align="center"]
+
+* The table rows are unsorted. Click the **Name** column header to sort the table rows in ascending or descending order.
+
+* If the user has existing application passwords or application tokens, you can revoke their authentication in one of three ways:
+
+** To delete a specific application password or application token, click **Delete** at the end of the table row.
+** To delete multiple application passwords and application tokens, individually click the checkbox at the beginning of each table row for the authentications that you want to revoke. The table summary is updated to show the number of items selected. Click the **Delete** button in the table summary header to delete the selected application password or application token authentications.
+** To select all application passwords and application tokens for the specified user for deletion, click the checkbox at the beginning of the table header next to the **Name** column. The table summary is updated to show the number of items selected. Click the **Delete** button in the table summary header.
+
+== See also
+
+- Blog: link:https://openliberty.io/blog/2019/09/13/microprofile-reactive-messaging-19009.html#oidc[Managing tokens on a Liberty OpenID Connect provider]
+- xref:admin-center.adoc[Manage Open Liberty with Admin Center]
+- link:/docs/latest/reference/feature/restConnector-2.0.html#_configure_rest_api_management_roles[Configure REST API management roles]

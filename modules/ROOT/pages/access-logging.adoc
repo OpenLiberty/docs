@@ -1,4 +1,4 @@
-// Copyright (c) 2013, 2019 IBM Corporation and others.
+// Copyright (c) 2013, 2021 IBM Corporation and others.
 // Licensed under Creative Commons Attribution-NoDerivatives
 // 4.0 International (CC BY-ND 4.0)
 //   https://creativecommons.org/licenses/by-nd/4.0/
@@ -10,31 +10,29 @@
 :page-type: general
 = HTTP access logging
 
-You can configure access log settings for HTTP endpoints. An HTTP access log contains a record of all inbound client requests that are handled by HTTP endpoints. You can enable access logging in the HTTP server or the Liberty server in two modes:
+You can configure access log settings for HTTP endpoints. An HTTP access log contains a record of all inbound client requests that are handled by HTTP endpoints.
 
-* A single log for multiple endpoints
-* One log for each endpoint
-
+You can enable access logging in the Open Liberty Server in two modes, a single log for multiple endpoints or one log for each endpoint.
 If you do not specify attributes, the defaults are used. To see a list of the default attributes, see xref:reference:config/httpAccessLogging.adoc[httpAccessLogging].
 
 == HTTP access log settings
 
-* Using a common log
-+
-To enable logging for multiple endpoints with common settings, include `httpAccessLogging` as a top-level element in your `server.xml` file, and then reference it from multiple `httpEndpoint` elements, as shown in the following example:
+You can configure HTTP access log settings either for multiple endpoints that share common log settings or for individual endpoints.
 
+=== Settings for a common log
+To enable logging for multiple endpoints with common settings, include `httpAccessLogging` as a top-level element in your `server.xml` file. Reference this element from multiple `httpEndpoint` elements, as shown in the following example.
 
+[source,xml]
 ----
 <httpAccessLogging id="accessLogging"/>
 <httpEndpoint id="defaultHttpEndpoint" accessLoggingRef="accessLogging" httpPort="9080" httpsPort="9443"/>
 <httpEndpoint id="otherHttpEndpoint" accessLoggingRef="accessLogging" httpPort="9081" httpsPort="9444"/>
 ----
 
-* Using distinct logs for each endpoint
-+
-To enable logging for individual endpoints, use an `accessLogging` child element and specify a file path that does not conflict with other logs, as shown in the following example:
+=== Settings for distinct logs for each endpoint
+To enable logging for individual endpoints, use an `accessLogging` child element and specify a file path that does not conflict with other logs, as shown in the following example.
 
-
+[source,xml]
 ----
 <httpEndpoint id="defaultHttpEndpoint" httpPort="9080" httpsPort="9443">
     <accessLogging filepath="${server.output.dir}/logs/http_defaultEndpoint_access.log"/>
@@ -43,16 +41,19 @@ To enable logging for individual endpoints, use an `accessLogging` child element
 
 == HTTP access log format
 
-Use the `accessLogFormat` property to specify the information  and format you want to include in the NCSA access log for an HTTP transport channel. The value for this property is a space-separated list of options.
+Use the `accessLogFormat` property to specify the information and format you want to include in the NCSA access log for an HTTP transport channel. The value for this property is a space-separated list of options.
 
-This log format string is specified by using the `logFormat` attribute of `httpAcccessLogging` or `accessLogging` elements in the `server.xml` file, as shown in the following examples:
+Specify the log format string with the `logFormat` attribute of `httpAcccessLogging` or `accessLogging` elements in the `server.xml` file, as shown in the following examples.
 
+In the following `server.xml` file example, The `logformat` attribute for the `httpAcccessLogging` element specifies the log format string. Multiple endpoints can specify this string by referencing the `accessLogging` configuration ID.
+[source,xml]
 ----
-<httpAccessLogging logFormat='%h %u %{t}W "%r" %s %b %D %{R}W'/>
+<httpAccessLogging id="accessLogging" logFormat='%h %u %{t}W "%r" %s %b %D %{R}W'/>
 ----
 
-or
+In the following `server.xml` file example, the `logformat` attribute for the `accessLogging` subelement specifies the log format string for a specific endpoint that is defined in the `httpEndpoint` element.
 
+[source,xml]
 ----
 <httpEndpoint id="defaultHttpEndpoint" httpPort="9080" httpsPort="9443">
    <accessLogging filepath="${server.output.dir}/logs/http_defaultEndpoint_access.log"
@@ -63,65 +64,65 @@ or
 The following table lists the available log format options.
 
 |===
-| Log format option|Description
+|Log format option |Description
 
 |%a
-|Remote IP address
+|The remote IP address
 
 |%A
-|Local IP address
+|The local IP address
 
 |%b
-|Response size in bytes excluding headers
+|The response size in bytes excluding the headers
 
 |%B
-|Response size in bytes excluding headers
-`0` is printed instead of `-` if no value is found.
+|The response size in bytes excluding the headers.
+If no value is found, `0` is printed instead of `-`.
 
 |%{CookieName}C or %C
-|The request cookie specified within the brackets. If the brackets are not included, prints all of the request cookies.
+|The request cookie that is specified within the brackets. If the brackets are not included, print all of the request cookies.
 
 |%D
-|The elapsed time of the request - millisecond accuracy, microsecond precision
+|The elapsed time of the request, in microseconds
 
 |%h
-|Remote host
+|The remote host
 
 |%i or %{HeaderName}i
-|`HeaderName` header value from the request
+|The `HeaderName` header value from the request
 
 |%m
-|Request method
+|The request method
 
 |%o or %{HeaderName}o
-|`HeaderName` header value from the response
+|The `HeaderName` header value from the response
 
 |%q
-|Output the query string with any password escaped
+|Output the query string with any password masked
 
 |%r
-|First line of the request
+|The first line of the request
+
+|%{remote}p
+|The ephemeral port of the client that made the request
 
 |%{R}W
 |Service time of the request from the moment the request is received until the first set of bytes of the response is sent - millisecond accuracy, microsecond precision
 
 |%s
-|Status code of the response
+|The status code of the response
 
 |%t
-|NCSA format of the start time of the request
+|The start time of the request, in NCSA format
 
-|%(t)W
-|The current time when the message to the access log is queued to be logged in normal NCSA format.
+|%{t}W
+|The end time of the request, in NCSA format
 
 |%u
-|Remote user according to the Open Liberty-specific `$WSRU` header.
+|The remote user according to the Open Liberty-specific `$WSRU` header
 
 |%U
-|URL Path, not including the query string
-
-|%{X}W
-|Cross Component Tracing (XCT) Context ID
+|The URL Path, not including the query string
 
 |===
 
@@ -133,7 +134,7 @@ The order that you specify the options determines the format of this information
  %h %i %u %t "%r" %s %b %D %{R}W
 ----
 
-Based on this setting, the NCSA access log will include the following information for each request in the specified order:
+Based on this setting, the NCSA access log includes the following information for each request in the specified order:
 
 * The remote host
 * The HeaderName header value from the request
@@ -144,3 +145,42 @@ Based on this setting, the NCSA access log will include the following informatio
 * The response size in bytes excluding headers
 * The elapsed time of the request in microseconds, end-to-end, including client and network time
 * The elapsed time in microseconds until the first bytes of the response are sent. This value is often a close approximation of application response time.
+
+
+== Time-based HTTP access log rollover
+
+You can enable time-based periodic rollover of your HTTP access log file by specifying a log rollover start time and a log rollover interval duration. The specified rollover start time is the time of day when the HTTP access log file first rolls over. The rollover interval duration is the time interval between consecutive HTTP access log file rollovers.
+
+For example, a server with a rollover start time of midnight and a rollover interval of 1 day rolls over the HTTP access log once every day, at midnight.
+
+Enable time-based rollover of your HTTP access log file by using the `rolloverStartTime` and `rolloverInterval` attributes of the `httpAcccessLogging` or `accessLogging` elements in the `server.xml` file. The following table lists the two attributes, their respective descriptions, and their permitted values.
+
+|===
+|Time-based log rollover attribute|Description
+
+|`rolloverStartTime`
+|Use this setting alone or with the `rolloverInterval` attribute to enable time-based log rollover for your HTTP access log file. This setting specifies the scheduled time of day for logs to first roll over. The `rolloverInterval` setting duration begins at `rolloverStartTime`. Valid values follow a 24-hour ISO-8601 date-time format of HH:MM, where 00:00 represents midnight. Padding zeros are required. If the `rolloverInterval` attribute is specified, the default value of the `rolloverStartTime` attribute is 00:00, midnight.
+
+|`rolloverInterval`
+| Use this setting alone or with the `rolloverStartTime` attribute to enable time-based log rollover for your HTTP access log file. This setting specifies the time interval in between log rollovers, in minutes if a unit of time is not specified. Specify a positive integer followed by a unit of time, which can be days (d), hours (h), or minutes (m). For example, specify 5 hours as 5h. You can include multiple values in a single entry. For example, 1d5h is equivalent to 1 day and 5 hours. If the `rolloverStartTime` attribute is specified, the default value of the `rolloverInterval` attribute is 1 day.
+
+|===
+
+The following examples demonstrate how to enable time-based periodic rollover for the HTTP access log file in the `httpAcccessLogging` and `accessLogging` elements. The `rolloverStartTime` attribute is set to  midnight and the `rolloverInterval` attribute is set to 1 day.
+
+In the following `server.xml` file example, the `rolloverStartTime` and  `rolloverInterval` attributes for the `httpAcccessLogging` element specify the log rollover start time and interval for multiple endpoints that reference the `accessLogging` configuration ID.
+
+[source,xml]
+----
+<httpAccessLogging id="accessLogging`" rolloverStartTime="00:00" rolloverInterval="1d"/>
+----
+
+In the following server.xml file example, attributes for the `accessLogging` subelement specify configuration for a specific endpoint that is defined in the `httpEndpoint` element. The `rolloverStartTime` and `rolloverInterval` attributes specify the log rollover start time and interval for the endpoint.
+
+[source,xml]
+----
+<httpEndpoint id="defaultHttpEndpoint" httpPort="9080" httpsPort="9443">
+   <accessLogging filepath="${server.output.dir}/logs/http_defaultEndpoint_access.log"
+                 rolloverStartTime="00:00" rolloverInterval="1d" />
+</httpEndpoint>
+----

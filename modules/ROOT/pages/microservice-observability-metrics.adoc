@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2020 IBM Corporation and others.
+// Copyright (c) 2019, 2023 IBM Corporation and others.
 // Licensed under Creative Commons Attribution-NoDerivatives
 // 4.0 International (CC BY-ND 4.0)
 //   https://creativecommons.org/licenses/by-nd/4.0/
@@ -6,151 +6,120 @@
 // Contributors:
 //     IBM Corporation
 //
-:page-description: By implementing metrics, developers can build observability into microservices and externalize the internal status of a system to enable operations teams to monitor microservice systems more effectively.
+:page-description: Open Liberty uses MicroProfile Metrics to provide metrics that describe the internal state of many Open Liberty components. MicroProfile Metrics provides an endpoint from which you can access all metrics that are emitted by an Open Liberty runtime and deployed applications.
 :seo-title: Microservice observability with metrics - OpenLiberty.io
-:seo-description: By implementing metrics, developers can build observability into microservices and externalize the internal status of a system to enable operations teams to monitor microservice systems more effectively.
+:seo-description: Open Liberty uses MicroProfile Metrics to provide metrics that describe the internal state of many Open Liberty components. MicroProfile Metrics provides an endpoint from which you can access all metrics that are emitted by an Open Liberty runtime and deployed applications.
 :page-layout: general-reference
 :page-type: general
 = Microservice observability with metrics
 
-Building observability into microservices externalizes the internal status of a system to enable operations teams to monitor microservice systems more effectively.
-MicroProfile Metrics provides a `/metrics` endpoint from which you can access all metrics that are emitted by an Open Liberty server and deployed applications.
+Open Liberty uses MicroProfile Metrics to provide metrics that describe the internal state of many Open Liberty components.
+MicroProfile Metrics provides a `/metrics` endpoint from which you can access all metrics that are emitted by an Open Liberty runtime and deployed applications.
 
-You can write an application to produce metrics that operations teams use when the application is running in production.
-When an application is running, you can view your metric data from any browser by accessing a `/metrics` endpoint, for example, `https://localhost:9443/metrics`, where `9443` is the port number for your application.
-You can narrow down the scope of the metric data by accessing the `/metrics/base`, `/metrics/application`, and `/metrics/vendor` endpoints.
+When MicroProfile Metrics is enabled and an application is running, you can view metric data from any browser by accessing the `/metrics` endpoint. An example of this endpoint is `\https://localhost:9443/metrics`, where `9443` is the port number for your application.
 
-By default, metric data is emitted in https://prometheus.io/docs/instrumenting/exposition_formats/[Prometheus format].
-Metric data can be retrieved in JSON format by configuring the `Accept` header of your request to the `application/json` value.
-A `GET` request returns a list of metrics, and an `OPTIONS` request returns a list of metrics with their metadata.
-Operations teams can gather the metrics and store them in a database by using tools like Prometheus.
-They can then visualize the metric data for analysis in dashboards such as https://grafana.com/[Grafana].
-For a list of metrics that are available in Open Liberty, see the xref:metrics-list.adoc[metrics reference list].
+You can narrow the scope of the metrics by using the `scope` query parameter with the `/metrics` endpoint to specify the metric registry scope. For example, to view the metric data for the `base` metric registry, use the `/metrics?scope=base` endpoint. This pattern is used to access all runtime-provided scopes  (`base`, `application`, and `vendor`) and any <<customscope, user-defined metric registry scopes>>.
 
+For feature:mpMetrics-4.0[display=MicroProfile Metrics 4.0] and earlier, only runtime-provided scopes are available and path parameters are used to narrow the scope of metric data. The endpoints are `/metrics/base`, `/metrics/application`, and `/metrics/vendor`.
+
+For more information about metrics endpoints, see xref:introduction-monitoring-metrics.adoc#endpoint[MicroProfile Metrics and the metrics endpoint].
+
+By default, metric data is emitted in https://prometheus.io/docs/instrumenting/exposition_formats/[Prometheus format]. Operations teams can gather the metrics and store them in a database by using tools like Prometheus. They can then visualize the metric data for analysis in dashboards such as https://grafana.com[Grafana]. Starting in version 5.0, MicroProfile Metrics uses xref:micrometer-metrics.adoc[embedded Micrometer metrics technology] so you can send your metrics data to the third-party monitoring tool of your choice.
+
+For a list of metrics that are available in Open Liberty, see the xref:metrics-list.adoc[Metrics reference list].
+
+[#add]
 == Adding metrics to your applications
 
 You can use MicroProfile Metrics with Open Liberty by enabling the feature:mpMetrics[display=MicroProfile Metrics] feature in your `server.xml` file.
-To add metrics to your applications, you must create and register metrics with the application registry so that they're known to the system and can be reported on from the `/metrics` endpoint.
+To add metrics to your applications, you must create and register metrics with the default application registry or your own user-defined metric registry scope. When metrics are registered, they're known to the system and can be reported on from the `/metrics` endpoint.
 The simplest way to add metrics to your application is by using annotations.
-link:/docs/ref/microprofile/3.3/#package=org/eclipse/microprofile/metrics/annotation/package-frame.html&class=org/eclipse/microprofile/metrics/annotation/package-summary.html[MicroProfile Metrics defines annotations] that you can use to quickly build metrics into your code.
-These metrics ultimately provide transparency for operations teams into how services are running.
+<<#types, MicroProfile Metrics defines annotations>> that you can use to quickly build metrics into your code.
 
-== Metrics and annotations
-The following sections describe metric types that are available with MicroProfile Metrics and how their corresponding annotations are used:
+[#customscope]
+=== User-defined metric registry scopes
 
-* <<concurrentgauge,Concurrent gauge>>
-* <<counter,Counter>>
-* <<gauge,Gauge>>
-* <<meter,Meter>>
-* <<simpletimer,Simple timer>>
+Starting in MicroProfile Metrics 5.0, in addition to the default `application` metric registry scope, you can define your own metric registry scope to register metrics to. Define your own scope either by specifying the `scope` parameter for metric annotations or by injecting a `MetricRegistry` class with the `RegistryScope` annotation and specifying the `scope` parameter. If you don't define a value for the `scope` parameter in the metric annotation or `RegistryScope` annotation, the default scope is `application`.
+
+The following example uses the `@Counted` metric annotation to define a `customScope` user-defined scope.
+
+[source,java]
+----
+@Counted(name="customCounter" description="This counter resides in a user-defined metric registry", scope="customScope")
+public String countingThings() {
+    return "1 2 3 4..!";
+}
+----
+
+
+The following example injects a `MetricRegistry` class that uses the `customScope` user-defined scope to instrument metrics with the Java API.
+[source,java]
+----
+@Inject
+@RegistryScope(scope="customScope")
+MetricRegistry customMetricRegistry;
+----
+
+=== Metric Tags
+
+With MicroProfile metrics, you can logically group metrics that track similar statistics by instrumenting the metrics with tags. Tags consist of a name and a value. You can group multiple metrics of the same type together by instrumenting them with tags of the same name but different values to group them together.
+
+For example, when you use counters, you can create multiple counters that are named `methodCounter` that return the count of the method that is identified by the tag.
+
+[source,java]
+----
+
+@Counted(name="methodCounter", tags={"method=foo"})
+public void foo() {
+    //foo something
+}
+
+@Counted(name="methodCounter", tags={"method=bar"})
+public void bar() {
+    //bar something
+}
+----
+
+However, in MicroProfile Metrics 5.0 and later, the set of tag names that are used must be identical across all metric IDs with the same metric name. Otherwise, an `IllegalArgumentException` is thrown.
+The final `methodCounter` instance in the following example has an inconsistent `extraTag` tag name and leads to an `IllegalArgumentException`.
+
+[source,java]
+----
+@Counted(name="methodCounter", tags={"method=foo"})
+public void foo() {
+    //foo something
+}
+
+@Counted(name="methodCounter", tags={"method=bar"})
+public void bar() {
+    //bar something
+}
+@Counted(name="methodCounter", tags={"method=bad", "extraTag=bad"})
+public void bad() {
+    // bad!
+}
+----
+
+[#types]
+== Metric types and annotations
+The following sections describe metric types that are available and how their corresponding annotations are used. Some metric types are only available in certain versions of MicroProfile Metrics and others might behave slightly differently in MicroProfile Metrics 5.0 than in earlier versions. Details are provided in the section for each metric type. For more information, see xref:reference:diff/mp-50-60-diff.adoc#metrics[Differences between MicroProfile Metrics 5.0 and 4.0].
+
 * <<timer,Timer>>
 * <<histogram,Histogram>>
-
-[#concurrentgauge]
-=== Concurrent gauge
-A concurrent gauge metric counts the concurrent invocations of an annotated element.
-This metric also tracks the high and low watermarks of each invocation.
-
-Use the `@ConcurrentGauge` annotation to mark a method as a concurrent gauge.
-The concurrent gauge increments when the annotated method is called and decrements when the annotated method returns, counting current invocations of the annotated method:
-
-[source,java]
-----
-@GET
-@Path("/livestream");
-@ConcurrentGauge(name = "liveStreamViewers", displayName="Donation live stream viewers", description="Number of active viewers for the donation live stream")
-public void donationLiveStream() {
-    launchLiveStreamConnection();
-}
-----
-
-[#counter]
-=== Counter
-A counter metric keeps an incremental count.
-The initial value of the counter is set to zero, and the metric increments each time that an annotated element is started.
-
-Use the `@Counted` annotation to mark a method, constructor, or type as a counter.
-The counter increments monotonically, counting total invocations of the annotated method:
-
-[source,java]
-----
-@GET
-@Path("/no")
-@Counted(name="no", displayName="No donation count", description="Number of people that declined to donate.")
-public String noDonation() {
-    return "Maybe next time!";
-}
-----
-
-[#gauge]
-=== Gauge
-You implement a gauge metric so that the gauge can be sampled to obtain a particular value.
-For example, you might use a gauge to measure CPU temperature or disk usage.
-
-Use the `@Gauge` annotation to mark a method as a gauge:
-
-[source,java]
-----
-@Gauge(
-    name="donations",
-    displayName="Total Donations",
-    description="Total amount of money raised for charity!",
-    unit = "dollars",
-    absolute=true)
-public Long getTotalDonations(){
-    return totalDonations;
-}
-----
-
-[#meter]
-=== Meter
-A meter metric tracks throughput.
-This metric provides the following information:
-
-* The mean throughput
-* The exponentially weighted moving average throughput at 1-minute, 5-minute, and 15-minute marks
-* A count of the number of measurements
-
-Use the `@Metered` annotation to mark a constructor or method as a meter.
-The meter counts the invocations of the annotated constructor or method and tracks how frequently they are called:
-
-[source,java]
-----
-@Metered(displayName="Rate of donations", description="Rate of incoming donations (the instances not the amount)")
-public void addDonation(Long amount) {
-    totalDonations += amount;
-    donations.add(amount);
-    donationDistribution.update(amount);
-}
-----
-
-[#simpletimer]
-=== Simple timer
-A simple timer metric tracks the elapsed timing duration and invocation counts.
-This type of metric is available link:/blog/2020/04/09/microprofile-3-3-open-liberty-20004.html#mra[beginning in MicroProfile Metrics 2.3].
-The simple timer is a lightweight alternative to the performance-heavy timer metric.
-Beginning in MicroProfile Metrics 3.0, the simple timer metric also tracks the largest and smallest recorded duration of the previous complete minute.
-A complete minute is defined as `00:00:00.000` seconds to `00:00:59.999` seconds.
-
-Use the `@SimplyTimed` annotation to mark a method, constructor, or type as a simple timer.
-The simple timer tracks how frequently the annotated object is started and how long the invocations take to complete:
-
-[source,java]
-----
-@GET
-@Path("/weather");
-@SimplyTimed(name = "weatherSimplyTimed", displayName="Weather data", description="Provides weather data in JSON")
-public JSON getWeatherData() {
-    retrieveWeatherData();
-}
-----
+* <<counter,Counter>>
+* <<gauge,Gauge>>
+* <<meter,Meter>> (MicroProfile Metrics 1.0-4.0 only)
+* <<concurrentgauge,Concurrent gauge>> (MicroProfile Metrics 2.0-4.0 only)
+* <<simpletimer,Simple timer>> (MicroProfile Metrics 2.3-4.0 only)
 
 [#timer]
 === Timer
-A timer metric aggregates timing durations in nanoseconds, and provides duration and throughput statistics.
+A timer metric aggregates timing durations in nanoseconds and provides duration statistics.
 
 Use the `@Timed` annotation to mark a constructor or method as a timer.
-The timer tracks how frequently the annotated object is started and how long the invocations take to complete:
+The timer tracks how frequently the annotated object is started and how long the invocations take to complete, as shown in the following example.
+
+//  MicroProfile Metrics 5.0::
 
 [source,java]
 ----
@@ -158,7 +127,6 @@ The timer tracks how frequently the annotated object is started and how long the
 @Path("/creditcard")
 @Timed(
     name="donateAmountViaCreditCard.timer",
-    displayName="Donations Via Credit Cards",
     description = "Donations that were made using a credit card")
 public String donateAmountViaCreditCard(@FormParam("amount") Long amount, @FormParam("card") String card) {
 
@@ -169,28 +137,38 @@ public String donateAmountViaCreditCard(@FormParam("amount") Long amount, @FormP
 }
 ----
 
+==== Fine-Tuning with MicroProfile Config properties
+
+Starting in MicroProfile Metrics 5.0, you can adjust the percentile precision of the `Timer` metrics by using the `mp.metrics.smallrye.timer.precision` MicroProfile Config property. The property accepts a value from 1 to 5 and is defaulted to 3 if no value is specified. A greater value results in more exact percentile calculations, but at a greater memory cost.
+
+Starting in MicroProfile Metrics 5.1, you can customize the set of percentiles that are tracked and reported by using the `mp.metrics.distribution.percentiles` MicroProfile config property. You can also use the `mp.metrics.distribution.timer.buckets` property to enable a customized set of histogram buckets to be tracked and reported. Alternatively, you can use the `mp.metrics.distribution.percentiles-histogram.enabled` property to enable the timer metric to output and track a default set of histogram buckets. Performance might decrease if a large set of buckets are enabled for numerous histogram or timer metrics.
+
+For more information, see xref:microprofile-config-properties.adoc#metrics[MicroProfile Config properties: MicroProfile Metrics].
+
+
 [#histogram]
 === Histogram
 A histogram is a metric that calculates the distribution of a value. It provides the following information:
 
-- Maximum, minimum, median and mean values
+- Maximum, median, and mean values
 - The value at the 50th, 75th, 95th, 98th, 99th, 99.9th percentile
 - A count of the number of values
-- Standard deviation for the value
+- Standard deviation for the value (MicroProfile Metrics 1.0-4.0 only)
 
-The histogram metric does not have an annotation. To record a value in the histogram, you must call the `histogram.update(long value)` method with the value that you want to record. The current state, or snapshot, of the histogram can be retrieved by using the `getSnapshot()` method. Histograms in MicroProfile Metrics only support integer or long values.
+Note: When you view the Prometheus-formatted metric data for a histogram, the mean value is not included.
 
-Examples of histograms include the distribution of payload sizes that are retrieved or for an onboarding survey that collects the distribution of household income.
+The histogram metric does not have an annotation. To record a value in the histogram, you must call the `histogram.update(long value)` method with the value that you want to record. The current state, or snapshot, of the histogram can be retrieved by using the `getSnapshot()` method. Histograms in MicroProfile Metrics support only integer or long values.
+
+// MicroProfile Metrics 5.0 histogram example::
 
 The following example illustrates a histogram that is used to store the value of donations. This example provides the administrator with an idea of the distribution of donation amounts:
 
+[source,java]
 ----
 Metadata donationDistributionMetadata = Metadata.builder()
               .withName("donationDistribution")                             // name
-              .withDisplayName("Donation Distribution")                     // display name
               .withDescription("The distribution of the donation amounts")  // description
-              .withType(MetricType.HISTOGRAM)                               //type
-              .withUnit("Dollars")                                          //units
+              .withUnit("Dollars")                                          // units
               .build();
 Histogram donationDistribution = registry.histogram(donationDistributionMetadata);
 public void addDonation(Long amount) {
@@ -200,8 +178,27 @@ public void addDonation(Long amount) {
 }
 ----
 
-For this example, the following response is generated from the REST endpoints:
+For this example, the following response is generated from the REST endpoints in Prometheus format:
 
+----
+# HELP donationDistribution_Dollars The distribution of the donation amounts
+# TYPE donationDistribution_Dollars summary
+donationDistribution_Dollars{mp_scope="application",tier="integration",quantile="0.5",} 431.248046875
+donationDistribution_Dollars{mp_scope="application",tier="integration",quantile="0.75",} 695.498046875
+donationDistribution_Dollars{mp_scope="application",tier="integration",quantile="0.95",} 914.498046875
+donationDistribution_Dollars{mp_scope="application",tier="integration",quantile="0.98",} 977.498046875
+donationDistribution_Dollars{mp_scope="application",tier="integration",quantile="0.99",} 991.498046875
+donationDistribution_Dollars{mp_scope="application",tier="integration",quantile="0.999",} 1000.498046875
+donationDistribution_Dollars_count{mp_scope="application",tier="integration",} 203.0
+donationDistribution_Dollars_sum{mp_scope="application",tier="integration",} 91850.0
+# HELP donationDistribution_Dollars_max The distribution of the donation amounts
+# TYPE donationDistribution_Dollars_max gauge
+donationDistribution_Dollars_max{mp_scope="application",tier="integration",} 1000.0
+----
+
+In MicroProfile 4.0 and earlier, the following JSON response is also available from the REST endpoints:
+
+[source,json]
 ----
 
 {
@@ -221,12 +218,119 @@ For this example, the following response is generated from the REST endpoints:
 }
 ----
 
-'''
+==== Fine-Tuning with MicroProfile Config properties
 
-These types of metrics are available to add to your applications to make them observable.
-In production, operations teams can use these metrics to monitor the application, along with metrics that are automatically emitted from the JVM and the Open Liberty server runtime.
-If you're interested in learning more about using MicroProfile Metrics to build observability into your microservices, see the Open Liberty guide for link:/guides/microprofile-metrics.html[Providing metrics from a microservice].
+Starting in MicroProfile Metrics 5.0, you can adjust the percentile precision of the `Histogram` metrics by using the `mp.metrics.smallrye.histogram.precision` MicroProfile Config property. The property accepts a value from 1 to 5 and is defaulted to 3 if no value is specified. A greater value results in more exact percentile calculations, but at a greater memory cost.
+
+Starting in MicroProfile Metrics 5.1, you can customize the set of percentiles that are tracked and reported by using the `mp.metrics.distribution.percentiles` MicroProfile config property. You can also use the `mp.metrics.distribution.histogram.buckets` property to enable a customized set of histogram buckets to be tracked and reported. Alternatively, you can use the `mp.metrics.distribution.percentiles-histogram.enabled` property to enable the histogram metric to output and track a default set of histogram buckets. Performance might decrease if a large set of buckets are enabled for numerous histogram or timer metrics.
+
+For more information, see xref:microprofile-config-properties.adoc#metrics[MicroProfile Config properties: MicroProfile Metrics].
+
+[#counter]
+=== Counter
+A counter metric keeps an incremental count.
+The initial value of the counter is set to zero, and the metric increments each time that an annotated element is started.
+
+Use the `@Counted` annotation to mark a method, constructor, or type as a counter.
+The counter increments monotonically, counting total invocations of the annotated method:
+
+[source,java]
+----
+@GET
+@Path("/no")
+@Counted(name="no", description="Number of people that declined to donate.")
+public String noDonation() {
+    return "Maybe next time!";
+}
+----
+
+[#gauge]
+=== Gauge
+You implement a gauge metric so that the gauge can be sampled to obtain a particular value.
+For example, you might use a gauge to measure CPU temperature or disk usage.
+
+Use the `@Gauge` annotation to mark a method as a gauge:
+
+[source,java]
+----
+@Gauge(
+    name="donations",
+    description="Total amount of money raised for charity!",
+    unit = "dollars",
+    absolute=true)
+public Long getTotalDonations(){
+    return totalDonations;
+}
+----
+
+[#meter]
+=== Meter (available only in MicroProfile Metrics 1.0-4.0)
+A meter metric tracks throughput.
+This metric provides the following information:
+
+* The mean throughput
+* The exponentially weighted moving average throughput at 1-minute, 5-minute, and 15-minute marks
+* A count of the number of measurements
+
+Use the `@Metered` annotation to mark a constructor or method as a meter.
+The meter counts the invocations of the annotated constructor or method and tracks how frequently they are called.
+
+[source,java]
+----
+@Metered(displayName="Rate of donations", description="Rate of incoming donations (the instances not the amount)")
+public void addDonation(Long amount) {
+    totalDonations += amount;
+    donations.add(amount);
+    donationDistribution.update(amount);
+}
+----
+
+
+[#concurrentgauge]
+=== Concurrent gauge (available only in MicroProfile Metrics 2.0-4.0)
+A concurrent gauge metric counts the concurrent invocations of an annotated element.
+This metric also tracks the high and low watermarks of each invocation. This metric type is removed starting in MicroProfile Metrics 5.0.
+
+Use the `@ConcurrentGauge` annotation to mark a method as a concurrent gauge.
+The concurrent gauge increments when the annotated method is called and decrements when the annotated method returns, counting current invocations of the annotated method:
+
+[source,java]
+----
+@GET
+@Path("/livestream");
+@ConcurrentGauge(name = "liveStreamViewers", displayName="Donation live stream viewers", description="Number of active viewers for the donation live stream")
+public void donationLiveStream() {
+    launchLiveStreamConnection();
+}
+----
+
+
+
+[#simpletimer]
+=== Simple timer (available only in MicroProfile Metrics 2.3-4.0)
+A simple timer metric tracks the elapsed timing duration and invocation counts.
+This type of metric is available link:/blog/2020/04/09/microprofile-3-3-open-liberty-20004.html#mra[beginning in MicroProfile Metrics 2.3]. It is removed starting in MicroProfile Metrics 5.0.
+The simple timer is a lightweight alternative to the performance-heavy timer metric.
+Beginning in MicroProfile Metrics 3.0, the simple timer metric also tracks the largest and smallest recorded duration of the previous complete minute.
+A complete minute is defined as `00:00:00.000` seconds to `00:00:59.999` seconds.
+
+Use the `@SimplyTimed` annotation to mark a method, constructor, or type as a simple timer.
+The simple timer tracks how frequently the annotated object is started and how long the invocations take to complete:
+
+[source,java]
+----
+@GET
+@Path("/weather");
+@SimplyTimed(name = "weatherSimplyTimed", displayName="Weather data", description="Provides weather data in JSON")
+public JSON getWeatherData() {
+    retrieveWeatherData();
+}
+----
+
+
+
 
 == See also
+* Guide: link:/guides/microprofile-metrics.html[Providing metrics from a microservice]
 * xref:introduction-monitoring-metrics.adoc[Monitoring with metrics]
-* link:/blog/2019/07/24/microprofile-metrics-migration.html[Migrating applications from MicroProfile Metrics 1.x to MicroProfile Metrics 2.0]
+* xref:metrics-list.adoc[Metrics reference list]

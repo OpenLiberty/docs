@@ -1,49 +1,104 @@
 
 == Examples
 
+- <<#config, Configure transport layer security (TLS)>>
+- <<#keystore, Default keystore and TLS certificate configurations>>
+- <<#alt, Specify an alternate SSL configuration as default>>
+- <<#configure-specific, Configure specific TLS protocols>>
+- <<#outbound, Configure outbound TLS>>
+- <<#certs, Provide certificates from an environment variable or a file>>
+
+
+[#config]
 === Configure transport layer security (TLS)
 
 To enable TLS connections, you must enable the Transport Security feature and add the `keyStore` element to your `server.xml` file.
-The following example shows the minimum configuration to specify a keystore:
 
-[source,java]
+The server creates a default `keystore` and certificate if you specify `defaultKeyStore` as the ID value for the `keyStore` element in your `server.xml` file. The following example shows the minimum configuration to specify a keystore:
+
+[source,xml]
 ----
 <keyStore id="defaultKeyStore" password="yourPassword"/>
 ----
 
+[#keystore]
+=== Default keystore and TLS certificate configurations
+
 When the `defaultKeyStore` value is specified, Open Liberty builds a TLS configuration around it with an ID attribute value of `defaultSSLConfig`.
-In this default TLS configuration, the `defaultKeyStore` file is used as both the keystore and truststore.
+If the keystore does not exist on server startup, the server also creates a default keystore file.
+In the default TLS configuration, this keystore file is used as both the keystore and truststore.
 
-This default configuration enables all TLS levels.
-Levels TLSv1, TLSv1.1, TLSv1.2, and  TLSv1.3 are enabled, according to what the Java SDK supports.
-The default ciphers include all ciphers that are size 128-bit and higher.
-Client authentication is not enabled by the default configuration.
-
-In this configuration, the server creates the keystore and a certificate, if no certificate exists during SSL initialization.
-The certificate is self-signed, with a validity period of 365 days and a signature algorithm of `SHA256withRSA`.
-The common name (CN) value of the certificate `subjectDN` attribute is the hostname of the computer where the server is running, such as `www.example.com`.
-
-Open Liberty creates a keystore password during profile creation and puts it in the `server.env` file that is in the server home directory.
-If no `keyStore` element exists for the `defaultKeyStore` file, this password is used to create a keystore file.
-This keystore file is then used as the `defaultKeyStore` file.
+Open Liberty creates a keystore password when the server is created and puts it in the `${server.config.dir}/server.env` file that is in the server home directory.
+If no `keyStore` element exists to create the default keystore file, this password is used to create a keystore file.
+This keystore file is then used as the default keystore file.
 Likewise, if a `defaultKeyStore` entry exists without a password in the `server.xml` file, the password from the `server.env` file is used to open the file.
 If you don't want to use the generated keystore password, remove the `keystore_password` entry from the `server.env` file.
 If a default keystore file was already generated with the password from the `server.env` file, you might need to remove it.
 
+The following table lists the default keystore file details.
+
+.The default keystore details
+[%header,cols=2*]
+|===
+|Keystore details
+|Description
+
+|Location
+|The keystore file is called `key.p12` and is in the server or client `${server.config.dir}/resources/security` directory.
+
+|Keystore type
+|The keystore type is `PKCS12`.
+
+|Password
+|The default password is the password that is specified in the `keyStore` element. If no password is provided in the `keyStore` element, `keystore_password` value from the `${server.config.dir}/server.env` file is used.
+|===
+
+This default configuration enables all TLS protocols.
+The TLSv1, TLSv1.1, TLSv1.2, and  TLSv1.3 protocols are enabled according to what the Java SDK supports.
+You can <<#configure-specific,configure specific TLS protocols>> instead of configuring and enabling all of them by default.
+
+The default ciphers include all ciphers that are size 128-bit and higher.
+Client authentication is not enabled by the default configuration.
+
+If no certificate exists during TLS initialization, the server also creates a default certificate.
+The default certificate is self-signed, with a certificate size of 2048 kb. The validity period is 365 days and the signature algorithm is `SHA256WITHRSA`.
+The certificate is created with `CN=<hostname>`,`OU=<client or server name>`,`O=ibm`,`C=US` as the `subjectDN` attribute.
+The hostname value is the hostname of the computer where the server is running.
+
+You can also run the xref:reference:command/securityUtility-createSSLCertificate.adoc[securityUtility createSSLCertificate] command to create and customize the default certificate and keystore.
+
+For more information, see xref:reference:config/ssl.adoc[SSL Repertoire].
+
+[#alt]
+=== Specify an alternate SSL configuration as default
+
 You can designate a different `ssl` element in the configuration as the default SSL configuration by specifying the `sslRef` attribute on the `sslDefault` element, as shown in the following example:
 
-[source,java]
+[source,xml]
 ----
 <sslDefault sslRef="customSSLConfiguration"/>
 ----
 
-For more information, see xref:reference:config/sslDefault.adoc[SSL Repertoire].
+[#configure-specific]
+=== Configure specific TLS protocols
+
+Configure TLS protocols on the `sslProtocol` attribute if the underlying JDK support exists for the protocols. Create a comma-separated list from the `TLSv1`, `TLSv1.1`, `TLSv1.2`, and `TLSv1.3` protocol values. This list of protocols overrides the TLS protocols that are enabled in the default TLS configuration.
+
+The TLSv1.3 and TLSv1.2 protocols are configured in the following example:
+
+[source,xml]
+----
+<ssl id="myDefaultSSLConfig"
+      keyStoreRef="defaultKeyStore"
+      trustStoreRef="defaultTrustStore"
+      sslProtocol="TLSv1.3, TLSv1.2" />
+----
 
 === Use the Java Virtual Machine (JVM) default truststore
 
 You can set the `trustDefaultCerts` attribute to `true` to specify that the JVM default truststore can be used, in addition to the configured truststore, as shown in the following example:
 
-[source,java]
+[source,xml]
 ----
 <ssl id="myDefaultSSLConfig"
       keyStoreRef="defaultKeyStore"
@@ -51,14 +106,14 @@ You can set the `trustDefaultCerts` attribute to `true` to specify that the JVM 
       trustDefaultCerts="true"/>
 ----
 
-
+[#outbound]
 === Configure outbound TLS
 
 You can configure Open Liberty to have a global outbound default TLS configuration that is different from the inbound default configuration. Outbound TLS filters are configured on the `outboundConnection` element that is nested in the `ssl` element. You can specify either a host or a host and port to indicate where the outbound SSL connection goes by setting attributes on the `outboundConnection` element.
 
 In the following example, outbound TLS connections that go to any port on the `otherhost` host use the TLS configuration that is specified by the `defaultSSLConfig` value. All other outbound TLS connections use the outbound default TLS configuration that is specified by the `outboundSSLRef` attribute called `outboundSSLSettings`:
 
-[source,java]
+[source,xml]
 ----
 <sslDefault outboundSSLRef=”outboundSSLSettings”/>
 
@@ -91,6 +146,7 @@ In the following example, outbound TLS connections that go to any port on the `o
            password="yourpassword"/>
 ----
 
+[#certs]
 === Provide certificates from an environment variable or a file
 
 At startup, Open Liberty can read certificates from an environment variable so that they can be used to establish trust. To provide a certificate, set the `cert_(name of existing truststore)` environment variable to equal the value of the certificate or a file that contains one or more certificates. Certificates must be either DER encoded or in the PEM format. Environment variables are set in the `server.env` file.
@@ -99,14 +155,14 @@ Any value that does not start with the `-----BEGIN CERTIFICATE-----` tag is trea
 
 In the following example, an environment variable supplies certificates to a truststore that is called `defaultKeyStore` from a file that is called `certs.crt`:
 
-[source,java]
+[source,xml]
 ----
 cert_defaultKeyStore=/var/certs.crt
 ----
 
 In the following example, an environment variable supplies a certificate to a truststore that is called `defaultKeyStore`:
 
-[source,java]
+[source,xml]
 ----
 cert_defaultKeyStore="-----BEGIN CERTIFICATE-----
 ....

@@ -1,0 +1,125 @@
+//
+// Copyright (c) 2021 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description: The `featureUtility` commands make it easier to install Open Liberty features and view your Maven repository settings.
+:seo-title: featureUtility Commands - OpenLiberty.io
+:seo-description: The `featureUtility` commands make it easier to install Open Liberty features and view your Maven repository settings.
+:page-layout: general-reference
+:page-type: general
+= featureUtility commands
+
+The `featureUtility` commands make it easier to install Open Liberty features and view your Maven repository settings.
+
+The following `featureUtility` commands are available:
+
+* xref:command/featureUtility-find.adoc[featureUtility find]: The command finds features in the repositories that are applicable to your configuration and allows you to view detailed information about these features.
+* xref:command/featureUtility-help.adoc[featureUtility help]: The command displays information about the `featureUtility command`, with details about its actions and options.
+* xref:command/featureUtility-installFeature.adoc[featureUtility installFeature]: The command installs a single feature or a list of space-separated features into Open Liberty from Maven Central, or from a Maven repository that’s hosted inside your firewall.
+* xref:command/featureUtility-installServerFeatures.adoc[featureUtility installServerFeatures]: The command installs the required features that are listed in the `server.xml` file of a server.
+* xref:command/featureUtility-viewSettings.adoc[featureUtility viewSettings]: The command is used to view Maven repository and proxy settings when Maven repositories other than Maven Central are configured.
+
+
+== Modifications for featureUtility commands
+
+You can modify several behaviors of the `featureUtility` commands by declaring environment variables in the shell environment or by specifying properties in the `featureUtility.properties` file that's located in the `{wlp.install.dir}/etc/` directory.
+
+Properties that are specified in the `featureUtility.properties` file take precedence over environment variables that are declared in the shell environment.
+For example, if you specify the `featureLocalRepo` property in the `featureUtility.properties` file, then any value set with the `FEATURE_LOCAL_REPO` environment variable is overridden.
+You can specify modifications to the `featureUtility` commands by using properties in the `featureUtility.properties` file rather than environment variables.
+You can also easily see Maven repository and proxy settings that are contained in the `featureUtility.properties` file by running the xref:command/featureUtility-viewSettings.adoc[featureUtility viewSettings command].
+Settings that are configured with environment variables don't show up with this information.
+
+The following table lists the environment variables and their corresponding properties that you can specify to modify the `featureUtility` commands:
+
+[%header,cols=3*]
+|===
+|Environment variable
+|Corresponding properties
+|Description
+
+|`FEATURE_REPO_URL`
+|`mavenCentralMirror.url`
+|Overrides Maven Central with an on-premises Maven repository.
+
+|`FEATURE_REPO_USER`
+|`mavenCentralMirror.user`
+|The username for `FEATURE_REPO_URL` user credentials.
+
+|`FEATURE_REPO_PASSWORD`
+|`mavenCentralMirror.password`
+|The password for `FEATURE_REPO_URL` user credentials.
+
+|`FEATURE_LOCAL_REPO`
+|`featureLocalRepo`
+|Overrides the local Maven repository.
+
+|`FEATURE_VERIFY`
+|`feature.verify`
+a|Specifies how features must be verified during a process or an installation.
+Supported values are `enforce`, `skip`, `all`, and `warn`. If this option is not specified, the default value is `enforce`.
+
+* `enforce`: Verifies the signatures of all Liberty features except for user features. It checks the integrity and authenticity of the features that are provided by the Liberty framework.
+* `skip`: Choosing this option skips the verification process altogether. No feature signatures are downloaded or checked. It expedites the installation process but must be used with caution, as it bypasses an important security step.
+* `all`: Verifies both the Liberty features and the user features. The features that are provided by the Liberty framework and any additional user features or components are checked for integrity.
+* `warn`: Similar to the `all` option, warn also verifies both the Liberty features and user features. This option allows the process to continue, even if some feature signatures cannot be validated. A verification failure does not immediately end the installation process, but it results in a warning message.
+
+|`http_proxy`
+|`proxyHost`, `proxyPort`, `proxyUser`, and `proxyPassword`
+a|Configures the outbound HTTP proxy.
+
+|`https_proxy`
+|`proxyHost`, `proxyPort`, `proxyUser`, and `proxyPassword`
+a|Configures the outbound HTTPS proxy.
+
+|===
+{empty} +
+
+== Verify user features
+
+You can verify your user features by providing the long key ID and key URL to reference your public key that is stored on a key server. Alternatively, you can specify a local file path for your public key. The supported protocols for the key URL are `HTTP`, `HTTPS`, and `file`.
+
+For more information about generating a key pair, signing the user feature, and distributing your key, see https://central.sonatype.org/publish/requirements/gpg/#signing-a-file[Working with PGP Signatures].
+
+The long key ID is a 64-bit identifier that is used to uniquely identify a PGP key. Provide the long key ID for your public key. In the following example, the key ID provided is `0xBD9FD5BE9E68CA00`.
+----
+myKey.keyid=0xBD9FD5BE9E68CA00
+----
+
+You can provide the full URL of your public key. The URL must be accessible and point to a location where your key can be retrieved. In the following example, the key URL provided is `https://keyserver.ubuntu.com/pks/lookup?op=get&options=mr&search=0xBD9FD5BE9E68CA00`. This URL is specific to the Ubuntu key server and includes the key ID as a search parameter.
+----
+myKey.keyurl=https://keyserver.ubuntu.com/pks/lookup?op=get&options=mr&search=0xBD9FD5BE9E68CA00
+----
+
+Alternatively, you can provide a local file path instead of a URL. If you have your public key that is stored as a file on your local system, you can specify the file path in the `myKey.keyurl` parameter. In the following example, the file path that is provided is `/pubkey.asc`, but you must replace it with the actual path to your public key file.
+----
+myKey.keyurl=/pubkey.asc
+----
+
+== Install user features
+
+You can specify the maven coordinates for the features BOM file to install user features by adding the `customBomFileName.featuresbom` property in the `featureUtility.properties` file, as shown in the following example:
+
+----
+customBomFileName.featuresbom=my.maven.coordinate:my-features-bom:version
+----
+
+== Define custom repositories
+
+You can also define remote repositories by adding the `customRepoName.url` property in the `featureUtility.properties` file.
+Each repository name must be unique, and defined repositories are accessed in the order that they're specified.
+If a repository requires a username and password, also set the `customRepoName.user` and `customRepoName.password` properties.
+In the following example, two custom repositories, `remoteRepo1` and `remoteRepo2`, are defined.
+The `remoteRepo2` repository is secure so it also requires a username and password:
+
+----
+remoteRepo1.url=http://my-remote-server1/maven2
+remoteRepo2.url=https://my-remote-server2/secure/maven2
+remoteRepo2.user=operator
+remoteRepo2.password={aes}KM8dhwcv892Ss1sawu9R+
+----

@@ -1,0 +1,144 @@
+// Copyright (c) 2021 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description: You can configure access to a NoSQL database with a CDI producer.
+:seo-title: Access NoSQL databases
+:seo-description: You can configure access to a NoSQL database with a CDI producer.
+:page-layout: general-reference
+:page-type: general
+= Access NoSQL databases with CDI
+
+You can create a CDI producer to provide access to a NoSQL database, such as MongoDB or CouchDB.
+With a CDI producer, you are not restricted to certain versions of NoSQL databases to provide a database for your application.
+
+You can modify a CDI producer according to your needs.
+For example, you can add authentication or enable Transport Layer Security (TLS) for your database connection.
+You can also use MicroProfile Config to configure the database driver.
+Using a CDI producer eliminates the need to enable features like the feature:mongodb[display=MongoDB Integration] feature for https://www.mongodb.com/[MongoDB] or the feature:couchdb[display=CouchDB Integration] feature for https://couchdb.apache.org/[CouchDB].
+The MongoDB Integration feature is stabilized in Open Liberty 19.0.0.4 and later.
+The CouchDB Integration feature is stabilized in Open Liberty 19.0.0.6 and later.
+
+== Access MongoDB with CDI
+
+To use CDI with Open Liberty, enable the feature:cdi[display=Contexts and Dependency Injection] feature.
+You can configure access to any version of MongoDB https://openliberty.io/guides/cdi-intro.html[with a CDI producer].
+This example demonstrates how to create a CDI producer to inject a `MongoDatabase` instance in your application:
+
+```
+@ApplicationScoped
+public class MongoProducer {
+
+    @Produces
+    public MongoClient createMongo() {
+        return new MongoClient(new ServerAddress(), new MongoClientOptions.Builder().build());
+    }
+
+    @Produces
+    public MongoDatabase createDB(MongoClient client) {
+        return client.getDatabase("testdb");
+    }
+
+    public void close(@Disposes MongoClient toClose) {
+        toClose.close();
+    }
+}
+```
+The `createMongo()producer` method returns a `MongoClient` instance.
+The `createDB()producer` method returns a `MongoDatabase` instance that depends on the `MongoClient` instance.
+The `close()` method is a clean-up function for the `MongoClient` instance that closes the connection to the `MongoDatabase` instance.
+You can use the CDI producer that you created to inject a `MongoDatabase` instance into the application, as shown in the following example:
+
+```
+@Inject
+MongoDatabase db;
+
+@POST
+@Path("/add")
+@Consumes(MediaType.APPLICATION_JSON)
+public void add(CrewMember crewMember) {
+    MongoCollection<Document> crew = db.getCollection("Crew");
+    Document newCrewMember = new Document();
+    newCrewMember.put("Name",crewMember.getName());
+    crew.insertOne(newCrewMember);
+}
+
+```
+
+== Secure your CDI producer
+
+Enable the feature:passwordUtilities[display=Password Utilities] feature in the `server.xml` file to include authentication in your CDI producer.
+In the following example, the CDI producer is enhanced to provide a username and an encoded password for the database connection.
+
+```
+@Produces
+public MongoClient createMongo() {
+    String password = PasswordUtil.passwordDecode(encodedPass);
+    MongoCredential creds = MongoCredential.createCredential(user, dbName, password.toCharArray());
+    return new MongoClient(new ServerAddress(), creds, new MongoClientOptions.Builder().build());
+}
+```
+To enable TLS for your CDI producer, first https://openliberty.io/docs/21.0.0.8/reference/feature/transportSecurity-1.0.html#_configure_transport_layer_security_tls[configure TLS for your Open Liberty server].
+Then, modify your CDI producer to add the `JSSEHelper` class to the `createMongo` method and get the `SSLContext` class, as shown in the following example:
+
+```
+@Produces
+public MongoClient createMongo() throws SSLException {
+    String password = PasswordUtil.passwordDecode(encodedPass);
+    MongoCredential creds = MongoCredential.createCredential(user, dbName, password.toCharArray());
+    SSLContext sslContext = JSSEHelper.getInstance().getSSLContext("defaultSSLConfig", Collections.emptyMap(), null);
+    return new MongoClient(new ServerAddress(hostname, port), creds, new MongoClientOptions.Builder()
+                           .sslEnabled(true)
+                           .sslContext(sslContext)
+                           .build());
+}
+```
+== Configure MongoDB with MicroProfile Config
+
+To configure the MongoDB driver with MicroProfile Config, enable the feature:mpConfig[display=MicroProfile Config] feature in the `server.xml` file.
+Then, add the following code to your CDI producer:
+
+```
+@Inject
+@ConfigProperty(name = "mongo.hostname", defaultValue = "localhost")
+String hostname;
+
+@Inject
+@ConfigProperty(name = "mongo.port", defaultValue = "27017")
+int port;
+
+@Inject
+@ConfigProperty(name = "mongo.dbname", defaultValue = "testdb")
+String dbName;
+
+@Inject
+@ConfigProperty(name = "mongo.user")
+String user;
+
+@Inject
+@ConfigProperty(name = "mongo.pass.encoded")
+String encodedPass;
+```
+
+Add the following snippet to your  `microprofile-config.properties` or `server.env` file to pull the values for the username and encoded password into the `MongoProducer` class:
+
+```
+mongo.user=sampleUser
+mongo.pass.encoded={aes}APtt+/vYxxPa0jE1rhmZue9wBm3JGqFK3JR4oJdSDGWM1wLr1ckvqkqKjSB2Voty8g==
+
+```
+
+## Access CouchDB with CDI
+
+You can configure access to any version of CouchDB with a CDI producer in Open Liberty.
+To access CouchDB with CDI, you can replace the MongoClient in the previous examples with any CouchDB client or use the https://www.ibm.com/cloud/cloudant[Cloudant] service, which is based on CouchDB.
+
+## See also
+
+Guide: https://openliberty.io/guides/mongodb-intro.html[Persisting data with MongoDB]
+
+Blog: https://openliberty.io/blog/2019/02/19/mongodb-with-open-liberty.html?_ga=2.207768594.1663611092.1606818058-1399812591.1606212512[Access any version of MongoDB with Open Liberty using CDI]

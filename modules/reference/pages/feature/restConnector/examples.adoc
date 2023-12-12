@@ -1,0 +1,122 @@
+== Examples
+
+=== Configure REST API management roles
+When the REST connector feature is enabled, you can configure management roles for your Open Liberty server to grant users and groups that are defined in a user registry access to select administrative REST APIs. You can use any supported user registry. The administrator role provides read and write access to administrative REST APIs. The reader role provides read-only access to administrative REST APIs. Users who are in the reader role can monitor the server but do not have permission to modify it in any way. 
+The following example maps users  and groups that are defined in a basic user registry to reader and administrator roles.
+
+[source,xml]
+----
+<basicRegistry>
+    <user name="Bob" password="bobpassword"/>
+    <user name="Wanda" password="wandapassword"/>
+    <user name="Todd" password="toddpassword"/>
+
+    <group name="managers">
+      <member name="Wanda"/>
+      <member name="Todd"/> 
+    </group>
+</basicRegistry>
+
+<administrator-role>
+    <group>managers</group>
+</administrator-role>
+
+<reader-role>
+    <user>Bob</user>
+</reader-role>
+----
+
+In this example, three users in the user registry are granted roles. 
+
+* The users `Wanda` and `Todd` are added to a group named as `managers`. The `managers` group is granted the administrator role. 
+* The user `Bob` is granted the reader role.
+
+To quickly configure a single administrator for testing and development purposes, use the `quickStartSecurity` element. This option automatically configures a registry with only one user who is granted the administrator role.
+The following example shows the minimal required configuration.
+
+[source,xml]
+----
+<featureManager>
+    <feature>restConnector-2.0</feature>
+</featureManager>
+<quickStartSecurity userName="bob" userPassword="bobpassword" />
+<keyStore id="defaultKeyStore" password="keystorePassword"/>
+----
+
+=== Configure REST API management roles by using access IDs
+To map a role to a user or group that does not exist in the configured user registry, use access IDs. If a user or group is authenticated to a single-sign-on server, use the access ID syntax to specify the security realm where the user is authenticated. Access IDs in Open Liberty take the following formats.
+
+* Access ID for a user:
++
+[subs=+quotes]
+----
+user: _security realm name_ / _user name_ 
+----
+
+* Access ID for a group:
++
+[subs=+quotes]
+----
+group: _security realm name_ / _group name_ 
+----
+
+To specify access IDs, you can use the `user-access-id` or `group-access-id` elements, as shown in the following example.
+
+[source,xml]
+----
+<reader-role>
+    <user-access-id>user:https://idp.example.com/bob@example.com</user-access-id>
+    <group-access-id>group:https://idp.example.com/EmployeeGroups</group-access-id>
+</reader-role>
+
+<administrator-role>
+    <user-access-id>user:https://idp.example.com/wanda@example.com</user-access-id>
+    <group-access-id>group:https://idp.example.com/ManagerGroups</group-access-id>
+</administrator-role>
+----
+
+=== Define access-id values for users and groups that are authenticated by MicroProfile JWT
+If authentication is performed with MicroProfile JSON Web Token, the default `user-access-id` is in the following format. 
+
+[subs=+quotes]
+----
+user: _value of 'iss' claim_ / _value of 'upn' claim_
+----
+
+The default `group-access-id` is in the following format.
+
+[subs=+quotes]
+----
+group: _value of 'iss' claim_ / _value of 'groups' claim_ 
+----
+
+The following example shows the mapping for a JWT-authenticated user and group. The user is mapped to the administrator role and the group is mapped to the reader role. In this example, the JWT for the user includes an `iss` value of `myCo` and a `upn` value of `lisa@myco.com``. The JWT for the group includes an `iss` value of `myCo` and a `groups` value of `readers`.
+
+[source,xml]
+----
+<administrator-role>
+    <user-access-id> user:myCo/lisa@myco.com</user-access-id>
+</administrator-role>
+
+<reader-role>
+    <group-access-id>group:myCo/readers</group-access-id>
+</reader-role>
+----
+
+=== User access for SAML Web Single Sign-On
+
+If authentication is performed with SAML Web Single Sign-On feature, the following value is set as the default `user-access-id`.
+
+[subs=+quotes]
+----
+user: _value of 'issuer' assertion_ / _value of 'NameID' assertion_ 
+----
+
+The following example shows the mapping for a SAML-authenticated user. The user is mapped to the administrator role. In this example, the SAML for the user includes an `iss` value of `myCo` and a `upn` value of `lisa@myco.com`. 
+
+[source,xml]
+----
+<administrator-role>
+    <user-access-id> user:myCo/lisa@myco.com</user-access-id>
+</administrator-role>
+----

@@ -1,0 +1,132 @@
+// Copyright (c) 2021 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description: You can monitor and manage registered resources in your Open Liberty server by using Java Management Extensions (JMX) managed beans (MBeans). You can access individual JMX MBeans through a secure JMX connection to the Open Liberty REST connector.
+:seo-title: Configuring JMX connections
+:seo-description: You can monitor and manage registered resources in your Open Liberty server by using Java Management Extensions (JMX) managed beans (MBeans). You can access individual JMX MBeans through a secure JMX connection to the Open Liberty REST connector.
+:page-layout: general-reference
+:page-type: general
+= Configuring JMX connections
+
+You can monitor and manage registered resources in your Open Liberty server by using Java Management Extensions (JMX) managed beans (MBeans).
+You can access individual JMX MBeans through a secure connection to the Open Liberty REST connector.
+
+== Configuring a secure remote JMX connection to Open Liberty
+
+You can configure a secure JMX connection by enabling the feature:restConnector[display=Admin REST connector] feature and configuring Transport Layer Security (TLS). You must also configure at least one user in either the administrator or reader management role.
+By default, the Admin REST Connector feature enables the feature:transportSecurity[display=Transport Security] feature, which supports TLS connections.
+Remote access with a JMX connection is protected by a single administrator or reader role through the HTTPS port that is defined by the default config:httpEndpoint[display=HTTP Endpoint] element.
+
+You can access an Open Liberty REST connector from a Java client or directly through an HTTPS call to the JMX endpoints of the administrative REST APIs.
+A Java client uses the client-side of the REST connector, which is in the `wlp/clients/restConnector.jar` file and implements the `javax.management.MBeanServerConnection` interface.
+HTTPS calls use the server-side of the REST connector.
+Any programming language that can make HTTPS calls can use the REST APIs.
+
+To configure a secure JMX connection, complete the following steps.
+
+. Enable the feature:restConnector[display=Admin REST connector] feature in your `server.xml` file.
+
+. feature:transportSecurity[display=Configure TLS certificates] in your `server.xml` file.
+Ensure that the CN value of the certificate `subjectDN` entry is the hostname of the machine where the server is running.
+If you plan to use the JConsole tool, ensure that the truststore contains the certificate of the server in the `jConsole` connection.
+
+. link:/docs/latest/reference/feature/restConnector-2.0.html#_configure_rest_api_management_roles[Configure at least one user or group to the administrator or reader role] in your `server.xml` file.
+For testing and development purposes, you can quickly configure a single user in the administrator role by link:/docs/latest/reference/feature/appSecurity-3.0.html#_configure_a_basic_user_registry_with_quickstart_security[configuring QuickStart security].
+
+. Access the REST connector by using a Java client application, by using the https://docs.oracle.com/en/java/javase/17/management/using-jconsole.html#GUID-77416B38-7F15-4E35-B3D1-34BFD88350B5[JConsole] tool that is provided by the Java SDK, or by making HTTPS calls directly to the server.
+ * To access the REST connector by using the JConsole tool, you can use `-j` flags to specify system properties and include the connector class files in the class path. The connector class files are packed in the `wlp/clients/restConnector.jar` file. The following example shows how to use `-j` flags on the `jconsole` command to specify the necessary JConsole and TLS configurations to access the REST connector.
+
+ jconsole -J-Djava.class.path=%JAVA_HOME%/lib/jconsole.jar;
+                             %JAVA_HOME%/lib/tools.jar;
+                             %WLP_HOME%/clients/restConnector.jar
+         -J-Djavax.net.ssl.trustStore=key.p12
+         -J-Djavax.net.ssl.trustStorePassword=Liberty
+         -J-Djavax.net.ssl.trustStoreType=PKCS12
+
+
+  * For information about accessing the REST connector by making HTTPS calls, when the Admin REST connector feature is enabled, you can access the API documentation at the `\https://<host>:<port>/IBMJMXConnectorREST/api` URL, for example, `\http://localhost:9443/IBMJMXConnectorREST/api`.
+  * To develop a JMX client application to access the secured Open Liberty REST connector, complete the steps in the following section.
+
+=== Developing a JMX Java client for Open Liberty
+* Start with the following sample application code. Add the Liberty REST connector client library (`wlp/clients/restConnector.jar`) to the application classpath.
++
+[source,java]
+----
+import javax.management.remote.JMXServiceURL;
+import javax.management.MBeanServerConnection;
+import javax.management.remote.JMXConnector;
+import javax.management.remote.JMXConnectorFactory;
+import java.util.HashMap;
+
+
+public class Test {
+
+  public static void main(String[] args) {
+    System.setProperty("javax.net.ssl.trustStore", <truststore location>);
+    System.setProperty("javax.net.ssl.trustStorePassword", <truststore password>);
+
+    //If the type of the trustStore is not PKCS12, which is default,
+    //set the type by using the following line.
+    System.setProperty("javax.net.ssl.trustStoreType", <truststore type>);
+
+   try {
+      HashMap<String, Object> environment = new HashMap<String, Object>();
+      environment.put("jmx.remote.protocol.provider.pkgs", "com.ibm.ws.jmx.connector.client");
+      environment.put(JMXConnector.CREDENTIALS, new String[] { "userid", "password" });
+
+      JMXServiceURL url = new JMXServiceURL("service:jmx:rest://localhost:9443/IBMJMXConnectorREST");
+      JMXConnector connector = JMXConnectorFactory.newJMXConnector(url, environment);
+      connector.connect();
+      MBeanServerConnection mbsc = connector.getMBeanServerConnection();
+    } catch(Throwable t) {
+         ...
+    }
+  }
+}
+----
++
+  ** If the server generates the server keystore for a test or development environment, you can use that keystore as the value for `<truststore location>`.
+  The keystore that the server generates for a test or development environment contains the client certificate.
+  ** Replace the `userid` and `password` values for the `JMXConnector.CREDENTIALS` property. Specify the user ID and password for the administrator or reader role user that you configured for step 3 of the previous procedure.
+  ** Use the contents of the `${server.output.dir}/logs/state/com.ibm.ws.jmx.rest.address` file as the `JMXServiceURL` constructor parameter. The file contains the REST endpoint, which in this example is `service:jmx:rest://localhost:9443/IBMJMXConnectorREST`. The program writes this file when a server starts with the Admin REST connector feature enabled.
+
+* You can configure optional REST connector settings by adding system properties to the environment `Map` object. In the following example, the `com.ibm.ws.jmx.connector.client.rest.maxServerWaitTime` property sets the amount of time that the client waits for the server to become available to 6500 milliseconds. The `com.ibm.ws.jmx.connector.client.rest.notificationDeliveryInterval` property sets the maximum amount of time that the server waits for new notifications before it responds to a request for notifications from the client to 0 milliseconds.
++
+[source,java]
+----
+...
+HashMap<String, Object> environment = new HashMap<String, Object>();
+environment.put("com.ibm.ws.jmx.connector.client.rest.maxServerWaitTime", 0);
+environment.put("com.ibm.ws.jmx.connector.client.rest.notificationDeliveryInterval", 65000);
+...
+----
+
+* The certificates that are installed with Liberty might not contain the hostname of where the server is running. If you want to disable hostname verification of SSL certificates, you can set the `com.ibm.ws.jmx.connector.client.disableURLHostnameVerification` system property to `true`, which disables hostname verification for all connections.
+
+* The Open Liberty REST connector can use a specific custom SSL socket factory to obtain sockets. If the specified truststore doesn't contain the required certificates for the JMX connection, the following exception is displayed.
++
+[role="no_copy"]
+----
+javax.net.ssl.SSLHandshakeException: com.ibm.jsse2.util.j: PKIX path building failed: java.security.cert.CertPathBuilderException: unable to find valid certification path to requested target
+----
++
+In this case, you can create your own `SSLContext` instance from your own keystores and then use the `SocketFactory` class from that context with the Open Liberty REST connector.
+Set the following value in your environment map to enable your JMX connection to use your custom SSL context.
++
+[source,java]
+----
+...
+Map<String, Object> environment = new HashMap<String, Object>();
+environment.put(ConnectorSettings.CUSTOM_SSLSOCKETFACTORY, sslContext.getSocketFactory());
+...
+----
+
+== See also
+
+- link:/docs/latest/introduction-monitoring-metrics.html#_jmx_metrics[JMX metrics]
+- xref:jmx-metrics-list.adoc[JMX metrics reference list]
