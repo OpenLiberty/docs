@@ -1,0 +1,114 @@
+// Copyright (c) 2023 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+// https://creativecommons.org/licenses/by-nd/4.0/
+//
+//
+// Contributors:
+// IBM Corporation
+//
+//
+//
+//
+:page-description: MicroProfile 6.1 is a minor release. If you are updating your application from using MicroProfile 6.0 features to using MicroProfile 6.1 features, changes in API behavior might require you to update your application code.
+:projectName: Open Liberty
+:page-layout: general-reference
+:page-type: general
+= Differences between MicroProfile 6.1 and 6.0
+
+MicroProfile 6.1 is a minor release. It includes minor changes for the MicroProfile Config 3.1, Metrics 5.1, and Telemetry 1.1 features.
+
+If you are updating your application from using MicroProfile 6.0 features to using link:https://github.com/eclipse/microprofile/releases/tag/6.1[MicroProfile 6.1] features, changes in API behavior might require you to update your application code. The following sections provide details about migrating your applications from MicroProfile 6.0 to 6.1:
+
+- <<#config, Differences between MicroProfile Config 3.1 and 3.0>>
+- <<#metrics, Differences between MicroProfile Metrics 5.0 and 5.1>>
+- <<#telemetry, Differences between MicroProfile Telemetry 1.0 and 1.1>>
+
+
+[#config]
+== Differences between MicroProfile Config 3.1 and 3.0
+
+The changes for MicroProfile Config 3.1 are minor specification refinements and TCK improvements. The update clarifies that the profile-specific properties affect only the values that are selected from each configuration source, not among the configuration sources. The TCK updates make sure that the tests are compatible with CDI Lite.
+
+
+[#metrics]
+== Differences between MicroProfile Metrics 5.0 and 5.1
+
+The MicroProfile Metrics 5.1 release introduces many changes to the specification and programming model that impact users who are migrating from MicroProfile Metrics 5.0.
+
+The MicroProfile Metrics 5.1 release introduces a set of new MicroProfile Config properties that customize the metric data that is tracked and output by the histogram and timer metrics. MicroProfile Metrics 5.1 introduces properties that specify a custom range of percentiles and a custom set of histogram buckets specifically for histogram and timer metrics. More configuration properties are now available for establishing a default range of histogram buckets, including options to specify the starting and ending points of the bucket set.
+
+.New Properties in MicroProfile Metrics 5.1
+|===
+
+| Name| Description
+
+|`mp.metrics.distribution.percentiles` 
+|Customize the percentile or quantile output for histogram and timers
+
+|`mp.metrics.distribution.histogram.buckets` 
+| Customize the set of histogram-buckets to be output by histogram metric
+
+|`mp.metrics.distribution.timer.buckets` 
+| Customize the set of histogram-buckets to be output by timer metric
+
+|`mp.metrics.distribution.percentiles-histogram.enabled` 
+| Enable a pre-set list of histogram-buckets for the histogram or timer metric
+
+|`mp.metrics.distribution.histogram.min-value` 
+| Upper bound bucket for pre-set list of histogram-buckets for histogram metric
+
+|`mp.metrics.distribution.histogram.max-value` 
+| Lower bound bucket for pre-set list of histogram-buckets for histogram metric
+
+|`mp.metrics.distribution.timer.min-value` 
+| Upper bound bucket for pre-set list of timer-buckets for histogram metric
+
+|`mp.metrics.distribution.timer.max-value` 
+| Lower bound bucket for pre-set list of timer-buckets for histogram metric
+
+|===
+
+For more information on the properties and how to use them, see the xref:ROOT:microprofile-config-properties.adoc#metrics[MicroProfile Config properties: MicroProfile Metrics].
+
+The following example of MicroProfile Config definitions sets up the `alpha.timer` metric to output the 50th, 70th, 75th, and 80th percentile. It also configures histogram buckets to track and report the count of durations within specific intervals: from 0 to 100 milliseconds, 0 to 200 milliseconds, and 0 to 1 second. These intervals function as cumulative ranges, which is how the histogram buckets operate.
+
+[source,xml]
+----
+mp.metrics.distribution.percentiles=alpha.timer=0.5,0.7,0.75,0.8
+mp.metrics.distribution.timer.buckets=alpha.timer=100ms,200ms,1s
+----
+
+The corresponding Prometheus output for the `alpha.timer` metric at the `/metrics` REST endpoint is as follows.
+
+[source,xml]
+----
+# HELP alpha_timer_seconds_max  
+# TYPE alpha_timer_seconds_max gauge
+alpha_timer_seconds_max{scope="application",} 5.633
+# HELP alpha_timer_seconds  
+# TYPE alpha_timer_seconds histogram <1>
+alpha_timer_seconds{scope="application",quantile="0.5",} 0.67108864
+alpha_timer_seconds{scope="application",quantile="0.7",} 5.603590144
+alpha_timer_seconds{scope="application",quantile="0.75",} 5.603590144
+alpha_timer_seconds{scope="application",quantile="0.8",} 5.603590144
+alpha_timer_seconds_bucket{scope="application",le="0.1",} 0.0 <2>
+alpha_timer_seconds_bucket{scope="application",le="0.2",} 0.0 <2>
+alpha_timer_seconds_bucket{scope="application",le="1.0",} 1.0 <2>
+alpha_timer_seconds_bucket{scope="application",le="+Inf",} 2.0  <2><3>
+alpha_timer_seconds_count{scope="application",} 2.0
+alpha_timer_seconds_sum{scope="application",} 6.333
+----
+
+<1> The Prometheus metric type is `histogram`, where both quantiles or percentiles, and buckets, are represented under this type.
+<2> The `le` tag represents _less than_ and is for the defined buckets that are converted to seconds.
+<3> Prometheus requires that a +Inf bucket that count all hits.
+
+Also, the `@RegistryScope` annotation, suitable for use during metric registry injection, is now a CDI qualifier.
+
+[#telemetry]
+== Differences between MicroProfile Telemetry 1.0 and 1.1
+
+MicroProfile Telemetry 1.1 equips you with the most recent Open Telemetry technology. This feature now uses OpenTelemetry-1.29.0, upgraded from 1.19.0. Therefore, a significant number of the dependencies are now stable. 
+This feature provides seamless integration with several environments. It is compatible with Java EE 7 and MicroProfile 1.4, and also Java EE 8 and MicroProfile 4.1. It also supports Jakarta EE 9 with MicroProfile 5.0, and Jakarta EE 10 paired with MicroProfile 6.1.
+

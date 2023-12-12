@@ -8,11 +8,12 @@ The following examples demonstrate configuration options for the OpenID Connect 
 - <<#jwe,Accept tokens in JWE format>>
 - <<#third,Configure a third-party OpenID Connect provider>>
 - <<#filter,Support Multiple OpenID Connect Providers>>
+- <<#privatekey,Use Private Key JWT for client authentication>>
 - <<#ltpa,Disable LTPA cookies>>
 - <<#oauth,Accept an OAuth 2.0 bearer access token without redirecting to an OpenID Connect provider>>
 - <<#context,Modify the context root>>
 - <<#params,Pass request parameters to OpenID Connect>>
-
+- <<#access-token,Check the access token for user and group information>>
 
 [#minimal]
 === Minimal configuration for Open Liberty to act as an OpenID Connect client
@@ -283,6 +284,27 @@ In the following example, authentication requests that contain the `/mywebapp/me
 
 For more information, see xref:ROOT:authentication-filters.adoc[Authentication filters].
 
+[#privatekey]
+=== Use Private Key JWT for client authentication
+
+OpenID Connect clients in Open Liberty support the `private_key_jwt` client authentication method with OpenID Connect token endpoints. OpenID Connect clients need to provide authentication data to the OpenID Connect provider for accessing the provider's token endpoint. Clients can authenticate by using several different methods, but most of those methods require a client secret. The `private_key_jwt` authentication method allows clients to use asymmetric keys to create signed JWTs to authenticate instead of client secrets. By using this authentication method, OpenID Connect clients in Open Liberty no longer need to have a client secret.
+
+Server administrators can enable this function by using the `private_key_jwt` option for the `tokenEndpointAuthMethod` attribute, and the new `tokenEndpointAuthSigningAlgorithm` and `keyAliasName` attributes in the `openidConnectClient` element.
+
+[source,xml]
+----
+<openidConnectClient id="myOidcClientUsingPrivateKeyJwt"
+    tokenEndpointAuthMethod="private_key_jwt"
+    tokenEndpointAuthSigningAlgorithm="E512"
+    keyAliasName="privatekeyaliasES512"
+    ...
+/>
+----
+
+The `tokenEndpointAuthSigningAlgorithm` attribute specifies the signing algorithm to sign the JWT that is used for client authentication. The `keyAliasName` attribute points to the private key to use to sign the JWT. The private key must be present in the keystore that is specified by the `sslRef` attribute in the config:openidConnectClient[display=OpenID Connect client configuration]. OpenID Connect providers that support Private Key JWT client authentication typically provide an interface for administrators to upload their corresponding public key.
+
+For more information on `private_key_jwt` client authentication, see the https://openid.net/specs/openid-connect-core-1_0.html#ClientAuthentication[OpenID Connect core specification] and https://datatracker.ietf.org/doc/html/rfc7523[RFC 7523].
+
 [#ltpa]
 === Disable LTPA cookies
 
@@ -338,3 +360,19 @@ To provide extra authorization parameters to the OP, configure `authzParameter` 
 ----
 
 To configure parameters for the token endpoint, use the `tokenParameter` element.
+
+[#access-token]
+=== Check the access token for user and group information
+
+If `userIdentifier` or `groupIdentifier` values are not found in the ID token, Open Liberty can also check in the access token and the `UserInfo` endpoint.
+
+Set the `tokensOrderToFetchCallerClaims` attribute to `AccessToken IDToken Userinfo`, as shown in the following example.
+
+[source,xml]
+----
+<openidConnectClient tokensOrderToFetchCallerClaims="AccessToken IDToken Userinfo"  userIdentifier="unique_name" groupIdentifier="aud" ... />
+----
+
+In this example, Open Liberty checks for `userIdentifier` and `groupIdentifier` values first in the access token, then the ID token, and lastly, calls the `UserInfo` endpoint. If the values are not found in any of those locations, an unauthorized response code is returned.
+
+If the `tokensOrderToFetchCallerClaims` attribute is not specified, the default value is `IDToken` and Open Liberty checks only the ID token for user and group information.

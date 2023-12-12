@@ -24,6 +24,7 @@ The following sections provide more information about configuring your Open Libe
 
 * <<#configuaration,Logging configuration>>
 * <<#storage,Log file storage management>>
+* <<#log_formats,Log formats>>
 * <<#json,JSON logging>>
   ** <<#names,Configurable JSON field names>>
   ** <<#fields,Custom message and trace JSON fields>>
@@ -31,7 +32,6 @@ The following sections provide more information about configuring your Open Libe
 * <<#container,Container image logging configuration>>
 * <<#binary,Binary logging>>
 * <<#rollover,Time-based log rollover>>
-* <<#log_formats,Log formats>>
 * <<#settings,Configuration settings by source>>
 * <<#log_details,Trace log detail levels>>
 
@@ -41,7 +41,7 @@ The logging component can be controlled through the server configuration. The lo
 
 [#storage]
 == Log file storage management
-The `console.log` file is created by redirecting the process `stdout` and `stderr` streams to a file. As a result, Open Liberty is unable to offer the same level of management, like log rollover, as it offers for the `messages.log` file. If you are concerned about the size of the `console.log` file, you can set the console log to `OFF` and use the `messages.log` file instead. All messages that are written or captured by the logging component are written to the `messages.log` file, and you can configure file rollover in the messages log.
+The `console.log` file is created by redirecting the process `stdout` and `stderr` streams to a file. As a result, Open Liberty is unable to offer the same level of management, like log rollover, as it offers for the `messages.log` file. If you are concerned about the size of the `console.log` file, you can set the console log to `OFF` and use the `messages.log` file instead. All messages that are written or captured by the logging component are written to the `messages.log` file. You can configure file rollover in the message log.
 
 However, when you set the console log level to `OFF`, messages from the underlying JVM are still written to the `console.log` file. The same principle applies to any messages that are written to the native standard out and standard error streams. The Open Liberty logging component does not capture or control the destination of messages that are written directly by the JVM process, such as `-verbose:gc` output. These messages are routed to the file system according to the active JVM settings and they do not appear in the `messages.log` file.
 
@@ -59,7 +59,7 @@ com.ibm.ws.logging.copy.system.streams=false
 [#log_formats]
 == Log formats
 
-Each of the three Open Liberty primary log files has a default log format and several alternative formats that you can specify in your logging configuration. The format that you choose for each log depends on the needs of your application and your infrastructure. For example, you might choose to output your messages log in JSON format if it is consumed by a log analysis platform. Alternatively, you might choose the `TBASIC` format for all three logs if you need a consistent log format across all of your log files.
+Each of the three Open Liberty primary log files has a default log format and several alternative formats that you can specify in your logging configuration. The format that you choose for each log depends on the needs of your application and your infrastructure. For example, you might choose to output your message log in JSON format if it is consumed by a log analysis platform. Alternatively, you might choose the `TBASIC` format for all three logs if you need a consistent log format across all of your log files.
 
 - The default format for the `console.log` file is `DEV`.
 - The default format for the `messages.log` file is `SIMPLE`.
@@ -68,30 +68,83 @@ Each of the three Open Liberty primary log files has a default log format and se
 The following examples show sample output in each of the available log formats and list the logs for which each format is available: `DEV`, `SIMPLE`, `JSON`, `TBASIC`, `ENHANCED`, and `ADVANCED`.
 
 DEV (console log)::
+Messages that are in `DEV` format use the following pattern:
++
+[subs=+quotes]
+----
+[_log level_] <message_ID>: <message>
+----
++
+The following example shows a message in `DEV` format:
++
 [source,console]
 ----
-[AUDIT   ] CWWKF0011I: The defaultServer server is ready to run a smarter planet. The defaultServer server started in 7.967 seconds.
+[AUDIT] CWWKF0011I: The defaultServer server is ready to run a smarter planet. The defaultServer server started in 7.967 seconds.
 ----
 
-SIMPLE (console and messages logs)::
+SIMPLE (console and message logs)::
+Messages that are in `SIMPLE` format use the following pattern:
++
+[subs=+quotes]
+----
+[_time stamp_] <thread ID> <fully qualified className> <log level attribute> <message ID>: <message>
+----
++
+The following example shows a message in `SIMPLE` format:
++
 [source,console]
 ----
 [18/10/21 14:49:26:246 EDT] 0000003e com.ibm.ws.kernel.feature.internal.FeatureManager            A CWWKF0011I: The defaultServer server is ready to run a smarter planet. The defaultServer server started in 7.844 seconds
 ----
+In this example, the `A` attribute that precedes the `CWWKF0011I` message ID code indicates that the message log level is `AUDIT`. For more information, see <<#log-level,Message log-level attributes>>.
 
-JSON (console and messages logs)::
+JSON (console and message logs)::
+Messages in JSON format include field names that identify the different components of the message. The following example shows a message in `JSON` format:
++
 [source,json]
 ----
 {"type":"liberty_message","host":"HOST","ibm_userDir":"/wlp\/usr\/","ibm_serverName":"defaultServer","message":"CWWKF0011I: The defaultServer server is ready to run a smarter planet. The defaultServer server started in 7.967 seconds.","ibm_threadId":"0000003e","ibm_datetime":"2021-10-18T14:50:58.159-0400","ibm_messageId":"CWWKF0011I","module":"com.ibm.ws.kernel.feature.internal.FeatureManager","loglevel":"AUDIT","ibm_sequence":"1634583058159_0000000000009"}
 ----
++
+For more information, see <<#json,JSON logging>>.
 
 TBASIC (console, messages, and trace logs)::
+Messages that are in `TBASIC` format use the following pattern:
++
+[subs=+quotes]
+----
+[_time stamp_] <thread ID> <fully qualified className> <log level attribute> <message ID>: <message>
+----
++
+The following example shows a message in `TBASIC` format:
++
 [source,console]
 ----
 [18/10/21 14:47:19:718 EDT] 0000003e FeatureManage A   CWWKF0011I: The defaultServer server is ready to run a smarter planet. The defaultServer server started in 7.718 seconds.
 ----
++
+In this example, the `A` attribute that precedes the `CWWKF0011I` message ID code indicates that the message log level is `AUDIT`. For more information about log-level attributes, see <<#log-level,Message log-level attributes>>.
++
+For more information about `TBASIC`, see <<#tbasic,TBASIC log format>>.
+
 
 ENHANCED (trace log)::
+Messages in `ENHANCED` format include field names that are components from the log record for the particular trace message, which provide more details about the trace message. These following details are included:
++
+- message type
+- date and time
+- messageID
+- fully qualified class name
+- severity level
+- log level
+- method name
+- class name
+- level value
+- thread name
+- correlationID (or product, component, message, and objectID)
++
+The following example shows a message in `ENHANCED` format:
++
 [source,console]
 ----
 [26/10/21 10:42:42:300 EDT] 0000006d id=00000000 x.com.ibm.ws.collector.manager.buffer.BufferManagerImpl      3 Adding event to buffer GenericData
@@ -100,7 +153,12 @@ ENHANCED (trace log)::
 7230d055f81e,correlationId=,org=,product=,component=,message=Exit ,objectId=-964551509]
 ----
 
+
 ADVANCED (trace log)::
+Messages in `ADVANCED` format include field names and details that are similar to `ENHANCED` format, but that preserve more specific trace information.
++
+The following example shows a message in `ADVANCED` format:
++
 [source,console]
 ----
 [26/10/21 10:29:25:011 EDT] 00000073  > UOW= source=com.ibm.ws.event.internal.EventImpl method=setProperty id=5f05cd40 org= prod= component=
@@ -110,12 +168,54 @@ ADVANCED (trace log)::
           com.ibm.wsspi.threading.WSExecutorService
 ----
 
+[#log-level]
+=== Message log-level attributes
+
+Messages that are in `DEV` format print the full log-level name before the message ID code. Messages that are in `JSON` or `ENHANCED` format include a `loglevel` property that identifies the message log level.
+
+Messages that are in `SIMPLE` or `TBASIC` format include one of the following message log-level attributes directly before the message ID code:
+
+.Log-level attributes
+[%header,cols="3,6,9"]
+|===
+| Attribute|Log level|Description
+
+|`A`
+|AUDIT
+|Audit messages are written to the system output stream.
+
+|`E`
+|ERROR
+|Error messages are written to the system error stream.
+
+|`I`
+|INFO
+|Info messages are written to the system output stream.
+
+|`W`
+|WARNING
+|Warning messages are written to the system output stream.
+
+|`O`
+|N/A
+|This attribute does not specify a log level but indicates that the message is written to the system output stream.
+
+|`R`
+|N/A
+|This attribute does not specify a log level but indicates that the message is written to the system error stream.
+
+|===
+
+
+For more information about log levels and output streams, see the descriptions for the `consoleLogLevel` and `copySystemStreams` attributes for the config:logging[] element.
+
+[#tbasic]
 === TBASIC log format
 
-The TBASIC logging format provides a consistent log format across your Open Liberty console, message, and trace log files.
+The `TBASIC` logging format provides a consistent log format across your Open Liberty console, message, and trace log files.
 The `BASIC` logging format exists for the trace log.
-However, the output differs between the trace log and that of the console and messages logs.
-The TBASIC format provides a consistent format option for the trace, console, and messages logs that matches the `BASIC` option for the trace log.
+However, the output differs between the trace log and that of the console and message logs.
+The `TBASIC` format provides a consistent format option for the trace, console, and message logs that matches the `BASIC` option for the trace log.
 The `TBASIC` format acts as an alias for the `BASIC` option.
 
 You can specify the `TBASIC` format  in the `bootstrap.properties` file, as shown in the following example:
@@ -126,7 +226,7 @@ com.ibm.ws.logging.console.format=tbasic
 com.ibm.ws.logging.trace.format=tbasic
 ----
 
-You can also specify the TBASIC log format for the messages and console logs as an environment variable in your `server.env` file, as shown in the following example:
+You can also specify the `TBASIC` log format for the messages and console logs as an environment variable in your `server.env` file, as shown in the following example:
 
 ----
 WLP_LOGGING_MESSAGE_FORMAT=TBASIC
@@ -245,7 +345,7 @@ The following example shows a configuration in the `server.xml` file to replace 
 [#container]
 == Container image logging configuration
 
-In containerized environments, you can disable the messages log and format the console output as JSON by using environment variables, as shown in the following example:
+In containerized environments, you can disable the message log and format the console output as JSON by using environment variables, as shown in the following example:
 
 [source,properties,linenums,role="code_column"]
 ----
@@ -281,7 +381,7 @@ podman run -e "WLP_LOGGING_CONSOLE_SOURCE=message,trace,accessLog,ffdc"
 [#binary]
 == Binary logging
 
-Liberty has a high-performance binary log format option that reduces the resources that are needed to write trace files. For best performance, when you configure binary logging, set the console log level to `OFF` and <<#storage,use the messages log instead>>. You can configure binary logging in the `bootstrap.properties` file, as shown in the following example:
+Liberty has a high-performance binary log format option that reduces the resources that are needed to write trace files. For best performance, when you configure binary logging, set the console log level to `OFF` and <<#storage,use the message log instead>>. You can configure binary logging in the `bootstrap.properties` file, as shown in the following example:
 
 [source,properties,linenums,role="code_column"]
 ----
@@ -336,7 +436,7 @@ WLP_LOGGING_ROLLOVER_INTERVAL=1m
 [#settings]
 == Configuration settings by source
 
-The following table shows the equivalent `server.xml` file, `bootstrap.properties` file, and environment variable configurations along with brief descriptions. Settings that apply to the console log appear first, followed by settings that apply to the messages log, and then the trace log. Settings that apply either globally or to more than one log type appear last in the table. For more information, see the xref:reference:config/logging.adoc[logging element].
+The following table shows the equivalent `server.xml` file, `bootstrap.properties` file, and environment variable configurations along with brief descriptions. Settings that apply to the console log appear first, followed by settings that apply to the message log, and then the trace log. Settings that apply either globally or to more than one log type appear last in the table. For more information, see the xref:reference:config/logging.adoc[logging element].
 
 // keep the rows in this table sorted according to the table description: console, message, trace, multiple/global. Rows within each category should be sorted alphabetically, with the exception of any settings that relate to JSON, which are sorted together in the final group under "j", regardless of the attribute name
 
@@ -545,7 +645,7 @@ The `trace.log` file is created and logs are written to it only if one or more t
 |General information that details subtask progress
 
 |fine
-|General trace 
+|General trace
 
 |finer
 |Detailed trace that includes method entry, exit, and return values
