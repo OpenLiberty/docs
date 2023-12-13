@@ -1,10 +1,10 @@
 == Examples
 
-=== Configure MicroProfile JWT
+=== Configure authentication with MicroProfile JWT
 
-The following example shows authentication with a JSON Web Token (JWT).
+The following example shows how to configure authentication with a JSON Web Token (JWT).
 The `mpJwt` element defines the configuration to process the inbound JSON Web Tokens.
-The `jwksUri` attribute points the `mpjwt` element towards the public key `https://localhost:19443/jwt/ibm/api/myBuilder/jwk`, to validate the JWT.
+The `jwksUri` attribute points the `mpjwt` element to the `\https://localhost:19443/jwt/ibm/api/myBuilder/jwk` JWK endpoint URL that the server uses to obtain the public keys from to verify the JWT.
 The `keyStore` element defines the keystore and truststore where the public key is stored.
 The `keyStore` element validates the JSON Web Token when the JSON Web Key Set (JWKS) is not used:
 
@@ -18,12 +18,12 @@ The `keyStore` element validates the JSON Web Token when the JSON Web Key Set (J
 
 In MicroProfile JSON Web Token 1.1 and later, this configuration is optional and you can also use MicroProfile Config properties to configure MicroProfile JWT. For more information, see link:/guides/microprofile-jwt.html[Guide: Securing microservices with JSON Web Tokens].
 
-=== Configure authentication filter to login with MicroProfile JWT
+=== Configure an authentication filter to log in with MicroProfile JWT
 
-You can use an authentication filter to protect a subset of applications, URLs, or IP addresses.
+You can use an xref:ROOT:authentication-filter.adoc[authentication filter] to protect a subset of applications, URLs, or IP addresses.
 The security configuration works when the conditions in the filter are met.
 In the following example, any requests to the `myApp` application are authenticated with the `mpJwt` feature.
-The `authFilterRef` attribute  that is named `myAuthFilter` filters the login requests to the `myApp` application:
+The `authFilterRef` attribute that is named `myAuthFilter` filters the login requests to the `myApp` application:
 
 [source,xml]
 ----
@@ -47,7 +47,7 @@ You can configure a truststore to verify JSON Web Tokens. The default keystore f
    jwksUri="https://localhost:19443/jwt/ibm/api/myBuilder/jwk"/>
 ----
 
-The `id` attribute in the `keyStore` element specifies the `“defaultTrustStore”` value to configure a truststore within the keystore.  A truststore contains the certificates that are used to validate the requests that are sent to applications with JSON Web Tokens. The `ssl` element is used to specify how the application validates the SSL connection to a server. Within the `ssl` element, the `id` attribute specifies the `"defaultSSLConfig"` value that sets the SSL configuration as the default SSL configuration for the server that the application connects to. The `trustStoreRef` attribute specifies the `“defaultTrustStore”` value that configures the `ssl` element to reference the truststore so that the application recognizes the truststore when it attempts to connect to the server. The `jwksUri` attribute specifies the `"https://localhost:19443/jwt/ibm/api/myBuilder/jwk”` JWK endpoint URL value that the server uses to obtain the public keys from to verify the JWT.
+The `id` attribute in the `keyStore` element specifies the `“defaultTrustStore”` value to configure a truststore within the keystore.  A truststore contains the certificates that are used to validate the requests that are sent to applications with JSON Web Tokens. The `ssl` element is used to specify how the application validates the SSL connection to a server. Within the `ssl` element, the `id` attribute specifies the `"defaultSSLConfig"` value that sets the SSL configuration as the default SSL configuration for the server that the application connects to. The `trustStoreRef` attribute specifies the `“defaultTrustStore”` value that configures the `ssl` element to reference the truststore so that the application recognizes the truststore when it attempts to connect to the server. The `jwksUri` attribute specifies the `\https://localhost:19443/jwt/ibm/api/myBuilder/jwk` JWK endpoint URL value that the server uses to obtain the public keys from to verify the JWT.
 
 === Configure the restriction of MicroProfile JWT authentication
 
@@ -69,21 +69,24 @@ You can also add `MP-JWT` to the `auth-method` element of the `web.xml` file to 
 
 [source,xml]
 ----
-<login-config> <auth-method>MP-JWT</auth-method> <realm-name>MP-JWT</realm-name></login-config>
+<login-config>
+    <auth-method>MP-JWT</auth-method>
+    <realm-name>MP-JWT</realm-name>
+</login-config>
 ----
 
 === Define role mapping for MicroProfile JWT
 
-By default, JSON Web Tokens use the `upn` claim from the JWT as the principal name and unique security name of the user. JSON Web Tokens also use the `groups` claim from the JWT as the group name for security role mapping. To change the default mapping, you can use the `userNameAttribute` attribute to choose a claim for the user principal. You can also use the `groupNameAttribute` attribute to choose a claim for the group name, as shown in the following example:
+By default, JSON Web Tokens use the `upn` claim from the JWT as the principal name and unique security name of the user. JWTs also use the `groups` claim from the JWT as the group name for security role mapping. To change the default mapping, you can use the `userNameAttribute` attribute to choose a claim for the user principal. You can also use the `groupNameAttribute` attribute to choose a claim for the group name, as shown in the following example:
 
 [source,xml]
 ----
-<mpJwt  userNameAttribute="claim" groupNameAttribute="claim"/>
+<mpJwt  userNameAttribute="<claim>" groupNameAttribute="<claim>"/>
 ----
 
 === Validate MicroProfile JWT claims with the user registry
 
-By default, JSON Web Tokens authenticate user claims without validation from the user registry. To modify this behavior, you can set the `mapToUserRegistry` attribute to `true` in the the `mpJwt` element, as shown in the following example:
+By default, JSON Web Tokens authenticate user claims without validation from the user registry. To modify this behavior, you can set the `mapToUserRegistry` attribute to `true` in the `mpJwt` element, as shown in the following example:
 
 [source,xml]
 ----
