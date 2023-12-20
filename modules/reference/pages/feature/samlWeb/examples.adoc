@@ -24,9 +24,9 @@ This endpoint on the service provider (SP) point of contact server receives asse
 
 - The service provider metadata URL endpoint: `\https://<hostname>:<sslport>/ibm/saml20/defaultSP/samlmetadata`
 +
-This endpoint provides configuration information for the service provider.
-You can download the metadata for the service provider from a browser with the service provider metadata URL.
-You can also provide the service provider metadata URL to the SAML IdP to establish a federation between the SP and IdP.
+This endpoint provides configuration information for the SP.
+You can download the metadata for the SP from a browser with the SP metadata URL.
+You can also provide the SP metadata URL to the SAML IdP to establish a federation between the SP and IdP.
 
 The IdP metadata file must be named `idpMetadata.xml` and copied to the `resources/security` directory on the server.
 
@@ -84,7 +84,7 @@ If the request meets the criteria that are specified in the authentication filte
 In this example, request URLs that contain the `/SimpleServlet` pattern are authenticated by using SAML SSO authentication.
 If the SAML Web Single Sign-On feature is enabled but no authentication filter is configured, all unauthenticated requests are processed by SAML authentication.
 
-You can also configure multiple SP and IdP federation partners by creating multiple `samlWebSso20` elements and associating each of them with a  unique config:authFilter[] element. In this case, all `authFilters` must exclude each other. When multiple `samlWebSso20` elements are configured, each element can implement single-sign-on with its specified federated IdP and according to its own authentication policy and rules. The following example shows a two mutually exclusive SAML configurations, each of which uses a different authentication filter to control the kinds of requests that it processes.
+You can also configure multiple SP and IdP federation partners by creating multiple `samlWebSso20` elements and associating each of them with a unique config:authFilter[] element. In this case, all `authFilters` must exclude each other. When multiple `samlWebSso20` elements are configured, each element can implement single sign-on with its specified federated IdP and according to its own authentication policy and rules. The following example shows two mutually exclusive SAML configurations, each of which uses a different authentication filter to control the kinds of requests that it processes.
 
 [source, xml]
 ----
@@ -139,8 +139,8 @@ The following example configuration demonstrates how to configure inbound propag
 === Configure identity provider-initiated unsolicited single sign-on
 Open Liberty SAML SP supports IdP-initiated unsolicited SSO with and without the requirement of IdP metadata on-premises. If you do not have IdP metadata, or if you intend to use unsolicited SSO to federate with multiple identity providers with one Liberty SP, you must add the following configurations.
 
-- Configure the `PKIXTrustEngine` subelement and import all the IdP signer certificates to the default truststore of the Liberty server, or to the trustAnchor of the PKIXTrustEngine.
-- Configure the `trustedIssuers` attribute to list the issuer name of the IdP as it appears in the SAML assertion. The issuer name is used as the EntityID in the metadata.
+- Configure the `PKIXTrustEngine` subelement and import all the IdP signer certificates to the default truststore of the Liberty server, or to the `trustAnchor` location of the `pkixTrustEngine` configuration.
+- Configure the `trustedIssuers` attribute to list the issuer name of the IdP as it appears in the SAML assertion. The issuer name is used as the `EntityID` value in the metadata.
 
 The following example demonstrates the `server.xml` file configuration to specify IdP-initiated SSO, where the IdP signer certificates are in a file that is specified in the `serverStore` keystore configuration.
 
@@ -172,8 +172,8 @@ To configure this scenario, set the `loginPageURL` attribute to a URL that can i
 [#ltpa]
 === Configure an SP authentication session and session cookie
 
-After SAML assertion is verified and processed, the Liberty SAML SP maintains an authenticated session between the browser and the SP without using an LTPA cookie. The authenticated session timeout is set to `SessionNotOnOrAfter` value from  the  `saml:AuthnStatement` element, if one is presented, or to the `sessionNotOnOrAfter` attribute as configured in the server.xml file. The default value is 120 minutes.
-The session cookie name is automatically generated, and you can customize the cookie name by using the attribute `spCookieName`, as shown in the following example.
+After the SAML assertion is verified and processed, the Liberty SAML SP maintains an authenticated session between the browser and the SP without using an LTPA cookie. The authenticated session timeout is set to the `SessionNotOnOrAfter` value from the `saml:AuthnStatement` element, if one is presented, or to the `sessionNotOnOrAfter` attribute, as configured in the `server.xml` file. The default value is 120 minutes.
+The session cookie name is automatically generated, and you can customize the cookie name by using the `spCookieName` attribute, as shown in the following example.
 
 [source,xml]
 ----
@@ -197,7 +197,7 @@ The Open Liberty SAML Single Logout Service URL takes the following format: `\ht
 
 For IdP-initiated single logout, no additional configuration step is required. The Open Liberty SP listens on the Single Logout Service URL and automatically responds to any single logout request.
 
-However, Open Liberty also supports service provider-initiated single logout. When you set the `spLogout` attribute to `true` both the `ibm_security_logout` URL and the `HttpServletRequest.logout()` method are upgraded to implement SAML single logout.
+However, Open Liberty also supports service provider-initiated single logout. When you set the `spLogout` attribute to `true`, both the `ibm_security_logout` URL and the `HttpServletRequest.logout()` method are upgraded to implement SAML single logout.
 
 [source,xml]
 ----
