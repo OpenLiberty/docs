@@ -164,20 +164,32 @@ The following example shows how to use a private key JWT for client authenticati
 [#openshiftservice]
 === Use OpenShift service accounts to authenticate and authorize protected resource requests
 
-The Social Media Login feature can be configured to use OpenShift service accounts to authenticate and authorize protected resource requests.
-With this configuration, server administrators can secure endpoints, for example, monitoring and metrics endpoints, that might produce sensitive information.
+You can configure the Social Media Login feature to use OpenShift service accounts to authenticate and authorize protected resource requests.
+With this configuration, you can secure endpoints that might produce sensitive information, such as monitoring and metrics endpoints.
+
 The service accounts can authenticate themselves by providing a service account token that was created within the OpenShift cluster in the request.
 
-The following example shows how to configure the Social Media Login feature to use OpenShift service accounts as a single sign-on provider.
+The following `server.xml` file example shows how to configure the Social Media Login feature to use OpenShift service accounts as a single sign-on provider.
+
 [source,xml]
 ----
-
 <okdServiceLogin />
-
 ----
 
+When the Liberty runtime is packaged and deployed within an OpenShift cluster, The minimum configuration requires only an config:okdServiceLogin[] element.
+
 The `okdServiceLogin` element authenticates all protected resource requests received by Open Liberty.
-The OpenShift project that the service account is in, is used as the group for the service account for authorization decisions.
+
+Incoming requests to protected resources must include a service account token. The token must be specified as a bearer token in the `Authorization` header of the request. The Liberty runtime uses the service account token to query information about the associated service account from the OpenShift cluster. The OpenShift project that is associated with the service account is used as the group for the service account for authorization decisions. Similarly, the name of the service account is used as the username.
+
+If the Liberty runtime is not deployed within an OpenShift cluster, configure the `userValidationApi` attribute to the value for the appropriate User API endpoint in the OpenShift cluster:
+
+[source,xml]
+----
+<okdServiceLogin userValidationApi="https://cluster.domain.example.com/apis/user.openshift.io/v1/users/~" />
+----
+
+You can configure multiple `okdServiceLogin` elements  as long as each element specifies a unique `id` attribute. In those cases, configure xref:ROOT:authentication-filters.adoc[authentication filters] to ensure the appropriate endpoints are protected by a unique `okdServiceLogin` instance.
 
 [#activedirectory]
 === Use Active Directory as an authentication provider

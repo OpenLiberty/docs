@@ -16,7 +16,7 @@
 For an application to be secure, it must manage access to protected resources. Authorization determines which resources a user can access.
 
 In applications where only certain users are entitled to access certain resources, users and groups are assigned roles that correspond to the resources that they can access. Authorization determines a user's role and the permissions that role includes.
-For example, in a payroll application, users in the `Employee` role can view a page that lists their hourly wages and hours worked.
+For example, in a payroll application, users in the `Employee` role can view a page that lists their hourly wages and the hours they worked.
 However, only users in the `Manager` role can edit employee wages.
 During xref:authentication.adoc[authentication], Open Liberty identifies users and determines what access groups they belong to.
 When a user attempts to access a protected resource on the server, this information determines whether the user is authorized to access the resource.
@@ -25,6 +25,12 @@ In addition to configuring authorization to application resources, you can confi
 
 == Define roles in your application
 
+To secure access to application resources, you can specify roles for different resources in your application source code. How you specify these roles generally depends on whether you are securing front-end or back-end resources.
+
+=== Securing back-end resources with the `@RolesAllowed` annotation
+
+The `@RolesAllowed` annotation typically specifies role-based access to back-end application resources, such as calls to a database.
+
 You can specify which roles can access an application resource by setting the `@RolesAllowed` annotation on a class or method in the source code, as shown in the following example:
 
 [source,java]
@@ -32,7 +38,22 @@ You can specify which roles can access an application resource by setting the `@
 @RolesAllowed({ "admin", "user" })
 ----
 
-You can map the roles that are declared in the application to existing groups from a user registry or SSO identity provider. To map the roles, you can specify the `security-role` element within the `application-bnd` element in the `server.xml` file, as shown in the following example:
+[#servlet]
+=== Securing front end resources with servlet security roles
+
+To control authorization for front-end resources, such as HTTP calls, you can specify roles by configuring the `@ServletSecurity` annotation on a class in the servlet code. You can specify the permissible roles with the `rolesAllowed` attribute on the `@HttpConstraint` or `@HttpMethodConstraint` parameters. The `@HttpMethodConstraint` parameter specifies constraints for specific HTTP methods. The `@HttpConstraint` parameter specifies the default constraints for all HTTP methods that are not otherwise specified by the `@HttpMethodConstraint` parameter.
+
+In the following example, the `@HttpConstraint` parameter specifies that all HTTP methods are constrained either to the `user` role or the `admin` role. The `@HttpMethodConstraint` parameter specifies that the `POST` method is constrained only to users who are in the `admin` role:
+
+[source,java]
+----
+@ServletSecurity (value = @HttpConstraint(rolesAllowed = { "user", "admin" }),
+  httpMethodConstraints = {@HttpMethodConstraint(value = "POST", rolesAllowed = {"admin"})})
+----
+
+=== Mapping roles to SSO groups
+
+You can map the roles that are declared in the application to existing groups from a user registry or SSO identity provider. To map the roles, you can specify the `security-role` element within the config:application-bnd[] element in the `server.xml` file, as shown in the following example:
 
 [source,xml]
 ----
@@ -48,15 +69,17 @@ You can map the roles that are declared in the application to existing groups fr
 ----
 
 The `name` attribute of the `security-role` element corresponds to a role that is specified in the application to control access to resources. The `name` attributes of the `group` elements correspond to the groups that are specified by a user registry or SSO identity provider.
-If the role names match the group names exactly, the server maps the group to the role with a matching name by default.
+If the role names match the group names exactly, Open Liberty maps the group to the role with a matching name by default.
 If you use this default mapping, you do not need to specify an `application-bnd` element in the `server.xml` file.
 
 In some cases, an application needs to know only the user’s authentication status.
 In such cases, you can specify the `**` value as the role name in the `@RolesAllowed` annotation.
 This value denotes that any authenticated user can access a resource.
-You can also authorize all users by setting the `@PermitAll` annotation on a class or method in the application code The `@PermitAll` annotation specifies that anyone can access a resource, even users who are not authenticated.
+You can also authorize all users by setting the `@PermitAll` annotation on a class or method in the application code. The `@PermitAll` annotation specifies that anyone can access a resource, even users who are not authenticated.
 
 For more information, see the link:/guides/microprofile-jwt.html#securing-the-system-service[Securing the inventory service section of the guide to Securing microservices with JSON Web Tokens].
+
+=== Role-mapping limitations with the dropins directory
 
 Open Liberty provides a `dropins` directory, which is automatically monitored by the server. If you put an application into this directory, the application is automatically deployed on the server. Similarly, if the application is deleted from the directory, the application is automatically removed from the server. The `dropins` directory can be used for applications that do not require security role mapping or other extra configuration in the `server.xml` file. However, if you specify the `application-bnd` element in your server.xml file to configure security role mapping, your application must not be in the `dropins` directory. If you leave your application in the `dropins` directory, then you must disable application monitoring by adding the following code in your `server.xml` file:
 
@@ -64,32 +87,17 @@ Open Liberty provides a `dropins` directory, which is automatically monitored by
 <applicationMonitor dropinsEnabled="false" />
 ----
 
-=== Configure servlet security roles
-
-The `@RolesAllowed` annotation typically specifies role-based access to back-end application resources, such as calls to a database.
-To control authorization for front-end resources, such as HTTP calls, you can specify roles by configuring the `@ServletSecurity` annotation on a class in the servlet code. You can specify the permissible roles with the `rolesAllowed` attribute on the `@HttpConstraint` or `@HttpMethodConstraint` parameters. The `@HttpMethodConstraint` parameter specifies constraints for specific HTTP methods. The `@HttpConstraint` parameter specifies the default constraints for all HTTP methods that are not otherwise specified by the `@HttpMethodConstraint` parameter.
-
-In the following example, the `@HttpConstraint` parameter specifies that all HTTP methods are constrained either to the `user` role or the `admin` role. The `@HttpMethodConstraint` parameter specifies that the `POST` method is constrained only to users who are in the `admin` role:
-
-[source,java]
-----
-@ServletSecurity (value = @HttpConstraint(rolesAllowed = { "user", "admin" }),
-  httpMethodConstraints = {@HttpMethodConstraint(value = "POST", rolesAllowed = {"admin"})})
-----
-
-
 
 For more information, see link:/guides/security-intro.html#adding-authentication-and-authorization[the Adding authentication and authorization section of the Securing a web application guide].
 
-
-=== Authorize requests between web services
+== Authorize requests between web services
 
 Authorization occurs not only between users and applications, but also between microservices within an application. When one service requests data from another, the requesting service often must demonstrate that it is authorized to access the data.
 xref:single-sign-on.adoc#_json_web_token_jwt[Token-based authorization], such as with a JSON Web Token (JWT), provides a lightweight way for security controls and security tokens to propagate user identities and roles across different services.
 
 Open Liberty supports token-based authorization through the feature:jwt[display=MicroProfile JWT feature].
 
-=== Configure authorization with a deployment descriptor file
+== Configure authorization with a deployment descriptor file
 
 Although annotations are the most common way to define roles in microservices, you can also define roles by specifying `security-constraint` elements in a `web.xml` deployment descriptor file.
 This configuration might be necessary in situations where you want to keep the security configuration separate from the development environment and apply it at deployment time.
@@ -98,7 +106,7 @@ Some applications rely on a combination of declarative annotations and a deploym
 Therefore, you can specify roles in a deployment descriptor file if you want to override security settings or defaults from elsewhere in the application code.
 For more information, see link:/guides/security-intro.html#adding-authentication-and-authorization[the Adding authentication and authorization section of the Securing a web application guide].
 
-=== Configure calls to run under a specific caller identity
+== Configure calls to run under a specific caller identity
 
 When a user is authenticated to a servlet, the servlet can make subsequent calls to downstream resources, such as other servlets or EJB components. These subsequent calls are normally made under the same security identity that was used to log in to the servlet. This identity is known as the caller identity. Alternatively, you can delegate any subsequent calls to a different caller identity.
 
@@ -110,7 +118,7 @@ For example, consider a servlet that requires either the `admin` or `user` role 
 @RunAs("admin")
 @RolesAllowed({ "admin", "user" })
 ----
-For more information, see the xref:reference:javadoc/liberty-javaee8-javadoc.adoc#package=javax/annotation/security/package-frame.html&class=javax/annotation/security/RunAs.html[@RunAs annotation].
+For more information, see the xref:reference:javadoc/liberty-jakartaee10-javadoc.html?package=allclasses-frame.html&class=jakarta/annotation/security/RunAs.html[@RunAs annotation].
 
 Alternatively, in the following `web.xml` deployment descriptor file example, the `run-as` element specifies that the servlet makes calls under the `admin` role that is defined in the server configuration:
 
@@ -128,7 +136,7 @@ Alternatively, in the following `web.xml` deployment descriptor file example, th
 
 To delegate calls that are made from a security role to a particular caller identity, specify the `run-as` element in the security role configuration in your `server.xml` file.  For example, the servlet from the previous example needs to call to downstream resources that require a particular caller identity with the username `Wanda`. You can set the `run-as` element on the `admin` security role to specify that calls that are made in that role must use this caller identity.
 
-In the following `server.xml` file example, the `run-as` element specifies that calls under the `admin` security role are run under the caller identity with the `Wanda` username :
+In the following `server.xml` file example, the `run-as` element specifies that calls under the `admin` security role are run under the caller identity with the `Wanda` username:
 
 ----
 <application-bnd>
