@@ -23,10 +23,12 @@ You can append an Open Liberty container image tag to the `icr.io/appcafe/open-l
 
 Select from the following container image tags for the latest Open Liberty release from ICR.
 
+* `kernel-slim-java21-openj9-ubi-minimal`
 * `kernel-slim-java17-openj9-ubi`
 * `kernel-slim-java11-openj9-ubi`
 * `kernel-slim-java8-openj9-ubi`
 * `kernel-slim-java8-ibmjava-ubi`
+* `full-java21-openj9-ubi-minimal`
 * `full-java17-openj9-ubi`
 * `full-java11-openj9-ubi`
 * `full-java8-openj9-ubi`
@@ -49,11 +51,11 @@ ibmcloud cr images --restrict appcafe/open-liberty
 
 You can use an Open Liberty container image tag in a `Dockerfile` or `Containerfile` file to build an application image that adds a single application and its corresponding configuration. Do not configure the container manually after it is started, except for debugging purposes, because these changes are not reflected in new containers that are created from the image.
 
-Set your image template similar to the following example, which uses the `kernel-slim-java17-openj9-ubi` tag to build an image that uses the latest Open Liberty release with the OpenJ9 distribution of Java 17.
+Set your image template similar to the following example, which uses the `kernel-slim-java21-openj9-ubi` tag to build an image that uses the latest Open Liberty release with the OpenJ9 distribution of Java 21.
 
 [source,dockerfile]
 ----
-FROM icr.io/appcafe/open-liberty:kernel-slim-java17-openj9-ubi
+FROM icr.io/appcafe/open-liberty:kernel-slim-java21-openj9-ubi-minimal
 
 # Add a Liberty server configuration including all necessary features
 COPY --chown=1001:0  server.xml /config/
@@ -84,7 +86,7 @@ You can also use xref:instanton.adoc[Open Liberty InstantOn] to improve the star
 Open Liberty container image tags use the following naming convention.
 [subs=+quotes]
 ----
-_<optional fix pack version**-**><liberty image type>**-**<java version>**-**<java type_>**-**ubi
+<optional fix pack version-><liberty image type>-<java version>-<java type>-<base image type>
 ----
 
 The following tag values determine the resources that are included in a container image.
@@ -103,7 +105,15 @@ Java version::
 This value determines the version of Java SE that the runtime uses. Tags are available for all Java long term support (LTS) releases that are listed on the xref:java-se.adoc[Java SE Support page].
 
 Java type::
-This value determines the type of Java SE distribution that the runtime uses. Current options are IBM Semeru with Eclipse OpenJ9 and, for Java SE 8 only, the IBM SDK, Java Technology Edition.
+This value determines the type of Java SE distribution that the runtime uses. Current options are IBM Semeru with Eclipse OpenJ9, named `openj9` and, for Java SE 8 only, the IBM SDK, Java Technology Edition, named `ibmjava`.
+
+Java 21 images are based on Universal Base Image (UBI) 9 minimal and include IBM Semeru Runtimes for Java 21 JRE. This combination offers a compact and effective Java runtime that is suited for applications that need Java 21.
+
+Base image type::
+Liberty images are available with two different types of Red Hat Universal Base (UBI) images: `ubi-minimal` or `ubi`.
+`ubi-minimal` offers a minimized pre-installed content set and the package manager `microdnf` for adding additional packages.
+`ubi` offers the standard images with access to `yum` repositories and includes utilities such as `tar` and `gzip`.
+
 
 In addition to the tags that follow this naming convention, Open Liberty offers three preformatted tags that pull particular images.
 
