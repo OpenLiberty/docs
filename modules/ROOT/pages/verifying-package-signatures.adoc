@@ -15,19 +15,19 @@
 
 You can use signature files and the corresponding public key to verify the authenticity and integrity of an Open Liberty release package. Signature files are produced for every package of an Open Liberty release.
 
-Signature files are available for every Open Liberty release. The Open Liberty project uses its private key to digitally sign each Open Liberty release. You can use the Open Liberty public key to check the signature, verify that the package was released by Open Liberty, and that it was not modified since its release. You can also verify the authenticity of the Liberty public key by using a certificate (`.cer`) file.
+Signature files are available for every Open Liberty release. The Open Liberty project uses its private key to digitally sign each Open Liberty release. You can use the Open Liberty public key to check the signature, verify that the package was released by Open Liberty, and that it was not modified since its release.
 
-You can verify a release package either locally, by using the `openssl` command and a `*.sig` file, or on Maven Central, by using the `gpg` command.
+You can verify a release package either locally, by using the `openssl` command and a `*.sig` file, or on Maven Central, by using the `gpg` command. When you verify the release locally, you can also verify the authenticity of the Open Liberty public key by using a certificate (`.cer`) file.
 
 == Verifying Open Liberty release package signatures with OpenSSL
 
 To verify an Open Liberty release package locally, you must first download an Open Liberty `.zip` package, the corresponding `*.sig` file, and the Open Liberty public key, which is included in the certificate (`.cer`) file. You can then run the `openssl` command to verify the package signature. Optionally, you can verify the authenticity of the Open Liberty public key before you verify the release package.
 
-In the following examples, replace the `<OpenLiberty_certificate>` and `<Open_Liberty_release_package>` variables with the public key and release package files that you are using to verify a release package.
+In the following examples, replace the `<OpenLiberty_certificate>` and `<Open_Liberty_release_package>` variables with the public key (`.cer`), signature (`.sig`), and release package (`.zip`) files that you are using to verify a release package.
 
 1. Go to the **Download package** section of the Open Liberty https://www.openliberty.io/start/[Get Started page] and download an Open Liberty `.zip` package and the corresponding `.sig` and `.cer` files.
 
-2. **Optional**: Verify the authenticity of the Open Liberty public key.
+2. Verify the authenticity of the Open Liberty public key.
 +
 The Open Liberty public key is embedded in the certificate file. Before you extract the Open Liberty public key, you can verify that it was produced by Open Liberty. Run the following https://www.openssl.org/docs/man1.1.1/man1/openssl-dgst.html[openssl command] from the directory that contains the certificate file.
 +
@@ -60,18 +60,20 @@ Certificate:
 -----END CERTIFICATE-----
 ----
 
-3. Extract the public key file from the certificate file.
+3. Extract the public key  as a `.pem` file from the `.cer` file.
 +
-The Open Liberty public key is embedded in the certificate file. To extract the key to a separate file, run the following command from the directory that contains the certificate file.
+The Open Liberty public key is embedded in the `.cer` file. To extract the key to a separate `.pem` file, run the following command from the directory that contains the certificate file.
 +
 [source,sh]
 ----
 openssl x509 -inform PEM -in <OpenLiberty_certificate>.pem.cer -pubkey -noout > <OpenLiberty_certificate>.pem
 ----
++
+You can now use this `.pem` file to verify the release package.
 
 4. Verify the authenticity and integrity of the release package.
 +
-Navigate to the directory that contains the release archive file, the corresponding .sig file, and the .pem file. Run the following command to verify the release package.
+Navigate to the directory that contains the release archive `.zip` file, the corresponding `.sig` file, and the `.pem` file that you extracted in the previous step. Run the following command to verify the release package.
 +
 [source,sh]
 ----
@@ -88,10 +90,10 @@ Verified OK
 
 == Verify Open Liberty package signatures on Maven Central
 
-To verify Open Liberty packages on Maven Central, you must first download the public key to your local machine by using https://gnupg.org[the gpg or gpg2 command].
-You must edit the trust level for the key owner. You can then use this key to remotely verify an Open Liberty .asc release file on Maven Central.
+To verify Open Liberty packages on Maven Central, you must first download the Open Liberty public key to your local machine by using https://gnupg.org[the gpg or gpg2 command].
+You must edit the trust level for the key owner. You can then use this key to remotely verify an Open Liberty `.asc` release file on Maven Central.
 
-1. Run the following command to download the public key file. The key ID value for the public key is `9E68CA00`.
+1. Run the following command to download the Open Liberty public key file. The key ID value for the Open Liberty public key is `9E68CA00`.
 +
 [source,sh]
 ----
