@@ -13,6 +13,7 @@
 :seo-title: Integrating MicroProfile Reactive Messaging with Apache Kafka in Open Liberty Applications
 :seo-description: The integration of MicroProfile Reactive Messaging with Apache Kafka in Open Liberty applications is a significant development in cloud-native microservice designs as it provides an efficient method of asynchronous communication.
 
+= Optimizing Kafka Integration with MicroProfile Messaging
 
 = Integrating MicroProfile Reactive Messaging with Apache Kafka in Open Liberty Applications
 
@@ -65,18 +66,18 @@ Indicating where your Kafka broker is hosted.
 mp.messaging.incoming.myChannel.connector=liberty-kafka
 mp.messaging.incoming.myChannel.topic=myTopicName
 ----
-
  
 * Create a channel for outgoing messages, to specify the Kafka topic from which messages are sent: 
 ----
 mp.messaging.outgoing.myChannel.connector=liberty-kafka
 mp.messaging.outgoing.myChannel.topic=myTopicName.
 ----
-
 +
 3. Include Kafka Client Libraries
 
-When using the Kafka connector included in Open Liberty, you must include the the Kafka client API jar in your application or include it using a shared library.
+* Include Kafka Libraries as an Application Dependency
+
+When using the Kafka connector included in Open Liberty, you must include the the Kafka client API jar in your application.
 
 If you are building your application with Maven, add the Kafka client dependency in your Maven `pom.xml` file.
 
@@ -89,6 +90,56 @@ If you are building your application with Maven, add the Kafka client dependency
 </dependency>
 ----
 
+This approach integrates Kafka client libraries directly into your application. It does not require additional server configuration for permissions, simplifying deployment and configuration management.
+
+* Include Kafka Libraries as a Shared Library
+
+Alternatively, you can include Kafka client libraries as a shared library within the Open Liberty server. This approach is useful when multiple applications deployed on the same server instance need to use the Kafka client libraries and reduces duplication.
+
+However, when using Kafka client libraries as a shared library, you must explicitly grant the necessary Java permissions for the libraries to function correctly. These permissions enable the Kafka client to perform operations such as connecting to Kafka brokers, reading system properties, and accessing or modifying security properties.
+
+To configure these permissions, you can use the `server.xml` configuration file. The following example demonstrates how to grant the necessary permissions to the Kafka client libraries specified as a shared library:
+
+[source,XML]
+----
+    <variable name="kafkaCodebase" value="${server.config.dir}/kafkaLib/kafka-clients-<client.version>.jar"/>
+   <javaPermission codebase="${kafkaCodebase}" className="javax.management.MBeanServerPermission" name="createMBeanServer"/>
+   <javaPermission codebase="${kafkaCodebase}" className="javax.management.MBeanPermission" name="*" actions="*"/>
+   <javaPermission codebase="${kafkaCodebase}" className="javax.management.MBeanTrustPermission"name="register"/>
+   
+   <!-- Kafka client reads system properties -->
+   <javaPermission codebase="${kafkaCodebase}" className="java.util.PropertyPermission"name="*"actions="read"/>
+   
+   <!-- Kafka client connects to the kafka broker server -->
+   <javaPermission codebase="${kafkaCodebase}" className="java.net.SocketPermission"name="*"actions="connect"/>
+   
+   <!-- Kafka client loads serializers and deserializers by name -->
+   <javaPermission codebase="${kafkaCodebase}" className="java.lang.RuntimePermission"name="getcodebase="${kafkaCodebase}" classLoader"actions="*"/>
+   
+   <!-- Kafka reads truststores -->
+   <javaPermission codebase="${kafkaCodebase}" className="java.io.FilePermission" name="*" <!-- all files in the current directory (i.e. the server directory) --> actions="read"/>
+   
+   <!-- Kafka client allowed to invoke the Subject.doAs methods -->
+   <javaPermission codebase="${kafkaCodebase}" className="javax.security.auth.AuthPermission" name="doAs"/>
+   
+   <!-- Kafka client allowed to call getSubject -->
+   <javaPermission codebase="${kafkaCodebase}" className="javax.security.auth.AuthPermission" name="getSubject"/>
+   
+   <!-- Kafka client sets properties for the Simple SASL/PLAIN Server Provider -->
+   <javaPermission codebase="${kafkaCodebase}" className="java.security.SecurityPermission" name="putProviderProperty.Simple SASL/PLAIN Server Provider"/>
+   
+   <!-- Kafka client allowed to set a Provider -->
+   <javaPermission codebase="${kafkaCodebase}" className="java.security.SecurityPermission" name="insertProvider"/>
+   
+   <!-- Kafka client allowed access to private Credentials belonging to a particular Subject -->
+   <javaPermission codebase="${kafkaCodebase}" className="javax.security.auth.PrivateCredentialPermission" name="* * "*"" actions="read"/>
+   
+   <!-- Kafka client allowed to modify the set of public credentials associated with a Subject -->
+   <javaPermission codebase="${kafkaCodebase}" className="javax.security.auth.AuthPermission" name="modifyPublicCredentials"/>
+   
+   <!-- Kafka client allowed to modify the set of private credentials associated with a Subject -->
+   <javaPermission codebase="${kafkaCodebase}" className="javax.security.auth.AuthPermission" name="modifyPrivateCredentials"/>
+----
 
 == Kafka Connector Configuration and Security
 
@@ -133,7 +184,7 @@ This configuration is essential for consuming messages from the specified topic,
 Similarly, the following example example of how to set up a microservice to to send messages to a Kafka broker.
 ----
 mp.messaging.outgoing.bar.connector=liberty-kafka
-mp.messaging.outgoing.bar.bootstrap.servers=
+mp.messaging.outgoing.bar.bootstrap.servers=kafkabrokerhost:9092
 mp.messaging.outgoing.bar.key.serializer=org.apache.kafka.common.serialization.StringSerializer
 mp.messaging.outgoing.bar.value.serializer=org.apache.kafka.common.serialization.StringSerializer
 ----
@@ -157,11 +208,11 @@ You can use all these options as attributes on either the connector or a channel
 |Property Name |Default |Description
 
 |topic
-|
+|The name of the channel.
 |The Kafka topic that the channel is to either send or receive messages from.
 
 |unacked.limit
-|Defaults to the value of max.poll.records if set, or to 500.
+|Defaults to the value of `max.poll.records` if set, or to 500.
 |The number outstanding unacknowledged messages. 
  {empty} +
  If this limit is reached, the connector will stop retrieving records from Kafka until some messages have been acknowledged.
@@ -169,7 +220,7 @@ You can use all these options as attributes on either the connector or a channel
 |fast.ack
 |- MicroProfile Reactive Messaging 1.0 - `False`
  {empty} +
- - MicroProfile Reactive Messaging 3.0 - true
+ - MicroProfile Reactive Messaging 3.0 - `true`
 |Defines the acknowledge behavior of the `liberty-kafka` connector within the MicroProfile Reactive Messaging framework for `incoming` channels in relation to activities with the Kafka topic.
  {empty} +
  If the value of `fast.ack` is `false`, the acknowledgement is not reported as complete until the partition offset has been committed to the Kafka broker. If an error occurs during this process, then the acknowledgement is reported as failed.
@@ -198,7 +249,7 @@ You can use all these options as attributes on either the connector or a channel
 |Property Name |Default |Description
 
 |topic
-|
+|The name of the channel.
 |The Kafka topic that the channel is to either send or receive messages from.
 
 
