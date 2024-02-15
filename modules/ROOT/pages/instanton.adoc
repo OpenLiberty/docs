@@ -25,11 +25,64 @@ InstantOn cannot be used outside of a container image build. An application cont
 
 The following sections describe the prerequisites and processes to build and run an InstantOn application image:
 
-- <<#beforeAppStart, When to take a checkpoint: beforeAppStart or afterAppStart>>
 - <<#prereq, Runtime and host build system prerequisites>>
 - <<#build, Building an InstantOn application image>>
 - <<#run, Running and deploying an InstantOn application image>>
 - <<#supported-features, Open Liberty InstantOn supported features>>
+
+[#prereq]
+== Runtime and host build system prerequisites
+
+InstantOn requires the Linux operating system with kernel version 5.9 or greater. It also requires a version of link:https://developer.ibm.com/languages/java/semeru-runtimes/[IBM Semeru Java], depending on the host machine architecture and Open Liberty version.
+
+The following table defines the supported IBM Semeru Java levels and minimum Liberty version for each supported architecture.
+
+.Supported Java levels and Open Liberty versions for InstantOn
+[options="header"]
+|===
+|Architecture |Supported IBM Semeru Java levels |Minimum Open Liberty version
+
+| Linux X86_64 UBI (`amd64`)
+a| * Java SE 11.0.19+
+  * Java SE 17.0.7+
+  * Java SE 21.0.1+
+| 23.0.0.6 and later
+
+| Linux on Power (`ppc64le`)
+| Java SE 21.0.1+
+| 24.0.0.1 and later
+
+| Linux on IBM Z (`s390x`)
+| Java SE 21.0.0.1+
+| 24.0.0.1 and later
+
+|===
+
+Currently, InstantOn is not supported on Java vendor implementations other than IBM Semeru, or on the Ubuntu architecture (Linux on ARM).
+
+Starting with Open Liberty version 23.0.0.6, all X86-64/AMD64 UBI xref:container-images.adoc[Open Liberty container images] include the prerequisites for InstantOn to checkpoint and restore Open Liberty application processes. In version 24.0.0.1 and later, Power and Z (s390x) processor architectures are also supported when you use IBM Semeru Java version 21.0.1+. Open Liberty Ubuntu container images are not enabled for InstantOn.
+
+Currently, InstantOn is supported with IBM Semeru Java version 11.0.19+, IBM Semeru Java version 17.0.7+, and  IBM Semeru Java version 21.0.1+. InstantOn is expected to support new versions of IBM Semeru Java as they are released. Currently, InstantOn is not supported on other Java vendor implementations.
+
+[#linux-capabilities]
+=== Linux capability prerequisites for checkpoint and restore
+
+To use InstantOn during an application container image build, the host machine must allow execution of privileged container builds by using Podman or Docker. The use of privileged containers in the application container image build is required only when you build the container image with InstantOn. Running the resulting InstantOn application image does not require the use of privileged containers.
+
+Unprivileged (non-root) users are supported by CRIU for checkpointing and restoring application processes. To checkpoint and restore, CRIU requires different link:https://man7.org/linux/man-pages/man7/capabilities.7.html[Linux capabilities].
+
+To perform an application process checkpoint, CRIU requires the following Linux capabilities:
+
+- `CHECKPOINT_RESTORE` - This capability was added in Linux 5.9 to separate checkpoint/restore functions from the overloaded `SYS_ADMIN` capability.
+- `SETPCAP` - This capability is required for the subsequent restore.
+- `SYS_PTRACE` - CRIU uses this powerful capability to capture and record the full process state. It is necessary only when CRIU is checkpointing an application process.
+
+To perform an application process restore, CRIU requires the following Linux capabilities:
+
+- `CHECKPOINT_RESTORE` - This capability was added in Linux 5.9 to separate checkpoint/restore functions from the overloaded `SYS_ADMIN` capability.
+- `SETPCAP` - This capability allows CRIU to drop capabilities from the restored application process. Because the CRIU binary is granted extra capabilities like `CHECKPOINT_RESTORE`, it needs `SETPCAP` so it can drop those capabilities from the final process that CRIU restores.
+
+To use Docker, a version 23.0 or greater is required. Earlier versions of Docker did not support the `CHECKPOINT_RESTORE` Linux capability, which prevents InstantOn from doing a checkpoint or restore of a process in container.
 
 [#beforeAppStart]
 == When to make a checkpoint: beforeAppStart or afterAppStart
@@ -59,40 +112,6 @@ If the application early start code is determined to be safe and acceptable for 
 If an application has no code that is run as the application is started, then the `beforeAppStart` and `afterAppStart` checkpoints are equivalent. In these cases, both checkpoint options perform a checkpoint of the process before the configured ports are enabled for servicing requests. This sequence ensures that the transport protocols for the application are enabled only after the InstantOn checkpoint process is restored.
 
 For more information about limitations with early startup code and possible workarounds, see xref:instanton-limitations.adoc[InstantOn limitations and known issues].
-
-[#prereq]
-== Runtime and host build system prerequisites
-
-Starting with Open Liberty version 23.0.0.6, all X86-64/AMD64 UBI xref:container-images.adoc[Open Liberty container images] include the prerequisites for InstantOn to checkpoint and restore Open Liberty application processes. In version 24.0.0.1 and later, Power and Z (s390x) processor architectures are also supported when you use IBM Semeru Java version 21.0.1+. Open Liberty Ubuntu container images are not enabled for InstantOn.
-
-Currently, InstantOn is supported with IBM Semeru Java version 11.0.19+, IBM Semeru Java version 17.0.7+, and  IBM Semeru Java version 21.0.1+. InstantOn is expected to support new versions of IBM Semeru Java as they are released. Currently, InstantOn is not supported on other Java vendor implementations.
-
-To use InstantOn during an application container image build, the host machine must satisfy the following prerequisites:
-
-- Uses the Linux Operating System with kernel version 5.9 or greater
-- Uses one of the following the processor architectures: X86-64/AMD64, Power (with IBM Semeru Java version 21.0.1+), Z (s390x) (with IBM Semeru Java version 21.0.1+)
-- Allows execution of privileged container builds by using Podman or Docker
-
-The use of privileged containers in the application container image build is required only when you build the container image with InstantOn. Running the resulting InstantOn application image does not require the use of privileged containers.
-
-To use Docker, a version 23.0 or greater is required. Earlier versions of Docker did not support the `CHECKPOINT_RESTORE` Linux capability, which prevents InstantOn from doing a checkpoint or restore of a process in container.
-
-[#linux-capabilities]
-=== Linux capability prerequisites for checkpoint and restore
-
-Unprivileged (non-root) users are supported by CRIU for checkpointing and restoring application processes. To checkpoint and restore, CRIU requires different link:https://man7.org/linux/man-pages/man7/capabilities.7.html[Linux capabilities].
-
-To perform an application process checkpoint, CRIU requires the following Linux capabilities:
-
-- `CHECKPOINT_RESTORE` - This capability was added in Linux 5.9 to separate checkpoint/restore functions from the overloaded `SYS_ADMIN` capability.
-- `SETPCAP` - This capability is required for the subsequent restore.
-- `SYS_PTRACE` - CRIU uses this powerful capability to capture and record the full process state. It is necessary only when CRIU is checkpointing an application process.
-
-To perform an application process restore, CRIU requires the following Linux capabilities:
-
-- `CHECKPOINT_RESTORE` - This capability was added in Linux 5.9 to separate checkpoint/restore functions from the overloaded `SYS_ADMIN` capability.
-- `SETPCAP` - This capability allows CRIU to drop capabilities from the restored application process. Because the CRIU binary is granted extra capabilities like `CHECKPOINT_RESTORE`, it needs `SETPCAP` so it can drop those capabilities from the final process that CRIU restores.
-
 
 [#build]
 == Building an InstantOn application image
