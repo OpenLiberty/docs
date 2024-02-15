@@ -17,7 +17,7 @@ Open Liberty InstantOn provides fast startup times for MicroProfile and Jakarta 
 
 InstantOn uses the Checkpoint/Restore In Userspace (link:https://criu.org/[CRIU]) feature of the Linux kernel to take a checkpoint of the JVM that can be restored later. With InstantOn, the application is developed as normal, and then InstantOn makes a checkpoint of the application process when the application container image is built. When the application is restored, it runs in the same JVM, which provides complete parity between development and production. Because the checkpoint process takes only seconds, your CI/CD process is barely affected.
 
-When you build an application container image, InstantOn creates an extra image layer that contains a checkpoint of the Open Liberty application process. When the application image starts, the Open Liberty runtime recognizes the InstantOn layer and restores the application process to the checkpoint that was created during the application container image build.
+When you build an application container image, InstantOn creates an extra image layer that contains a checkpoint of the Open Liberty application process. When the application image starts, the Open Liberty runtime recognizes the InstantOn layer and restores the application process from the checkpoint that was created during the application container image build.
 
 Open Liberty and link:https://blog.openj9.org/2022/10/14/openj9-criu-support-a-look-under-the-hood/[OpenJ9] contain hooks that participate in the checkpoint and restore process. These hooks allow the Open Liberty runtime to prepare the process for checkpoint such that persisting the checkpoint process in the container image is safe. This preparation step ensures that the process can be restored from the same persistent state in the container image into multiple, possibly concurrent, instances of the application. For more information on the CRIU support in OpenJ9 and the IBM Semeru JVM, see the Java link:https://www.eclipse.org/openj9/docs/criusupport/[CRIU Support] documentation.
 
@@ -59,10 +59,6 @@ a| * Java SE 11.0.19+
 |===
 
 Currently, InstantOn is not supported on Java vendor implementations other than IBM Semeru, or on the Ubuntu architecture (Linux on ARM).
-
-Starting with Open Liberty version 23.0.0.6, all X86-64/AMD64 UBI xref:container-images.adoc[Open Liberty container images] include the prerequisites for InstantOn to checkpoint and restore Open Liberty application processes. In version 24.0.0.1 and later, Power and Z (s390x) processor architectures are also supported when you use IBM Semeru Java version 21.0.1+. Open Liberty Ubuntu container images are not enabled for InstantOn.
-
-Currently, InstantOn is supported with IBM Semeru Java version 11.0.19+, IBM Semeru Java version 17.0.7+, and  IBM Semeru Java version 21.0.1+. InstantOn is expected to support new versions of IBM Semeru Java as they are released. Currently, InstantOn is not supported on other Java vendor implementations.
 
 [#linux-capabilities]
 === Linux capability prerequisites for checkpoint and restore
