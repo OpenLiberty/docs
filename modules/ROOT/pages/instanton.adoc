@@ -15,99 +15,103 @@
 
 Open Liberty InstantOn provides fast startup times for MicroProfile and Jakarta EE applications. With InstantOn, your applications can start in milliseconds, without compromising on throughput, memory, development-production parity, or Java language features.
 
-InstantOn uses the Checkpoint/Restore In Userspace (link:https://criu.org/[CRIU]) feature of the Linux kernel to take a checkpoint of the JVM that can be restored later. With InstantOn, the application is developed as normal, and then InstantOn makes a checkpoint of the application process when the application container image is built. When the application is restored, it runs in the same JVM, which provides complete parity between development and production. Because the checkpoint process takes only seconds, your CI/CD process is barely affected.
+InstantOn is configured as part of the application image build. When you build an application image, InstantOn creates an extra image layer that contains a checkpoint of the Open Liberty application process. This checkpoint is a snapshot of the running application process that can be persisted and then quickly restored to bring the application process back into the state it was in when the checkpoint was taken. When the application image starts, the Open Liberty runtime recognizes the InstantOn layer and restores the application process from that checkpoint.
 
-When you build an application container image, InstantOn creates an extra image layer that contains a checkpoint of the Open Liberty application process. When the application image starts, the Open Liberty runtime recognizes the InstantOn layer and restores the application process to the checkpoint that was created during the application container image build.
+InstantOn uses the Checkpoint/Restore In Userspace (link:https://criu.org/[CRIU]) feature of the Linux kernel to take a checkpoint of the JVM that can be restored later. Open Liberty and link:https://blog.openj9.org/2022/10/14/openj9-criu-support-a-look-under-the-hood/[OpenJ9] contain hooks that participate in the checkpoint and restore process. These hooks allow the Open Liberty runtime to safely persist the checkpoint process in the container image. This preparation step ensures that the process can be restored from the same persistent state in the container image into multiple, possibly concurrent, instances of the application. For more information on the CRIU support in OpenJ9 and the IBM Semeru JVM, see the Java link:https://www.eclipse.org/openj9/docs/criusupport/[CRIU Support] documentation.
 
-Open Liberty and link:https://blog.openj9.org/2022/10/14/openj9-criu-support-a-look-under-the-hood/[OpenJ9] contain hooks that participate in the checkpoint and restore process. These hooks allow the Open Liberty runtime to prepare the process for checkpoint such that persisting the checkpoint process in the container image is safe. This preparation step ensures that the process can be restored from the same persistent state in the container image into multiple, possibly concurrent, instances of the application. For more information on the CRIU support in OpenJ9 and the IBM Semeru JVM, see the Java link:https://www.eclipse.org/openj9/docs/criusupport/[CRIU Support] documentation.
-
-InstantOn cannot be used outside of a container image build. An application container image provides a consistent environment, which is required to ensure a reliable restore of an Open Liberty application process. The InstantOn container layer is the last layer of the application container image. This configuration ensures that the resources in the underlying layers of the image do not change from the time the checkpoint is taken to the time the image is started with InstantOn.
+You cannot use InstantOn outside of a container image build. An application container image provides a consistent environment, which is required to ensure a reliable restore of an Open Liberty application process. The InstantOn container layer is the last layer of the application container image. This configuration ensures that the resources in the underlying layers of the image do not change from the time the checkpoint is taken to the time the image starts with InstantOn.
 
 The following sections describe the prerequisites and processes to build and run an InstantOn application image:
 
-- <<#beforeAppStart, When to take a checkpoint: beforeAppStart or afterAppStart>>
 - <<#prereq, Runtime and host build system prerequisites>>
 - <<#build, Building an InstantOn application image>>
 - <<#run, Running and deploying an InstantOn application image>>
 - <<#supported-features, Open Liberty InstantOn supported features>>
 
+[#prereq]
+== Runtime and host build system prerequisites
+
+InstantOn requires the Linux operating system with kernel version 5.9 or greater. It also requires a version of link:https://developer.ibm.com/languages/java/semeru-runtimes/[IBM Semeru Java], depending on the host machine architecture and Open Liberty version.
+
+The following table defines the InstantOn-supported IBM Semeru Java levels and minimum Liberty version for each supported architecture. Currently, InstantOn is not supported on Java vendor implementations other than IBM Semeru.
+
+.Supported Java levels and Open Liberty versions for InstantOn
+[options="header"]
+|===
+|Architecture |Supported IBM Semeru Java levels |Minimum Open Liberty version
+
+| Linux X86_64 UBI (`amd64`)
+a| * Java SE 11.0.19+
+  * Java SE 17.0.7+
+  * Java SE 21.0.1+
+| 23.0.0.6 and later
+
+| Linux on Power (`ppc64le`)
+| Java SE 21.0.1+
+| 24.0.0.1 and later
+
+| Linux on IBM Z (`s390x`)
+| Java SE 21.0.0.1+
+| 24.0.0.1 and later
+
+|===
+
+[#linux-capabilities]
+=== Linux capability prerequisites for checkpoint and restore
+
+To use InstantOn during an application container image build, the host machine must allow Podman or Docker to run privileged container builds. The use of privileged containers in the application container image build is required only when you build the container image with InstantOn. Running the resulting InstantOn application image does not require the use of privileged containers. CRIU supports  checkpointing and restoring application processes by unprivileged (non-root) users.
+
+To checkpoint and restore an application process, CRIU requires the following link:https://man7.org/linux/man-pages/man7/capabilities.7.html[Linux capabilities]:
+
+- `CHECKPOINT_RESTORE` - This capability was added in Linux 5.9 to separate checkpoint/restore functions from the overloaded `SYS_ADMIN` capability.
+- `SETPCAP` - This capability is required for the subsequent restore.
+- `SYS_PTRACE` - CRIU uses this powerful capability to capture and record the full process state. It is necessary only when CRIU checkpoints an application process. This capability is not required to restore an application process.
+
+To use Docker, a version 23.0 or greater is required. Earlier versions of Docker did not support the `CHECKPOINT_RESTORE` Linux capability, which prevents InstantOn from doing a checkpoint or restore of a process in container.
+
 [#beforeAppStart]
 == When to make a checkpoint: beforeAppStart or afterAppStart
 
-When an InstantOn checkpoint occurs, the Open Liberty runtime starts. During this startup, the runtime processes the configuration, loads all the enabled features, and starts processing the configured application. This startup sequence varies depending on the size and complexity of the application and the number of Open Liberty features it requires. For small simple applications, this process can take less than 1 second. For more typical applications, it can take several seconds. InstantOn takes a checkpoint after the Open Liberty runtime completes startup. Two options are available to determine whether the checkpoint occurs before or after the application itself starts, either of which can be specified as part of the InstantOn `RUN` configuration:
+When an InstantOn checkpoint occurs, the Open Liberty runtime starts. During this startup, the runtime processes the configuration, loads all the enabled features, and starts processing the configured application. This startup sequence varies depending on the size and complexity of the application and the number of Open Liberty features it requires. For small simple applications, this process can take less than 1 second. For more typical applications, it can take several seconds. InstantOn takes a checkpoint after the Open Liberty runtime completes startup. Two options are available to determine whether the checkpoint occurs before or after the application itself starts. You can specify one of these options as part of the InstantOn `RUN` configuration:
 
-- `afterAppStart` - Performs a checkpoint after the application is started. This option provides the fastest startup, but might not be suitable for some applications.
-- `beforeAppStart` - Performs a checkpoint before any application code runs. Use this option in cases where the application code is not compatible with the `afterAppStart` option.
+- `afterAppStart` - This option takes a checkpoint after the application starts. It provides the fastest startup, but might not be suitable for some applications.
+- `beforeAppStart` - This option takes a checkpoint before the application starts and before any application code runs. Use this option in cases where the application code is not compatible with the `afterAppStart` option.
 
 
 Which of these options you choose depends on the code your application must run.
-link:https://jakarta.ee/[Jakarta EE] and link:https://microprofile.io/[MicroProfile] applications might contain application code that gets run as the application is started, such as the following examples:
+link:https://jakarta.ee/[Jakarta EE] and link:https://microprofile.io/[MicroProfile] applications might contain application code that runs as the application starts, such as the following examples:
 
 - A servlet that uses the `loadOnStartup` attribute
 - An EJB that uses the `@Startup` annotation
 - A CDI bean that uses `@Observes @Initialized(ApplicationScoped.class)` annotations
 
-Sometimes, the application code that runs as the application starts might not be suited for performing an InstantOn checkpoint. For such cases, use the `beforeAppStart` option. For example, the following application code scenarios must be avoided before an InstantOn checkpoint, and are therefore better suited for the `beforeAppStart` option:
+Sometimes, the application code that runs as the application starts might not be suited for an InstantOn checkpoint. For such cases, use the `beforeAppStart` option. For example, avoid the following application code scenarios before an InstantOn checkpoint. They are better suited for the `beforeAppStart` option:
 
 - Accessing a remote resource, such as a database. The correct data source is unlikely to be available to connect to during an application container build.
 - Creating a transaction. Currently, transactions are prohibited before an InstantOn checkpoint.
 - Reading configuration that is expected to change when the application is deployed, for example configuration from MicroProfile Config.
 
 Using the `beforeAppStart` option in these cases ensures that the application code is run only after the InstantOn checkpoint process is restored. This option might result in slower restore times because it must run more code before the application is ready to service any incoming requests.
-If the application early start code is determined to be safe and acceptable for checkpoint, then the `afterAppStart` checkpoint option can be used. This option provides for the fastest startup time when the application process is restored.
+If you determine that the application early start code is safe and acceptable for checkpoint, then use the `afterAppStart` checkpoint option. This option provides the fastest startup time when the application process is restored.
 
-If an application has no code that is run as the application is started, then the `beforeAppStart` and `afterAppStart` checkpoints are equivalent. In these cases, both checkpoint options perform a checkpoint of the process before the configured ports are enabled for servicing requests. This sequence ensures that the transport protocols for the application are enabled only after the InstantOn checkpoint process is restored.
+If an application has no code that is run as the application starts, then the `beforeAppStart` and `afterAppStart` checkpoints are equivalent. In these cases, both checkpoint options perform a checkpoint of the process before the configured ports are enabled for servicing requests. This sequence ensures that the transport protocols for the application are enabled only after the InstantOn checkpoint process is restored.
 
 For more information about limitations with early startup code and possible workarounds, see xref:instanton-limitations.adoc[InstantOn limitations and known issues].
-
-[#prereq]
-== Runtime and host build system prerequisites
-
-Starting with Open Liberty version 23.0.0.6, all X86-64/AMD64 UBI xref:container-images.adoc[Open Liberty container images] include the prerequisites for InstantOn to checkpoint and restore Open Liberty application processes. In version 24.0.0.1 and later, Power and Z (s390x) processor architectures are also supported when you use IBM Semeru Java version 21.0.1+. Open Liberty Ubuntu container images are not enabled for InstantOn.
-
-Currently, InstantOn is supported with IBM Semeru Java version 11.0.19+, IBM Semeru Java version 17.0.7+, and  IBM Semeru Java version 21.0.1+. InstantOn is expected to support new versions of IBM Semeru Java as they are released. Currently, InstantOn is not supported on other Java vendor implementations.
-
-To use InstantOn during an application container image build, the host machine must satisfy the following prerequisites:
-
-- Uses the Linux Operating System with kernel version 5.9 or greater
-- Uses one of the following the processor architectures: X86-64/AMD64, Power (with IBM Semeru Java version 21.0.1+), Z (s390x) (with IBM Semeru Java version 21.0.1+)
-- Allows execution of privileged container builds by using Podman or Docker
-
-The use of privileged containers in the application container image build is required only when you build the container image with InstantOn. Running the resulting InstantOn application image does not require the use of privileged containers.
-
-To use Docker, a version 23.0 or greater is required. Earlier versions of Docker did not support the `CHECKPOINT_RESTORE` Linux capability, which prevents InstantOn from doing a checkpoint or restore of a process in container.
-
-[#linux-capabilities]
-=== Linux capability prerequisites for checkpoint and restore
-
-Unprivileged (non-root) users are supported by CRIU for checkpointing and restoring application processes. To checkpoint and restore, CRIU requires different link:https://man7.org/linux/man-pages/man7/capabilities.7.html[Linux capabilities].
-
-To perform an application process checkpoint, CRIU requires the following Linux capabilities:
-
-- `CHECKPOINT_RESTORE` - This capability was added in Linux 5.9 to separate checkpoint/restore functions from the overloaded `SYS_ADMIN` capability.
-- `SETPCAP` - This capability is required for the subsequent restore.
-- `SYS_PTRACE` - CRIU uses this powerful capability to capture and record the full process state. It is necessary only when CRIU is checkpointing an application process.
-
-To perform an application process restore, CRIU requires the following Linux capabilities:
-
-- `CHECKPOINT_RESTORE` - This capability was added in Linux 5.9 to separate checkpoint/restore functions from the overloaded `SYS_ADMIN` capability.
-- `SETPCAP` - This capability allows CRIU to drop capabilities from the restored application process. Because the CRIU binary is granted extra capabilities like `CHECKPOINT_RESTORE`, it needs `SETPCAP` so it can drop those capabilities from the final process that CRIU restores.
-
 
 [#build]
 == Building an InstantOn application image
 
 Two options are available to build an application container image that uses InstantOn:
 
-- Add a special `RUN` instruction at end of a `Dockerfile` or `Containerfile` that runs the <<#checkpoint_script,checkpoint.sh script>> to perform an application checkpoint at container image build time. This option requires you to use link:https://podman.io/[Podman].
-- Use a <<#three_step_process,three-step process>> to build the application image, run the checkpoint, and commit the final result into an InstantOn application container image. This option requires you to use either Podman or Docker version 23.0 or later.
+- Add a special `RUN` instruction at end of a `Dockerfile` or `Containerfile` that runs the <<#checkpoint_script,checkpoint.sh script>> to take an application checkpoint at container image build time. This option requires you to use link:https://podman.io/[Podman].
+- Use a <<#three_step_process,three-step process>> to build the application image, run the checkpoint, and commit the final result into an InstantOn application container image. This option allows you to use either Podman or Docker version 23.0 or later.
 
 To run the `checkpoint.sh` script, you must use Podman to build the application container image. Currently, you cannot use Docker to build the InstantOn application container image because Docker does not provide a way to grant the container build the necessary Linux capabilities. To use Docker to build an InstantOn application container image, you must follow the three-step build process.
 
 [#checkpoint_script]
 === Building the InstantOn image with Podman and the checkpoint.sh script
 
-You can use the `checkpoint.sh` script to perform the application checkpoint by adding the `RUN checkpoint.sh` instruction to the end of your `Dockerfile` or `Containerfile` file. The execution of the `checkpoint.sh` must be the last `RUN` instruction during your container image build. This configuration performs the application process checkpoint and stores the process data as the last layer of the application container image. Currently, this script requires you to use Podman rather than Docker because Docker cannot grant the necessary Linux capabilities.
+You can use the `checkpoint.sh` script to take the application checkpoint by adding the `RUN checkpoint.sh` instruction to the end of your `Dockerfile` or `Containerfile` file. The `checkpoint.sh`script must be the last `RUN` instruction during your container image build. This configuration takes the application process checkpoint and stores the process data as the last layer of the application container image. This script requires you to use Podman rather than Docker because Docker cannot grant the necessary Linux capabilities.
 
 The following image template example uses the `kernel-slim-java17-openj9-ubi` tag to build an image that uses the latest Open Liberty release with the IBM Semeru distribution of Java 17. This example uses the `afterAppStart` checkpoint option.
 
@@ -138,7 +142,7 @@ RUN configure.sh
 RUN checkpoint.sh afterAppStart
 ----
 
-Use the following Podman command to build the InstantOn application container image. To grant the necessary Linux capabilities to the container image build, this command must be run either as the `root` user or by using the `sudo` utility.
+Use the following Podman command to build the InstantOn application container image. To grant the necessary Linux capabilities to the container image build, run this command either as the `root` user or by using the `sudo` utility.
 
 [source,sh]
 ----
@@ -157,13 +161,13 @@ The three `--cap-add` options grant the three Linux capabilities that CRIU requi
 
 If you cannot use Podman to run the `checkpoint.sh` during the container image build, you can use the following three-step process to build the InstantOn application container image:
 
-1. Build the application container image without the InstantOn layer
-2. Run the application container to perform a checkpoint of the application in the running container
-3. Commit the stopped container with the checkpoint process data into an InstantOn application container image
+1. Build the application container image without the InstantOn layer.
+2. Run the application container to take a checkpoint of the application in the running container.
+3. Commit the stopped container with the checkpoint process data into an InstantOn application container image.
 
 You can use these steps with either Podman and Docker to build an InstantOn application image. For Docker, version 23.0 or later is required. The following examples assume that you are using Docker to build an application image that is named `liberty-app`.
 
-==== 1. Build the application container image
+==== 1. Build the application container image without the InstantOn layer
 
 Set the image template (`Dockerfile` or `Containerfile`) similar to the following example. This example uses the `kernel-slim-java17-openj9-ubi` tag to build an image that uses the latest Open Liberty release with the IBM Semeru distribution of Java 17. This template does not run the `checkpoint.sh` script.
 
@@ -199,9 +203,9 @@ docker build -t liberty-app .
 
 The resulting application container image, which is tagged `liberty-app`, does not contain the InstantOn checkpoint process layer.
 
-==== 2. Run the application container to perform a checkpoint
+==== 2. Run the application container to take a checkpoint
 
-Run the application container image to perform a checkpoint of the application process within the running container. The following example uses the `liberty-app` application image to run the checkpoint of the application process with the `afterAppStart` option:
+Run the application container image to take a checkpoint of the application process within the running container. The following example uses the `liberty-app` application image to run the checkpoint of the application process with the `afterAppStart` option:
 
 [source,sh]
 ----
@@ -212,7 +216,7 @@ docker run \
   liberty-app
 ----
 
-This command runs the application within a container and performs an application process checkpoint. The `--env` option sets a `WLP_CHECKPOINT` environment variable to specify the checkpoint `afterAppStart` option. When the application process checkpoint completes, the `liberty-app-checkpoint-container` application container is stopped and exits.
+This command runs the application within a container and takes an application process checkpoint. The `--env` option sets a `WLP_CHECKPOINT` environment variable to specify the checkpoint `afterAppStart` option. When the application process checkpoint completes, the `liberty-app-checkpoint-container` application container is stopped and exits.
 
 ==== 3. Commit the stopped container with the checkpoint process data
 
@@ -232,14 +236,14 @@ You now have two application images: `liberty-app` and `liberty-app-instanton`. 
 Special considerations are required to run an InstantOn application image locally or when it is deployed to a public cloud. The following prerequisites are required to restore the InstantOn checkpoint process.
 
 [#required-to-restore]
-1. The host that is running the container image must use Linux kernel 5.9 or greater
-2. The Linux capabilities CHECKPOINT_RESTORE and SETPCAP must be granted to the running container
-3. The necessary system calls must be granted to the running container
-4. The host processor must be X86-64/AMD64. If you are running IBM Semeru Java version 21.0.1+, Power and Z (s390x) processor architectures are also supported.
+1. The host that is running the container image must use Linux kernel 5.9 or greater.
+2. The `CHECKPOINT_RESTORE` and `SETPCAP` Linux capabilities must be granted to the running container.
+3. The necessary system calls must be granted to the running container.
+4. The host processor must be X86-64/AMD64. If you are running IBM Semeru Java version 21.0.1+, Linux on Power and Linux on Z (s390x) architectures are also supported.
 
 === Running an InstantOn application image locally
 
-If a host system is running the Linux kernel 5.9 or greater with the X86-64/AMD64 processor, you can run an InstantOn application image by using Podman or Docker locally. If you are running IBM Semeru Java version 21.0.1+, Power and Z (s390x) processor architectures are also supported. The following command runs the `liberty-app-instanton` InstantOn application image with Podman:
+The following command runs the `liberty-app-instanton` InstantOn application image with Podman:
 
 [source,sh]
 ----
@@ -286,10 +290,10 @@ podman run \
   liberty-app-instanton
 ----
 
-The resulting xref:instanton-sycalls-json.adoc[criuRequiredSysCalls.json] file grants access to all the Linux system calls that are required by CRIU to restore an InstantOn application process.
+The resulting xref:instanton-sycalls-json.adoc[criuRequiredSysCalls.json] file grants access to all the Linux system calls that CRIU requires to restore an InstantOn application process.
 
 ==== Recovering from a failed InstantOn restore
-If restoration of the InstantOn application process fails, Open Liberty starts the server without using the InstantOn checkpoint process. In such cases, the Open Liberty application starts as if no InstantOn checkpoint process layer exists, which takes longer than a successfully restored InstantOn process. This recovery launch from a failed InstantOn restore can be disabled by setting the following environment variable:
+If restoration of the InstantOn application process fails, Open Liberty starts the server without using the InstantOn checkpoint process. In such cases, the Open Liberty application starts as if no InstantOn checkpoint process layer exists, which takes longer than a successfully restored InstantOn process. You can disable this recovery launch from a failed InstantOn restore by setting the following environment variable:
 
 [source,sh]
 ----
@@ -310,7 +314,7 @@ podman run \
   liberty-app-instanton
 ----
 
-To avoid cloud environments from continuously trying to restart the failed start of an application container image, the default value of the `CRIU_RESTORE_DISABLE_RECOVERY` variable is `false`.
+To avoid cloud environments continuously trying to restart the failed start of an application container image, the default value of the `CRIU_RESTORE_DISABLE_RECOVERY` variable is `false`.
 
 === Deploying an InstantOn application to Kubernetes services
 
@@ -371,7 +375,7 @@ For more information, see the Red Hat documentation for link:https://docs.opensh
 [#supported-features]
 == Open Liberty InstantOn supported features
 
-InstantOn supports a subset of Open Liberty features. If a feature is enabled that InstantOn does not support, a failure occurs when you try to perform a checkpoint of an application process. InstantOn supports the following Jakarta EE and MicroProfile xref:reference:feature/feature-overview.adoc#conv[convenience features]:
+InstantOn supports a subset of Open Liberty features. If a feature is enabled that InstantOn does not support, a failure occurs when you try to take a checkpoint of an application process. InstantOn supports the following Jakarta EE and MicroProfile xref:reference:feature/feature-overview.adoc#conv[convenience features]:
 
 - Jakarta EE Web Profile versions feature:webProfile-8.0[display=8.0] and later
 - MicroProfile versions feature:microProfile-4.1[display=4.1] and later
