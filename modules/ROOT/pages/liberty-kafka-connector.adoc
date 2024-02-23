@@ -10,34 +10,33 @@
 :page-type: general
 :page-description: The integration of MicroProfile Reactive Messaging with Apache Kafka in Open Liberty applications is a significant development in cloud-native microservice designs as it provides an efficient method of asynchronous communication.
 :page-categories: MicroProfile Reactive Messaging
-:seo-title: Integrating MicroProfile Reactive Messaging with Apache Kafka in Open Liberty Applications
+:seo-title: Optimizing asynchronous communication with MicroProfile Reactive Messaging
 :seo-description: The integration of MicroProfile Reactive Messaging with Apache Kafka in Open Liberty applications is a significant development in cloud-native microservice designs as it provides an efficient method of asynchronous communication.
 
-= Optimizing Kafka Integration with MicroProfile Messaging
+= Optimizing asynchronous communication with MicroProfile Reactive Messaging
 
-Integrating MicroProfile Reactive Messaging with Apache Kafka in Open Liberty applications is a significant development in cloud-native microservice designs as it provides an efficient asynchronous communication method.
+Integrating MicroProfile Reactive Messaging and Apache Kafka with the `liberty-kafka` connector provides an efficient asynchronous communication method for Open Liberty applications. This setup helps you handle large volumes of data efficiently, which is essential for event-driven systems.
 
-By using the `liberty-kafka` connector with MicroProfile Reactive Messaging and Apache Kafka in Open Liberty, you can easily manage data across microservices, making your systems more scalable and reliable. Kafka offers a robust platform for handling large volumes of data efficiently, which is essential for event-driven systems. This setup helps you get started quickly and optimize your microservices for better performance.
-
-The core aspects of integrating MicroProfile Reactive Messaging with Apache Kafka in Open Liberty are detailed through the following topics:
+The following sections describe how to intergrate MicroProfile Reactive Messaging with Apache Kafka to send messages within and between applications:
 
 * <<#configuration,Configure the Liberty-kafka connector>>
-* <<#kcconfsec,Kafka connector configuration and security>>
-* <<#sendrecemessages,Sending and receiving messages between applications by using connectors>>
-* <<#connectoroptionschannelprop,Connector options and channel properties>>
+* <<#sendrecemessages,Sending and receiving messages among applications by using connectors>>
 * <<#troubleshooting,Troubleshooting>>
 
 
 [#configuration]
 == Configure the Liberty-kafka connector
 
-The `liberty-kafka` connector feature within Open Liberty facilitates seamless integration with Apache Kafka, enabling applications to send and receive messages from an Apache Kafka broker. It uses MicroProfile Reactive Messaging standards for robust, asynchronous communication in microservices architectures. 
+The `liberty-kafka` connector enables applications to send and receive messages from an Apache Kafka broker. It uses MicroProfile Reactive Messaging standards for robust, asynchronous communication in microservices architectures. 
 
-You can fine-tune your application's interaction with Kafka by configuring the connector in the `microprofile-config.properties` file, as shown in the following example.
+You can fine-tune your application's interaction with Kafka by configuring the connector in the xref:microprofile-config-properties.adoc#react[microprofile-config.properties] file, as shown in the following example.
 
 ----
 mp.messaging.connector.liberty-kafka.bootstrap.servers=localhost:9082
 ----
+
+By configuring a MicroProfile application as shown in the example, to connect to a Kafka broker at `localhost:9082` for messaging. The result is the application's ability to produce and receive messages through Kafka, facilitating event-driven communication.
+
 
 You can define a channel to use this connector, directly linking a message channel to Kafka, as shown in the following example.
 
@@ -45,19 +44,28 @@ You can define a channel to use this connector, directly linking a message chann
 mp.messaging.incoming.myChannel.connector=liberty-kafka
 ----
 
-By setting up a channel as shown in the example, you connect a message channel directly to Kafka. Giving you precise control over the messaging channels. You can specify attributes such as `bootstrap.servers` for connection and `topic` for message direction, enhancing your application's ability to scale and remain robust by efficiently managing messages.
+By setting up a channel as shown in the example, you connect a message channel directly to Kafka, which gives you precise control over the messaging channels. You can specify attributes such as `bootstrap.servers` for connection and `topic` for message direction, enhancing your application's ability to scale and remain robust by efficiently managing messages.
 
 
-Integrating Kafka with Open Liberty involves a set of carefully planned actions to achieve seamless communication between your application and Kafka message brokers. The process starts with establishing a stable connection with Kafka brokers. It also includes creating specific channels for sending and receiving messages, and incorporating the necessary Kafka client libraries to your application. Each of these steps is crucial for using the full potential of Kafka within an Open Liberty environment, enabling efficient, scalable messaging capabilities. To properly set up the `liberty-kafka` connector, proceed with the following steps:
+Integrate Kafka with Open Liberty by following these steps:
 
+1. <<#connection,Establish a stable connection with Kafka brokers>>
+2. <<#define,Create specific channels for sending and receiving messages>>
+3. <<#includelib,Incorporate Kafka client libraries to the application>>
+
+
+
+[#connection]
 === Configure Kafka Broker Connection
 
-In the `microprofile-config.properties` file, specify the Kafka broker addresses to establish a connection. Indicating where your Kafka broker is hosted.
+In the `microprofile-config.properties` file, specify the Kafka broker addresses to establish a connection, which indicates where your Kafka broker is hosted.
 
 ----
 mp.messaging.connector.liberty-kafka.bootstrap.servers=myKafkaBroker:9092
 ----
 
+
+[#define]
 === Define Channels for Messaging
 
 - To specify the Kafka topic from which messages are received, create a channel for incoming messages.
@@ -73,6 +81,9 @@ mp.messaging.outgoing.myChannel.connector=liberty-kafka
 mp.messaging.outgoing.myChannel.topic=myTopicName.
 ----
 
+For more information on `liberty-kafka` connector options and channel properties, see xref:liberty-kafka-connector-channel-properties.adoc[Liberty-kafka connector options and channel properties].
+
+[#includelib]
 === Include Kafka Client Libraries
 
 To integrate Kafka into your application environment by using Open Liberty, choose one of the following methods based on your requirement.
@@ -91,16 +102,18 @@ If you are building your application with Maven, add the Kafka client dependency
     <version>3.5.1</version>
 </dependency>
 ----
-+
+
 This approach integrates Kafka client libraries directly into your application. It does not require any additional server configuration for permissions, simplifying deployment and configuration management.
 
 ==== Include Kafka Libraries as a Shared Library
 
-Kafka client libraries can be integrated as a shared resource within the Open Liberty server. This approach is useful for situations where several applications on the same server instance require the Kafka client libraries. It effectively minimizes duplication.
+You can integrate Kafka client libraries as a shared resource within the Open Liberty server. This approach is useful for situations where several applications on the same server instance require the Kafka client libraries. It effectively minimizes duplication.
 
-However, if Kafka client libraries are used as a shared library, you must explicitly grant the necessary Java permissions for the libraries to function correctly. These permissions allow the Kafka client to connect to Kafka brokers, read system properties, and access or modify security properties.
+However, if Kafka client libraries are used as a xref:class-loader-library-config.adoc#shrdLib[shared library], you must explicitly grant the necessary Java permissions for the libraries to function correctly. These permissions allow the Kafka client to connect to Kafka brokers, read system properties, and access or modify security properties.
 
-To configure these permissions, you can use the `server.xml` configuration file. The following example demonstrates how to grant the necessary permissions to the Kafka client library specified as a shared library:
+For more information on security and authentication methods, see xref:liberty-kafka-connector-config-security.adoc[Kafka connector configuration and security].
+
+To configure these permissions, you can use the `server.xml` configuration file. The following example demonstrates how to grant the necessary permissions to a Kafka client library that is specified as a shared library:
 
 [source,XML]
 ----
@@ -144,109 +157,12 @@ To configure these permissions, you can use the `server.xml` configuration file.
 ----
 
 
-[#kcconfsec]
-== Kafka connector configuration and security
-
-For configuring the Kafka connector and security in Open Liberty, you can focus on the distinction between channel-specific and connector-wide properties for tailored messaging behavior. 
-
-Connector-wide properties, like `bootstrap.servers` apply globally, whereas channel-specific properties, such as `topic` or `group.id`, customize the individual channel behavior. 
-
-For security, Open Liberty supports multiple authentication methods: 
-
-* <<#ssl,SSL (Secure Sockets Layer)>>
-* <<#sasl,SASL/PLAIN (Simple Authentication and Security Layer/PLAIN)>>
-* <<#mtls,Mutual TLS (mTLS)>>
-
-To make sure of secure communication with Kafka brokers, you set the appropriate security properties within the `microprofile-config.properties` file, facilitating the support of various authentication methods.
-
-[#ssl]
-=== SSL (Secure Sockets Layer)
-
-The following example demonstrates how to configure a Kafka client for secure SSL communication with Kafka brokers, by using the MicroProfile Config API within the `microprofile-config.properties` file. The configuration that is shown enables SSL-based authentication to make sure that the client can securely verify the identity of the Kafka server it connects to. It is essential for applications that are deployed in sensitive environments where data security and privacy are the priorities.
-
-- Client authenticating the server
-----
-mp.messaging.connector.liberty-kafka.bootstrap.servers=SSL\://kafka-server\:34691
-mp.messaging.connector.liberty-kafka.security.protocol=SSL
-mp.messaging.connector.liberty-kafka.ssl.truststore.password=kafka-teststore
-mp.messaging.connector.liberty-kafka.ssl.truststore.location=kafka-truststore.jks
-----
-
-[#sasl]
-=== SASL/PLAIN (Simple Authentication and Security Layer/PLAIN)
-
-The following example demonstrates how to configure secure communication with Kafka brokers by using the MicroProfile Config API, specifically within the context of Open Liberty applications. 
- 
-It demonstrates the setup of SASL_SSL (Simple Authentication and Security Layer over SSL) for authentication, detailing both the use of Kafka's Plain Login Module and Open Liberty's Kafka Login Module.
-
-This configuration enables encrypted communication and authentication with Kafka brokers. It uses properties set in the `microprofile-config.properties` file to support different authentication methods, including password encryption with Open Liberty xref:command/securityUtility-encode.adoc[securityUtility encode]. Applications can maintain the confidentiality and integrity of messages, making sure that secure data flow across distributed systems.
-
-- Authenticating with Kafka's Plain Login Module
-----
-mp.messaging.connector.liberty-kafka.security.protocol=SASL_SSL
-mp.messaging.connector.liberty-kafka.bootstrap.servers=SASL_SSL\://kafka-boostrap-server\:34696
-mp.messaging.connector.liberty-kafka.ssl.truststore.location=kafka-truststore.jks
-mp.messaging.connector.liberty-kafka.sasl.mechanism=PLAIN
-mp.messaging.connector.liberty-kafka.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username\="test" password\="test-QmCFfb";
-mp.messaging.connector.liberty-kafka.ssl.truststore.password=kafka-teststore
-----
-
-- Authenticating with Open Liberty's Kafka Login Module that can use passwords encoded by Open Liberty xref:command/securityUtility-encode.adoc[securityUtility encode] on a per channel basis.
-----
-mp.messaging.incoming.aes-test-in.connector=liberty-kafka
-mp.messaging.incoming.aes-test-in.bootstrap.servers=SASL_SSL\://kafka-boostrap-server\:39643
-mp.messaging.incoming.aes-test-in.security.protocol=SASL_SSL
-mp.messaging.incoming.aes-test-in.sasl.mechanism=PLAIN
-mp.messaging.incoming.aes-test-in.ssl.truststore.password=kafka-teststore
-mp.messaging.incoming.aes-test-in.sasl.jaas.config=com.ibm.ws.kafka.security.LibertyLoginModule required username\="test" password\="{aes}<encoded password>";
-mp.messaging.incoming.aes-test-in.ssl.truststore.location=kafka-truststore.jks
-mp.messaging.incoming.aes-test-in.group.id=group-id-1
-mp.messaging.incoming.aes-test-in.auto.offset.reset=earliest
-
-mp.messaging.outgoing.aes-test-out.connector=liberty-kafka
-mp.messaging.outgoing.aes-test-out.bootstrap.servers=SASL_SSL\://kafka-boostrap-server\:39643
-mp.messaging.outgoing.aes-test-out.security.protocol=SASL_SSL
-mp.messaging.outgoing.aes-test-out.sasl.mechanism=PLAIN
-mp.messaging.outgoing.aes-test-out.sasl.jaas.config=com.ibm.ws.kafka.security.LibertyLoginModule required username\="test" password\="{aes}<encoded password>";
-mp.messaging.outgoing.aes-test-out.ssl.truststore.location=kafka-truststore.jks
-mp.messaging.outgoing.aes-test-out.ssl.truststore.password=kafka-teststore
-----
-
-[#mtls]
-=== Mutual TLS (mTLS)
-
-Mutual TLS is an enhanced security protocol that requires both the client and server to authenticate each other, providing a two-way SSL authentication. 
-
-The following example involves configuring each channel with its own keystore to authenticate itself with the Kafka bootstrap server, as detailed in the configuration settings. With the `mp.messaging.connector.liberty-kafka` and specific channel configurations, the example demonstrates how to establish a secure, encrypted channel by using SSL. Mutual TLS not only secures the data in transit but also makes sure that each communication partner is authenticated, thus adding another layer of security in distributed systems communication.
-
-- Each channel uses a separate keystore to authenticate itself with the Kafka Bootstrap server
-----
-mp.messaging.connector.liberty-kafka.bootstrap.servers=SSL\://kafka-boostrap-server\:39647
-mp.messaging.connector.liberty-kafka.security.protocol=SSL
-mp.messaging.connector.liberty-kafka.ssl.truststore.location=kafka-truststore.jks
-mp.messaging.connector.liberty-kafka.ssl.truststore.password=kafka-teststore
-mp.messaging.connector.liberty-kafka.ssl.truststore.location=kafka-truststore.jks
-
-mp.messaging.incoming.test-in.connector=liberty-kafka
-mp.messaging.incoming.test-in.ssl.keystore.location=kafka-keystore.jks
-mp.messaging.incoming.test-in.ssl.keystore.password=kafka-teststore
-mp.messaging.incoming.test-in.group.id=group-id-1
-mp.messaging.incoming.test-in.topic=incoming-topic
-mp.messaging.incoming.test-in.auto.offset.reset=earliest
-
-mp.messaging.outgoing.test-out.connector=liberty-kafka
-mp.messaging.outgoing.test-out.topic=outgoing-topic
-mp.messaging.outgoing.test-out.ssl.keystore.location=kafka-keystore2.jks
-mp.messaging.outgoing.test-out.ssl.keystore.password=kafka-teststore
-----
-
-
 [#sendrecemessages]
-== Sending and receiving messages between applications by using connectors
+== Sending and receiving messages among applications by using connectors
 
 To send and receive messages from other systems, reactive messaging uses connectors. Connectors can be attached to one end of a channel and are configured by using MicroProfile Config. Open Liberty includes the `liberty-kafka` connector for sending and receiving messages from an Apache Kafka broker.
 
-The following example shows you how to configure a microservice for retrieving messages from a Kafka topic, which is achieved by using MicroProfile (MP) Reactive Messaging and a Kafka connector.
+The following example shows you how to configure a microservice for retrieving messages from a Kafka topic by using MicroProfile Reactive Messaging and the liberty-kafka connector.
 ----
 mp.messaging.incoming.foo.connector=liberty-kafka
 mp.messaging.incoming.foo.bootstrap.servers=kafkabrokerhost:9092
@@ -255,7 +171,7 @@ mp.messaging.incoming.foo.key.deserializer=org.apache.kafka.common.serialization
 mp.messaging.incoming.foo.value.deserializer=org.apache.kafka.common.serialization.StringDeserializer
 ----
 
-The example indicates the `liberty-kafka` connector type for the incoming channel `foo`. The `kafkabrokerhost:9092` Kafka broker address, the `foo-reader` consumer group ID, and the deserializers for both `key` and `value` are `org.apache.kafka.common.serialization.StringDeserializer`, indicating that both keys and values are expected to be strings.
+The `kafkabrokerhost:9092` Kafka broker address, the `foo-reader` consumer group ID, and the deserializers for both key and value are `org.apache.kafka.common.serialization.StringDeserializer`, indicating that both keys and values are expected to be strings.
 
 This configuration is essential for retrieving messages from the specified topic, facilitating the building of reactive applications that can efficiently process data streams.
 
@@ -267,21 +183,21 @@ mp.messaging.outgoing.bar.key.serializer=org.apache.kafka.common.serialization.S
 mp.messaging.outgoing.bar.value.serializer=org.apache.kafka.common.serialization.StringSerializer
 ----
 
-The example indicates the use of the `liberty-kafka` connector for managing the connection between the application and Kafka. The `bootstrap.servers` setting points to `kafkabrokerhost:9092`, the Kafka broker's network address, allowing the application to locate and send messages to the Kafka cluster. The `key` and `value` of messages are configured to use `StringSerializer`. The application serializes both parts of the message as strings for Kafka transmission.
+The example uses the `liberty-kafka` connector to manage the connection between the application and Kafka. The `bootstrap.servers` setting points to `kafkabrokerhost:9092`, the Kafka broker's network address, allowing the application to locate and send messages to the Kafka cluster. The `key` and `value` of messages are configured to use `StringSerializer`. The application serializes both parts of the message as strings for Kafka transmission.
 
 The application gains the ability to offload messages to the Kafka topic `bar`. This approach to distributed messaging enhances scalability and flexibility in handling data flows.
+
+For more information, see link:/guides/microprofile-reactive-messaging.html#creating-the-consumer-in-the-inventory-microservice[Creating the consumer in the inventory microservice].
 
 
 [#troubleshooting]
 == Troubleshooting
 
-For troubleshooting the `Liberty-kafka` connector, you can focus on resolving common issues such as connectivity with Kafka, managing multiple server instances, and assigning distinct identifiers to producers and consumers. 
+To troubleshoot the `liberty-kafka` connector, address key issues like Kafka connectivity, managing multiple server instances, and giving distinct identifiers to producers and consumers. Make sure that the `bootstrap.servers` are configured correctly for connection. Each consumer has a distinct `group.id` to prevent conflicts, and producers need a unique `client.id` to av     o id identifier overlap.
 
-Proper configuration of `bootstrap.servers` properties is crucial for connectivity. Use a distinct `group.id` for each consumer in different instances to avoid conflicts, and assign a distinct `client.id` for producers to prevent identifier overlap.
+== = Multiple server instances
 
-=== Multiple server instances
-
-If multiple instances of Open Liberty are started with the same application, it is essential to specify a distinct `group.id` for each channel on every server instance for all incoming channels. Without a distinct `group.id` on each server instance, the server rejects any additional connections to a topic beyond the first one. This requirement makes sure that each connection to a topic is uniquely identified and managed across server instances.
+If you start multiple instances of Open Liberty with the same application, you must assign a distinct `group.id` to each channel for every server instance. This requirement applies to all incoming channels. Without a distinct `group.id` on each server instance, the server will block any new connections to a topic after the first connection is established. This policy makes sure that each connection to a topic is distinct and properly managed across all server instances.
 
 === Multiple Reactive Messaging applications using the same Kafka server
 
@@ -298,13 +214,6 @@ Specifying either attribute on the `liberty-kafka` Connector does not resolve th
 These steps are designed to diagnose and resolve common challenges that are encountered integrating Kafka with Open Liberty. They help in facilitating the smooth functioning of your microservices architecture.
 
 For more information on Apache Kafka, see the https://kafka.apache.org/documentation.html#gettingStarted[Apache Kafka documentation].
-
-
-
-
-
-
-
 
 
 
