@@ -1,0 +1,108 @@
+// Copyright (c) 2024 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//    https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+// IBM Corporation
+//
+:page-layout: general-reference
+:page-type: general
+:page-description: For configuring the Kafka connector and security in Open Liberty, you can focus on the distinction between channel-specific and connector-wide properties for tailored messaging behavior. 
+:page-categories: MicroProfile Reactive Messaging
+:seo-title: Kafka connector configuration and security
+:seo-description: The integration of MicroProfile Reactive Messaging with Apache Kafka in Open Liberty applications is a significant development in cloud-native microservice designs as it provides an efficient method of asynchronous communication.
+
+
+[#kcconfsec]
+= Kafka connector configuration and security
+
+For configuring the Kafka connector and security in Open Liberty, you can focus on the distinction between channel-specific and connector-wide properties for tailored messaging behavior. 
+
+Connector-wide properties, like `bootstrap.servers` apply globally, whereas channel-specific properties, such as `topic` or `group.id`, customize the individual channel behavior. 
+
+For security, Open Liberty supports multiple authentication methods: 
+
+* <<#ssl,Secure Sockets Layer (SSL)>>
+* <<#sasl,Simple Authentication and Security Layer/PLAIN (SASL/PLAIN)>>
+* <<#mtls,Mutual TLS (mTLS)>>
+
+To make sure of secure communication with Kafka brokers, you can set the appropriate security properties within the `microprofile-config.properties` file, facilitating the support of any of the authentication methods.
+
+[#ssl]
+== Secure Sockets Layer (SSL)
+
+The following example demonstrates how to configure a Kafka client for secure SSL communication with Kafka brokers in the `microprofile-config.properties` file. The following configuration enables SSL-based authentication so that the client can securely verify the identity of the Kafka server it connects to. 
+
+----
+mp.messaging.connector.liberty-kafka.bootstrap.servers=SSL\://kafka-server\:34691
+mp.messaging.connector.liberty-kafka.security.protocol=SSL
+mp.messaging.connector.liberty-kafka.ssl.truststore.password=kafka-teststore
+mp.messaging.connector.liberty-kafka.ssl.truststore.location=kafka-truststore.jks
+----
+
+[#sasl]
+== Simple Authentication and Security Layer/PLAIN (SASL/PLAIN)
+
+The following example demonstrates the setup of SASL_SSL (Simple Authentication and Security Layer over SSL) for authentication with either the Kafka Plain Login Module or the Open Liberty Kafka Login Module.
+
+This configuration enables encrypted communication and authentication with Kafka brokers. It uses properties set in the `microprofile-config.properties` file to support different authentication methods, including password encryption with Open Liberty xref:reference:command/securityUtility-encode.adoc[securityUtility encode]. Applications can maintain the confidentiality and integrity of messages, making sure that secure data flow across distributed systems.
+
+- Authenticating with Open Liberty's Kafka Login Module that can use passwords encoded by Open Liberty xref:reference:command/securityUtility-encode.adoc[securityUtility encode] on a per channel basis.
+----
+mp.messaging.incoming.aes-test-in.connector=liberty-kafka
+mp.messaging.incoming.aes-test-in.bootstrap.servers=SASL_SSL\://kafka-boostrap-server\:39643
+mp.messaging.incoming.aes-test-in.security.protocol=SASL_SSL
+mp.messaging.incoming.aes-test-in.sasl.mechanism=PLAIN
+mp.messaging.incoming.aes-test-in.ssl.truststore.password=kafka-teststore
+mp.messaging.incoming.aes-test-in.sasl.jaas.config=com.ibm.ws.kafka.security.LibertyLoginModule required username\="test" password\="{aes}<encoded password>";
+mp.messaging.incoming.aes-test-in.ssl.truststore.location=kafka-truststore.jks
+mp.messaging.incoming.aes-test-in.group.id=group-id-1
+mp.messaging.incoming.aes-test-in.auto.offset.reset=earliest
+
+mp.messaging.outgoing.aes-test-out.connector=liberty-kafka
+mp.messaging.outgoing.aes-test-out.bootstrap.servers=SASL_SSL\://kafka-boostrap-server\:39643
+mp.messaging.outgoing.aes-test-out.security.protocol=SASL_SSL
+mp.messaging.outgoing.aes-test-out.sasl.mechanism=PLAIN
+mp.messaging.outgoing.aes-test-out.sasl.jaas.config=com.ibm.ws.kafka.security.LibertyLoginModule required username\="test" password\="{aes}<encoded password>";
+mp.messaging.outgoing.aes-test-out.ssl.truststore.location=kafka-truststore.jks
+mp.messaging.outgoing.aes-test-out.ssl.truststore.password=kafka-teststore
+----
+
+- Authenticating with Kafka's Plain Login Module
+----
+mp.messaging.connector.liberty-kafka.security.protocol=SASL_SSL
+mp.messaging.connector.liberty-kafka.bootstrap.servers=SASL_SSL\://kafka-boostrap-server\:34696
+mp.messaging.connector.liberty-kafka.ssl.truststore.location=kafka-truststore.jks
+mp.messaging.connector.liberty-kafka.sasl.mechanism=PLAIN
+mp.messaging.connector.liberty-kafka.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username\="test" password\="test-QmCFfb";
+mp.messaging.connector.liberty-kafka.ssl.truststore.password=kafka-teststore
+----
+
+[#mtls]
+== Mutual TLS (mTLS)
+
+Mutual TLS is an enhanced security protocol that requires both the client and server to authenticate each other, providing a two-way SSL authentication. Each channel uses a separate keystore to authenticate itself with the Kafka Bootstrap server.
+
+The following example configures each channel with its own keystore to authenticate itself with the Kafka bootstrap server, as detailed in the configuration settings. With the `mp.messaging.connector.liberty-kafka` and specific channel configurations, the example demonstrates how to establish a secure, encrypted channel by using SSL. 
+Mutual TLS not only secures the data in transit but also makes sure that each communication partner is authenticated, thus adding another layer of security. 
+
+----
+mp.messaging.connector.liberty-kafka.bootstrap.servers=SSL\://kafka-boostrap-server\:39647
+mp.messaging.connector.liberty-kafka.security.protocol=SSL
+mp.messaging.connector.liberty-kafka.ssl.truststore.location=kafka-truststore.jks
+mp.messaging.connector.liberty-kafka.ssl.truststore.password=kafka-teststore
+mp.messaging.connector.liberty-kafka.ssl.truststore.location=kafka-truststore.jks
+
+mp.messaging.incoming.test-in.connector=liberty-kafka
+mp.messaging.incoming.test-in.ssl.keystore.location=kafka-keystore.jks
+mp.messaging.incoming.test-in.ssl.keystore.password=kafka-teststore
+mp.messaging.incoming.test-in.group.id=group-id-1
+mp.messaging.incoming.test-in.topic=incoming-topic
+mp.messaging.incoming.test-in.auto.offset.reset=earliest
+
+mp.messaging.outgoing.test-out.connector=liberty-kafka
+mp.messaging.outgoing.test-out.topic=outgoing-topic
+mp.messaging.outgoing.test-out.ssl.keystore.location=kafka-keystore2.jks
+mp.messaging.outgoing.test-out.ssl.keystore.password=kafka-teststore
+----
