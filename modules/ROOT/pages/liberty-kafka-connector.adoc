@@ -27,29 +27,14 @@ The following sections describe how to intergrate MicroProfile Reactive Messagin
 [#configuration]
 == Configure the Liberty-Kafka connector
 
-The `liberty-kafka` connector enables applications to send and receive messages from an Apache Kafka broker. It uses MicroProfile Reactive Messaging standards for robust, asynchronous communication in microservices architectures. 
-
-You can fine-tune your application's interaction with Kafka by configuring the connector in the xref:microprofile-config-properties.adoc#react[microprofile-config.properties] file, as shown in the following example.
-
-----
-mp.messaging.connector.liberty-kafka.bootstrap.servers=localhost:9082
-----
-
-By configuring a MicroProfile application as shown in the example, to connect to a Kafka broker at `localhost:9082` for messaging. The application is able to send and receive messages through Kafka, facilitating event-driven communication.
-
-
-You can define a channel to use this connector, directly linking a message channel to Kafka, as shown in the following example.
-----
-mp.messaging.incoming.myChannel.connector=liberty-kafka
-----
-By setting up a channel as shown in the example, you connect a message channel directly to Kafka, which gives you precise control over the messaging channels. You can specify attributes such as `bootstrap.servers` for connection and `topic` for message direction, enhancing your application's ability to scale and remain robust by efficiently managing messages.
+The `liberty-kafka` connector enables applications to send and receive messages from an https://kafka.apache.org/[Apache Kafka broker]. It uses MicroProfile Reactive Messaging standards for robust, asynchronous communication in microservices architectures. 
 
 Integrate Kafka with Open Liberty by following these steps:
 
 1. <<#connection,Configure the Kafka broker connection>>
 2. <<#define,Define channels for messaging>>
 3. <<#includelib,Include Kafka client libraries>>
-
+4. <<#consec,Configure security for the liberty-kafka connector>>
 
 [#connection]
 === 1. Configure the Kafka broker connection
@@ -58,6 +43,8 @@ In the `microprofile-config.properties` file, specify the Kafka broker addresses
 ----
 mp.messaging.connector.liberty-kafka.bootstrap.servers=myKafkaBroker:9092
 ----
+By configuring a MicroProfile application as shown in the example, to connect to a Kafka broker at `myKafkaBroker:9092` for messaging. The application is able to send and receive messages through Kafka, facilitating event-driven communication.
+
 
 [#define]
 === 2. Define channels for messaging
@@ -74,13 +61,20 @@ mp.messaging.outgoing.myChannel.connector=liberty-kafka
 mp.messaging.outgoing.myChannel.topic=myTopicName.
 ----
 
+By setting up a channel as shown in the examples, you connect a message channel directly to Kafka, which gives you precise control over the messaging channels. You can specify attributes such as `bootstrap.servers` for connection and `topic` for message direction, enhancing your application's ability to scale and remain robust by efficiently managing messages.
+
 For more information on Liberty-Kafka connector options and channel properties, see xref:liberty-kafka-connector-channel-properties.adoc[Liberty-Kafka connector options and channel properties].
 
 [#includelib]
 === 3. Include Kafka client libraries
 
-To integrate Kafka into your application environment by using Open Liberty, choose one of the following methods based on your requirement.
+To integrate Kafka into your application environment by using Open Liberty, choose one of the following methods based on your requirement:
 
+* <<#kafkaappdep,Include Kafka libraries as an application dependency>>
+* <<#kafkashrddep,Include Kafka libraries as a shared library>>
+
+
+[#kafkaappdep]
 ==== Include Kafka libraries as an application dependency
 
 To use the Kafka connector provided by Open Liberty, you must include the Kafka client API jar in your application.
@@ -98,6 +92,7 @@ If you are building your application with Maven, add the Kafka client dependency
 
 This approach integrates Kafka client libraries directly into your application. It does not require any additional server configuration for permissions, simplifying deployment and configuration management.
 
+[#kafkashrddep]
 ==== Include Kafka libraries as a shared library
 
 You can integrate Kafka client libraries as a shared resource within the Open Liberty server. This approach is useful for situations where several applications on the same server instance require the Kafka client libraries. It effectively minimizes duplication.
@@ -147,6 +142,9 @@ To configure these permissions, you can use the `server.xml` configuration file.
    <javaPermission codebase="${kafkaCodebase}" className="javax.security.auth.AuthPermission" name="modifyPrivateCredentials"/>
 ----
 
+[#consec]
+=== 4. Configure security for the liberty-kafka connector
+
 For more information on security and authentication methods, see xref:liberty-kafka-connector-config-security.adoc[Kafka connector security configuration].
 
 
@@ -166,9 +164,7 @@ mp.messaging.incoming.foo.value.deserializer=org.apache.kafka.common.serializati
 
 The `kafkabrokerhost:9092` Kafka broker address, the `foo-reader` consumer group ID, and the deserializers for both key and value are `org.apache.kafka.common.serialization.StringDeserializer`, indicating that both keys and values are expected to be strings.
 
-This configuration is essential for retrieving messages from the specified topic, facilitating the building of reactive applications that can efficiently process data streams.
-
-Similarly, the following example of how to set up a microservice to send messages to a Kafka broker.
+Similarly, the following example shows you how to set up a microservice to send messages to a Kafka broker by using MicroProfile Reactive Messaging and the liberty-kafka connector.
 ----
 mp.messaging.outgoing.bar.connector=liberty-kafka
 mp.messaging.outgoing.bar.bootstrap.servers=kafkabrokerhost:9092
@@ -182,10 +178,12 @@ The application gains the ability to offload messages to the Kafka topic `bar`. 
 
 For more information on `liberty-kafka` connector options and channel properties, see xref:liberty-kafka-connector-channel-properties.adoc[Liberty-kafka connector options and channel properties].
 
+For more information, see link:/guides/microprofile-reactive-messaging.html#creating-the-consumer-in-the-inventory-microservice[Creating the consumer in the inventory microservice] in the Creating reactive Java microservices guide.
+
 [#troubleshooting]
 == Troubleshooting
 
-To troubleshoot the `liberty-kafka` connector, address key issues like Kafka connectivity, managing multiple server instances, and giving distinct identifiers to producers and consumers. Make sure that the `bootstrap.servers` are configured correctly for connection. Each consumer has a distinct `group.id` to prevent conflicts, and producers need a unique `client.id` to av     o id identifier overlap.
+To troubleshoot the `liberty-kafka` connector, address key issues like Kafka connectivity, managing multiple server instances, and giving distinct identifiers to producers and consumers. Make sure that the `bootstrap.servers` are configured correctly for connection. Each consumer has a distinct `group.id` to prevent conflicts, and producers need a distinct `client.id` to avoid identifier overlap.
 
 === Multiple server instances
 
@@ -193,19 +191,11 @@ If you start multiple instances of Open Liberty with the same application, you m
 
 === Multiple Reactive Messaging applications using the same Kafka server
 
-Deploying multiple applications with a Kafka client to Liberty, all connecting to the same Kafka server, can cause errors. These errors stem from conflicting identifiers that are used by both Kafka Producers and Consumers within the applications.
+When multiple applications with a Kafka client are deployed to Open Liberty and connect to the same Kafka server, errors can happen. The errors come from conflicting identifiers that both Kafka producers and consumers use within these applications. Kafka generates the `client.id` for both, that lead to these conflicts, especially since consumers determine their identifiers by using either their `group.id` or `client.id`. 
 
-This is due to how Kafka generates the `client.id` for both. Consumers generate identifiers based on their `group.id` or their `client.id`.
+To mitigate these conflicts, it is essential to make sure that each consumer channel has a distinct `group.id` and each producer channel has a distinct `client.id`. However, specifying these attributes directly on the `liberty-kafka` connector is not an effective solution and must be avoided.
 
-- For consumers, it is suggested that you create a distinct `group.id` for each incoming channel.
-
-- For producers, it is suggested that you create a distinct `client.id` for each outgoing channel.
-
-Specifying either attribute on the `liberty-kafka` Connector does not resolve the issue and is not advised.
-
-These steps are designed to diagnose and resolve common challenges that are encountered integrating Kafka with Open Liberty. They help in facilitating the smooth functioning of your microservices architecture.
-
-For more information, see link:/guides/microprofile-reactive-messaging.html#creating-the-consumer-in-the-inventory-microservice[Creating the consumer in the inventory microservice] in the Creating reactive Java microservices guide.
+These steps aim to identify and address common challenges that arise during the integration of Kafka with Open Liberty. They help in facilitating the smooth functioning of your microservices architecture.
 
 For more information on Apache Kafka, see the https://kafka.apache.org/documentation.html#gettingStarted[Apache Kafka documentation].
 
