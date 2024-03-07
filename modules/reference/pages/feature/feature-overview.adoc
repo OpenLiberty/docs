@@ -28,7 +28,7 @@ Finally, the applications are started.
 When the configuration is changed, the feature manager reevaluates the code that is required for the newly requested features by starting and stopping parts of the runtime without restarting the server.
 Changes to applications are processed in a similar way.
 
-== Using features
+== Feature configuration
 Features are specified in the system configuration files that are the `server.xml` file and any other included files.
 The feature manager is configured by using the `featureManager` element in the `server.xml` file.
 Each feature that is required is configured by using the `feature` element.
@@ -49,6 +49,48 @@ Specify the features that you need, along with any additions or overrides to the
 For details about the server configuration, see the xref:config/server-configuration-overview.adoc[server configuration overview].
 
 Occasionally, Liberty features that are not listed in the `server.xml` file are enabled automatically by other features. To confirm whether a particular feature is enabled in a Liberty server, inspect the `CWWKF0012I` message in the `console.log`, `messages.log`, or `trace.log` from the Liberty server. This message provides a comprehensive list of all the features that are installed and running on the Liberty server.
+
+=== Feature combinations and compatibility
+Not all Open Liberty features and feature versions are interoperable and some combinations might result in compatibility errors if they are enabled in the same server configuration.
+
+==== Singleton features and feature versions
+
+A singleton feature is a feature for which you can configure only one version per server. Most Open Liberty features are singleton features. If your server configuration includes multiple versions of the same singleton feature, either in the `server.xml` file or through feature dependencies, an error occurs and neither version of that feature loads.
+
+To resolve this problem, ensure that the configured features all specify, or tolerate, the same version of that singleton feature.
+If you have hard requirements on both feature versions, you must move some of your applications to a different server.
+
+==== MicroProfile, Jakarta EE, and Java EE features
+Open Liberty features that support the MicroProfile, Jakarta EE, and Java EE specifications are sensitive to the version of whatever platform specification they target. For example, features that support Jakarta EE 10 do not interoperate with features that support Jakarta EE 8. Errors occur if you enable these features in the same server configuration.
+
+To avoid these errors, see the **Features that this feature enables** section on the feature:microprofile[display=MicroProfile], feature:jakartaee[display=Jakarta EE Platform] or feature:javaee[display=Java EE Platform] convenience feature pages. You can use this list to determine which individual feature versions align with each platform specification version. Alternatively, to enable all the features that support a particular platform specification version, use the MicroProfile, Jakarta EE, or Java EE <<#conv,convenience features>>.
+
+For more information about migrating your applications from one version of a MicroProfile or Jakarta EE specification to another, see the relevant _Differences between..._ pages in the xref:microprofile-api.adoc[MicroProfile API] and xref:jakarta-ee-api.adoc[Jakarta EE API] sections of the documentation.
+
+==== Java EE 7 and Java EE 8 feature combinations
+Open Liberty doesn't support combining features from both Java EE 7 and Java EE 8, except when the Java EE 7 and Java EE 8 specifications share a component specification version.
+If you combine Java EE 7 and Java EE 8 features in a server configuration, the server reports errors at startup.
+
+The following features are included in both Java EE 7 and Java EE 8:
+
+* feature:appClientSupport-1.0[display="Application Client Support for Server 1.0"]
+* feature:batch-1.0[display="Batch API 1.0"]
+* feature:concurrent-1.0[display="Concurrency Utilities for Java EE 1.0"]
+* feature:ejb-3.2[display="Enterprise JavaBeans 3.2"]
+* feature:j2eeManagement-1.1[display="J2EE Management 1.1"]
+* feature:jacc-1.5[display="Java Authorization Contract for Containers 1.5"]
+* feature:jca-1.7[display="Java Connector Architecture 1.7"]
+* feature:jcaInboundSecurity-1.0[display="Java Connector Architecture Security Inflow 1.0"]
+* feature:jdbc-4.2[display="Java Database Connectivity 4.2"]
+* feature:jdbc-4.3[display="Java Database Connectivity 4.3"]
+* feature:jms-2.0[display="Java Message Service 2.0"]
+* feature:jaxws-2.2[display="Java Web Services 2.2"]
+* feature:wasJmsClient-2.0[display="JMS 2.0 Client for Message Server"]
+* feature:wasJmsServer-1.0[display="Message Server 1.0"]
+* feature:wasJmsSecurity-1.0[display="Message Server Security 1.0"]
+
+For a complete list of features that support Java EE 7, see the feature:javaee-7.0[display="Java EE Full Platform 7.0"] feature.
+For a complete list of features that support Java EE 8, see the feature:javaee-8.0[display="Java EE Full Platform 8.0"] feature.
 
 [#conv]
 === Convenience features
@@ -81,40 +123,6 @@ An API behavior change is made available as a new version of a feature so that y
 These versioned features continue to be supported across Open Liberty updates.
 If you continue to use the same feature version, you never need to migrate your application.
 For more information about zero migration with Open Liberty, see xref:ROOT:zero-migration-architecture.adoc[Zero-migration architecture].
-
-== Combining features
-If you try to configure a server to have different versions of a feature, an error is reported because Open Liberty doesn't support combining different versions of the same feature.
-This means that most Open Liberty features are singleton features.
-A singleton feature is a feature for which you can configure only one version for use in a server.
-
-If you have applications that need different versions of the singleton feature, you must deploy them in different servers.
-If your server configuration includes multiple versions of a singleton feature, either through direct configuration in the `server.xml` file, or through feature dependencies, that configuration is in error and neither version of that feature is loaded.
-To resolve this problem, ensure that the configured features all specify, or tolerate, the same version of that singleton feature.
-If you have hard requirements on both feature versions, you must move some of your applications to a different server.
-
-Open Liberty doesn't support combining features from both Java EE 7 and Java EE 8, except when the Java EE 7 and Java EE 8 specifications share a component specification version.
-If you combine Java EE 7 and Java EE 8 features in a server configuration, the server reports errors at startup.
-
-The following features are included in both Java EE 7 and Java EE 8:
-
-* feature:appClientSupport-1.0[display="Application Client Support for Server 1.0"]
-* feature:batch-1.0[display="Batch API 1.0"]
-* feature:concurrent-1.0[display="Concurrency Utilities for Java EE 1.0"]
-* feature:ejb-3.2[display="Enterprise JavaBeans 3.2"]
-* feature:j2eeManagement-1.1[display="J2EE Management 1.1"]
-* feature:jacc-1.5[display="Java Authorization Contract for Containers 1.5"]
-* feature:jca-1.7[display="Java Connector Architecture 1.7"]
-* feature:jcaInboundSecurity-1.0[display="Java Connector Architecture Security Inflow 1.0"]
-* feature:jdbc-4.2[display="Java Database Connectivity 4.2"]
-* feature:jdbc-4.3[display="Java Database Connectivity 4.3"]
-* feature:jms-2.0[display="Java Message Service 2.0"]
-* feature:jaxws-2.2[display="Java Web Services 2.2"]
-* feature:wasJmsClient-2.0[display="JMS 2.0 Client for Message Server"]
-* feature:wasJmsServer-1.0[display="Message Server 1.0"]
-* feature:wasJmsSecurity-1.0[display="Message Server Security 1.0"]
-
-For a complete list of features that support Java EE 7, see the feature:javaee-7.0[display="Java EE Full Platform 7.0"] feature.
-For a complete list of features that support Java EE 8, see the feature:javaee-8.0[display="Java EE Full Platform 8.0"] feature.
 
 == Superseded features
 If a feature is superseded, a new feature or a combination of features might provide an advantage over the superseded feature.
