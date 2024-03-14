@@ -17,16 +17,14 @@
 
 Integrating MicroProfile Reactive Messaging and Apache Kafka with the Liberty-Kafka connector provides an efficient asynchronous communication method for Open Liberty applications. This setup helps you handle large volumes of data efficiently, which is essential for event-driven systems.
 
-In highly distributed and event-driven application architectures, it is critical to manage data transfer between system components in a nonobstructive and responsive manner. Reactive messaging patterns make it possible by enabling applications to send, receive, and process messages asynchronously. By decoupling system components, this method enhances scalability and resilience. Open Liberty incorporates this paradigm with its MicroProfile Reactive Messaging support. By using MicroProfile Config properties to configure reactive messaging channels in Open Liberty, it is possible to facilitate the administration and specification of how your applications interact with message brokers like Kafka. By configuring this setting, you can precisely tailor the behavior of reactive messaging to the requirements of your application, which ensures streamlined data processing and communication. For more information on the the MicroProfile Reactive Messaging properties, see xref:microprofile-config-properties.adoc#react[MicroProfile Config properties for MicroProfile Reactive Messaging].
+Highly distributed and event-driven application architectures need to manage data transfer between system components responsively. Reactive messaging patterns enable applications to send, receive, and process messages asynchronously. By decoupling system components, this method enhances scalability and resilience. Open Liberty incorporates this paradigm with its MicroProfile Reactive Messaging support. By using MicroProfile Config properties to configure reactive messaging channels in Open Liberty, it is possible to facilitate the administration and specification of how your applications interact with message brokers like Kafka. By configuring this setting, you can precisely tailor the behavior of reactive messaging to the requirements of your application, which facilitates streamlined data processing and communication. For more information, see xref:microprofile-config-properties.adoc#react[MicroProfile Config properties for MicroProfile Reactive Messaging].
 
-The following section describes how to intergrate MicroProfile Reactive Messaging with Apache Kafka to send messages within and between applications.
+The Liberty-Kafka connector enables applications to send and receive messages from an https://kafka.apache.org/[Apache Kafka broker]. It uses MicroProfile Reactive Messaging standards for robust, asynchronous communication in microservices architectures. The following section describes how to intergrate MicroProfile Reactive Messaging with Apache Kafka to send messages within and between applications.
 
 [#configuration]
 == Configure the Liberty-Kafka connector
-
-The Liberty-Kafka connector enables applications to send and receive messages from an https://kafka.apache.org/[Apache Kafka broker]. It uses MicroProfile Reactive Messaging standards for robust, asynchronous communication in microservices architectures. 
-
-Integrate Kafka with Open Liberty by following these steps:
+ 
+Integrate Kafka with Open Liberty by following these steps.
 
 1. <<#connection,Configure the Kafka broker connection>>
 2. <<#define,Define channels for messaging>>
@@ -40,14 +38,13 @@ In the `microprofile-config.properties` file, specify the Kafka broker addresses
 ----
 mp.messaging.connector.liberty-kafka.bootstrap.servers=myKafkaBroker:9092
 ----
-By configuring a MicroProfile application as shown in the example, to connect to a Kafka broker at `myKafkaBroker:9092` for messaging. The application is able to send and receive messages through Kafka, facilitating event-driven communication.
+By configuring a MicroProfile application as shown in the example, connect to a Kafka broker at `myKafkaBroker:9092` for messaging. The application is able to send and receive messages through Kafka, facilitating event-driven communication.
 
 
 [#define]
 === 2. Configuring microservices for Kafka messaging with Liberty-Kafka connector
 
-To facilitate communication among applications, it is essential to configure microservices to send and receive messages through Kafka topics. Using the Liberty-Kafka connector, part of the MicroProfile Reactive Messaging specification, applications can connect to an Apache Kafka broker, ensuring efficient message handling for both incoming and outgoing channels.
-
+To enable communication among applications, microservices must be set up to send and receive messages through Kafka topics. Using the Liberty-Kafka connector, part of the MicroProfile Reactive Messaging specification, applications can connect to an Apache Kafka broker, ensuring efficient message handling for both incoming and outgoing channels.
 
 ==== Incoming message configuration
 
@@ -61,7 +58,7 @@ mp.messaging.incoming.myChannel.key.deserializer=org.apache.kafka.common.seriali
 mp.messaging.incoming.myChannel.value.deserializer=org.apache.kafka.common.serialization.StringDeserializer
 ----
 
-The configuration ensures that your application connects to the specified Kafka topic (`myTopicName`) for incoming messages, with `kafkabrokerhost:9092` as the broker address and `myGroupID` as the consumer group ID. The deserializers are set to handle keys and values as strings.
+The configuration ensures that your application connects to the specified Kafka topic (`myTopicName`) for incoming messages, with `kafkabrokerhost:9092` as the broker address and `myGroupID` as the consumer group ID. The the `key.deserializer` and `value.deserializer` properties specify how Kafka should convert the bytes of the keys and values of messages back into objects that your application can understand.
 
 To troubleshoot the Liberty-Kafka connector, address key issues like Kafka connectivity, managing multiple server instances, and giving distinct identifiers to producers and consumers. Make sure that the `bootstrap.servers` are configured correctly for connection. Each consumer has a distinct `group.id` to prevent conflicts, and producers need a distinct `client.id` to avoid identifier overlap.
 
@@ -69,10 +66,12 @@ If you start multiple instances of Open Liberty with the same application, you m
 
 Deploying multiple applications with Kafka clients on Open Liberty to the same Kafka server can lead to identifier conflicts. Kafka assigns `client.id` to both producers and consumers, leading to this issue. Consumers also identify themselves using either their `group.id` or `client.id`. To avoid these conflicts, assigning a distinct `group.id` and `client.id` to each producer and consumer is crucial. Avoid directly setting these IDs on the Liberty-Kafka connector. Effective management of identifiers is crucial for successful Kafka integration with Open Liberty, facilitating smooth operations within the microservices architecture.
 
+The `key.deserializer` and `value.deserializer` properties are critical for the correct functioning of your Kafka consumer. They ensure that your application can accurately interpret the keys and values of incoming messages from a Kafka topic. Without proper deserialization, your application might encounter errors or be unable to process the messages it receives.
+
 
 ==== Outgoing message configuration
 
-Similarly, for sending messages to a Kafka topic, an outgoing channel must be configured by using the Liberty-Kafka connector. The setup includes specifying the Kafka topic to which messages are sent, along with serialization for message keys and values.
+Similarly, you must configure an outgoing channel to send messages to a Kafka topic that uses the Liberty-Kafka connector. The setup includes specifying the Kafka topic to which messages are sent, along with serialization for message keys and values.
 ----
 mp.messaging.outgoing.myChannel.connector=liberty-kafka
 mp.messaging.outgoing.myChannel.topic=myTopicName
@@ -81,21 +80,26 @@ mp.messaging.outgoing.myChannel.key.serializer=org.apache.kafka.common.serializa
 mp.messaging.outgoing.myChannel.value.serializer=org.apache.kafka.common.serialization.StringSerializer
 ----
 
-The configuration ensures messages are sent to the `myTopicName` Kafka topic, with the broker located at `kafkabrokerhost:9092`. Both message keys and values are serialized as strings for efficient transmission.
+The configuration ensures messages are sent to the `myTopicName` Kafka topic, with the broker located at `kafkabrokerhost:9092`. The `key.serializer` and `value.serializer` properties are crucial for the correct formatting of messages before they are sent to a Kafka topic. Serialization refers to converting the key and value objects from your application into a byte array so that Kafka can efficiently transmit them over the network to the specified topic.
 
-By setting up channels as demonstrated, you connect message channels directly to Kafka, offering precise control over the messaging channels. This enhances your application's scalability and robustness by efficiently managing messages, whether incoming or outgoing.
+By setting up channels as demonstrated, you connect message channels directly to Kafka. Offering precise control over the messaging channels, enhancing your application's scalability and robustness by efficiently managing messages, whether incoming or outgoing.
 
-For more information, see xref:liberty-kafka-connector-channel-properties.adoc[Liberty-Kafka connector options and channel properties].
+For more information: 
 
-For more information, see link:/guides/microprofile-reactive-messaging.html#creating-the-consumer-in-the-inventory-microservice[Creating the consumer in the inventory microservice] in the Creating reactive Java microservices guide.
+* See xref:liberty-kafka-connector-channel-properties.adoc[Liberty-Kafka connector options and channel properties].
+
+* See link:/guides/microprofile-reactive-messaging.html#creating-the-consumer-in-the-inventory-microservice[Creating the consumer in the inventory microservice] in the Creating reactive Java microservices guide.
 
 [#includelib]
 === 3. Include Kafka client libraries
 
 To integrate Kafka into your application environment by using Open Liberty, choose one of the following methods.
 
-* <<#kafkaappdep,Include Kafka libraries as an application dependency>> - Does not require any additional server configuration for permissions.
-* <<#kafkashrddep,Include Kafka libraries as a shared library>> - Grant the necessary Java permissions for the libraries to function correctly.
+* <<#kafkaappdep,Include Kafka libraries as an application dependency>> 
+This method does not require any additional server configuration for permissions. It incorporates the Kafka client libraries directly within your application deployment. This approach is suitable if you want to keep the Kafka client libraries tightly coupled with your application. The libraries that are used are the ones that are specified in your application's dependency management system (like Maven). This method simplifies dependency management but does not share the Kafka client libraries across multiple applications that are deployed on the same server.
+
+* <<#kafkashrddep,Include Kafka libraries as a shared library>>
+A shared library enables the assignment of essential permissions for the libraries to operate effectively. When you share the Kafka client libraries, multiple applications on the same Open Liberty server can use them efficiently. This method reduces redundancy and can facilitate easier library management, especially in environments where multiple applications need to interact with Kafka. However, it requires careful management of permissions to avoid class conflicts or security issues.
 
 
 [#kafkaappdep]
