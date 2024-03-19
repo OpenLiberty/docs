@@ -17,9 +17,21 @@
 
 Integrating MicroProfile Reactive Messaging and Apache Kafka with the Liberty-Kafka connector provides an efficient asynchronous communication method for Open Liberty applications. This setup helps you handle large volumes of data efficiently, which is essential for event-driven systems.
 
-Highly distributed and event-driven application architectures need to manage data transfer between system components responsively. Reactive messaging patterns enable applications to send, receive, and process messages asynchronously. By decoupling system components, this method enhances scalability and resilience. Open Liberty incorporates this paradigm with its MicroProfile Reactive Messaging support. By using MicroProfile Config properties to configure reactive messaging channels in Open Liberty, it is possible to facilitate the administration and specification of how your applications interact with message brokers like Kafka. By configuring this setting, you can precisely tailor the behavior of reactive messaging to the requirements of your application, which facilitates streamlined data processing and communication. For more information, see xref:microprofile-config-properties.adoc#react[MicroProfile Config properties for MicroProfile Reactive Messaging].
+Reactive messaging patterns enhance scalability and resilience by enabling applications to send, receive, and process messages asynchronously. Open Liberty incorporates this paradigm with its MicroProfile Reactive Messaging support. You can use MicroProfile Config properties to configure reactive messaging channels in Open Liberty and control how your applications interact with message brokers like Kafka. By configuring this setting, you can precisely tailor the behavior of reactive messaging to the requirements of your application. For more information, see xref:microprofile-config-properties.adoc#react[MicroProfile Config properties for MicroProfile Reactive Messaging].
 
 The Liberty-Kafka connector enables applications to send and receive messages from an https://kafka.apache.org/[Apache Kafka broker]. It uses MicroProfile Reactive Messaging standards for robust, asynchronous communication in microservices architectures. The following section describes how to intergrate MicroProfile Reactive Messaging with Apache Kafka to send messages within and between applications.
+
+== Enable MicroProfile Reactive Messaging
+
+To enable reactive messaging in Open Liberty, add the following element declaration into your `server.xml` file, inside the `featureManager` element.
+----
+<featureManager>
+    <feature>mpReactiveMessaging-3.0</feature>
+</featureManager>
+----
+
+This step enables the reactive messaging feature in Open Liberty, allowing you to build and run applications that use the MicroProfile Reactive Messaging API.
+
 
 [#configuration]
 == Configure the Liberty-Kafka connector
@@ -38,7 +50,7 @@ In the `microprofile-config.properties` file, specify the Kafka broker addresses
 ----
 mp.messaging.connector.liberty-kafka.bootstrap.servers=myKafkaBroker:9092
 ----
-By configuring a MicroProfile application as shown in the example, connect to a Kafka broker at `myKafkaBroker:9092` for messaging. The application is able to send and receive messages through Kafka, facilitating event-driven communication.
+By configuring a MicroProfile application as shown in the example, connect to a Kafka broker at `myKafkaBroker:9092` for messaging. The application can send and receive messages through Kafka, which facilitates event-driven communication.
 
 
 [#define]
@@ -82,9 +94,9 @@ mp.messaging.outgoing.myChannel.value.serializer=org.apache.kafka.common.seriali
 
 The configuration ensures messages are sent to the `myTopicName` Kafka topic, with the broker located at `kafkabrokerhost:9092`. The `key.serializer` and `value.serializer` properties are crucial for the correct formatting of messages before they are sent to a Kafka topic. Serialization refers to converting the key and value objects from your application into a byte array so that Kafka can efficiently transmit them over the network to the specified topic.
 
-By setting up channels as demonstrated, you connect message channels directly to Kafka. Offering precise control over the messaging channels, enhancing your application's scalability and robustness by efficiently managing messages, whether incoming or outgoing.
+When you set up channels as demonstrated, you directly connect message channels to Kafka. This method provides you with precise control over the messaging channels. As a result, it enhances the scalability and robustness of your application by efficiently managing both incoming and outgoing messages.
 
-For more information: 
+For more information, see the following resources: 
 
 * See xref:liberty-kafka-connector-channel-properties.adoc[Liberty-Kafka connector options and channel properties].
 
@@ -96,9 +108,11 @@ For more information:
 To integrate Kafka into your application environment by using Open Liberty, choose one of the following methods.
 
 * <<#kafkaappdep,Include Kafka libraries as an application dependency>> 
++
 This method does not require any additional server configuration for permissions. It incorporates the Kafka client libraries directly within your application deployment. This approach is suitable if you want to keep the Kafka client libraries tightly coupled with your application. The libraries that are used are the ones that are specified in your application's dependency management system (like Maven). This method simplifies dependency management but does not share the Kafka client libraries across multiple applications that are deployed on the same server.
 
 * <<#kafkashrddep,Include Kafka libraries as a shared library>>
++
 A shared library enables the assignment of essential permissions for the libraries to operate effectively. When you share the Kafka client libraries, multiple applications on the same Open Liberty server can use them efficiently. This method reduces redundancy and can facilitate easier library management, especially in environments where multiple applications need to interact with Kafka. However, it requires careful management of permissions to avoid class conflicts or security issues.
 
 
