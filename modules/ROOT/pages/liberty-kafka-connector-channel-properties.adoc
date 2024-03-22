@@ -8,59 +8,75 @@
 //
 :page-layout: general-reference
 :page-type: general
-:page-description: The Liberty-Kafka connector offers a range of properties to fine-tune its operation. You can set these properties on the `liberty-kafka` connector to define certain behaviors during operation.
+:page-description: You can fine-tune the Liberty-Kafka connector by setting MicroProfile Config properties. The attributes that you specify for these properties configure message channels, message acknowledgment, context services, and other operational details.
 :page-categories: MicroProfile Reactive Messaging
 :seo-title: Liberty-Kafka connector options and channel properties
-:seo-description: The Liberty-Kafka connector offers a range of properties to fine-tune its operation. You can set these properties on the `liberty-kafka` connector to define certain behaviors during operation.
+:seo-description: You can fine-tune the Liberty-Kafka connector by setting MicroProfile Config properties. The attributes that you specify for these properties configure message channels, message acknowledgment, context services, and other operational details.
 
 
 [#connectoroptionschannelprop]
 = Liberty-Kafka connector options and channel properties
 
-The `liberty-kafka` connector offers a range of properties to fine-tune its operation. You can set these properties on the `liberty-kafka` connector to define certain behaviors during operation.
+You can fine-tune the Liberty-Kafka connector by setting MicroProfile Config properties. The attributes that you specify for these properties configure message channels, message acknowledgment, context services, and other operational details.
 
-You can use all these options as attributes on either the connector or a channel that uses the `liberty-kafka` connector. If you specify the option on both the channel and the connector, the channel takes precedence.
+You can use all these options as attributes on either the connector or a channel that uses the Liberty-Kafka connector. If you specify the option on both the channel and the connector, the channel takes precedence.
 
-.Properties supported by the `liberty-kafka` connector for incoming channels
-[cols="a,a,a",width="100%"]
+To secure communication with Kafka brokers, set the necessary security properties in the xref:microprofile-config-properties.adoc#react[microprofile-config.properties] file.
+
+==  Managing incoming and outgoing channels with Liberty-Kafka connector attributes
+
+The Liberty-Kafka connector helps applications use Kafka for sending and receiving messages. It integrates with the MicroProfile Reactive Messaging framework, simplifying message management. You can configure how to receive messages from Kafka, such as selecting which topics to listen to and managing message acknowledgments, facilitating efficient messages processing. 
+
+For sending messages, you can decide where to send messages by specifying topics and use settings to make sending messages more efficient, like managing background tasks better. This means you can adjust the connector to handle both incoming and outgoing messages in the best way for your application. It facilitates smooth operation and the ability to meet the demands of working with Kafka.
+
+
+.Attributes supported by the Liberty-Kafka connector for incoming and outgoing channels
+[cols="a,a,a,a",width="100%"]
 |===
-|Property Name |Default |Description
+|Attribute Name |Channel |Default |Description
 
 |topic
+|Incoming and Outgoing channels
 |The name of the channel.
 |The Kafka topic that the channel is to either send or receive messages from.
 
 |unacked.limit
+|Incoming channel
 |Defaults to the value of `max.poll.records` if set, or to 500.
 |The number outstanding unacknowledged messages. 
  {empty} +
  If this limit is reached, the connector stops retrieving records from Kafka until some messages are acknowledged.
 
 |fast.ack
+|Incoming channel
 |- MicroProfile Reactive Messaging 1.0 - `False`
  {empty} +
  - MicroProfile Reactive Messaging 3.0 - `true`
-|Defines the acknowledge behavior of the `liberty-kafka` connector within the MicroProfile Reactive Messaging framework for `incoming` channels in relation to activities with the Kafka topic.
+|Defines the acknowledge behavior of the Liberty-Kafka connector within the MicroProfile Reactive Messaging framework for `incoming` channels in relation to activities with the Kafka topic.
  {empty} +
 If the value of `fast.ack` is `false`, the acknowledgment is not reported as complete until the partition offset is committed to the Kafka broker. If an error occurs during this process, then the acknowledgment is reported as failed.
  {empty} +
-If the value of `fast.ack` is `true`, and the acknowledgment is reported as complete when the Kafka connector receives the acknowledgment signal.
+If the value of `fast.ack` is `true`, and the acknowledgment is reported as complete when the Kafka connector receives the acknowledgment signal. For more information, see <<#fastack,fast.ack>>.
 
 |context.service
-|If the `concurrent-x.y` feature is enabled. the default context service is used.
+|Incoming and Outgoing channels
+|If the feature:concurrent[display=Jakarta Concurrency] feature is enabled. the default context service is used.
  {empty} +
- If the concurrent feature is not enabled, the built in Liberty context service is used with a set list of context types to capture and apply around asynchronous tasks.
-|Enabling the concurrent feature is needed for the `context.service` option to be effective for the `liberty-kafka` connector. 
+ If the feature:concurrent[display=Jakarta Concurrency] feature is not enabled, the built in Liberty context service is used with a set list of context types to capture and apply around asynchronous tasks.
+|Enabling the feature:concurrent[display=Jakarta Concurrency] feature is needed for the `context.service` option to be effective for the Liberty-Kafka connector. 
  {empty} +
-This setting specifies the Context Service that is used for Asynchronous tasks.
+This setting specifies the Context Service that is used for Asynchronous tasks. For more information, see <<#contextservice,context.service>>.
 
 |<any other property>
+|Incoming and Outgoing channels
 |Uses the Kafka Client default
 |All other properties are passed directly as config parameters to the KafkaConsumer API. A list of required and optional properties can be found in the http://kafka.apache.org/documentation.html#consumerconfigs[Kafka documentation].
 
 |===
 
-== fast.ack
+
+[#fastack]
+=== fast.ack
 Properties like `fast.ack` allow for control over message acknowledgment processes, improving the efficiency of message processing. 
 
 In the following example, in the `microprofile-config.properties` file of the application, the `fast.ack` setting is defaulted to `false` for the connector, affecting all channels in the application. However, for a distinct incoming channel called `foo`, this setting is overridden to `true`. This alteration favors a quicker acknowledgment approach, which enhances the handling performance for messages that arrive on this channel.
@@ -73,34 +89,10 @@ mp.messaging.incoming.foo.fast.ack=true
 ----
 
 
-.Properties supported by the `liberty-kafka` connector for outgoing channels
-[cols="a,a,a",width="100%"]
-|===
-|Property Name |Default |Description
-
-|topic
-|The name of the channel.
-|The Kafka topic that the channel is to either send or receive messages from.
-
-
-|context.service
-|If the `concurrent-x.y` feature is enabled. the default context service is used.
- {empty} +
- If the concurrent feature is not enabled, the built in Liberty context service is used with a set list of context types to capture and apply around asynchronous tasks.
-|Enabling the concurrent feature is needed for the `context.service` option to be effective for the `liberty-kafka` connector. 
- {empty} +
-This setting specifies the Context Service that is used for Asynchronous tasks.
-
-|<any other property>
-|Uses the Kafka Client default
-|All other properties are passed directly as config parameters to the KafkaProducer API. A list of required and optional properties can be found in the http://kafka.apache.org/documentation.html#producerconfigs[Kafka documentation].
-
-|===
-
-
-== context.service
+[#contextservice]
+=== context.service
 The `context.service` attribute specifies the Context Service for asynchronous operations, critical for performance tuning. 
-Context Services that are defined within the application itself cannot be used with the `liberty-kafka` connector. 
+Context Services that are defined within the application itself cannot be used with the Liberty-Kafka connector. 
 
 In the following example, the `server.xml` file defines three different context services, each with a unique identifier (`rst`, `uvw`, and `xyz`).
 ----
