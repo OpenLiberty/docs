@@ -25,4 +25,5 @@ assignees: ''
 - [ ] Confirm with the team that docs are frozen and no more updates will be sent to vNext (3 working days before GA).
 - [ ] Verify main feature epic statuses to ensure that all targeted features will be included in the release (before closing doc feature issues and again 1-2 working days before GA).
 - [ ] [Publish docs to production on GA](https://github.com/OpenLiberty/docs-playbook#publishing-a-new-release-of-open-liberty-docs)
+- [ ] If this is a December release, contact the Open LIberty website team to plan for copyright date updates in the January release.
 - [ ] Determine if a docs refresh will be needed before the next upcoming release. If so, make a note of the date and leave this issue open until complete. If not, close this issue. 
