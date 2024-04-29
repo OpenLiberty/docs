@@ -85,6 +85,19 @@ To monitor peers, servers must be configured so that their transaction logs are 
 
 The use of a shared file system for this purpose, such as an RWX persistent volume in a Kubernetes cluster, is explicitly not supported where the file system crosses data centers. This limitation is due to the difficulty of implementing POSIX locking semantics in such a configuration. Under these circumstances, the transaction service must be configured to use a relational database for its transaction logs. For more information, see the <<#log,Transaction log management>> section.
 
+=== Considerations when using a proxy server
+
+The older alternative to peer recovery in a cloud environment is to route WS-AtomicTransaction traffic through a proxy server using `externalURLPrefix`. This may be done by setting `externalURLPrefix` to the pod IP address; for example:
+
+[source,xml]
+----
+<wsAtomicTransaction
+  ...
+  externalURLPrefix="https://${env.POD_IP}:9443"
+/>
+----
+
+It has been observed in some Kubernetes environments that this may cause intermittent socket timeout exceptions when non-WS-AtomicTransaction traffic communicates through a Kubernetes service to the same destination pod on the same port. To avoid this, consider adding an additional config:httpEndpoint[display=HTTP Endpoint] with a different port solely for `externalURLPrefix` traffic, add an additional `hostAlias` for this port in the config:virtualHost[display=Virtual Host], and configure `externalURLPrefix` to use this new port.
 
 [#log]
 == Transaction log management
