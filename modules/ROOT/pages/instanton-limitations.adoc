@@ -367,7 +367,9 @@ Currently, the only supported processor is X86-64/AMD64. Other processors are ex
 [#connectors]
 == Jakarta Connectors work submission before checkpoint
 
-Open Liberty InstantOn does not allow resource adapters to submit work nor create timer tasks that schedule periodic work before a checkpoint is performed for the application process. This scenario is possible if the resource adapter has xref:docs/latest/instanton.html#beforeAppStart[[early startup code] that attempts to submit work or create a timer by using the bootstrap context facilities provided by the runtime.
+Open Liberty InstantOn does not allow resource adapters to submit work nor create timer tasks that schedule periodic work before a checkpoint is performed for the application process. This scenario is possible when the  `afterAppStart` option is configured and the resource adapter has xref:instanton.adoc#beforeAppStart[early startup code] that attempts to submit work or create a timer by using the bootstrap context facilities provided by the runtime.
+
+In such cases, the server fails the checkpoint and logs an error. You can avoid these failures by using the xref:instanton.adoc#beforeAppStart[beforeAppStart] option.
 
 Consider the following JavaBean resource adapter code. The `start()` method is invoked when the server starts the resource adapter, which occurs before the checkpoint if you use the `afterAppStart` option.
 
@@ -426,5 +428,3 @@ The server then fails the checkpoint and logs the following error:
 ----
 J2CA8511E: The server checkpoint request failed because the `StartupExample` resource adapter created a timer.
 ----
-
-You can avoid these failures by using the xref:docs/latest/instanton.html#beforeAppStart[beforeAppStart] option.
