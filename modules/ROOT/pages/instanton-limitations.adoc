@@ -15,7 +15,7 @@
 
 In addition to the general InstantOn prerequisites, Open Liberty InstantOn is subject to certain limitations. For example, applications that must run early startup code or that rely on certain Liberty features might require modification to use InstantOn.
 
-For more information about InstantOn prerequisites, see xref:instanton.adoc#prereq[Runtime and host build system prerequisites]. 
+For more information about InstantOn prerequisites, see xref:instanton.adoc#prereq[Runtime and host build system prerequisites].
 
 The following sections describe the limitations and known issues with using Open Liberty InstantOn.
 
@@ -33,6 +33,7 @@ The following sections describe the limitations and known issues with using Open
 - <<#linux-calls,Access to Linux system calls>>
 - <<#linux, Running without the necessary Linux capabilities>>
 - <<#processors, Supported processors>>
+- <<#connectors, Jakarta Connectors work submission before checkpoint>>
 
 [#transaction]
 == Jakarta Transactions configuration limitations
@@ -77,14 +78,14 @@ This `Servlet` example uses the `loadOnStartup = 1` attribute. When you use this
 
 [source,text]
 ----
-[WARNING ] WTRN0155W: An application began or required a transaction during the server checkpoint request. The following stack trace for this thread was captured when the transaction was created: 
+[WARNING ] WTRN0155W: An application began or required a transaction during the server checkpoint request. The following stack trace for this thread was captured when the transaction was created:
 ----
 
 This warning is followed by a stacktrace that helps identify the application code that is attempting to begin a transaction. The server then fails to checkpoint and the following error is logged:
 
 [source,text]
 ----
-WTRN0154E: The server checkpoint request failed because the transaction service is unable to begin a transaction. 
+WTRN0154E: The server checkpoint request failed because the transaction service is unable to begin a transaction.
 ----
 
 You can avoid this failure by using the `beforeAppStart` option or by modifying the component not to use early startup code. In this example, that modification is to remove the `loadOnStartup = 1` attribute.
@@ -166,7 +167,7 @@ If an application is injected with a `DataSource` before the checkpoint and the 
 == Accessing MicroProfile Config properties with no default value at checkpoint
 An application injected with a configuration property that has no default value set in any configuration source might cause errors during checkpoint. This section provides solutions for common errors that are encountered.
 
-A configuration property can be introduced into the application either statically or dynamically, and in either case, the property can be declared optional. The following example shows ways to inject static, static-optional, dynamic, and dynamic-optional configuration properties. 
+A configuration property can be introduced into the application either statically or dynamically, and in either case, the property can be declared optional. The following example shows ways to inject static, static-optional, dynamic, and dynamic-optional configuration properties.
 [source,java]
 ----
   @Inject
@@ -214,7 +215,7 @@ Specify a default value in a `variable` element in the server.xml` file::
   <variable name="static_config" defaultValue="defaultValue" />
 ----
 
-If no default value is set, you can still avoid the previous error by injecting configuration with the `static_optional_config`, `dynamic_config`,  or `dynamic_optional_config` properties. 
+If no default value is set, you can still avoid the previous error by injecting configuration with the `static_optional_config`, `dynamic_config`,  or `dynamic_optional_config` properties.
 However,  the following error might occur if you use the checkpoint option with CDI beans that are `@ApplicationScoped` and the `dynamic_config` is accessed too early during application startup:
 [source,sh]
 ----
@@ -280,7 +281,7 @@ To work around this limitation, you can either enable the `virt_sandbox_use_netl
 If link:https://www.kernel.org/doc/Documentation/security/Yama.txt[Yama] is configured with one of the following modes, InstantOn cannot checkpoint or restore the application process in running containers:
 
 - `2` - admin-only attach
-- `3` - no attach 
+- `3` - no attach
 
 When this configuration is present, the `/logs/checkpoint/restore.log` contains the following error:
 
@@ -363,3 +364,67 @@ The `Operation not permitted` message is an indication that the required Linux c
 == Supported processors
 Currently, the only supported processor is X86-64/AMD64. Other processors are expected to be supported in later releases of Open Liberty InstantOn.
 
+[#connectors]
+== Jakarta Connectors work submission before checkpoint
+
+Open Liberty InstantOn does not allow resource adapters to submit work nor create timer tasks that schedule periodic work before a checkpoint is performed for the application process. This scenario is possible if the resource adapter has xref:docs/latest/instanton.html#beforeAppStart[[early startup code] that attempts to submit work or create a timer by using the bootstrap context facilities provided by the runtime.
+
+Consider the following JavaBean resource adapter code. The `start()` method is invoked when the server starts the resource adapter, which occurs before the checkpoint if you use the `afterAppStart` option.
+
+[source,java]
+----
+public class StartupExample implements ResourceAdapter {
+    BootstrapContext bootstrapCtx = null;
+
+    @Override
+    public void start(BootstrapContext ctx) {
+        bootstrapCtx = ctx;
+        WorkManager workMgr = bootstrapCtx.getWorkManager();
+        ...
+
+        // work submission is not allowed before checkpoint
+        try {
+            workMgr.scheduleWork(new ExampleWork());  // same for doWork() and startWork()
+        } catch (WorkRejectedException wre) {}
+
+        // timer creation is not allowed before checkpoint
+        try {
+            Timer timer = bootstrapCtx.createTimer();
+        } (UnavailableException ue) {}
+        ...
+     }
+----
+
+=== Error submitting work
+
+When a resource adapter attempts to submit work before checkpoint, the work manager throws a `WorkRejectedException` with the `J2CA8602E` message that identifies the resource adapter and the rejected work instance:
+
+[source,console]
+----
+J2CA8602E: The `ExampleWork` work that was submitted by the `StartupExample` resource adapter was rejected during the server checkpoint request.
+----
+
+The server then fails the checkpoint and logs the following error:
+
+[source,console]
+----
+J2CA8601E: The server checkpoint request failed because the `StartupExample` resource adapter submitted work `ExampleWork`.
+----
+
+=== Error creating a timer
+
+When a resource adapter attempts to create a timer before checkpoint, the `createTimer()`method throws an `UnavailableException` with the following `J2CA8512E` message that identifies the resource adapter:
+
+[source,console]
+----
+J2CA8512E: A timer could not be created for the `StartupExample` resource adapter during the server checkpoint request..
+----
+
+The server then fails the checkpoint and logs the following error:
+
+[source,console]
+----
+J2CA8511E: The server checkpoint request failed because the `StartupExample` resource adapter created a timer.
+----
+
+You can avoid these failures by using the xref:docs/latest/instanton.html#beforeAppStart[beforeAppStart] option.
