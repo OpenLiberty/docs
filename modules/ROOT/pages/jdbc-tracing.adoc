@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2023 IBM Corporation and others.
+// Copyright (c) 2022, 2024 IBM Corporation and others.
 // Licensed under Creative Commons Attribution-NoDerivatives
 // 4.0 International (CC BY-ND 4.0)
 // https://creativecommons.org/licenses/by-nd/4.0/
@@ -22,7 +22,7 @@ You can enable tracing for your third-party JDBC driver in Open Liberty for debu
 
 == Understanding Open Liberty tracing
 
-How you enable trace for your JDBC driver depends on whether the driver supports the `java.util.logging` Java logging library or some other logging library, such as SLF4J or Log4J. In either case, you must identify your driver in the trace specification. Drivers that support the `java.util.logging` library are specified by the package name that the driver uses.
+How you enable trace for your JDBC driver depends on whether the driver supports the `java.util.logging` Java logging library or some other logging library, such as SLF4J or Log4J. In any case, you must configure the trace specification for your driver. Drivers that support the `java.util.logging` library are specified by the package name that the driver uses.
 
 Drivers that do not support the `java.util.logging` library are specified by the log writer name for the JDBC driver. Open Liberty provides log writers for common database vendors that generate logs based on JDBC specification methods such as `getConnection` and `executeQuery`. Open Liberty also provides a generic log writer for drivers that do not support the `java.util.logging` library and for which no driver-specific log writer exists.
 
@@ -66,11 +66,11 @@ Drivers that support the `java.util.logging` library can also be configured in t
 [#customsettings]
 == Configure custom settings
 
-If your JDBC driver has custom trace settings, you can set these custom trace settings as JDBC driver vendor properties in the `server.xml` file.
+If your JDBC driver has custom trace settings, you can configure these custom trace settings as JDBC driver vendor properties in the `server.xml` file.
 
 [source, xml]
 ----
-<logging traceSpecification="*=info:RRA=all:com.ibm.db2=all" ... />
+<logging traceSpecification="*=info:RRA=all:com.ibm.ws.db2.logwriter=all" ... />
 <datasource ...>
   <!-- traceLevel -1 is equivalent to ALL -->
   <properties.db2.jcc traceLevel="-1"/>
@@ -100,11 +100,11 @@ The following subsections contain JDBC driver specific configuration.
 [#DB2JCC]
 === DB2 JCC
 
-The DB2 JCC driver supports the `java.util.logging` library. The driver uses the `com.ibm.db2` package name in the trace specification. The following `server.xml` file example shows you the configuration to enable trace for the DB2 JCC driver and specify a custom property.
+The DB2 JCC does not support the `java.util.logging` library. This driver has it's own logging implementations which outputs directly to a file using a PrintWriter. Open Liberty provides the `com.ibm.ws.db2.logwriter` log writer name for trace specification that will configure a PrintWriter that will output JCC driver trace to trace.log. The following `server.xml` file example shows you the configuration to enable trace for the DB2 JCC driver and specify a custom property.
 
 [source, xml]
 ----
-<logging traceSpecification="*=info:RRA=all:com.ibm.db2=all" ... />
+<logging traceSpecification="*=info:RRA=all:com.ibm.ws.db2.logwriter=all" ... />
 <datasource ...>
   <!-- traceLevel -1 is equivalent to ALL -->
   <properties.db2.jcc traceLevel="-1"/>
@@ -117,7 +117,7 @@ For more information about valid values for the `traceLevel` attribute, see http
 [#Derby]
 === Derby
 
-The Derby driver does not support the `java.util.logging` library. Open Liberty provides the `com.ibm.ws.derby.logwriter` log writer name in the trace specification. The following `server.xml` file example shows you the configuration to enable trace for the Derby driver.
+The Derby driver does not support the `java.util.logging` library. Open Liberty provides the `com.ibm.ws.derby.logwriter` log writer name for trace specification. The following `server.xml` file example shows you the configuration to enable trace for the Derby driver.
 
 [source, xml]
 ----
@@ -128,7 +128,7 @@ The Derby driver does not support the `java.util.logging` library. Open Liberty 
 [#InformixJDBC]
 === Informix using JDBC
 
-The Informix using JDBC driver supports the `java.util.logging` library. The driver uses the `com.informix` package name in the trace specification. The following `server.xml` file example shows you the configuration to enable trace for the Informix using JDBC driver.
+The Informix using JDBC driver supports the `java.util.logging` library. The driver uses the `com.informix` package name for trace specification. The following `server.xml` file example shows you the configuration to enable trace for the Informix using JDBC driver.
 
 [source, xml]
 ----
@@ -139,11 +139,11 @@ The Informix using JDBC driver supports the `java.util.logging` library. The dri
 [#InformixDB2JCC]
 === Informix using DB2 JCC
 
-The Informix using DB2 JCC driver supports the `java.util.logging` library. The driver uses the `com.ibm.db2` package name in the trace specification. The following `server.xml` file example shows you the configuration to enable trace for the Informix using DB2 JCC driver and specify a custom property.
+Informix using the DB2 JCC driver does not support the `java.util.logging` library. This driver has it's own logging implementations which outputs directly to a file using a PrintWriter. Open Liberty provides the `com.ibm.ws.db2.logwriter` log writer name for trace specification that will configure a PrintWriter that will output JCC driver trace to trace.log. The following `server.xml` file example shows you the configuration to enable trace for Informix using the DB2 JCC driver and specify a custom property.
 
 [source, xml]
 ----
-<logging traceSpecification="*=info:RRA=all:com.ibm.db2=all" />
+<logging traceSpecification="*=info:RRA=all:com.ibm.ws.db2.logwriter=all" />
 
 <datasource ... >
   <!-- traceLevel -1 is equivalent to ALL -->
@@ -157,7 +157,7 @@ For more information on additional valid values for the traceLevel, see https://
 [#SQLServerJDBCdriver]
 === Microsoft SQL Server JDBC driver
 
-The Microsoft SQL Server JDBC driver supports the `java.util.logging` library. The driver uses the `com.microsoft.sqlserver.jdbc` package name in the trace specification. The following `server.xml` file example shows you the configuration to enable trace for the Microsoft SQL Server JDBC driver.
+The Microsoft SQL Server JDBC driver supports the `java.util.logging` library. The driver uses the `com.microsoft.sqlserver.jdbc` package name for trace specification. The following `server.xml` file example shows you the configuration to enable trace for the Microsoft SQL Server JDBC driver.
 
 [source, xml]
 ----
@@ -168,7 +168,7 @@ The Microsoft SQL Server JDBC driver supports the `java.util.logging` library. T
 [#SQLServerDataDirectdriver]
 === Microsoft SQL Server DataDirect driver
 
-The Microsoft SQL Server DataDirect driver does not support the `java.util.logging` library. Open Liberty provides the `com.ibm.ws.sqlserver.logwriter` log writer name in the trace specification. The following `server.xml` file example shows you the configuration to enable trace for the Microsoft SQL Server DataDirect driver.
+The Microsoft SQL Server DataDirect driver does not support the `java.util.logging` library. Open Liberty provides the `com.ibm.ws.sqlserver.logwriter` log writer name for trace specification. The following `server.xml` file example shows you the configuration to enable trace for the Microsoft SQL Server DataDirect driver.
 
 [source, xml]
 ----
@@ -181,7 +181,7 @@ The Microsoft SQL Server DataDirect driver does not support the `java.util.loggi
 
 Oracle provides two different drivers, one for production and another for debugging purposes. The production driver does not produce any trace, so you need to download and replace your production driver with the debugging driver. The debugging driver has `_g` in the driver name. For example, `ojdbc8.jar` is `ojdbc8_g.jar`. Configure the debugging driver by specifying the `library` subelement within the `jdbcDriver` element. The `library` subelement defines the path to the debugging driver JAR file.
 
-The Oracle driver supports the `java.util.logging` library. The driver uses the `oracle` package name in the trace specification. The following `server.xml` file example shows you how to configure the Oracle debugging driver and enable trace.
+The Oracle driver supports the `java.util.logging` library. The driver uses the `oracle` package name for trace specification. The following `server.xml` file example shows you how to configure the Oracle debugging driver and enable trace.
 
 [source, xml]
 ----
@@ -247,14 +247,14 @@ For Oracle recommended settings, see the Oracle documentation.
 [#PostgreSQL]
 === PostgreSQL
 
-The PostgreSQL driver version 42.0.0 and later supports the `java.util.logging` library. The driver uses the `org.postgresql` package name in the trace specification. The following `server.xml` file example shows the configuration to enable trace for the PostgreSQL driver.
+The PostgreSQL driver version 42.0.0 and later supports the `java.util.logging` library. The driver uses the `org.postgresql` package name for trace specification. The following `server.xml` file example shows the configuration to enable trace for the PostgreSQL driver.
 
 [source, xml]
 ----
 <logging traceSpecification="*=info:RRA=all:org.postgresql=all" />
 ----
 
-Prior to version 42.0.0, the PostgreSQL driver  does not support the `java.util.logging` library. Open Liberty provides the `com.ibm.ws.postgresql.logwriter` log writer name in the trace specification. The following `server.xml` file example shows the configuration to enable trace for the PostgreSQL driver in versions earlier than 42.0.0.
+Prior to version 42.0.0, the PostgreSQL driver  does not support the `java.util.logging` library. Open Liberty provides the `com.ibm.ws.postgresql.logwriter` log writer name for trace specification. The following `server.xml` file example shows the configuration to enable trace for the PostgreSQL driver in versions earlier than 42.0.0.
 
 [source, xml]
 ----
@@ -265,7 +265,7 @@ Prior to version 42.0.0, the PostgreSQL driver  does not support the `java.util.
 [#Sybase]
 === Sybase
 
-The Sybase driver does not support the `java.util.logging` library. Open Liberty provides the `com.ibm.ws.sybase.logwriter` log writer name in the trace specification. The following `server.xml` file example shows you the configuration to enable trace for the Sybase driver.
+The Sybase driver does not support the `java.util.logging` library. Open Liberty provides the `com.ibm.ws.sybase.logwriter` log writer name for trace specification. The following `server.xml` file example shows you the configuration to enable trace for the Sybase driver.
 
 [source, xml]
 ----
@@ -276,7 +276,7 @@ The Sybase driver does not support the `java.util.logging` library. Open Liberty
 [#Otherdatabases]
 === Other databases
 
-The generic `com.ibm.ws.database.logwriter` log writer name is used in the trace specification for drivers that do not support the `java.util.logging` library and for which Open Liberty does not provide a driver-specific log writer. The following `server.xml` file example shows you how to enable trace with the generic log writer.
+The generic `com.ibm.ws.database.logwriter` log writer name is used for drivers that do not support the `java.util.logging` library and for which Open Liberty does not provide a driver-specific log writer. The following `server.xml` file example shows you how to enable trace with the generic log writer.
 
 [source, xml]
 ----
