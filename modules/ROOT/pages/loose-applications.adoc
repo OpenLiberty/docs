@@ -15,32 +15,22 @@
 
 Loose applications are applications that are assembled from multiple physical locations, which are provided to the run time through an XML file. Loose applications are compatible with Java EE and OSGi applications and offer advantages in a development environment.
 
-
-== Normal application
-
-Normally an application is contained under one directory or in one archive, with its content, modules, resources, classdata, and metadata at known locations within that directory. For example, the location of resources for a web application is as follows:
-
-* Library Java archive (JAR) files are stored in `WEB-INF/lib`.
-* Classes are either in library JAR files or in `WEB-INF/classes`.
-* The deployment descriptor is in `WEB-INF/web.xml`.
-* Content to be served is located from the root of the directory.
+Normally an application is contained under one directory or in one archive, with its content, modules, resources, classdata, and metadata at known locations within that directory.
 
 
 == Loose application
 
-A loose application is defined as a virtual directory that represents the application, where information can be located anywhere. It enables development tools, such as WebSphere Application Server Developer Tools, to run applications where the related files are sourced directly from the workspace, bypassing the need for exporting. Such related files might be Java classes, JavaServer Pages, or images. Loading these files straight from the workspace leads to a quicker build-run-debug cycle. The content is not located in a single directory,  but might originate from various locations. These locations are detailed in an XML configuration file.
+A loose application is defined as a virtual directory that represents the application, where information can be located anywhere. It enables development tools to run applications where the related files are sourced directly from the workspace, bypassing the need for exporting. Such related files might be Java classes, JavaServer Pages, or images. Loading these files straight from the workspace leads to a quicker build-run-debug cycle. The content is not located in a single directory,  but might originate from various locations. These locations are detailed in an XML configuration file.
 
 The two ways to provide the XML file to the runtime are:
 
-- Using the location attribute.
-
+Using the location attribute::
 Specify the XML file in the location attribute of the application configuration section, and make sure that the file name ends with `.xml`. If you specify `<application location="myapp.war" />`, the runtime searches for a file named `myapp.war.xml`. However, if both `myapp.war` and `myapp.war.xml` exist, the Open Liberty server prioritizes `myapp.war` for running the application. The search rules for this method align with those of an application directory or an archive.
 
-- Using the application dropins folder.
-
+Using the application dropins folder::
 Directly place the XML file into the application dropins folder, adhering to the folder naming conventions and appending `.xml` to the end of the file name.
-
-When you run the `server package` command with a loose application `my_app.war.xml` file that uses server variable substitution, those parts of the loose application having variable substitution are not packaged. The server is not started at the time of packaging and has no way to access the needed variable information. Variable substitution does not take place when you use the `server package` command .
++
+When you run the xref:server-package.adoc[server package] command with a loose application `my_app.war.xml` file that uses server variable substitution, those parts of the loose application having variable substitution are not packaged. The server is not started at the time of packaging and has no way to access the needed variable information. Variable substitution does not take place when you use the `server package` command .
 
 
 == Loose application configuration file
@@ -66,20 +56,20 @@ For example:
 
 You can configure three different elements in the loose application configuration file:
 
-- `<archive>` for archives
-- `<file>` for files
-- `<dir>` for directories
+- `archive` for archives
+- `file` for files
+- `dir` for directories
 
 
 ===  Archives
 
-The `<archive>` element is always used as the root of the loose application configuration file. It is also the root of the virtual file system that is represented in the XML. You can nest any of the three elements under the root `<archive>` element. The root `<archive>` element does not have any attributes.
+The `archive` element is always used as the root of the loose application configuration file. It is also the root of the virtual file system that is represented in the XML. You can nest any of the three elements under the root `archive` element. The root `archive` element does not have any attributes.
 
-The archive elements can be nested recursively. For `<archive>` elements nested under the root `<archive>` element, you can set the `targetInArchive` attribute. The `targetInArchive` attribute defines the path where the archive appears within the loose defined enclosing archive. You cannot map an archive on the file system as an archive in the application with an `<archive>` element. To use loose application configuration to map an archive on disk, use a `<file>` element instead.
+The archive elements can be nested recursively. For `archive` elements nested under the root `archive` element, you can set the `targetInArchive` attribute. The `targetInArchive` attribute defines the path where the archive appears within the loose defined enclosing archive. You cannot map an archive on the file system as an archive in the application with an `archive` element. To use loose application configuration to map an archive on disk, use a `file` element instead.
 
 The `targetInArchive` attribute value is an absolute path with a leading forward slash `/`.
 
-The following code is an example of the root `<archive>` element with another `<archive>` element nested under it:
+The following code is an example of the root `archive` element with another `archive` element nested under it:
 
 
 [source,xml]
@@ -96,7 +86,7 @@ The following code is an example of the root `<archive>` element with another `<
 
 ===  Files
 
-You can use the `<file>` element to map a file on your hard disk to a file in your loose application configuration. You can set the following attributes on the `<file>` element:
+You can use the `file` element to map a file on your hard disk to a file in your loose application configuration. You can set the following attributes on the `file` element:
 
 - `targetInArchive` attribute defines the path where the archive appears within the loose defined enclosing archive.
 - `sourceOnDisk`` attribute defines the actual location of your file on your file system.
@@ -114,7 +104,7 @@ The following code is an example of a file in `C:/devFolder/myApplication.zip` t
 ----
 
 ===  Directories
-You can use the `<dir>` element to map a directory, and all of its contents on disk, to a directory location in the loose application configuration. The element has the same attributes as the `<file>` element and you use it in a similar way.
+You can use the `dir` element to map a directory, and all of its contents on disk, to a directory location in the loose application configuration. The element has the same attributes as the `file` element and you use it in a similar way.
 
 The following code is an example of a directory that the loose application configuration shows as being in `/META-INF` and on your file system in `${example.dir}/applicationData/myApplication`:
 
@@ -125,7 +115,7 @@ The following code is an example of a directory that the loose application confi
 
 ----
 
-To add the directory to an archive so it appears to be in `/apps/jarName.jar/META-INF`, embed the `<dir>` element as follows:
+To add the directory to an archive so it appears to be in `/apps/jarName.jar/META-INF`, embed the `dir` element as follows:
 
 
 [source,xml]
@@ -140,7 +130,7 @@ In both of the previous examples, all files that are in `${example.dir}/applicat
 
 
 == Virtual paths and file names
-If you add `<file>` or `<dir>` elements to an archive, the name of the file or directory in the loose archive does not need to be the same as the actual name on the disk.
+If you add `file` or `dir` elements to an archive, the name of the file or directory in the loose archive does not need to be the same as the actual name on the disk.
 
 The following code is an example of how you can configure `${example.dir}/applicationFiles/newfile.txt` to appear in the archive as `/application.txt`:
 
@@ -186,7 +176,7 @@ In each case, the open Liberty server sees the resource by the name and path dec
 
 If you have two folders with the same name, the same virtual location in the loose application configuration, the folders are merged and the contents of both folders are available. If you have two files with the same target location in the loose archive, the first occurrence of the file is used. The first occurrence is based on a top-down approach to reading the elements of the loose application configuration file.
 
-If the first file found is the wrong file, reorder the XML so that the element that contains the version of the file you want is processed first. The first occurrence applies to files defined in the `<dir>` elements and files that are defined in the `<file>` elements. The first occurrence of a file with the same name and virtual location is the one returned from the virtual file system.
+If the first file found is the wrong file, reorder the XML so that the element that contains the version of the file you want is processed first. The first occurrence applies to files defined in the `dir` elements and files that are defined in the `file` elements. The first occurrence of a file with the same name and virtual location is the one returned from the virtual file system.
 
 
 == Considerations for loose applications
@@ -211,14 +201,13 @@ Consider the following configuration:
 
 ----
 
-An application that directly accesses `/web/pages` and then navigates up the directory hierarchy, finds that the parent of the physical path of `/web/pages` is `c:\` and not `/web`.
-`c:\` has no pages directory and no parent directory.
+An application that directly accesses `/web/pages` and then navigates up the directory hierarchy, finds that the parent of the physical path of `/web/pages` is `c:\` and not `/web`. `c:\` has no pages directory and no parent directory.
 
 These considerations apply only if your applications attempt to directly access the content on disk, and perform their own path navigation based on an assumption of a corresponding hierarchical layout on disk. The same applications also encounter issues if they are deployed as an archive. These applications generally experience issues with portability.
 
 == Complex example
 
-The following code is a more complex example of loose application configuration. This example uses all of the elements and creates a complex mapping of files and directories:
+The following code is a more complex example of loose application configuration. This example uses the elements and creates a complex mapping of files and directories.
 
 [source,xml]
 ----
