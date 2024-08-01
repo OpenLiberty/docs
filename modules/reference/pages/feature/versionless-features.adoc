@@ -1,0 +1,183 @@
+// Copyright (c) 2024 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+// This doc is hosted in the Red Hat Runtimes documentation. Any changes made to this doc also need to be made to the version that's located in the PurpleLiberty GitHub repo (https://github.com/PurpleLiberty/docs).
+//
+:page-description:
+:seo-title: Simplify feature selection with versionless features - OpenLiberty.io
+:projectName: Open Liberty
+:page-layout: feature
+:page-type: overview
+= Simplify feature selection with versionless features - OpenLiberty.io
+
+Versionless features provide a generic way to specify Open Liberty features without having to specify a feature version. Versionless features automate version selection, so you can focus on application development without worrying about feature compatibility issues.
+
+Versionless features are available for the MicroProfile, Jakarta EE, and Java EE platforms. Versionless features are supported only in server environments, not in client environments.
+
+
+== Enabling versionless features
+
+To use versionless features, you must declare a corresponding versioned platform. You can declare a platform in three different ways
+
+* Specify a platform element inside the `featureManager` element of your `server.xml` file
+* Specify the `PREFFERED_PLATFORM_VERSIONS` environment variable
+* Enable one versioned feature from a supported platform in your `server.xml` file
+
+[#platform]
+=== Specify a platform element
+
+You can declare a platform version by specifying a `platform` inside the `featureManager` element of your `server.ml` file. This method is the recommended best practice for specifying a platform for versionless features.
+
+For example, following `server.xml` file configuration specifies a Jakarta EE platform of `jakartaee-9.1`, with associated versionless features for `servlet`, `persistence`, and `restfulWS`
+
+[source,xml]
+----
+<featureManager>
+    <platform>javaee-9.1</platform>
+    <feature>servlet</feature>
+    <feature>jpa</feature>
+    <feature>jaxrs</feature>
+</featureManager>
+----
+
+With this configuration, the built-in Open Liberty feature resolver automatically resolves each feature the version that are included in the Jakarta EE 9.1 platform.
+
+Similarly, the following example enables versionless MicroProfile features that are included in the MicroProfile 5.0 platform:
+
+[source,xml]
+----
+<featureManager>
+  <platform>microProfile-5.0</platform>
+  <feature>mpHealth</feature>
+  <feature>mpMetrics</feature>
+</featureManager>
+----
+
+=== Define a platform with an environment variable
+
+Alternatively, you can declare a platform for versionless features by defining the `PREFERRED_PLATFORM_VERSIONS` in your `server.env` file, as shown in the following example:
+
+[source,properties]
+----
+PREFERRED_PLATFORM_VERSIONS=microProfile-5.0
+----
+
+When this environment variable is set as shown in the previous example, you can specify versionless features in your server.xml file and the Open Liberty feature resolver automatically resolves them to the correct version. In this `server.xml` file example, the `mpHealth` and `mpMetrics` features resolve to versions that are included in MicroProfile 5.0:
+
+[source,xml]
+----
+<featureManager>
+    <feature>mpHealth</feature>
+    <feature>mpMetrics</feature>
+</featureManager>
+----
+
+Although you can also set the `PREFERRED_PLATFORM_VERSIONS` environment variable from the environment shell, setting it in your `server.env` file ensures that the variable is applied if you run the `server package` command to package the server.
+
+If you set the `PREFERRED_PLATFORM_VERSIONS` environment variable as a true environment variable in the shell outside of the `server.env`` file, and you then run the `server package` command, the variable is not retained during packaging.
+
+If this scenario occurs, the `server package` command issues  the following  warning:
+
+----
+CWWKE0969W: A manual PREFERRED_PLATFORM_VERSION environment variable was specified during server packaging.
+----
+
+You must then re-create the `PREFERRED_PLATFORM_VERSION` definition in the new environment where the packaged server runs with the same platform values that were specified in the prior environment.
+
+=== Enable one versioned feature
+
+When you declare a single versioned feature that is part of a MicroProfile, Java EE, or Jakarta EE platform, Open Liberty automatically resolves any versionless features that are associated with the platform to their compatible versions.
+
+In the following example, the `microHealth-3.0` feature is part of the MicroProfile 4.0 platform, and no other MicroProfile platform. Consequently, Open Liberty automatically resolves the versionless `mpMetrics` and `mpConfig` features to the versions that are included in MicroProfile 4.0:
+
+[source,xml]
+----
+<featureManager>
+  <feature>mpHealth-3.0</feature>
+  <feature>mpMetrics</feature>
+  <feature>mpConfig</feature>
+</featureManager>
+----
+
+
+
+
+[%header,cols=3*]
+|===
+
+|Platform versions
+|Feature name
+|Versionless feature short name
+
+.9+a| * microProfile-1.2
+
+* microProfile-1.3
+
+* microProfile-1.4
+
+* microProfile-2.0
+
+* microProfile-2.1
+
+* microProfile-2.2
+
+* microProfile-3.0
+
+* microProfile-3.2
+
+* microProfile-3.3
+
+* microProfile-4.0
+
+* microProfile-4.1
+
+* microProfile-5.0
+
+* microProfile-6.0
+
+* microProfile-6.1
+
+* microProfile-7.0
+
+|feature:mpConfig[MicroProfile Config]
+|`mpConfig`
+
+
+|feature:mpFaultTolerance[MicroProfile Fault Tolerance]
+|`mpFaultTolerance`
+
+
+|feature:mpHealth[MicroProfile Health]
+|`mpHealth`
+
+
+|feature:mpJwt[MicroProfile JSON Web Token]
+|`mpJwt`
+
+
+
+|feature:mpMetrics[MicroProfile Metrics]
+|`mpMetrics`
+
+
+|feature:mpOpenAPI[MicroProfile OpenAPI]
+|`mpOpenAPI`
+
+
+|feature:mpOpenTracing[MicroProfile Open Tracing]
+|`mpOpenTracing`
+
+
+|feature:mpRestClient[MicroProfile Rest Client]
+|`mpRestClient`
+
+
+|feature:mpTelemetry[MicroProfile Telemetry]
+|`mpTelemetry`
+
+|===
