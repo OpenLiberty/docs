@@ -6,14 +6,14 @@
 // Contributors:
 //     IBM Corporation
 //
-// This doc is hosted in the Red Hat Runtimes documentation. Any changes made to this doc also need to be made to the version that's located in the PurpleLiberty GitHub repo (https://github.com/PurpleLiberty/docs).
+//
 //
 :page-description:
 :seo-title: Simplify feature selection with versionless features - OpenLiberty.io
 :projectName: Open Liberty
 :page-layout: feature
 :page-type: overview
-= Simplify feature selection with versionless features - OpenLiberty.io
+= Simplify feature selection with versionless features
 
 Versionless features provide a generic way to specify Open Liberty features without having to specify a feature version. Versionless features automate version selection, so you can focus on application development without worrying about feature compatibility issues.
 
@@ -24,16 +24,16 @@ Versionless features are available for the MicroProfile, Jakarta EE, and Java EE
 
 To use versionless features, you must declare a corresponding versioned platform. You can declare a platform in three different ways
 
-* Specify a platform element inside the `featureManager` element of your `server.xml` file
-* Specify the `PREFFERED_PLATFORM_VERSIONS` environment variable
-* Enable one versioned feature from a supported platform in your `server.xml` file
+* <<platform, Specify a platform element inside the `featureManager` element of your `server.xml` file>>
+* <<env, Specify the `PREFFERED_PLATFORM_VERSIONS` environment variable>>
+* <<feat, Enable one versioned feature from a supported platform in your `server.xml` file>>
 
 [#platform]
 === Specify a platform element
 
 You can declare a platform version by specifying a `platform` inside the `featureManager` element of your `server.ml` file. This method is the recommended best practice for specifying a platform for versionless features.
 
-For example, following `server.xml` file configuration specifies a Jakarta EE platform of `jakartaee-9.1`, with associated versionless features for `servlet`, `persistence`, and `restfulWS`
+For example, the following `server.xml` file configuration specifies a Jakarta EE platform of `jakartaee-9.1`, with associated versionless features for `servlet`, `persistence`, and `restfulWS`
 
 [source,xml]
 ----
@@ -45,7 +45,7 @@ For example, following `server.xml` file configuration specifies a Jakarta EE pl
 </featureManager>
 ----
 
-With this configuration, the built-in Open Liberty feature resolver automatically resolves each feature the version that are included in the Jakarta EE 9.1 platform.
+With this configuration, the built-in Open Liberty feature resolver automatically resolves each feature the version that is included in the Jakarta EE 9.1 platform.
 
 Similarly, the following example enables versionless MicroProfile features that are included in the MicroProfile 5.0 platform:
 
@@ -58,6 +58,7 @@ Similarly, the following example enables versionless MicroProfile features that 
 </featureManager>
 ----
 
+[#env]
 === Define a platform with an environment variable
 
 Alternatively, you can declare a platform for versionless features by defining the `PREFERRED_PLATFORM_VERSIONS` in your `server.env` file, as shown in the following example:
@@ -67,7 +68,7 @@ Alternatively, you can declare a platform for versionless features by defining t
 PREFERRED_PLATFORM_VERSIONS=microProfile-5.0
 ----
 
-When this environment variable is set as shown in the previous example, you can specify versionless features in your server.xml file and the Open Liberty feature resolver automatically resolves them to the correct version. In this `server.xml` file example, the `mpHealth` and `mpMetrics` features resolve to versions that are included in MicroProfile 5.0:
+When this environment variable is set, you can specify versionless features in your `server.xml` file and the Open Liberty feature resolver automatically resolves them to the correct version. In this `server.xml` file example, the `mpHealth` and `mpMetrics` features resolve to versions that are included in MicroProfile 5.0:
 
 [source,xml]
 ----
@@ -77,11 +78,11 @@ When this environment variable is set as shown in the previous example, you can 
 </featureManager>
 ----
 
-Although you can also set the `PREFERRED_PLATFORM_VERSIONS` environment variable from the environment shell, setting it in your `server.env` file ensures that the variable is applied if you run the `server package` command to package the server.
+Although you can also set the `PREFERRED_PLATFORM_VERSIONS` environment variable from the environment shell, setting it in your `server.env` file ensures that the variable is applied if you run the xref:reference:command/server-package.adoc[server package] command to package the server.
 
 If you set the `PREFERRED_PLATFORM_VERSIONS` environment variable as a true environment variable in the shell outside of the `server.env`` file, and you then run the `server package` command, the variable is not retained during packaging.
 
-If this scenario occurs, the `server package` command issues  the following  warning:
+If this scenario occurs, the `server package` command issues the following warning:
 
 ----
 CWWKE0969W: A manual PREFERRED_PLATFORM_VERSION environment variable was specified during server packaging.
@@ -89,11 +90,12 @@ CWWKE0969W: A manual PREFERRED_PLATFORM_VERSION environment variable was specifi
 
 You must then re-create the `PREFERRED_PLATFORM_VERSION` definition in the new environment where the packaged server runs with the same platform values that were specified in the prior environment.
 
+[#feat]
 === Enable one versioned feature
 
-When you declare a single versioned feature that is part of a MicroProfile, Java EE, or Jakarta EE platform, Open Liberty automatically resolves any versionless features that are associated with the platform to their compatible versions.
+When you declare a versioned feature that is part of a MicroProfile, Java EE, or Jakarta EE platform, Open Liberty automatically resolves any associated versionless features to their compatible versions.
 
-In the following example, the `microHealth-3.0` feature is part of the MicroProfile 4.0 platform, and no other MicroProfile platform. Consequently, Open Liberty automatically resolves the versionless `mpMetrics` and `mpConfig` features to the versions that are included in MicroProfile 4.0:
+In the following example, the `microHealth-3.0` feature is part of the MicroProfile 4.0 platform, and no other MicroProfile platform. Open Liberty automatically resolves the versionless `mpMetrics` and `mpConfig` features to the versions that are included in MicroProfile 4.0:
 
 [source,xml]
 ----
@@ -106,7 +108,12 @@ In the following example, the `microHealth-3.0` feature is part of the MicroProf
 
 == Available platforms and versionless features
 
+The following tables list the available MicroProfile, Jakarta EE, and Java EE platform versions and corresponding versionless features. You can declare up to 2 platform elements, one for MicroProfile, another for either Jakarta EE or Java EE.
+
+[#mp]
 == MicroProfile
+
+Declare a platform version by using any of the three strategies that are described in the previous sections. Open Liberty automatically resolves any versionless features that you enable in your `server.xml` file to the version that is included in your specified platform version.
 
 .MicroProfile platforms and versionless features
 [%header,cols=3*]
@@ -184,6 +191,8 @@ In the following example, the `microHealth-3.0` feature is part of the MicroProf
 
 == Java EE and Jakarta EE
 
+Declare a platform version by using any of the three strategies that are described in the previous sections. Open Liberty automatically resolves any versionless features that you enable in your `server.xml` file to the version that is included in your specified platform version. Although Liberty uses different feature names and short names for some Java EE and Jakarta EE versions of the same feature, you can use either short name and the platform you specify pulls in the correct compatible feature.
+
 .Java EE and Jakarta EE platforms and versionless features
 [%header,cols=3*]
 |===
@@ -200,166 +209,187 @@ In the following example, the `microHealth-3.0` feature is part of the MicroProf
 
 * jakartaee-10.0
 
-
-a| * Jakarta EE: feature:appAuthentication[display=MicroProfile Config]
-* Java EE: feature:jaspic[display=MicroProfile Config]
+a| * Jakarta EE: feature:appAuthentication[display=Jakarta Authentication]
+* Java EE: feature:jaspic[display=Java Authentication SPI for Container]
 a| * Jakarta EE: `appAuthentication`
 * Java EE: `jaspic`
 
-
-a| * Jakarta EE: feature:appAuthorization[display=MicroProfile Config]
-* Java EE: feature:jacc[display=MicroProfile Config]
+a| * Jakarta EE: feature:appAuthorization[display=Jakarta Authorization]
+* Java EE: feature:jacc[display=Java Authorization Contract for Containers]
 a| * Jakarta EE: `appAuthorization`
 * Java EE: `jacc`
 
-
-a|feature:appClientSupport[display=MicroProfile Health]
+a|feature:appClientSupport[display=Application Client Support for Server]
 a|`appClientSupport`
 
-
-a|feature:appSecurity[display=MicroProfile JSON Web Token]
+a|feature:appSecurity[display=Application Security]
 a|`appSecurity`
 
-
-
-a|feature:batch[display=MicroProfile Metrics]
+a|feature:batch[display=Batch API]
 a|`batch`
 
-
-a|feature:beanValidation[display=MicroProfile OpenAPI]
+a|feature:beanValidation[display=Bean Validation]
 a|`beanValidation`
 
-
-a|feature:cdi[display=MicroProfile Open Tracing]
+a|feature:cdi[display=Contexts and Dependency Injection]
 a|`cdi`
 
-
-a|feature:concurrent[display=MicroProfile Rest Client]
+a|* Jakarta EE: feature:concurrent[display=Jakarta Concurrency]
+* Java EE: Concurrency Utilities for Java EE
 a|`concurrent`
 
-
-a| * Jakarta EE: feature:connectors[display=MicroProfile Config]
-* Java EE: feature:jca[display=MicroProfile Config]
+a| * Jakarta EE: feature:connectors[display=Jakarta Connectors]
+* Java EE: feature:jca[display=Java Connector Architecture]
 a| * Jakarta EE: `connectors`
 * Java EE: `jca`
 
-a| * Jakarta EE: feature:connectorsInboundSecurity[display=MicroProfile Config]
-* Java EE: feature:jcaInboundSecurity[display=MicroProfile Config]
+a| * Jakarta EE: feature:connectorsInboundSecurity[display=Jakarta Connectors Inbound Security]
+* Java EE: feature:jcaInboundSecurity[display=Java Connector Architecture Security Inflow]
 a| * Jakarta EE: `connectorsInboundSecurity`
 * Java EE: `jcaInboundSecurity`
 
-a| * Jakarta EE: feature:enterpriseBeans[display=MicroProfile Config]
-* Java EE: feature:ejb[display=MicroProfile Config]
+a| * Jakarta EE: feature:enterpriseBeans[display=Jakarta Enterprise Beans]
+* Java EE: feature:ejb[display=Enterprise JavaBeans]
 a| * Jakarta EE: `enterpriseBeans`
 * Java EE: `ejb`
 
-a| * Jakarta EE: feature:enterpriseBeansHome[display=MicroProfile Config]
-* Java EE: feature:ejbHome[display=MicroProfile Config]
+a| * Jakarta EE: feature:enterpriseBeansHome[display=Jakarta Enterprise Beans Home]
+* Java EE: feature:ejbHome[display=Enterprise JavaBeans Home]
 a| * Jakarta EE: `enterpriseBeansHome`
 * Java EE: `ejbHome`
 
-a| * Jakarta EE: feature:enterpriseBeansLite[display=MicroProfile Config]
-* Java EE: feature:ejbLite[display=MicroProfile Config]
+a| * Jakarta EE: feature:enterpriseBeansLite[display=Jakarta Enterprise Beans Lite]
+* Java EE: feature:ejbLite[display=Enterprise JavaBeans Lite]
 a| * Jakarta EE: `enterpriseBeansLite`
 * Java EE: `ejbLite`
 
-a| * Jakarta EE: feature:enterpriseBeansPersistentTimer[display=MicroProfile Config]
-* Java EE: feature:ejbPersistentTimer[display=MicroProfile Config]
+a| * Jakarta EE: feature:enterpriseBeansPersistentTimer[display=Jakarta Enterprise Beans Persistent Timer]
+* Java EE: feature:ejbPersistentTimer[display=Enterprise JavaBeans Persistent Timer]
 a| * Jakarta EE: `enterpriseBeansPersistentTimer`
 * Java EE: `ejbPersistentTimer`
 
-a| * Jakarta EE: feature:enterpriseBeansRemote[display=MicroProfile Config]
-* Java EE: feature:ejbRemote[display=MicroProfile Config]
+a| * Jakarta EE: feature:enterpriseBeansRemote[display=Jakarta Enterprise Beans Remote]
+* Java EE: feature:ejbRemote[display=Enterprise JavaBeans Remote]
 a| * Jakarta EE: `enterpriseBeansRemote`
 * Java EE: `ejbRemote`
 
-a| * Jakarta EE: feature:expressionLanguage[display=MicroProfile Config]
-* Java EE: feature:el[display=MicroProfile Config]
+a| * Jakarta EE: feature:expressionLanguage[display=Jakarta Expression Language]
+* Java EE: feature:el[display=Expression Language]
 a| * Jakarta EE: `expressionLanguage`
 * Java EE: `el`
 
-a| * Jakarta EE: feature:faces[display=MicroProfile Config]
-* Java EE: feature:jsf[display=MicroProfile Config]
+a| * Jakarta EE: feature:faces[display=Jakarta Faces]
+* Java EE: feature:jsf[display=JavaServer Faces]
 a| * Jakarta EE: `faces`
 * Java EE: `jsf`
 
-a|feature:j2eeManagement[display=MicroProfile Rest Client]
+a|feature:j2eeManagement[display=J2EE Management]
 a|`j2eeManagement`
 
-a|feature:jdbc[display=MicroProfile Rest Client]
+a| * Jakarta EE: feature:jdbc[display=Jakarta Database Connectivity]
+* Java EE: feature:jdbc[display=Java Database Connectivity]
 a|`jdbc`
 
-a|feature:jsonb[display=MicroProfile Rest Client]
+a|feature:jsonb[display=JavaScript Object Notation Binding]
 a|`jsonb`
 
-a|feature:jsonp[display=MicroProfile Rest Client]
+a|feature:jsonp[display=JavaScript Object Notation Processing]
 a|`jsonp`
 
-a| * Jakarta EE: feature:mail[display=MicroProfile Config]
-* Java EE: feature:javaMail[display=MicroProfile Config]
+a| * Jakarta EE: feature:mail[display=Jakarta Mail]
+* Java EE: feature:javaMail[display=JavaMail]
 a| * Jakarta EE: `mail`
 * Java EE: `javaMail`
 
-a|feature:managedBeans[display=MicroProfile Rest Client]
+a| * Jakarta EE: feature:managedBeans[display=Jakarta Managed Beans]
+* Java EE: feature:managedBeans[display=Java EE Managed Bean]
 a|`managedBeans`
 
-a|feature:mdb[display=MicroProfile Rest Client]
+a| * Jakarta EE: feature:mdb[display=Jakarta Enterprise Beans Message-Driven Beans]
+* Java EE: feature:mdb[display=Message-Driven Beans]
 a|`mdb`
 
-a| * Jakarta EE: feature:messaging[display=MicroProfile Config]
-* Java EE: feature:jms[display=MicroProfile Config]
+a| * Jakarta EE: feature:messaging[display=Jakarta Messaging]
+* Java EE: feature:jms[display=Java Message Service]
 a| * Jakarta EE: `messaging`
 * Java EE: `jms`
 
-a| * Jakarta EE: feature:messagingClient[display=MicroProfile Config]
-* Java EE: feature:wasJmsClient[display=MicroProfile Config]
+a| * Jakarta EE: feature:messagingClient[display=Messaging Server Client]
+* Java EE: feature:wasJmsClient[display=JMS Client for Message Server]
 a| * Jakarta EE: `messagingClient`
 * Java EE: `wasJmsClient`
 
-a| * Jakarta EE: feature:messagingSecurity[display=MicroProfile Config]
-* Java EE: feature:wasJmsSecurity[display=MicroProfile Config]
+a| * Jakarta EE: feature:messagingSecurity[display=Messaging Server Security]
+* Java EE: feature:wasJmsSecurity[display=Message Server Security]
 a| * Jakarta EE: `messagingSecurity`
 * Java EE: `wasJmsSecurity`
 
-a| * Jakarta EE: feature:messagingServer[display=MicroProfile Config]
-* Java EE: feature:wasJmsServer[display=MicroProfile Config]
+a| * Jakarta EE: feature:messagingServer[display=Messaging Server]
+* Java EE: feature:wasJmsServer[display=Message Server]
 a| * Jakarta EE: `messagingServer`
 * Java EE: `wasJmsServer`
 
-a| * Jakarta EE: feature:pages[display=MicroProfile Config]
-* Java EE: feature:jsp[display=MicroProfile Config]
+a| * Jakarta EE: feature:pages[display=Jakarta Server Pages]
+* Java EE: feature:jsp[display=JavaServer Pages]
 a| * Jakarta EE: `pages`
 * Java EE: `jsp`
 
-a| * Jakarta EE: feature:persistence[display=MicroProfile Config]
-* Java EE: feature:jpa[display=MicroProfile Config]
+a| * Jakarta EE: feature:persistence[display=Jakarta Persistence]
+* Java EE: feature:jpa[display=Java Persistence API]
 a| * Jakarta EE: `persistence`
 * Java EE: `jpa`
 
-a| * Jakarta EE: feature:restfulWS[display=MicroProfile Config]
-* Java EE: feature:jaxrs[display=MicroProfile Config]
+a| * Jakarta EE: feature:restfulWS[display=Jakarta RESTful Web Services]
+* Java EE: feature:jaxrs[display=Java RESTful Services]
 a| * Jakarta EE: `restfulWS`
 * Java EE: `jaxrs`
 
-a| * Jakarta EE: feature:restfulWSClient[display=MicroProfile Config]
-* Java EE: feature:jaxrsClient[display=MicroProfile Config]
+a| * Jakarta EE: feature:restfulWSClient[display=Jakarta RESTful Web Services Client]
+* Java EE: feature:jaxrsClient[display=Java RESTful Services Client]
 a| * Jakarta EE: `restfulWSClient`
 * Java EE: `jaxrsClient`
 
-a|feature:servlet[display=MicroProfile Rest Client]
+a|* Jakarta EE: feature:servlet[display=Jakarta Servlet]
+* Java EE: feature:servlet[display=Java Servlets]
 a|`servlet`
 
-a|feature:websocket[display=MicroProfile Rest Client]
+a| * Jakarta EE: feature:websocket[display=Jakarta WebSocket]
+* Java EE: feature:websocket[display=Java WebSocket]
 a|`websocket`
 
-a| * Jakarta EE: feature:xmlBinding[display=MicroProfile Config]
-* Java EE: feature:jaxb[display=MicroProfile Config]
+a| * Jakarta EE: feature:xmlBinding[display=Jakarta XML Binding]
+* Java EE: feature:jaxb[display=Java XML Bindings]
 a| * Jakarta EE: `xmlBinding`
 * Java EE: `jaxb`
 
-a| * Jakarta EE: feature:xmlWS[display=MicroProfile Config]
-* Java EE: feature:jaxws[display=MicroProfile Config]
+a| * Jakarta EE: feature:xmlWS[display=Jakarta XML Web Services]
+* Java EE: feature:jaxws[display=Java Web Services]
 a| * Jakarta EE: `xmlWS`
 * Java EE: `jaxws`
 
 |===
+
+== Exceptions to versionless feature platforms.
+
+Not all public features are available as versionless features.
+
+For example, because the `restConnector-2.0` is not clearly associated with MicroProfile, Jakarta EE, or JavaEE, no `restConnector` versionless feature is available.
+
+Furthermore, not all features that are associated with a platform are available in versionless format.
+
+The following features have an association with Jakarta or Java EE, but are not available as versionless features:
+
+* `facesContainer` and `jsfContainer`
+* `persistenceContainer` and `jpaContainer`
+
+These features enable third-party Faces and Persistence implementations, and are not used unless you configure a third-party implementation.
+
+The following features are weakly associated with Jakarta or Java EE, but are not available as versionless features:
+
+* `distributedMap`
+* `jndi`
+* `json`
+* `jwt`
+* `monitor`
+* `opentracing`
+* `ssl`
