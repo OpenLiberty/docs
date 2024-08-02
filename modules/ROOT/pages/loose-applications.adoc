@@ -30,7 +30,7 @@ Specify the XML file in the location attribute of the application configuration 
 Using the application dropins folder::
 Directly place the XML file into the application dropins folder, adhering to the folder naming conventions and appending `.xml` to the end of the file name.
 +
-When you run the xref:command/server-package.adoc[server package] command with a loose application `my_app.war.xml` file that uses server variable substitution, those parts of the loose application having variable substitution are not packaged. Variable substitution does not take place when you use the `server package` command.
+When you run the xref:reference/command/server-package.adoc[server package] command with a loose application `my_app.war.xml` file that uses server variable substitution, those parts of the loose application having variable substitution are not packaged. Variable substitution does not take place when you use the `server package` command.
 
 
 == Loose application configuration file
@@ -60,6 +60,43 @@ You can configure three different elements in the loose application configuratio
 - `file` for files
 - `dir` for directories
 
+NOTE: The application name is taken from the application location. For example, if the application is located at `apps/myApp.war.xml`, the application name will be derived from `myApp.war`.
+
+- Configured Application:
+
+  * Application configuration:
+  
+  [source,xml]
+  ----
+  <application location="myApp.war"/>
+  ----
+
+  * Actual application location:
+
+  [source,bash]
+  ----
+  <application location="myApp.war"/>
+  ----
+
+  * Application name: `myApp` or possibly `myApp.war`
+
+- Dropins Application:
+
+  * Application configuration:
+
+  [source,css]
+  ----
+  ** NONE **
+  ----
+
+  * Actual application location:
+
+  [source,bash]
+  ----
+  dropins/myApp.war.xml
+  ----
+
+  * Application name: `myApp` or possibly `myApp.war`
 
 ===  Archives
 
@@ -130,6 +167,7 @@ In both of the previous examples, all files that are in `${example.dir}/applicat
 
 
 == Virtual paths and file names
+
 If you add `file` or `dir` elements to an archive, the name of the file or directory in the loose archive does not need to be the same as the actual name on the disk.
 
 The following code is an example of how you can configure `${example.dir}/applicationFiles/newfile.txt` to appear in the archive as `/application.txt`:
@@ -141,7 +179,6 @@ The following code is an example of how you can configure `${example.dir}/applic
             sourceOnDisk="${example.dir}/applicationFiles/newfile.txt"/>
 </archive>
 ----
-
 
 The same concept also holds true for the path of any added file or directory. The physical resource on disk does not need to be in a directory hierarchy that corresponds to the one being declared.
 
@@ -171,6 +208,29 @@ In each case, the open Liberty server sees the resource by the name and path dec
 </archive>
 ----
 
+=== Mapping files or directories to the root of the archive
+
+You can also map file or directory elements to the root location, `/``, of the enclosing archive.
+
+For example, to use the contents of a folder as the contents of the virtual archive:
+
+[source,xml]
+----
+<archive>
+    <dir targetInArchive="/"
+         sourceOnDisk="c:/myapplication"/>
+</archive>
+----
+
+To use the contents of an application archive as the contents of the virtual archive:
+
+[source,xml]
+----
+<archive>
+    <file targetInArchive="/"
+          sourceOnDisk="c:/myapplication.ear"/>
+</archive>
+----
 
 == Folders and files with the same name
 
