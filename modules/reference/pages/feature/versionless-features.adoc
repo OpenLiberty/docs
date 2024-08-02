@@ -15,37 +15,36 @@
 :page-type: overview
 = Simplify feature selection with versionless features
 
-Versionless features provide a generic way to specify Open Liberty features without having to specify a feature version. Versionless features automate version selection, so you can focus on application development without worrying about feature compatibility issues.
+Versionless features provide a generic way to specify Open Liberty features without having to specify a feature version. These features automate version selection, so you can focus on application development without worrying about feature compatibility issues.
 
-Versionless features are available for the MicroProfile, Jakarta EE, and Java EE platforms. Versionless features are supported only in server environments, not in client environments.
-
+Versionless features are available for the MicroProfile, Jakarta EE, and Java EE platforms. They are supported only in server environments, not in client environments.
 
 == Enabling versionless features
 
-To use versionless features, you must declare a corresponding versioned platform. You can declare a platform in three different ways
+To use versionless features, you must declare a corresponding versioned platform. You can declare a platform in three different ways:
 
-* <<platform, Specify a platform element inside the `featureManager` element of your `server.xml` file>>
-* <<env, Specify the `PREFFERED_PLATFORM_VERSIONS` environment variable>>
-* <<feat, Enable one versioned feature from a supported platform in your `server.xml` file>>
+* <<platform, Specify a platform element inside the featureManager element of your server.xml file>>
+* <<env, Specify the PREFFERED_PLATFORM_VERSIONS environment variable>>
+* <<feat, Enable one versioned feature from a supported platform in your server.xml file>>
 
 [#platform]
 === Specify a platform element
 
-You can declare a platform version by specifying a `platform` inside the `featureManager` element of your `server.ml` file. This method is the recommended best practice for specifying a platform for versionless features.
+You can declare a platform version by specifying a `platform` element inside the `featureManager` element of your `server.ml` file. This method is simplest way to configure and keep track of your versionless features.
 
 For example, the following `server.xml` file configuration specifies a Jakarta EE platform of `jakartaee-9.1`, with associated versionless features for `servlet`, `persistence`, and `restfulWS`
 
 [source,xml]
 ----
 <featureManager>
-    <platform>javaee-9.1</platform>
+    <platform>jakartaee-9.1</platform>
     <feature>servlet</feature>
     <feature>jpa</feature>
     <feature>jaxrs</feature>
 </featureManager>
 ----
 
-With this configuration, the built-in Open Liberty feature resolver automatically resolves each feature the version that is included in the Jakarta EE 9.1 platform.
+With this configuration, Open Liberty automatically resolves each feature the version that is included in the Jakarta EE 9.1 platform.
 
 Similarly, the following example enables versionless MicroProfile features that are included in the MicroProfile 5.0 platform:
 
@@ -61,14 +60,14 @@ Similarly, the following example enables versionless MicroProfile features that 
 [#env]
 === Define a platform with an environment variable
 
-Alternatively, you can declare a platform for versionless features by defining the `PREFERRED_PLATFORM_VERSIONS` in your `server.env` file, as shown in the following example:
+Alternatively, you can declare a platform for versionless features by defining the `PREFERRED_PLATFORM_VERSIONS` environment variable in your `server.env` file, as shown in the following example:
 
 [source,properties]
 ----
 PREFERRED_PLATFORM_VERSIONS=microProfile-5.0
 ----
 
-When this environment variable is set, you can specify versionless features in your `server.xml` file and the Open Liberty feature resolver automatically resolves them to the correct version. In this `server.xml` file example, the `mpHealth` and `mpMetrics` features resolve to versions that are included in MicroProfile 5.0:
+When this environment variable is set, you can specify versionless features in your `server.xml` file and Open Liberty automatically resolves them to the correct version. In this `server.xml` file example, the `mpHealth` and `mpMetrics` features resolve to versions that are included in MicroProfile 5.0:
 
 [source,xml]
 ----
@@ -80,7 +79,7 @@ When this environment variable is set, you can specify versionless features in y
 
 Although you can also set the `PREFERRED_PLATFORM_VERSIONS` environment variable from the environment shell, setting it in your `server.env` file ensures that the variable is applied if you run the xref:reference:command/server-package.adoc[server package] command to package the server.
 
-If you set the `PREFERRED_PLATFORM_VERSIONS` environment variable as a true environment variable in the shell outside of the `server.env`` file, and you then run the `server package` command, the variable is not retained during packaging.
+If you set the `PREFERRED_PLATFORM_VERSIONS` environment variable as a true environment variable in the shell outside of the `server.env` file, and you then run the `server package` command, the variable is not retained during packaging.
 
 If this scenario occurs, the `server package` command issues the following warning:
 
@@ -106,12 +105,17 @@ In the following example, the `microHealth-3.0` feature is part of the MicroProf
 </featureManager>
 ----
 
+However, this strategy does not work if you declare a feature version that is part of more than one platform, such as `mpConfig-2.0`, which is included in both MicroProfile 4.0 and MicroProfile 4.1. This strategy is useful primarily for simple configurations, where only a few features are enabled. For more complex configurations, <<platform, declare a platform explicitly in a platform element>>.
+
 == Available platforms and versionless features
 
 The following tables list the available MicroProfile, Jakarta EE, and Java EE platform versions and corresponding versionless features. You can declare up to 2 platform elements, one for MicroProfile, another for either Jakarta EE or Java EE.
 
+Features that are not specifically included in the supported platforms are not available in versionless format.
+For example, because the `springBoot-3.0` is not specifically included in the MicroProfile, Jakarta EE, or JavaEE platforms, no `springBoot` versionless feature is available.
+
 [#mp]
-== MicroProfile
+=== MicroProfile
 
 Declare a platform version by using any of the three strategies that are described in the previous sections. Open Liberty automatically resolves any versionless features that you enable in your `server.xml` file to the version that is included in your specified platform version.
 
@@ -123,33 +127,33 @@ Declare a platform version by using any of the three strategies that are describ
 |Feature name
 |Versionless feature short name
 
-.9+a| * microProfile-1.2
+.9+| * `microProfile-1.2`
 
-* microProfile-1.3
+* `microProfile-1.3`
 
-* microProfile-1.4
+* `microProfile-1.4`
 
-* microProfile-2.0
+* `microProfile-2.0`
 
-* microProfile-2.1
+* `microProfile-2.1`
 
-* microProfile-2.2
+* `microProfile-2.2`
 
-* microProfile-3.0
+* `microProfile-3.0`
 
-* microProfile-3.2
+* `microProfile-3.2`
 
-* microProfile-3.3
+* `microProfile-3.3`
 
-* microProfile-4.0
+* `microProfile-4.0`
 
-* microProfile-4.1
+* `microProfile-4.1`
 
-* microProfile-5.0
+* `microProfile-5.0`
 
-* microProfile-6.0
+* `microProfile-6.0`
 
-* microProfile-6.1
+* `microProfile-6.1`
 
 |feature:mpConfig[display=MicroProfile Config]
 |`mpConfig`
@@ -189,11 +193,11 @@ Declare a platform version by using any of the three strategies that are describ
 
 |===
 
-== Java EE and Jakarta EE
+=== Java EE and Jakarta EE
 
-Declare a platform version by using any of the three strategies that are described in the previous sections. Open Liberty automatically resolves any versionless features that you enable in your `server.xml` file to the version that is included in your specified platform version. Although Liberty uses different feature names and short names for some Java EE and Jakarta EE versions of the same feature, you can use either short name and the platform you specify pulls in the correct compatible feature.
+Declare a platform version by using any of the three strategies that are described in the previous sections. Open Liberty automatically resolves any versionless features that you enable in your `server.xml` file to the version that is included in your specified platform version. Liberty uses different feature names and short names for some Java EE and Jakarta EE versions of the same feature. However, you can use either short name and the platform you specify pulls in the correct compatible feature.
 
-.Java EE and Jakarta EE platforms and versionless features
+.Jakarta EE platforms and versionless features
 [%header,cols=3*]
 |===
 
@@ -201,195 +205,238 @@ Declare a platform version by using any of the three strategies that are describ
 |Feature name
 |Versionless feature short name
 
-.36+a| * javaee-7.0
+.35+a|* `jakartaee-9.1`
 
-* javaee-8.0
+* `jakartaee-10.0`
 
-* jakartaee-9.1
+| feature:appClientSupport[display=Application Client Support for Server]
+| `appClientSupport`
 
-* jakartaee-10.0
+| feature:appSecurity[display=Application Security]
+| `appSecurity`
 
-a| * Jakarta EE: feature:appAuthentication[display=Jakarta Authentication]
-* Java EE: feature:jaspic[display=Java Authentication SPI for Container]
-a| * Jakarta EE: `appAuthentication`
-* Java EE: `jaspic`
+| feature:batch[display=Batch API]
+| `batch`
 
-a| * Jakarta EE: feature:appAuthorization[display=Jakarta Authorization]
-* Java EE: feature:jacc[display=Java Authorization Contract for Containers]
-a| * Jakarta EE: `appAuthorization`
-* Java EE: `jacc`
+|feature:beanValidation[display=Bean Validation]
+|`beanValidation`
 
-a|feature:appClientSupport[display=Application Client Support for Server]
-a|`appClientSupport`
+|feature:cdi[display=Contexts and Dependency Injection]
+|`cdi`
 
-a|feature:appSecurity[display=Application Security]
-a|`appSecurity`
+| feature:appAuthentication[display=Jakarta Authentication]
+| `appAuthentication`
 
-a|feature:batch[display=Batch API]
-a|`batch`
+| feature:appAuthorization[display=Jakarta Authorization]
+| `appAuthorization`
 
-a|feature:beanValidation[display=Bean Validation]
-a|`beanValidation`
+|feature:concurrent[display=Jakarta Concurrency]
+|`concurrent`
 
-a|feature:cdi[display=Contexts and Dependency Injection]
-a|`cdi`
+|feature:connectors[display=Jakarta Connectors]
+|`connectors`
 
-a|* Jakarta EE: feature:concurrent[display=Jakarta Concurrency]
-* Java EE: Concurrency Utilities for Java EE
-a|`concurrent`
+|feature:connectorsInboundSecurity[display=Jakarta Connectors Inbound Security]
+|`connectorsInboundSecurity`
 
-a| * Jakarta EE: feature:connectors[display=Jakarta Connectors]
-* Java EE: feature:jca[display=Java Connector Architecture]
-a| * Jakarta EE: `connectors`
-* Java EE: `jca`
+|feature:enterpriseBeans[display=Jakarta Enterprise Beans]
+|`enterpriseBeans`
 
-a| * Jakarta EE: feature:connectorsInboundSecurity[display=Jakarta Connectors Inbound Security]
-* Java EE: feature:jcaInboundSecurity[display=Java Connector Architecture Security Inflow]
-a| * Jakarta EE: `connectorsInboundSecurity`
-* Java EE: `jcaInboundSecurity`
+|feature:enterpriseBeansHome[display=Jakarta Enterprise Beans Home]
+|`enterpriseBeansHome`
 
-a| * Jakarta EE: feature:enterpriseBeans[display=Jakarta Enterprise Beans]
-* Java EE: feature:ejb[display=Enterprise JavaBeans]
-a| * Jakarta EE: `enterpriseBeans`
-* Java EE: `ejb`
 
-a| * Jakarta EE: feature:enterpriseBeansHome[display=Jakarta Enterprise Beans Home]
-* Java EE: feature:ejbHome[display=Enterprise JavaBeans Home]
-a| * Jakarta EE: `enterpriseBeansHome`
-* Java EE: `ejbHome`
+|feature:enterpriseBeansLite[display=Jakarta Enterprise Beans Lite]
+|`enterpriseBeansLite`
 
-a| * Jakarta EE: feature:enterpriseBeansLite[display=Jakarta Enterprise Beans Lite]
-* Java EE: feature:ejbLite[display=Enterprise JavaBeans Lite]
-a| * Jakarta EE: `enterpriseBeansLite`
-* Java EE: `ejbLite`
+|feature:mdb[display=Jakarta Enterprise Beans Message-Driven Beans]
+|`mdb`
 
-a| * Jakarta EE: feature:enterpriseBeansPersistentTimer[display=Jakarta Enterprise Beans Persistent Timer]
-* Java EE: feature:ejbPersistentTimer[display=Enterprise JavaBeans Persistent Timer]
-a| * Jakarta EE: `enterpriseBeansPersistentTimer`
-* Java EE: `ejbPersistentTimer`
+|feature:enterpriseBeansPersistentTimer[display=Jakarta Enterprise Beans Persistent Timer]
+|`enterpriseBeansPersistentTimer`
 
-a| * Jakarta EE: feature:enterpriseBeansRemote[display=Jakarta Enterprise Beans Remote]
-* Java EE: feature:ejbRemote[display=Enterprise JavaBeans Remote]
-a| * Jakarta EE: `enterpriseBeansRemote`
-* Java EE: `ejbRemote`
+|feature:enterpriseBeansRemote[display=Jakarta Enterprise Beans Remote]
+|`enterpriseBeansRemote`
 
-a| * Jakarta EE: feature:expressionLanguage[display=Jakarta Expression Language]
-* Java EE: feature:el[display=Expression Language]
-a| * Jakarta EE: `expressionLanguage`
-* Java EE: `el`
+|feature:expressionLanguage[display=Jakarta Expression Language]
+|`expressionLanguage`
 
-a| * Jakarta EE: feature:faces[display=Jakarta Faces]
-* Java EE: feature:jsf[display=JavaServer Faces]
-a| * Jakarta EE: `faces`
-* Java EE: `jsf`
+|feature:faces[display=Jakarta Faces]
+| `faces`
 
-a|feature:j2eeManagement[display=J2EE Management]
-a|`j2eeManagement`
+|feature:jsonb[display=Jakarta JavaScript Object Notation Binding]
+|`jsonb`
 
-a| * Jakarta EE: feature:jdbc[display=Jakarta Database Connectivity]
-* Java EE: feature:jdbc[display=Java Database Connectivity]
-a|`jdbc`
+|feature:jsonp[display=Jakarta JavaScript Object Notation Processing]
+|`jsonp`
 
-a|feature:jsonb[display=JavaScript Object Notation Binding]
-a|`jsonb`
+|feature:mail[display=Jakarta Mail]
+|`mail`
 
-a|feature:jsonp[display=JavaScript Object Notation Processing]
-a|`jsonp`
+|feature:managedBeans[display=Jakarta Managed Beans]
+|`managedBeans`
 
-a| * Jakarta EE: feature:mail[display=Jakarta Mail]
-* Java EE: feature:javaMail[display=JavaMail]
-a| * Jakarta EE: `mail`
-* Java EE: `javaMail`
+|feature:messaging[display=Jakarta Messaging]
+|`messaging`
 
-a| * Jakarta EE: feature:managedBeans[display=Jakarta Managed Beans]
-* Java EE: feature:managedBeans[display=Java EE Managed Bean]
-a|`managedBeans`
+|feature:persistence[display=Jakarta Persistence]
+|`persistence`
 
-a| * Jakarta EE: feature:mdb[display=Jakarta Enterprise Beans Message-Driven Beans]
-* Java EE: feature:mdb[display=Message-Driven Beans]
-a|`mdb`
+|feature:restfulWS[display=Jakarta RESTful Web Services]
+|`restfulWS`
 
-a| * Jakarta EE: feature:messaging[display=Jakarta Messaging]
-* Java EE: feature:jms[display=Java Message Service]
-a| * Jakarta EE: `messaging`
-* Java EE: `jms`
+|feature:restfulWSClient[display=Jakarta RESTful Web Services Client]
+|`restfulWSClient`
 
-a| * Jakarta EE: feature:messagingClient[display=Messaging Server Client]
-* Java EE: feature:wasJmsClient[display=JMS Client for Message Server]
-a| * Jakarta EE: `messagingClient`
-* Java EE: `wasJmsClient`
+|* Jakarta EE: feature:servlet[display=Jakarta Servlet]
+|`servlet`
 
-a| * Jakarta EE: feature:messagingSecurity[display=Messaging Server Security]
-* Java EE: feature:wasJmsSecurity[display=Message Server Security]
-a| * Jakarta EE: `messagingSecurity`
-* Java EE: `wasJmsSecurity`
+|feature:pages[display=Jakarta Server Pages]
+|`pages`
 
-a| * Jakarta EE: feature:messagingServer[display=Messaging Server]
-* Java EE: feature:wasJmsServer[display=Message Server]
-a| * Jakarta EE: `messagingServer`
-* Java EE: `wasJmsServer`
+|feature:websocket[display=Jakarta WebSocket]
+|`websocket`
 
-a| * Jakarta EE: feature:pages[display=Jakarta Server Pages]
-* Java EE: feature:jsp[display=JavaServer Pages]
-a| * Jakarta EE: `pages`
-* Java EE: `jsp`
+|feature:xmlBinding[display=Jakarta XML Binding]
+|`xmlBinding`
 
-a| * Jakarta EE: feature:persistence[display=Jakarta Persistence]
-* Java EE: feature:jpa[display=Java Persistence API]
-a| * Jakarta EE: `persistence`
-* Java EE: `jpa`
+|feature:xmlWS[display=Jakarta XML Web Services]
+|`xmlWS`
 
-a| * Jakarta EE: feature:restfulWS[display=Jakarta RESTful Web Services]
-* Java EE: feature:jaxrs[display=Java RESTful Services]
-a| * Jakarta EE: `restfulWS`
-* Java EE: `jaxrs`
+|feature:jdbc[display=Java Database Connectivity]
+|`jdbc`
 
-a| * Jakarta EE: feature:restfulWSClient[display=Jakarta RESTful Web Services Client]
-* Java EE: feature:jaxrsClient[display=Java RESTful Services Client]
-a| * Jakarta EE: `restfulWSClient`
-* Java EE: `jaxrsClient`
+|feature:messagingClient[display=Messaging Server Client]
+|`messagingClient`
 
-a|* Jakarta EE: feature:servlet[display=Jakarta Servlet]
-* Java EE: feature:servlet[display=Java Servlets]
-a|`servlet`
+|feature:messagingSecurity[display=Messaging Server Security]
+|`messagingSecurity`
 
-a| * Jakarta EE: feature:websocket[display=Jakarta WebSocket]
-* Java EE: feature:websocket[display=Java WebSocket]
-a|`websocket`
-
-a| * Jakarta EE: feature:xmlBinding[display=Jakarta XML Binding]
-* Java EE: feature:jaxb[display=Java XML Bindings]
-a| * Jakarta EE: `xmlBinding`
-* Java EE: `jaxb`
-
-a| * Jakarta EE: feature:xmlWS[display=Jakarta XML Web Services]
-* Java EE: feature:jaxws[display=Java Web Services]
-a| * Jakarta EE: `xmlWS`
-* Java EE: `jaxws`
+|feature:messagingServer[display=Messaging Server]
+|`messagingServer`
 
 |===
 
-== Exceptions to versionless feature platforms.
+.Java EE platforms and versionless features
+[%header,cols=3*]
+|===
 
-Not all public features are available as versionless features.
+|Platform versions
+|Feature name
+|Versionless feature short name
 
-For example, because the `restConnector-2.0` is not clearly associated with MicroProfile, Jakarta EE, or JavaEE, no `restConnector` versionless feature is available.
+.36+a| * `javaee-7.0`
 
-Furthermore, not all features that are associated with a platform are available in versionless format.
+* `javaee-8.0`
 
-The following features have an association with Jakarta or Java EE, but are not available as versionless features:
+|feature:appClientSupport[display=Application Client Support for Server]
+|`appClientSupport`
 
-* `facesContainer` and `jsfContainer`
-* `persistenceContainer` and `jpaContainer`
+|feature:appSecurity[display=Application Security]
+|`appSecurity`
 
-These features enable third-party Faces and Persistence implementations, and are not used unless you configure a third-party implementation.
+|feature:batch[display=Batch API]
+|`batch`
 
-The following features are weakly associated with Jakarta or Java EE, but are not available as versionless features:
+|feature:beanValidation[display=Bean Validation]
+|`beanValidation`
 
-* `distributedMap`
-* `jndi`
-* `json`
-* `jwt`
-* `monitor`
-* `opentracing`
-* `ssl`
+|feature:cdi[display=Contexts and Dependency Injection]
+|`cdi`
+
+|* Jakarta EE: feature:concurrent-1.0[display=Concurrency Utilities for Java EE]
+|`concurrent`
+
+|feature:ejb-3.2[display=Enterprise JavaBeans]
+|`ejb`
+
+|feature:ejbHome-3.2[display=Enterprise JavaBeans Home]
+|`ejbHome`
+
+|feature:ejbLite-3.2[display=Enterprise JavaBeans Lite]
+|`ejbLite`
+
+|feature:ejbPersistentTimer-3.2[display=Enterprise JavaBeans Persistent Timer]
+|`ejbPersistentTimer`
+
+|feature:ejbRemote-3.2[display=Enterprise JavaBeans Remote]
+|`ejbRemote`
+
+|feature:el-3.0[display=Expression Language]
+|`el`
+
+|feature:jaspic[display=Java Authentication SPI for Container]
+|`jaspic`
+
+|feature:jacc[display=Java Authorization Contract for Containers]
+|`jacc`
+
+|feature:jca-1.7[display=Java Connector Architecture]
+|`jca`
+
+|feature:jcaInboundSecurity-1.0[display=Java Connector Architecture Security Inflow]
+|`jcaInboundSecurity`
+
+
+|feature:jdbc[display=Java Database Connectivity]
+|`jdbc`
+
+|feature:managedBeans-1.0[display=Java EE Managed Bean]
+|`managedBeans`
+
+|feature:jms-2.0[display=Java Message Service]
+|`jms`
+
+|feature:jpa-2.2[display=Java Persistence API]
+|`jpa`
+
+|feature:jaxrs-2.1[display=Java RESTful Services]
+|`jaxrs`
+
+|feature:jaxrsClient-2.1[display=Java RESTful Services Client]
+|`restfulWSClient`
+* Java EE: `jaxrsClient`
+
+|feature:servlet-4.0[display=Java Servlets]
+|`servlet`
+
+|feature:websocket-1.1[display=Java WebSocket]
+|`websocket`
+
+|feature:jaxb-2.2[display=Java XML Bindings]
+|`jaxb`
+
+|feature:jaxws-2.2[display=Java Web Services]
+|`jaxws`
+
+|feature:javaMail-1.6[display=JavaMail]
+|`javaMail`
+
+|feature:jsonb-1.0[display=JavaScript Object Notation Binding] (`javaee-8` only)
+|`jsonb`
+
+|feature:jsonp-1.1[display=JavaScript Object Notation Processing]
+|`jsonp`
+
+|feature:jsf-2.3[display=JavaServer Faces]
+|`jsf`
+
+|feature:jsp-2.3[display=JavaServer Pages]
+|`jsp`
+
+|feature:wasJmsClient-2.0[display=JMS Client for Message Server]
+|`wasJmsClient`
+
+|feature:j2eeManagement-1.1[display=J2EE Management]
+|`j2eeManagement`
+
+|feature:mdb-1.0[display=Message-Driven Beans]
+|`mdb`
+
+|feature:wasJmsServer-1.0[display=Message Server]
+|`wasJmsServer`
+
+|feature:wasJmsSecurity-1.0[display=Message Server Security]
+|`wasJmsSecurity`
+
+|===
