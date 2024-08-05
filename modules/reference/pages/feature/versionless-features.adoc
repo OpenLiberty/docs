@@ -30,7 +30,7 @@ To use versionless features, you must declare a corresponding versioned platform
 [#platform]
 === Specify a platform element
 
-You can declare a platform version by specifying a `platform` element inside the `featureManager` element of your `server.ml` file. This method is simplest way to configure and keep track of your versionless features.
+You can declare a platform version by specifying a `platform` element inside the `featureManager` element of your `server.xml` file. This method is simplest way to configure and keep track of your versionless features.
 
 For example, the following `server.xml` file configuration specifies a Jakarta EE platform of `jakartaee-9.1`, with associated versionless features for `servlet`, `persistence`, and `restfulWS`:
 
@@ -58,9 +58,9 @@ Similarly, the following example enables versionless MicroProfile features that 
 ----
 
 [#env]
-=== Define a platform with an environment variable
+=== Define platforms with an environment variable
 
-Alternatively, you can declare a platform for versionless features by defining the `PREFERRED_PLATFORM_VERSIONS` environment variable in your `server.env` file, as shown in the following example:
+Alternatively, you can declare platforms for versionless features by defining the `PREFERRED_PLATFORM_VERSIONS` environment variable in your `server.env` file, as shown in the following example:
 
 [source,properties]
 ----
@@ -77,24 +77,23 @@ When this environment variable is set, you can specify versionless features in y
 </featureManager>
 ----
 
-Although you can also set the `PREFERRED_PLATFORM_VERSIONS` environment variable from the environment shell, setting it in your `server.env` file ensures that the variable is applied if you run the xref:reference:command/server-package.adoc[server package] command to package the server.
+You can also set the `PREFERRED_PLATFORM_VERSIONS` environment variable from the environment shell. However, this method might cause problems if you need to package the server by running the xref:reference:command/server-package.adoc[server package] command.
+When you set `PREFERRED_PLATFORM_VERSIONS` in the `server.env` file, the setting is retained by server packaging when you run the `server package` command. When the server image is unpacked, the `server.env` file still has the `PREFERRED_PLATFORM_VERSIONS` setting.
 
-If you set the `PREFERRED_PLATFORM_VERSIONS` environment variable as a true environment variable in the shell outside of the `server.env` file, and you then run the `server package` command, the variable is not retained during packaging.
-
-If this scenario occurs, the `server package` command issues the following warning:
+If you set the `PREFERRED_PLATFORM_VERSIONS` environment variable in the environment shell, the variable is not retained when the server is packaged. If this scenario occurs, the `server package` command issues the following warning:
 
 ----
 CWWKE0969W: A manual PREFERRED_PLATFORM_VERSION environment variable was specified during server packaging.
 ----
 
-You must then re-create the `PREFERRED_PLATFORM_VERSION` definition in the new environment where the packaged server runs with the same platform values that were specified in the prior environment.
+After you unpack the server image, you must provide a definition of the `PREFERRED_PLATFORM_VERSIONS` variable to the server.
 
 [#feat]
-=== Enable one versioned feature
+=== Enable a versioned feature
 
-When you enable a versioned feature that is included in only one MicroProfile, Java EE, or Jakarta EE platform version, Open Liberty resolves any versionless features from that platform to their corresponding versions.
+When you enable at least one versioned feature that is included in only one MicroProfile, Java EE, or Jakarta EE platform version, Open Liberty resolves any versionless features from that platform to their corresponding versions.
 
-In the following `server.xml` example, the `microHealth-3.0` feature is part of the MicroProfile 4.0 platform, and no other MicroProfile platform. Open Liberty automatically resolves the versionless `mpMetrics` and `mpConfig` features to the versions that are included in MicroProfile 4.0:
+In the following `server.xml` example, the `mpHealth-3.0` feature is part of the MicroProfile 4.0 platform, and no other MicroProfile platform. Open Liberty automatically resolves the versionless `mpMetrics` and `mpConfig` features to the versions that are included in MicroProfile 4.0:
 
 [source,xml]
 ----
@@ -105,7 +104,7 @@ In the following `server.xml` example, the `microHealth-3.0` feature is part of 
 </featureManager>
 ----
 
-However, this strategy does not work if you declare a feature version that is part of more than one platform, such as `mpConfig-2.0`, which is included in both MicroProfile 4.0 and MicroProfile 4.1. This strategy is useful primarily for simple configurations, where only a few features are enabled. For more complex configurations, <<platform, declare a platform explicitly in a platform element>>.
+However, this strategy does not work if you declare a feature version that is part of more than one platform, such as `mpConfig-2.0`, which is included in both MicroProfile 4.0 and MicroProfile 4.1. This strategy is useful primarily for simple configurations, where only a few features are enabled. If you specify multiple versioned features that are part of the same platform, but different platform versions, versionless features might not resolve correctly. For more complex configurations, <<platform, declare a platform explicitly in a platform element>>.
 
 == Available platforms and versionless features
 
@@ -113,6 +112,7 @@ The following tables list the available MicroProfile, Jakarta EE, and Java EE pl
 
 Features that are not specifically included in the supported platforms are not available in versionless format.
 For example, because the `springBoot-3.0` feature is not specifically included in the MicroProfile, Jakarta EE, or JavaEE platforms, no `springBoot` versionless feature is available.
+
 
 [#mp]
 === MicroProfile
