@@ -1,4 +1,4 @@
-// Copyright (c) 2022 IBM Corporation and others.
+// Copyright (c) 2024 IBM Corporation and others.
 // Licensed under Creative Commons Attribution-NoDerivatives
 // 4.0 International (CC BY-ND 4.0)
 //   https://creativecommons.org/licenses/by-nd/4.0/
@@ -18,39 +18,39 @@ Loose applications are applications that are assembled from multiple physical lo
 Normally an application is contained under one directory or in one archive, with its content, modules, resources, classdata, and metadata at known locations within that directory. Using loose applications, the content of an application can be split between multiple physical locations.
 
 
-== Loose application
+== What is a loose application?
 
 A loose application is defined as a virtual directory that represents the application, where information can be located anywhere. Use of loose applications enables development tools to run applications where the related files are sourced directly from the workspace, bypassing the need for exporting. Such related files might be Java classes, JavaServer Pages, or images. Loading these files straight from the workspace leads to a quicker build-run-debug cycle. The content is not located in a single directory,  but might originate from various locations. These locations are detailed in an XML configuration file.
 
 The two ways to provide the XML file to the Liberty server are:
 
 Using the location attribute::
-Specify the XML file in the location attribute of the application configuration section, and make sure that the file name ends with `.xml`. If you specify `<application location="myapp.war" />`, the runtime searches for a file named `myapp.war.xml`. However, if both `myapp.war` and `myapp.war.xml` exist, the Open Liberty server prioritizes `myapp.war` for running the application. The search rules for this method align with those of an application directory or an archive.
+Specify the XML file in the `location` attribute of the application configuration section, and make sure that the file name ends with `.xml`. If you specify `application location="myapp.war"`, the runtime searches for a file named `myapp.war.xml`. However, if both `myapp.war` and `myapp.war.xml` exist, the Open Liberty server prioritizes `myapp.war` for running the application. The search rules for this method align with those of an application directory or an archive.
 
 Using the application dropins folder::
 Directly place the XML file into the application dropins folder, adhering to the folder naming conventions and appending `.xml` to the end of the file name.
 
 
-When you run the xref:reference/pages/command/server-package.adoc[server package] command with a loose application `my_app.war.xml` file that uses server variable substitution, those parts of the loose application having variable substitution are not packaged. Variable substitution does not take place when you use the `server package` command.
+When you run the xref:reference/command:server-package.adoc[server package] command with a loose application `my_app.war.xml` file that uses server variable substitution, those parts of the loose application having variable substitution are not packaged. Variable substitution does not take place when you use the `server package` command.
 
 
-== Loose application configuration file
+== Loose Application Configuration Files
 
-When using a loose application, the Open Liberty server employs a loose application configuration to locate application content, instead of locating it from a root directory or root archive. You can use this loose application configuration to locate application content in the following ways:
+When using a loose application, the Open Liberty server employs a loose application configuration to locate application content, instead of locating it from a root directory or root archive. This configuration provides flexibility in how application content is organized and accessed. You can use the loose application configuration to locate application content in the following ways:
 
-- Map any physical directory to any location within the application.
-- Map any physical file to any location within the application.
+- Map any physical directory or physical file to any location within the application.
+  
+  *For example:* You can map the root of the virtual application archive to one location on disk, such as a folder in an Eclipse project.
+
 - Map any physical JAR file or directory to any location as a nested archive.
+  
+  *For example:* Map an **external** `JAR` file into the application. This **external** `JAR` file might be the output of a Java project, packaged as a `JAR` file, and created at a physical location outside of the virtual application.
+
 - Map multiple physical sources to a single target location, also known as merging.
-
-For example:
-
-- Map the root of the virtual application archive to one location on disk, such as a folder in an Eclipse project.
-- Map one or more `bin/output` folders onto the `WEB-INF/classes` folder. A mapped folder may be needed, for example, because of workspace preferences, corporate guidelines, or source control project layout guidelines. Multiple mapped folders may be needed because a project has multiple output locations, or because multiple projects are mapped onto the same `WEB-INF/classes` folder.
-- Map an **external** `JAR` file into the application. This **external** `JAR` file might be one of the following:
-
-* The output of a Java project, packaged as a `JAR` file, and created at a physical location outside of the virtual application.
-* A utility `JAR` file somewhere else on your hard disk drive that you built the `.war` file against, and that you need to include in `WEB-INF/lib` at runtime.
+  
+  *For example:* Map one or more `bin/output` folders onto the `WEB-INF/classes` folder. This might be necessary because of workspace preferences, corporate guidelines, or source control project layout guidelines. Multiple mapped folders may be needed because a project has multiple output locations or because multiple projects are mapped onto the same `WEB-INF/classes` folder.
+  
+  *For example:* Include a utility `JAR` file somewhere else on your hard disk drive that you built the `.war` file against, and that you need to include in `WEB-INF/lib` at runtime.
 
 
 == Loose application configuration file examples
@@ -135,7 +135,7 @@ In both of the previous examples, all files that are in `${example.dir}/applicat
 
 If you add `file` or `dir` elements to an archive, the name of the file or directory in the loose archive does not need to be the same as the physical file name.
 
-The following is an example of how you can configure `${example.dir}/applicationFiles/newfile.txt` to appear in the archive as `/application.txt`:
+The example demonstrates how you can configure `${example.dir}/applicationFiles/newfile.txt` to appear in the archive as `/application.txt`:
 
 [source,xml]
 ----
@@ -197,12 +197,6 @@ To use the contents of an application archive as the contents of the virtual arc
 </archive>
 ----
 
-== Folders and files with the same name
-
-If you map two folders to the same virtual location in the loose application configuration, the system merges the folders and makes the contents of both folders available. If you have two files with the same target location in the loose archive, the first occurrence of the file is used. The first occurrence is based on a top-down approach to reading the elements of the loose application configuration file. If the first file found is the wrong file to be used, reorder the XML so that the element that contains the version of the file you want is processed first. 
-
-The first occurrence applies to files defined in the `dir` elements and files that are defined in the `file` elements. The first occurrence of a file with the same name and virtual location is the one returned from the virtual file system.
-
 
 == Considerations for loose applications
 
@@ -229,6 +223,13 @@ Consider the following configuration:
 An application that directly accesses `/web/pages` and then navigates up the directory hierarchy, finds that the parent of the physical path of `/web/pages` is `c:\` and not `/web`. `c:\` has no pages directory and no parent directory.
 
 These considerations apply only if your applications attempt to directly access the content on disk, and perform their own path navigation based on an assumption of a corresponding hierarchical layout on disk. The same applications also encounter issues if they are deployed as an archive. These applications generally experience issues with portability.
+
+=== Folders and files with the same name
+
+If you map two folders to the same virtual location in the loose application configuration, the system merges the folders and makes the contents of both folders available. If you have two files with the same target location in the loose archive, the first occurrence of the file is used. The first occurrence is based on a top-down approach to reading the elements of the loose application configuration file. If the first file found is the wrong file to be used, reorder the XML so that the element that contains the version of the file you want is processed first. 
+
+The first occurrence applies to files defined in the `dir` elements and files that are defined in the `file` elements. The first occurrence of a file with the same name and virtual location is the one returned from the virtual file system.
+
 
 == Complex example
 
