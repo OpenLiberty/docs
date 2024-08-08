@@ -20,18 +20,18 @@ Normally an application is contained under one directory or in one archive, with
 
 == What is a loose application?
 
-A loose application is defined as a virtual directory that represents the application, where information can be located anywhere. Use of loose applications enables development tools to run applications where the related files are sourced directly from the workspace, bypassing the need for exporting. Such related files might be Java classes, JavaServer Pages, or images. Loading these files straight from the workspace leads to a quicker build-run-debug cycle. The content is not located in a single directory,  but might originate from various locations. These locations are detailed in an XML configuration file.
+A loose application is defined as a virtual directory that represents the application, where information can be located anywhere. Use of loose applications enables development tools to run applications where the related files are sourced directly from the workspace, bypassing the need for exporting. These related files may include Java classes, JavaServer Pages, or images. Loading these files straight from the workspace leads to a quicker build-run-debug cycle. The content is not located in a single directory,  but might originate from various locations. These locations are detailed in an XML configuration file.
 
-The two ways to provide the XML file to the Liberty server are:
+There are two primary methods to provide the XML file to Open Liberty:
 
 Using the location attribute::
-Specify the XML file in the `location` attribute of the application configuration section, and make sure that the file name ends with `.xml`. If you specify `application location="myapp.war"`, the runtime searches for a file named `myapp.war.xml`. However, if both `myapp.war` and `myapp.war.xml` exist, the Open Liberty server prioritizes `myapp.war` for running the application. The search rules for this method align with those of an application directory or an archive.
+Specify the XML file in the `location` attribute of the application configuration section, and make sure that the file name ends with `.xml`. If you specify `application location="myapp.war"`, the runtime searches for a file named `myapp.war.xml`. However, if both `myapp.war` and `myapp.war.xml` exist, the Open Liberty runtime prioritizes `myapp.war` for running the application. The search rules for this method align with those of an application directory or an archive.
 
 Using the application dropins folder::
 Directly place the XML file into the application dropins folder, adhering to the folder naming conventions and appending `.xml` to the end of the file name.
 
 
-When you run the xref:reference/command:server-package.adoc[server package] command with a loose application `my_app.war.xml` file that uses server variable substitution, those parts of the loose application having variable substitution are not packaged. Variable substitution does not take place when you use the `server package` command.
+When you run the xref:reference/pages/command:server-package.adoc[server package] command with a loose application `my_app.war.xml` file that uses server variable substitution, those parts of the loose application having variable substitution are not packaged. Variable substitution does not take place when you use the `server package` command.
 
 
 == Loose Application Configuration Files
@@ -48,7 +48,7 @@ When using a loose application, the Open Liberty server employs a loose applicat
 
 - Map multiple physical sources to a single target location, also known as merging.
   
-  *For example:* Map one or more `bin/output` folders onto the `WEB-INF/classes` folder. This might be necessary because of workspace preferences, corporate guidelines, or source control project layout guidelines. Multiple mapped folders may be needed because a project has multiple output locations or because multiple projects are mapped onto the same `WEB-INF/classes` folder.
+  *For example:* Map one or more `bin/output` folders onto the `WEB-INF/classes` folder. This might be necessary because of workspace preferences, corporate guidelines, or source control project layout guidelines. You may need multiple mapped folders if a project has several output locations or if multiple projects are mapped to the same `WEB-INF/classes` folder.
   
   *For example:* Include a utility `JAR` file somewhere else on your hard disk drive that you built the `.war` file against, and that you need to include in `WEB-INF/lib` at runtime.
 
@@ -61,7 +61,7 @@ You can configure three different elements in the loose application configuratio
 - `file` for files
 - `dir` for directories
 
-NOTE: The application name is taken from the application location. For example, if the application is located at `apps/myApp.war.xml`, the application name will be derived from `myApp.war`.
+NOTE: The application name is taken from the application location. For example, If you locate the application at `apps/myApp.war.xml`, the Open Liberty server derives the application name from `myApp.war`.
 
 ===  Archives
 
@@ -200,11 +200,11 @@ To use the contents of an application archive as the contents of the virtual arc
 
 == Considerations for loose applications
 
-For all loose configured applications, the files are not on disk in the hierarchy that they are declared to be. If your applications access their resources directly and anticipate them to be organized on the disk in the same manner as an expanded `war` or `ear` layout, they can behave unexpectedly.
+For all loose configured applications, the files are not stored on disk in the hierarchy in which they are declared. If your applications access their resources directly and anticipate them to be organized on the disk in the same manner as an expanded `war` or `ear` layout, they can behave unexpectedly.
 
 You can use `ServletContext.getRealPath` in your applications to discover physical resource paths. `ServletContext.getRealPath` can discover file paths to open to read or write data, and obtain directories. You can use `ServletContext.getRealPath` in your web applications to obtain a path for `/`, but you cannot use this path to navigate the application on disk.
 
-NOTE: Using loose applications, `ServletContext.getRealPath` is unreliable for accessing physical files. Loose applications can merge multiple directories to provide content at one virtual path visible to the application, and `ServletContext.getRealPath` can provide only one of the mapped physical paths.
+NOTE: When using loose applications, avoid relying on `ServletContext.getRealPath` to access physical files. Loose applications can merge multiple directories to provide content at one virtual path visible to the application, and `ServletContext.getRealPath` can provide only one of the mapped physical paths.
 
 Consider the following configuration:
 
@@ -220,7 +220,7 @@ Consider the following configuration:
 
 ----
 
-An application that directly accesses `/web/pages` and then navigates up the directory hierarchy, finds that the parent of the physical path of `/web/pages` is `c:\` and not `/web`. `c:\` has no pages directory and no parent directory.
+An application that directly accesses `/web/pages` and then navigates up the directory hierarchy finds that the parent of the physical path of `/web/pages` is `c:\` and not `/web`. `c:\` has no pages directory and no parent directory.
 
 These considerations apply only if your applications attempt to directly access the content on disk, and perform their own path navigation based on an assumption of a corresponding hierarchical layout on disk. The same applications also encounter issues if they are deployed as an archive. These applications generally experience issues with portability.
 
