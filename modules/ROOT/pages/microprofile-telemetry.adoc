@@ -97,7 +97,7 @@ For more information, see <<#global,Enabling MicroProfile Telemetry for Open Lib
 +
 You can configure how MicroProfile Telemetry collects and exports logs by specifying configuration properties in any of the xref:external-configuration.adoc#default[config sources that are available to MicroProfile Config]. If you choose to set these configuration properties by using environment variables, make the key name uppercase and convert any punctuation to underscores. For example, the `otel.sdk.disabled=false` property is equivalent to the `OTEL_SDK_DISABLED=false` environment variable.
 
-.. Change the log exporter that MicroProfile Telemtry uses.
+.. Change the log exporter that MicroProfile Telemetry uses.
 +
 By default, all OpenTelemetry data is exported to link:https://opentelemetry.io/docs/languages/java/exporters/#otlp[OTLP]. You can change this setting by specifying the `otel.logs.exporter` property.
 +
@@ -123,6 +123,70 @@ By default, the SimpleLogRecordProcessor is enabled, so the records are sent imm
 For more information, see the OpenTelemetry link:https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/#batch-logrecord-processor[Batch LogRecord Processor] documentation.
 
 For more information about the available properties, see xref:microprofile-config-properties.adoc#telemetry[MicroProfile Config properties: MicroProfile Telemetry].
+
+[#metricss]
+== Configuring Open Liberty to use MicroProfile Telemetry to collect metrics
+
+To enable MicroProfile Telemetry to collect and export metrics in your Open Liberty runtime, add the MicroProfile Telemetry 2.0 feature to your `server.xml` file and enable the OpenTelemetry SDK. Optionally, you can specify MicroProfile Config properties to configure how MicroProfile Telemetry collects and exports metrics.
+
+. Enable the MicroProfile Telemetry feature 2.0 or later and specify a MicroProfile Config property or environment variable to enable the OpenTelemetry SDK.
++
+For more information, see <<#global,Enabling MicroProfile Telemetry for Open Liberty>>
+
+. Optionally, change the log exporter that MicroProfile Telemetry uses.
++
+By default, all OpenTelemetry data is exported to link:https://opentelemetry.io/docs/languages/java/exporters/#otlp[OTLP]. You can change this setting by specifying the `otel.metrics.exporter` property or the `OTEL_METRICS_EXPORTER` environment variable.
++
+For example, to export metrics to Open Liberty log files, specify the following property:
++
+----
+otel.metrics.exporter=logging
+----
+
+. Optionally, change the metric export interval.
++
+By default, metric data is exported at an interval of 60 seconds. To modify the export interval, specify the `otel.metric.export.interval` property or the `OTEL_METRIC_EXPORT_INTERVAL` environment variable. Specify the value in milliseconds. For more information, see link:https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/#periodic-exporting-metricreader[Periodic exporter MetricReader] in the OpenTelemetry documentation.
+
+To separately configure multiple applications in a server, you can configure OpenTelemetry with application configuration. However, you cannot collect runtime-level metrics this way.
+
+Depending on how you choose to instrument your application code for metrics, further configuration might be required.
+
+
+
+=== Custom metrics
+
+You can use the metrics API to define custom metrics in your application code, as shown in the following example:
+
+[source,java]
+----
+class WithCounter {
+    @Inject
+    Meter meter;
+
+    private LongCounter counter;
+
+    @PostConstruct
+    public void init() {
+        counter = meter
+                    .counterBuilder("new_subscriptions")
+                    .setDescription("Number of new subscriptions")
+                    .setUnit("1")
+                    .build();
+    }
+
+    void subscribe(String plan) {
+        counter.add(1,
+            Attributes.of(AttributeKey.stringKey("plan"), plan));
+    }
+}
+----
+
+In this example, `Meter` is used to define an instrument, in this case a Counter. Application code then can record measurement values along with additional attributes. Measurement aggregations are computed separately for each unique combination of attributes.
+
+For a full list of available metrics, see link:https://opentelemetry.io/docs/specs/otel/metrics/api/#meter-operations[Meter operations]  in the OpenTelemetry documentation.
+
+
+
 
 
 [#trouble]
@@ -152,6 +216,10 @@ If you enable the `mpTelemetry-1.1` or `mpTelemetry-1.0` feature, you must also 
 You receive the CWMOT5003W message that the application attempted to acquire MicroProfile Telemetry after shut down::
 
 Review the application to see why it attempted to use MicroProfile Telemetry after it shut down. Actions that might trigger MicroProfile Telemetry include calling a method that is annotated with `@WithSpan` or making a request with a JAX-RS Client or MP Rest Client.
+
+You receive either of the CWMOT5006W or CWMOT5007 warning message that there is conflicting configuration for otel.sdk.disabled::
+
+Specify the settings to enable or disable OpenTelemetry instances by using either environment variables or MicroProfile Config sources, but not both. If you see these warnings, the other MicroProfile Config source to look at is your `server.xml` file.
 
 ////
 +
