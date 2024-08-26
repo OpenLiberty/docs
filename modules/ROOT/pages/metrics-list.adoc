@@ -32,11 +32,9 @@ Use metric data to effectively monitor the status of your microservice systems.
 
 The metrics reference tables list and describe all the metrics that are available for Open Liberty with MicroProfile Metrics and MicroProfile Telemetry 2.0 and later. Use metric data to effectively monitor the status of your microservice systems.
 
-You can obtain metrics from applications, the Open Liberty runtime, and the Java virtual machine (JVM). They can be gathered and stored in database tools, such as [Prometheus](https://prometheus.io/), and displayed on dashboards, such as [Grafana](https://grafana.com/). For more information about building observability into your applications with MicroProfile Metrics, see [Microservice observability with metrics](https://openliberty.io/docs/latest/microservice-observability-metrics.html). For more information about integrating MicroProfile Metrics 5.0 with Micrometer to send metric data to third-party monitoring systems, see [Choose your own monitoring tools with MicroProfile Metrics](https://openliberty.io/docs/latest/micrometer-metrics.html).
+You can obtain metrics from applications, the Open Liberty runtime, and the Java virtual machine (JVM). They can be gathered and stored in database tools, such as [Prometheus](https://prometheus.io/), and displayed on dashboards, such as [Grafana](https://grafana.com/). For more information about building observability into your applications with MicroProfile Metrics, see xref:microservice-observability-metrics.adoc[Microservice observability with metrics]. For more information about integrating MicroProfile Metrics 5.0 with Micrometer to send metric data to third-party monitoring systems, see xref:micrometer-metrics.adoc[Choose your own monitoring tools with MicroProfile Metrics][Choose your own monitoring tools with MicroProfile Metrics].
 
-You can obtain metrics from applications, the Open Liberty runtime, and the Java virtual machine (JVM).
-They can be gathered and stored in database tools, such as https://prometheus.io/[Prometheus], and displayed on dashboards, such as https://grafana.com/[Grafana].
-For more information about building observability into your applications, see xref:microservice-observability-metrics.adoc[Microservice observability with metrics]. For more information about integrating MicroProfile Metrics 5.0 with Micrometer to send metric data to third-party monitoring systems, see xref:micrometer-metrics.adoc[Choose your own monitoring tools with MicroProfile Metrics].
+When you enable the feature:mpTelemetry-2.0[display=MicroProfile Telemetry] feature version 2.0 and later, you can manage your logs, metrics, and traces in a standardized way with the OpenTelemetry protocol. For more information, see xref:microprofile-telemetry[Enable observability with MicroProfile Telemetry].
 
 == MicroProfile Metrics base and vendor metrics
 When the feature:mpMetrics[display="MicroProfile metrics"] feature is enabled, a set of base metrics is always reported. You can augment this set of metrics by collecting vendor metrics, which are available from different monitoring components within your Open Liberty server. When you enable both the feature:monitor[display="Performance Monitoring"] and the MicroProfile metrics feature, you enable the reporting of vendor metrics on the `/metrics` endpoint. The Performance Monitoring feature retrieves the statistical data from all available monitoring components. The `REST` base metrics that were introduced in MicroProfile Metrics 2.3 also rely on the Performance Monitoring feature. Before MicroProfile Metrics 2.3, the Performance Monitoring feature had to be explicitly configured. In MicroProfile Metrics 2.3, and later, the Performance Monitoring feature is automatically enabled by MicroProfile Metrics during startup.
@@ -67,15 +65,14 @@ To disable all monitoring components, add the following code to your `server.xml
 
 == Metrics reference tables
 
-The following two tables list the available metrics when you use <<#metrics-table-mp-metrics-5, MicroProfile Metrics 5.0>> or <<#metrics-table,MicroProfile Metrics 4.0 (or earlier versions)>>.
-In both tables, the Prometheus metric names are listed after each metric.
+The following tables list the available metrics when you use <<#metrics-table-mp-metrics-5, MicroProfile Metrics 5.0>>, <<#metrics-table,MicroProfile Metrics 4.0 (or earlier versions)>>, or <<#telem-table, MicroProfile Telemetry 2.0 and later>>. In each table, the Prometheus metric names are listed after each metric.
 The tables also list the metric types, metric units, and descriptions of all metrics that are available for Open Liberty. For the vendor metrics, the associated monitoring component that you can use to filter the metric is also included.
 The **Features required** column of the table includes the feature or features that must be enabled to obtain that metric data.
 The **Version introduced** column specifies the minimum version of the feature that you must enable to collect the metric.
 
 === Units in the metrics reference tables
 
-For both tables, metric units are included along with both the metric names and Prometheus names. In MicroProfile 4.0 and earlier, these units can differ because the Prometheus exporter scales metrics to a base unit.
+Metric units are included along with both the metric names and Prometheus names. In MicroProfile 4.0 and earlier, these units can differ because the Prometheus exporter scales metrics to a base unit.
 For example, while the `ft.<name>.bulkhead.executionDuration` metric is recorded internally in nanoseconds, the Prometheus output is in seconds.
 In MicroProfile Metrics 5.0, the unit that is associated with the metric is what is reflected in the Prometheus output. The metrics are not scaled to a base unit.
 
@@ -1596,18 +1593,14 @@ This metric is a gauge.
 
 == MicroProfile Telemetry 2.0 and later metrics reference
 
-OpenTelemetry just sends metric data to compatible OpenTelemetry protocol (OTLP) receivers. Prometheus formatted metrics can be reported by the Open Telemetry collector, but I will replace that column in favor for the attributes (i.e. tags/labels) used.
-(Also not sure hot to format a list in the table, so I will list it with commas.
-NOTE NOTE: Perhaps we can have "two" tables for HTTP + JVM and the rest. This is because HTTP and JVM actually follow the Open Telemetry HTTP semantic conventions lsited for HTTP and JVM. The others are ones we created for Open liberty.
-
-The following table lists and describes the metrics that are available for Open Liberty for MicroProfile Metrics 4.0 and earlier.
+When the MicroProfile Telemetry feature 2.0 and later is enabled, Open Liberty can sends metric data to compatible OpenTelemetry protocol (OTLP) receivers. For more information, see xref:microprofile-telemetry[Enable observability with MicroProfile Telemetry].
 
 // Assisted by watsonx latest genai contribution llama-3-70b
 [#telem-table]
 .MicroProfile Telemetry 2.0 and later metrics reference
 [options="header"cols="3,4a,6a,2,2,2"]
 |===
-| feature:mpTelemetry-2.0[display=MicroProfile Telemetry 2.0]  name | Attributes | Type and description | Monitoring component | Features required | Version introduced
+| MicroProfile Telemetry 2.0 name | Attributes | Type and description | Monitoring component | Features required | Version introduced
 
 | `http.server.request.duration`
 |* `http.request.method`
@@ -1620,7 +1613,7 @@ The following table lists and describes the metrics that are available for Open 
 * `server.port`
 | Duration of HTTP server requests. This metric is a Histogram. / (seconds). This histogram has the following explicit bucket boundaries [ 0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1, 2.5, 5, 7.5, 10 ]
 | HTTP
-| MicroProfile Telemetry
+| feature:mpTelemetry[display=MicroProfile Telemetry]
 | feature:mpTelemetry-2.0[display=MicroProfile Telemetry 2.0]
 
 | io.openliberty.connection_pool.handle.count
