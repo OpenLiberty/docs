@@ -7,7 +7,7 @@
 - <<#configure-specific, Configure specific TLS protocols>>
 - <<#outbound, Configure outbound TLS>>
 - <<#certs, Provide certificates from an environment variable or a file>>
-- <<#hostverify, Hostname verification>>
+- <<#hostverify, Hostname and IP address verification>>
 
 [#config]
 === Configure transport layer security (TLS)
@@ -170,24 +170,13 @@ cert_defaultKeyStore="-----BEGIN CERTIFICATE-----
 ----
 
 [#hostverify]
-=== Hostname verification
+=== Hostname and IP address verification
 
-In Open Liberty, hostname and IP address verification are enabled by default. This verification is enforced for target servers in all SSL connections by using the Open Liberty socket factories. However, you can specify a list of hostnames, IP addresses, or both to skip verification.
+In Open Liberty, hostname and IP address verification are enabled by default. This verification is enforced for target servers in all SSL connections through Open Liberty socket factories. However, you can specify a list of hostnames, IP addresses, or both to skip verification.
 
-To disable hostname verification entirely, set the `verifyHostname` attribute within the `ssl` tag to `false`.
+The verification makes sure that the hostname or IP address in the URL matches the Subject Alternative Name (SAN) in the SSL certificate of the server. If the SAN is not found, the property makes sure that the hostname in the URL matches the Common Name (CN). If a mismatch exists, the SSL connection is rejected.
 
-[source,xml]
-----
-<ssl id="defaultSSLConfig" keyStoreRef="defaultKeyStore" trustStoreRef="defaultTrustStore" verifyHostname="false"/>
-----
+Typically, during hostname verification, when the hostname is used in the request, it checks against the DNSName entry in the SAN. If the SAN does not contain a DNSName entry, hostname verification uses the certificate owner's common name (CN). When an IP address is used in the request, hostname verification relies on the IP address information in the SAN only.
 
-When hostname verification is enabled (`verifyHostname="true"`), you can specify hostnames or IP addresses to be skipped for verification by using the `skipHostnameVerificationForHosts` attribute within the `ssl` tag.
-
-[source,xml]
-----
-<ssl id="defaultSSLConfig" keyStoreRef="defaultKeyStore" trustStoreRef="defaultTrustStore" verifyHostname="true" skipHostnameVerificationForHosts="myHost.com"/>
-----
-
-Additionally, hostname verification for only HTTP connections can be controlled separately by using the `httpHostNameVerification` attribute within the `sslDefault` tag. If `httpHostNameVerification` attribute is set to `true` and `verifyHostname` attribute is set to `false`, hostname verification can still be enforced on HTTP connections, but not on other connections.
-
+For more information, see xref:ROOT:pages/troubleshooting.adoc#Troubleshooting_SSL[Troubleshooting SSL and TLS] 
 
