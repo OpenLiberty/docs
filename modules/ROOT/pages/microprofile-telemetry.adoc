@@ -31,12 +31,12 @@ The following sections explain how to prepare your Open Liberty runtime and appl
 OpenTelemetry is disabled by default. Depending on your needs, you can configure OpenTelemetry SDK instances at the runtime level or the application level.
 
 Runtime-level configuration::
-Runtime-level configuration collects and emits telemetry from the runtime and all applications. However, this configuration is preferable when you are running a single application per Liberty because all telemetry emitted is labeled as coming from the same service.
+Runtime-level configuration collects and emits telemetry from the runtime and all applications. However, this configuration is preferable when you are running a single application per Liberty runtime because all telemetry emitted is labeled as coming from the same service.
 +
 You can configure your runtime instance in a few different sources, including your `jvm.options`, `bootstrap.properties`, or `server.env` files. You do not need to modify your application configuration to configure your runtime instance.
 
 Application-level configuration::
-Configuring application-level OpenTelemetry instances gives you more fine-grained control over the data you collect for each application. This option also supports compatibility with earlier versions of MicroProfile Telemetry, which created only application SDK instances. Runtime-level data is not collected or emitted with application-level instances.
+Configuring application-level OpenTelemetry instances gives you more fine-grained control over the data you collect for each application. This option also supports compatibility with MicroProfile Telemetry 1.1 and earlier, which created only application-level SDK instances. Runtime-level data is not collected or emitted with application-level instances.
 +
 You can configure your application-level OpenTelemetry instances in the applications `microprofile-config.properties` files or the `appProperties` attribute in the `server.xml` file for each application. When you create application-level instances, any system and server environment properties overwrite your application-level configuration. For more information about configuration sources and their ordinal values, see xref:external-configuration.adoc#default[Default configuration sources].
 
@@ -59,7 +59,7 @@ otel.service.name=RT1
 +
 The `otel.service.name` property creates a name for any telemetry that this OpenTelemetry SDK instance collects and emits.
 +
-If you choose to set configuration properties by using environment variables in your `server.env` file, make the key name uppercase and convert any punctuation to underscores. For example, the `otel.sdk.disabled=false` property is equivalent to the `OTEL_SDK_DISABLED=false` environment variable.
+Alternatively, you can set runtime-level configuration properties by using environment variables in your `server.env` file. For any property definition, make the key name uppercase and convert any punctuation to underscores. For example, the `otel.sdk.disabled=false` property is equivalent to the `OTEL_SDK_DISABLED=false` environment variable.
 
 .. To enable the OpenTelemetry SDK at the application level, set the `otel.sdk.disabled=false property` in the `microprofile-config.properties` file of each application.
 +
@@ -77,11 +77,11 @@ otel.sdk.disabled=false
 otel.service.name=A2
 ----
 +
-This configuration creates all telemetry from App1 with the service name A1, and from App2 with the service name A2. It omits all runtime-level telemetry.
+This configuration creates all telemetry from Application 1 with the service name A1, and from Application 2 with the service name A2. It omits all runtime-level telemetry.
 
 .. Optionally, use a combination of application-level and runtime-level configuration.
 +
-Regardless of whether a runtime instance is created, any configuration in the system properties and server environment variables takes precedence over application-level configuration. Therefore, you can configure common application configuration at the runtime level in the server environment variables or system properties and make application-specific changes in your application configuration.
+Regardless of whether a runtime instance is created, any configuration in the system properties and server environment variables takes precedence over application-level configuration. Therefore, you can configure shared application configuration at the runtime level and make application-specific changes in your application configuration.
 +
 For example, you can set the OpenTelemetry exporter at the runtime-level in the `bootstrap.properties` file:
 +
@@ -89,14 +89,14 @@ For example, you can set the OpenTelemetry exporter at the runtime-level in the 
 otel.logs.exporter=myExporter
 ----
 +
-Then, enable an application-level SDK instance in the `microprofile-config.properties` file for each application in the runtime:
+Then, enable an application-level OpenTelemetry SDK instance in the `microprofile-config.properties` file for each application in the runtime:
 +
 ----
 otel.sdk.disabled=false
 otel.service.name=<serviceName>
 ----
 +
-This configuration enables an application-level instance and a custom service name for each configured application, while all applications in the runtime use the `myExporter` OpenTelemetry exporter.
+This configuration enables an application-level SDK instance and custom service name for each configured application, while all applications in the runtime use the `myExporter` OpenTelemetry exporter.
 
 
 [#traces]
