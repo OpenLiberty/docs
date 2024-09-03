@@ -28,19 +28,67 @@ The following sections explain how to prepare your Open Liberty runtime and appl
 [#global]
 == Enabling MicroProfile Telemetry for Open Liberty
 
-To enable MicroProfile Telemetry in your Open Liberty runtime, you must add the MicroProfile Telemetry feature to your `server.xml` file and enable the OpenTelemetry SDK.
+To enable MicroProfile Telemetry in your Open Liberty runtime, you must add the MicroProfile Telemetry feature to your `server.xml` file and enable the OpenTelemetry SDK.OpenTelemetry is disabled by default. Depending on your needs, you can configure OpenTelemetry SDK instances at the runtime level or the application level.
+
+Runtime-level configuration::
+Runtime-level configuration collects and emits telemetry from the runtime and all applications. However, this configuration is preferable when you are running a single application per Liberty because all telemetry emitted is labeled as coming from the same service.
+
+You can configure your runtime instance in a few different sources, including your `jvm.options`, `bootstrap.properties`, or `server.env` files. You do not need to modify your application configuration to configure your runtime instance.
+
+Application-level configuration::
+Configuring application-level OpenTelemetry instances gives you more fine-grained control over the data you collect for each application. This option also supports compatibility with earlier versions of MicroProfile Telemetry, which created only application SDK instances. Runtime-level data is not collected or emitted with application-level instances.
+
+You can configure your application-level OpenTelemetry instances in the applications `microprofile-config.properties` files or the `appProperties` attribute in the `server.xml` file for each application. When you create application-level instances, any system and server environment properties overwrite your application-level configuration. For more information about configuration sources and their ordinal values, see xref:external-configuration.adoc#default[Default configuration sources].
 
 . Enable the feature:mpTelemetry[display=MicroProfile Telemetry] feature in your `server.xml` file. To export metrics or logs, you must enable `mpTelemetry-2.0` or later.
 
-. OpenTelemetry is disabled by default. To enable the generation of traces, metrics, and logs, set the `otel.sdk.disabled=false` property.
-+
-You can configure how MicroProfile Telemetry collects and exports logs, metrics, and traces by specifying configuration properties in any of the config sources that are available to MicroProfile Config. Alternatively, if you choose to set these configuration properties by using environment variables, make the key name uppercase and convert any punctuation to underscores. For example, the `otel.sdk.disabled=false` property is equivalent to the `OTEL_SDK_DISABLED=false` environment variable.
-+
-Depending on how you enable the OpenTelemetry SDK, you can configure a single instance for the runtime and all applications, or configure a separate instance for each application. Any runtime-level configuration settings, such as environment variables or system properties, apply to the runtime and all applications, unless an application overrides those settings in a higher ordinal value configuration source. For more information about configuration sources and their ordinal values, see xref:external-configuration.adoc#default[Default configuration sources].
-+
-Although application-level configuration gives you more fine-grained control over the data that you collect, it does not collect any runtime-level data and might require manual instrumentation in your code. Runtime-level configuration does not require you to modify your application code.
+. To enable the generation of traces, metrics, and logs, set the `otel.sdk.disabled=false` property at the runtime level or the application level.
 
+.. To enable the OpenTelemetry SDK at the runtime level, set the `otel.sdk.disabled=false property` as a system property, for example, in the `bootstrap.properties` file:
++
+----
+otel.sdk.disabled=false
+otel.service.name=RT1
+----
++
+The `otel.service.name` property creates a name for any telemetry that this OpenTelemetry SDK instance collects and emits.
 
+.. To enable the OpenTelemetry SDK at the application level, set the `otel.sdk.disabled=false property` in the `microprofile-config.properties` file of each application.
++
+Application 1 `microprofile-config.properties` file:
++
+----
+otel.sdk.disabled=false
+otel.service.name=A1
+----
++
+Application 2 `microprofile-config.properties` file:
++
+----
+otel.sdk.disabled=false
+otel.service.name=A2
+----
++
+This configuration creates all telemetry from App1 with the service name A1, and from App2 with the service name A2. It omits all runtime-level telemetry.
++
+At runtime initialization, if the `otel.sdk.disabled` property is set to false, the runtime-level OpenTelemetry SDK instance is created. If the runtime instance is not enabled and `otel.sdk.disabled=false` is specified at the application level, an application-level instance is created during application initialization.
++
+You can also use a combination of application-level and runtime-level configuration. Regardless of whether a runtime instance is created, any configuration in the system properties and server environment variables takes precedence over application-level configuration. Therefore, you can configure common application configuration at the runtime level in the server environment variables or system properties and make application-specific changes in your application configuration.
++
+For example, you can set the OpenTelemetry exporter at the runtime-level in the `bootstrap.properties` file:
++
+----
+otel.logs.exporter=myExporter
+----
++
+Then, enable an application-level SDK instance in the `microprofile-config.properties` file for each application in the runtime:
++
+----
+otel.sdk.disabled=false
+otel.service.name=<serviceName>
+----
++
+This configuration enables an application-level instance and a custom service name for each configured application, while all applications in the runtime use the `myExporter` OpenTelemetry exporter.
 
 
 [#traces]
