@@ -1,0 +1,46 @@
+// Copyright (c) 2022 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description:
+:seo-description:
+:page-layout: general-reference
+:page-type: general
+= Define custom MicroProfile Telemetry metrics
+
+You can use the OpenTelemetry metrics API to define custom metrics in your application code. When you enable the MicroProfile Telemetry feature 2.0 or later, you can then collect and emit these metrics to customize the observability of your application.
+
+
+The following example defines a custom counter metric:
+
+[source,java]
+----
+class WithCounter {
+    @Inject
+    Meter meter;
+
+    private LongCounter counter;
+
+    @PostConstruct
+    public void init() {
+        counter = meter
+                    .counterBuilder("new_subscriptions")
+                    .setDescription("Number of new subscriptions")
+                    .setUnit("1")
+                    .build();
+    }
+
+    void subscribe(String plan) {
+        counter.add(1,
+            Attributes.of(AttributeKey.stringKey("plan"), plan));
+    }
+}
+----
+
+In this example, `Meter` is used to define an instrument, in this case a Counter. Application code then can record measurement values along with other attributes. Measurement aggregations are computed separately for each unique combination of attributes.
+
+For a full list of available metrics, see link:https://opentelemetry.io/docs/specs/otel/metrics/api/#meter-operations[Meter operations] in the OpenTelemetry documentation.
