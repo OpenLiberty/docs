@@ -28,15 +28,15 @@ The following sections explain how to prepare your Open Liberty runtime and appl
 [#global]
 == Enabling MicroProfile Telemetry for Open Liberty
 
-To enable MicroProfile Telemetry in your Open Liberty runtime, you must add the MicroProfile Telemetry feature to your `server.xml` file and enable the OpenTelemetry SDK.OpenTelemetry is disabled by default. Depending on your needs, you can configure OpenTelemetry SDK instances at the runtime level or the application level.
+To enable MicroProfile Telemetry in your Open Liberty runtime, you must add the MicroProfile Telemetry feature to your `server.xml` file and enable the OpenTelemetry SDK.OpenTelemetry is disabled by default. Depending on your needs, you can configure OpenTelemetry SDK instances at the runtime level or the application level. In most cases, runtime-level configuration is preferred as it includes both runtime-level telemetry and application-specific telemetry.
 
 Runtime-level configuration::
-Runtime-level configuration collects and emits telemetry from the runtime and all applications. However, this configuration is preferable when you are running a single application per Liberty runtime because all telemetry emitted is labeled as coming from the same service.
+Runtime-level configuration collects and emits telemetry from the runtime and all applications. As all telemetry from the runtime and applications is labeled as coming from the same service, this configuration works best when you are running a single application per Liberty runtime.
 +
 You can configure your runtime instance in a few different sources, including your `jvm.options`, `bootstrap.properties`, or `server.env` files. You do not need to modify your application configuration to configure your runtime instance.
 
 Application-level configuration::
-Configuring application-level OpenTelemetry instances gives you more fine-grained control over the data you collect for each application. This option also supports compatibility earlier versions of OpenTelemetry, which created only application-level SDK instances. Runtime-level data is not collected or emitted by application-level instances.
+Configuring application-level OpenTelemetry instances gives you more fine-grained control over the data you collect for each application. This option also supports configuration-compatibility with MicroProfile Telemetry 1.1 and earlier, which created only application-level SDK instances. Runtime-level data is not collected or emitted by application-level instances.
 +
 You can configure your application-level OpenTelemetry instances in the `microprofile-config.properties` file or the `appProperties` attribute for the config:application[] element in the `server.xml` file. When you create application-level instances, any system and server environment properties overwrite your application-level configuration.
 
@@ -160,7 +160,7 @@ You can configure how MicroProfile Telemetry collects and exports logs by specif
 
 .. Enable MicroProfile Telemetry to collect logs from different sources in the Open Liberty runtime environment.
 +
-Configure the `source` attribute for the `mpTelemetry` element with a comma-separated list of comma-separated log sources:
+Configure the `source` attribute for the `mpTelemetry` element with a comma-separated list of log sources:
 +
 [source,xml]
 ----
@@ -181,7 +181,7 @@ otel.sdk.disabled=false
 otel.logs.exporter=console
 ----
 +
-If you set this property to `console`, all the logs are exported to standard out (`stdout`) and the `console.log` file. The `console.log` file contains the usual logs, along with duplicate OpenTelemetry-mapped logs. This setting is only for debugging purposes because the `console.log` file does not roll over and might affect performance if it gets too large. If you set this property to `none`, no logs are exported to OpenTelemetry.
+If you set this property to `console`, all the logs are exported to standard out (`stdout`) or the `console.log` file. The `console.log` file contains the usual logs, along with duplicate OpenTelemetry-mapped logs. This setting is only for debugging purposes because the `console.log` file does not roll over and might affect performance if it gets too large. If you set this property to `none`, no logs are exported.
 +
 .. Configure MicroProfile Telemetry to use the OpenTelemetry Batch LogRecord Processor.
 +
@@ -212,7 +212,7 @@ By default, all OpenTelemetry data is exported to link:https://opentelemetry.io/
 For example, to export metrics to Open Liberty log files, specify the following property:
 +
 ----
-otel.metrics.exporter=logging
+otel.metrics.exporter=console
 ----
 
 . Optionally, change the metric export interval.
