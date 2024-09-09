@@ -273,6 +273,48 @@ Exception thrown while trying to read configuration and update ManagedServiceFac
 This error occurs when a keystore element exists in the configuration without an ID field.
 If you use a minimal TLS configuration, set the `ID` field to `defaultKeyStore`.
 
+[#hostverify]
+=== You receive the CWPKI0824E message that SSL handshake failure due to hostname verification error
+
+If you try to access a URL, you might see the following message.
+
+----
+CWPKI0824E: SSL HANDSHAKE FAILURE:  Host name verification error while connecting to host [testServer.com].  The host name used to access the server does not match the server certificate's [Subject Alternative Name [dnsName:server1.com, ipAddress:11.22.33.444]].  The extended error message from the SSL handshake exception is: [No subject alternative names matching host name testServer.com].
+----
+
+Hostname and IP address verification is a critical security check that prevents man-in-the-middle attacks by making sure that the client connects to the correct server. However, hostname verification can fail during an SSL handshake.
+
+The following list provides common reasons that hostname verification fails.
+
+==== Mismatched hostnames
+
+The hostname that is specified in the client’s URL does not match the Common Name (CN) or Subject Alternative Name (SAN) in the server’s SSL certificate.
+
+==== Incorrect SSL configuration
+
+The SSL configuration on the server might be set up with a certificate that does not include the correct hostname.
+
+==== Configuration error in client
+
+The client might be configured with an incorrect URL or might be using a deprecated hostname.
+
+You can resolve the hostname verification failure by addressing the following areas.
+
+- Verify the hostname or IP address: Check that the hostname or IP address in the URL that you are using matches the SAN or CN in the server's SSL certificate. If the URL is incorrect, update it with the correct hostname.
+
+- Review your SSL configuration: Make sure that the server SSL certificate is configured correctly. The SSL certificate must contain the SAN or CN of the hostname that the client is connecting to.
+
+- If the security of your environment is not impacted, you can skip hostname verification for specific hostnames, IP addresses, or both. Set the `skipHostnameVerificationForHosts` attribute in the SSL config to the specific hostnames, IP addresses, or both that you want to skip verification for. Separate multiple entries with commas.
+
+- Disable hostname verification temporarily when this security check is not a concern, such as in nonproduction environments, by setting the SSL config element with the attribute `verifyHostname` to `false`.
+The following message is then displayed:
+
+----
+CWPKI0063W: Hostname verification is disabled for [mySSLConfig]. TLS/SSL connections do not check server identities to verify that the client is communicating with the correct server.
+----
+
+NOTE: Avoid disabling hostname verification for production environments as it can compromise security.
+
 [#Troubleshooting_TAI]
 == Troubleshooting Trust Association Interceptor
 
