@@ -1,4 +1,4 @@
-// Copyright (c) 2022 IBM Corporation and others.
+// Copyright (c) 2024 IBM Corporation and others.
 // Licensed under Creative Commons Attribution-NoDerivatives
 // 4.0 International (CC BY-ND 4.0)
 //   https://creativecommons.org/licenses/by-nd/4.0/
@@ -50,36 +50,9 @@ otel.exporter.zipkin.endpoint=http://localhost:9411/api/v2/spans
 [#manual]
 == Manual instrumentation
 
-Automatic instrumentation is available only for JAX-RS and Jakarta RESTful web service applications. To create spans for other operations, such as database calls, you can add manual instrumentation to the source code for those operations by using the https://www.javadoc.io/doc/io.opentelemetry/opentelemetry-api/1.19.0/io/opentelemetry/api/trace/package-summary.html[OpenTelemetry API]. However, before you manually instrument your code, you must complete the following prerequisites.
+Automatic instrumentation is available only for JAX-RS and Jakarta RESTful web service applications. To create spans for other operations, such as database calls, you can add manual instrumentation to the source code for those operations by using the https://www.javadoc.io/doc/io.opentelemetry/opentelemetry-api/1.39.0/io/opentelemetry/api/trace/package-summary.html[OpenTelemetry API].
 
-. Enable MicroProfile Telemetry, as described in <<#ol-config,Configuring Open Liberty to use MicroProfile Telemetry>>.
-
-. xref:class-loader-library-config.adoc#3rd-party[Enable third-party APIs] for your application by adding the following code in your `server.xml` file:
-+
-[source,xml]
-----
-<webApplication id="app-name" location="app-name.war">
-    <classloader apiTypeVisibility="+third-party"/>
-</webApplication>
-----
-
-. Add the `opentelemetry` API and OpenTelemetry instrumentation annotations as a provided dependency to your build path. For example, with Maven, add the following code to your `pom.xml` file.
-+
-[source,xml]
-----
-    <dependency>
-        <groupId>io.opentelemetry</groupId>
-        <artifactId>opentelemetry-api</artifactId>
-        <version>1.19.0</version>
-        <scope>provided</scope>
-    </dependency>
-    <dependency>
-        <groupId>io.opentelemetry.instrumentation</groupId>
-        <artifactId>opentelemetry-instrumentation-annotations</artifactId>
-        <version>1.19.0-alpha</version>
-        <scope>provided</scope>
-    </dependency>
-----
+However, before you manually instrument your code, you must enable MicroProfile Telemetry in your development environment by editing your runtime configuration. You must also add the OpenTelemetry API and annotations as a dependency on your build path. For more information, see xref:prepare-mptelemetry-metrics.adoc[Prepare your development environment for MicroProfile Telemetry].
 
 After you complete those prerequisites, you're ready to instrument your code. The following examples show configuration options with the OpenTelemetry API.
 
@@ -170,7 +143,7 @@ The OpenTelemetry Java agent is a tool that is provided by the OpenTelemetry pro
     ** Configuration is shared between all applications that are deployed to the server.
     ** Configuration properties are only read from system properties and environment variables. They are not read from MicroProfile Config configuration sources.
     ** Because the agent reads its configuration early in the startup process, system properties are not read from the `bootstrap.properties` file. Alternatively, you can set system properties in the `jvm.options` file by using the following syntax: `-Dname=value`
-    ** Implementations of https://www.javadoc.io/doc/io.opentelemetry/opentelemetry-sdk-extension-autoconfigure-spi/1.19.0/index.html[SPI extensions] within applications are ignored. For more information, see the https://opentelemetry.io/docs/instrumentation/java/automatic/agent-config/#extensions[agent documentation for providing SPI extensions].
-* When you use the agent, it takes over the instrumentation of REST calls and methods that are annotated with `@WithSpan`. As a result, the created spans might be slightly different.
+    ** Implementations of https://www.javadoc.io/doc/io.opentelemetry/opentelemetry-sdk-extension-autoconfigure-spi/1.39.0/index.html[SPI extensions] within applications are ignored. For more information, see the https://opentelemetry.io/docs/instrumentation/java/automatic/agent-config/#extensions[agent documentation for providing SPI extensions].
+* When you use the agent, it takes over the instrumentation of REST calls and methods that are annotated with the `@WithSpan` annotation. As a result, the created spans might be slightly different.
 * The agent is not compatible with https://www.ibm.com/docs/en/was-liberty/base?topic=security-java-2[Java 2 security].
 * Open Liberty uses many open source libraries internally. Some of these libraries might be automatically instrumented by the agent.
