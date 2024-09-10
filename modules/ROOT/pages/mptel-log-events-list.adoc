@@ -1,0 +1,175 @@
+// Copyright (c) 2024 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-layout: general-reference
+:page-type: general
+:seo-title: MicroProfile Telemetry logging events - OpenLiberty.io
+:seo-description: The MicroProfile Telemetry logging events that can be captured from the Open Liberty server runtime environment and applications.
+= MicroProfile Telemetry log events reference list
+
+MicroProfile Telemetry can collect logging events from the server runtime and applications. You can use these events to gather and analyze data that can help to better understand the behavior of applications.
+
+For more information, see xref:microprofile-telemetry.adoc[Enable observability with MicroProfile Telemetry].
+
+MicroProfile Telemetry can collect the following types of events:
+
+* <<Message events, Message events>>
+* <<Trace events, Trace events>>
+* <<FFDC events, FFDC events>>
+
+For information about trace log detail levels and how Open Liberty settings map to OpenTelemetry severity numbers, see <<sevlev, OpenTelemetry severity number mapping with Liberty log levels>>.
+
+== Message events
+The following table provides the fields for Liberty message events, a description for each field, and the mapping to the OpenTelemetry logs data model and Java agent:
+
+.Message event fields
+[options="header"]
+|=======================
+| Liberty message event fields | Description | Maps to OpenTelemetry logs data model | OpenTelemetry Java agent (JUL) mapping
+| type                             | A string that identifies the type of event. | Attributes[`io.openliberty.type`] | N/A
+| host                             | Host name of the server that is the source of the event. | Resource[`host.name`] | Resource[`host.name`]
+| message                          | The message from the log record, starting with the message ID. | Body | body
+| ibm_threadId                     | Thread ID in the log line, for example, 00000015. | Attributes[`thread.id`] | N/A
+| ibm_datetime                     | Time at which the event occurred. | TimeStamp | TimeStamp
+| ibm_messageId                    | Message ID in the log line. | Attributes[`io.openliberty.message_id`] | N/A
+| module                           | Logger name from the log record. | Attributes[`io.openliberty.module`] | N/A
+| loglevel                         | Severity indicator | SeverityText | SeverityText
+| ibm_methodName                   | Method name from the log record. | Attributes[`io.openliberty.method_name`] | N/A
+| ibm_className                    | Class name from the log record. | Attributes[`io.openliberty.class_name`] | N/A
+| ibm_sequence                     | Sequence number of the event,. | Attributes[`io.openliberty.sequence`] | N/A
+| ext_thread                       | Name of the thread that is the source of the event. | Attributes[`thread.name`] | N/A
+| ext_appName                      | Name of the application that logged the message. | Attributes[`io.openliberty.ext.app_name`] | N/A
+|=======================
+
+The following example shows the OpenTelemetry Collector output for a message event from an application:
+
+----
+timeUnixNano="1717512929163000000"
+observeTimeUnixNano="1717512929602000000"
+severityNumber="13"
+severityText="W"
+body=" BADAP0001W: Test Warning."
+traceId="a4fa4f34167d2bcbcfb94588d37b332"
+spanId="63522117c3492d42"
+Attributes:
+            io.openliberty.type="liberty_message"
+            io.openliberty.message_id="BADAP0001W"
+            io.openliberty.sequence="1717512929163_0000000000012
+            io.openliberty.module="com.ibm.ws.lumberjack.badness.Angry"
+            thread.id="65"
+            thread.name="Default Executor-thread-2"
+            io.openliberty.ext.app_name="badapp"
+----
+
+== Trace events
+The following table provides the fields for Liberty trace events, a description for each field, and the mapping to the OpenTelemetry logs data model and Java agent:
+
+.Trace event fields
+[options="header"]
+|=======================
+| Liberty trace event fields | Description | Maps to OpenTelemetry Logs Data Model | OpenTelemetry Java Agent JUL Mapping
+| type                             | A string that identifies the type of event. | Attributes[`io.openliberty.type`] | N/A
+| host                             | Host name of the server that is the source of the event. | Resource[`host.name`] | Resource[`host.name`]
+| message                          | The message from the log record, starting with the message ID. | Body | body
+| ibm_threadId                     | Thread ID in the log line, for example, 00000015. | Attributes[`thread.id`] | N/A
+| ibm_datetime                     | Time at which the event occurred. | TimeStamp | TimeStamp
+| ibm_messageId                    | Message ID in the log line. | Attributes[`io.openliberty.message_id`] | N/A
+| module                           | Logger name from the log record. | Attributes[`io.openliberty.module`] | N/A
+| loglevel                         | Severity indicator | SeverityText | SeverityText
+| ibm_methodName                   | Method name from the log record. | Attributes[`io.openliberty.method_name`] | N/A
+| ibm_className                    | Class name from the log record. | Attributes[`io.openliberty.class_name`] | N/A
+| ibm_sequence                     | Sequence number of the event,. | Attributes[`io.openliberty.sequence`] | N/A
+| ext_thread                       | Name of the thread that is the source of the event. | Attributes[`thread.name`] | N/A
+| ext_appName                      | Name of the application that logged the message. | Attributes[`io.openliberty.ext.app_name`] | N/A
+|=======================
+
+The following example shows the OpenTelemetry Collector output for a trace event from an application:
+
+----
+timeUnixNano="11234512231363000000"
+observeTimeUnixNano="17123512929602000000"
+severityNumber="1"
+severityText="3"
+body="finest trace"
+traceId="3fced7fbfbc062349c66a8c1a37c31b2"
+spanId="4be39c323e375d9e"
+Attributes:
+            io.openliberty.type="liberty_trace"
+            io.openliberty.sequence="12312363_0000000000021"
+            io.openliberty.module="com.test.app"
+            thread.id="79"
+            thread.name="Default Executor-thread-12"
+            io.openliberty.ext.app_name="testapp"
+----
+
+== FFDC events
+The following table provides the fields for the first failure data capture (FFDC) events, a description for each fiel, and the mapping to the OpenTelemetry logs data model:
+
+.FFDC event fields
+[options="header"]
+|=======================
+| Liberty FFDC event fields | Description | Maps to OpenTelemetry Logs Data Model
+| type                     | A string that identifies the type of event. | Attributes[`io.openliberty.type`]
+| host                     | Host name of the server that is the source of the event. | Resource[`host.name`]
+| ibm_datetime             | Time at which the event occurred. | TimeStamp
+| message                  | The message from the exception that triggered the event. | body and Attributes[`exception.message`]
+| ibm_className            | The class that emitted the FFDC event. | Attributes[`io.openliberty.class_name`]
+| ibm_exceptionName        | The exception that is reported in the FFDC event. | Attributes[`exception.type`]
+| ibm_probeID              | The unique identifier of the FFDC point within the class. | Attributes[`io.openliberty.probe_id`]
+| ibm_threadId             | The thread ID of the FFDC event. | Attributes[`thread.id`]
+| ibm_stackTrace           | The stack trace of the FFDC event. | Attributes[`exception.stacktrace`]
+| ibm_objectDetails        | The incident details for the FFDC event. | Attributes[`io.openliberty.object_details`]
+| ibm_sequence             | Sequence number of the event, which is useful for sorting records with the same timestamp. | Attributes[`io.openliberty.sequence`]
+|=======================
+
+The following example shows the OpenTelemetry Collector output for an FFDC event from an application:
+
+----
+timeUnixNano=“1232335231363000000”
+observeTimeUnixNano=“123455512929602000000”
+severityNumber=“13”
+body="Cannot invoke "java.lang.String.toString()" because "myString" is null"
+traceId=“3fced7fbfbc062349c66a8c1a37c31b2”
+spanId=“4be39c323e375d9e”
+Attributes:
+            io.openliberty.type="liberty_ffdc"
+            exception.message="Cannot invoke "java.lang.String.toString()" because "myString" is null"
+            exception.stacktrace="java.lang.NullPointerException: Cannot invoke "java.lang.String.toString()" because "myString" is null\n\tat io.openliberty.microprofile.telemetry.logging.internal.container.fat.MpTelemetryLogApp.MpTelemetryServlet.doGet(MpTelemetryServlet.java:53) ..."
+            exception.type= "java.lang.NullPointerException"
+            io.openliberty.class_name="io.openliberty.microprofile.telemetry.logging.internal.container.fat.MpTelemetryLogApp"
+            io.openliberty.object_details="Object type = io.openliberty.microprofile.telemetry.logging.internal.container.fat.MpTelemetryLogApp\n tc = class             com.ibm.websphere.ras.TraceComponent@7baa4ff8 ...
+            io.openliberty.probe_id="62"
+            io.openliberty.sequence=“1723140654466_00000000000011"
+            thread.id=“92”
+            thread.name=“Default Executor-thread-12”
+----
+
+[#sevlev]
+== OpenTelemetry severity number mapping with Open Liberty log levels
+
+You can set the level of detail that your Open Liberty logs collect by configuring the `traceSpecification` attribute for the config:logging[] attribute in your `server.xml` file.  For more information about Liberty log levels, see xref:log-trace-configuration.adoc#log_details[Trace log detail levels].
+
+The following table describes how the different Liberty log levels map to severity numbers and short names from the OpenTelemetry specification.
+
+.Open Liberty log levels and OpenTelemetry severity numbers
+[options="header"]
+|=======================
+| Liberty log levels | OpenTelemetry severity short Name | OpenTelemetry severity meaning | OpenTelemetry severity number
+| fatal             | FATAL                             | A fatal error such as application or system crash. | 21
+| severe            | ERROR                             | An error event. Something went wrong. | 17
+| warning           | WARN                              | A warning event. Not an error but is likely more important than an informational event. | 13
+| audit             | INFO2                             | An informational event. Indicates that an event happened. | 10
+| info              | INFO                              | - | 9
+| config            | DEBUG4                            | A debugging event. | 8
+| detail            | DEBUG3                            | - | 7
+| fine              | DEBUG2                            | - | 6
+| finer             | DEBUG                             | - | 5
+| finest            | TRACE                             | A fine-grained debugging event. Typically disabled in default configurations. | 1
+|=======================
+
+// assisted by watsonx latest with latest GenAI contribution: llama-3-70b-instruct

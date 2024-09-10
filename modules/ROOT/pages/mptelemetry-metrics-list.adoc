@@ -1,0 +1,309 @@
+// Copyright (c) 2019, 2022 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description: The metrics contained in this reference list are all available for Open Liberty. Use metric data to effectively monitor the status of your microservice systems.
+:seo-title: Metrics reference list - openliberty.io
+:seo-description: The metrics contained in this reference list are all available for Open Liberty. Use metric data to effectively monitor the status of your microservice systems.
+:page-layout: general-reference
+:page-type: general
+:mp-1-0: feature:mpMetrics-1.0[display=MicroProfile Metrics 1.0]
+:mp-1-1: feature:mpMetrics-1.1[display=MicroProfile Metrics 1.1]
+:mp-2-0: feature:mpMetrics-2.0[display=MicroProfile Metrics 2.0]
+:mp-2-3: feature:mpMetrics-2.3[display=MicroProfile Metrics 2.3]
+:mp-3-0: feature:mpMetrics-3.0[display=MicroProfile Metrics 3.0]
+:mp-4-0: feature:mpMetrics-4.0[display=MicroProfile Metrics 4.0]
+:mp-5-0: feature:mpMetrics-5.0[display=MicroProfile Metrics 5.0]
+:mp-ft-3-0: feature:mpFaultTolerance-3.0[display=MicroProfile Fault Tolerance 3.0]
+:connector-metric-features: feature:mpMetrics[display=MicroProfile Metrics] and feature:mpReactiveMessaging[display=MicroProfile Reactive Messaging 3.0]
+:base-metric-features: feature:mpMetrics[display=MicroProfile Metrics]
+:vendor-metric-features: feature:mpMetrics[display=MicroProfile Metrics]
+:ft-metric-features: feature:mpMetrics[display=MicroProfile Metrics] and feature:mpFaultTolerance[display=MicroProfile Fault Tolerance]
+:grpc-client-metric-features: feature:mpMetrics[display=MicroProfile Metrics] and feature:grpcClient[display=gRPC Client]
+:grpc-server-metric-features: feature:mpMetrics[display=MicroProfile Metrics] and feature:grpc[display=gRPC]
+= MicroProfile Telemetry metrics reference list
+
+The MicroProfile Telemetry metrics reference table lists and describes all the metrics that are available for Open Liberty when you enable the MicroProfile Telemetry feature 2.0 or later.
+Use metric data to effectively monitor the status of your microservice systems.
+
+You can obtain metrics from applications, the Open Liberty runtime, and the Java virtual machine (JVM). They can be gathered and stored in database tools, such as link:https://prometheus.io/[Prometheus], and displayed on dashboards, such as link:https://grafana.com/[Grafana].
+
+When you enable the feature:mpTelemetry-2.0[display=MicroProfile Telemetry] feature version 2.0 and later, you can manage your logs, metrics, and traces in a standardized way with the OpenTelemetry protocol. For more information, see xref:microprofile-telemetry[Enable observability with MicroProfile Telemetry].
+
+
+== Filter metrics to gather only the data you need
+By default, all monitoring components are enabled. If your server is collecting more metrics data than you need, you can improve the server performance by collecting only those metrics that you intend to use. To configure only a subset of metrics to be reported, specify the components that you want to monitor in the `filter` attribute for the `monitor` configuration element in your `server.xml` file. You can identify the relevant monitoring component for each metric by referencing the **Monitoring component** column of the metrics reference tables.
+
+To enable only the monitoring components that are used by MicroProfile Telemetry, add the following code to your `server.xml` file.
+
+[source,xml]
+----
+<monitor  filter="ConnectionPool,ThreadPool,RequestTiming,Session,HTTP"/>
+----
+
+To disable all metrics but the `Session` metrics, add the following code to your `server.xml` file:
+
+[source,xml]
+----
+<monitor  filter="Session"/>
+----
+
+To disable all monitoring components, add the following code to your `server.xml` file:
+
+[source,xml]
+----
+<monitor  filter=" "/>
+----
+
+
+== MicroProfile Telemetry 2.0 and later metrics reference
+
+When the MicroProfile Telemetry feature 2.0 and later is enabled, Open Liberty can send metric data to compatible OpenTelemetry protocol (OTLP) receivers. For more information, see xref:microprofile-telemetry[Enable observability with MicroProfile Telemetry].
+
+The table lists the metric types, descriptions and attributes that are available for Open Liberty. Where applicable, the associated monitoring component that you can use to filter the metric is also included.
+The **Features required** column of the table includes the feature or features that must be enabled to obtain that metric data.
+The **Version introduced** column specifies the minimum version of the feature that you must enable to collect the metric.
+
+// Assisted by watsonx latest genai contribution llama-3-70b
+[#telem-table]
+.MicroProfile Telemetry 2.0 and later metrics reference
+[options="header"cols="3,4a,6a,2,2,2"]
+|===
+| MicroProfile Telemetry 2.0 name | Attributes | Type and description | Monitoring component | Features required | Version introduced
+
+| `http.server.request.duration`
+|* `http.request.method`
+* `url.scheme`
+* `errory.type` (conditionally required)
+* `http.response.status_code`
+* `http.route`
+* `network.protocol.version`
+* `server.address`
+* `server.port`
+| Duration of HTTP server requests. This metric is a Histogram. / (seconds). This histogram has the following explicit bucket boundaries [ 0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1, 2.5, 5, 7.5, 10 ]
+| HTTP
+| feature:mpTelemetry[display=MicroProfile Telemetry]
+| feature:mpTelemetry-2.0[display=MicroProfile Telemetry 2.0]
+
+| io.openliberty.connection_pool.handle.count
+| io.openliberty.datasource.name="<datasource_name>"
+| The number of connections that are in use. This number might include multiple connections that are shared from a single managed connection. This metric is an `ObservableLongUpDownCounter` counter. / ({connection_handle})
+| ConnectionPool
+| feature:mpTelemetry[display=MicroProfile Telemetry]
+| feature:mpTelemetry-2.0[display=MicroProfile Telemetry 2.0]
+
+| io.openliberty.connection_pool.connection.created
+| io.openliberty.datasource.name="<datasource_name>"
+| The total number of managed connections that were created since the pool creation. This metric is an `ObservableLongCounter` counter. / ({connection_handle})
+| ConnectionPool
+| feature:mpTelemetry[display=MicroProfile Telemetry]
+| feature:mpTelemetry-2.0[display=MicroProfile Telemetry 2.0]
+
+| io.openliberty.connection_pool.connection.destroyed
+| io.openliberty.datasource.name="<datasource_name>"
+| The total number of managed connections that were destroyed since the pool creation. This metric is an `ObservableLongCounter` counter. / ({connection_handle})
+| ConnectionPool
+| feature:mpTelemetry[display=MicroProfile Telemetry]
+| feature:mpTelemetry-2.0[display=MicroProfile Telemetry 2.0]
+
+| io.openliberty.connection_pool.connection.free
+| io.openliberty.datasource.name="<datasource_name>"
+| The number of managed connections that are available. This metric is an `ObservableLongUpDownCounter` counter. / ({connection_handle})
+| ConnectionPool
+| feature:mpTelemetry[display=MicroProfile Telemetry]
+| feature:mpTelemetry-2.0[display=MicroProfile Telemetry 2.0]
+
+| io.openliberty.connection_pool.connection.use_time
+| io.openliberty.datasource.name="<datasource_name>"
+| The amount of time connections were used for. This metric is an DoubleHistogram / (seconds). This histogram has the following explicit bucket boundaries [ 0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 5, 10]
+| ConnectionPool
+| feature:mpTelemetry[display=MicroProfile Telemetry]
+| feature:mpTelemetry-2.0[display=MicroProfile Telemetry 2.0]
+
+| io.openliberty.connection_pool.connection.count
+| io.openliberty.datasource.name="<datasource_name>"
+| The current sum of managed connections in the pool. This sum includes managed connections that are available and those that are in use. A single managed connection that is shared by multiple connections only counts once. This metric is an `ObservableLongUpDownCounter` counter / ({connection_handle})
+| ConnectionPool | feature:mpTelemetry[display=MicroProfile Telemetry]
+| feature:mpTelemetry-2.0[display=MicroProfile Telemetry 2.0]
+
+| io.openliberty.connection_pool.connection.wait_time
+| io.openliberty.datasource.name="<datasource_name>"
+| The amount of time that connection requests waited for a connection. This metric is an `DoubleHistogram` histogram / (seconds). This histogram has the following explicit bucket boundaries [ 0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 5, 10]
+| ConnectionPool
+| feature:mpTelemetry[display=MicroProfile Telemetry]
+| feature:mpTelemetry-2.0[display=MicroProfile Telemetry 2.0]
+
+| io.openliberty.request_timing.active
+| n/a
+| The number of servlet requests that are currently running. This metric is an `ObservableLongUpDownCounter` counter. / ({request})
+| RequestTiming
+| feature:mpTelemetry[display=MicroProfile Telemetry]
+| feature:mpTelemetry-2.0[display=MicroProfile Telemetry 2.0]
+
+| io.openliberty.request_timing.hung
+| n/a
+| The number of servlet requests that are currently hung. This metric is an `ObservableLongUpDownCounter` counter. / ({request})
+| RequestTiming
+| feature:mpTelemetry[display=MicroProfile Telemetry]
+| feature:mpTelemetry-2.0[display=MicroProfile Telemetry 2.0]
+
+| io.openliberty.request_timing.processed
+| n/a
+| The number of servlet requests since the server started. This metric is an `ObservableLongCounter` counter. / ({request})
+| RequestTiming
+| feature:mpTelemetry[display=MicroProfile Telemetry]
+| feature:mpTelemetry-2.0[display=MicroProfile Telemetry 2.0]
+
+| io.openliberty.request_timing.slow
+| n/a
+| The number of servlet requests that are currently running but are slow. This metric is an `ObservableLongUpDownCounter` counter. / ({request})
+| RequestTiming
+| feature:mpTelemetry[display=MicroProfile Telemetry]
+| feature:mpTelemetry-2.0[display=MicroProfile Telemetry 2.0]
+
+| io.openliberty.session.active
+| io.openliberty.app.name="<app_name>"
+| The number of concurrently active sessions. A session is considered active if the application server is processing a request that uses that user session. This metric is an `ObservableLongUpDownCounter` counter. / ({session})
+| Session
+| feature:mpTelemetry[display=MicroProfile Telemetry]
+| feature:mpTelemetry-2.0[display=MicroProfile Telemetry 2.0]
+
+| io.openliberty.session.created
+| io.openliberty.app.name="<app_name>"
+| The number of sessions logged in since this metric was enabled. This metric is an `ObservableLongCounter` counter. / ({session})
+| Session
+| feature:mpTelemetry[display=MicroProfile Telemetry]
+| feature:mpTelemetry-2.0[display=MicroProfile Telemetry 2.0]
+
+| io.openliberty.session.invalidated
+| io.openliberty.app.name="<app_name>"
+| The number of sessions logged out since this metric was enabled. This metric is an `ObservableLongCounter` counter. / ({session})
+| Session
+| feature:mpTelemetry[display=MicroProfile Telemetry]
+| feature:mpTelemetry-2.0[display=MicroProfile Telemetry 2.0]
+
+| io.openliberty.session.invalidated_by_timeout
+| io.openliberty.app.name="<app_name>"
+| The number of sessions logged out because of a timeout since this metric was enabled. This metric is an `ObservableLongCounter` counter. / ({session})
+| Session
+| feature:mpTelemetry[display=MicroProfile Telemetry]
+| feature:mpTelemetry-2.0[display=MicroProfile Telemetry 2.0]
+
+| io.openliberty.session.live
+| io.openliberty.app.name="<app_name>"
+| The number of users that are currently logged in. This metric is an `ObservableLongUpDownCounter` counter. / ({session})
+| Session
+| feature:mpTelemetry[display=MicroProfile Telemetry]
+| feature:mpTelemetry-2.0[display=MicroProfile Telemetry 2.0]
+
+| io.openliberty.threadpool.active_threads
+| io.openliberty.threadpool.name="<pool_name>"
+| The number of threads that are actively running tasks. This metric is an `ObservableLongUpDownCounter` counter. / ({thread})
+| ThreadPool
+| feature:mpTelemetry[display=MicroProfile Telemetry]
+| feature:mpTelemetry-2.0[display=MicroProfile Telemetry 2.0]
+
+| io.openliberty.threadpool.size
+| io.openliberty.threadpool.name="<pool_name>"
+| The size of the thread pool. This metric is an `ObservableLongUpDownCounter` counter. / ({thread})
+| ThreadPool
+| feature:mpTelemetry[display=MicroProfile Telemetry]
+| feature:mpTelemetry-2.0[display=MicroProfile Telemetry 2.0]
+
+| jvm.memory.used
+| vm.memory.pool.name="<pool_name>" , -jvm.memory.type=<memory_type>
+| Measure of memory used. This metric is an `UpDownCounter` counter. /(bytes)
+| n/a
+| feature:mpTelemetry[display=MicroProfile Telemetry]
+| feature:mpTelemetry-2.0[display=MicroProfile Telemetry 2.0]
+
+| jvm.memory.committed
+| * jvm.memory.pool.name="<pool_name>"
+* jvm.memory.type=<memory_type>
+| Measure of memory committed. This metric is an `UpDownCounter` counter. /(bytes)
+| n/a
+| feature:mpTelemetry[display=MicroProfile Telemetry]
+| feature:mpTelemetry-2.0[display=MicroProfile Telemetry 2.0]
+
+| jvm.memory.limit
+| * vm.memory.pool.name="<pool_name>"
+* jvm.memory.type=<memory_type>
+| Measure of max obtainable memory. This metric is an `UpDownCounter` counter. /(bytes)
+| n/a
+| feature:mpTelemetry[display=MicroProfile Telemetry]
+| feature:mpTelemetry-2.0[display=MicroProfile Telemetry 2.0]
+
+| jvm.memory.used_after_last_gc
+| * vm.memory.pool.name="<pool_name>"
+* jvm.memory.type=<memory_type>
+| Measure of memory used, as measured after the most recent garbage collection event on this pool. This metric is an `UpDownCounter` counter. /(bytes)
+| n/a
+| feature:mpTelemetry[display=MicroProfile Telemetry]
+| feature:mpTelemetry-2.0[display=MicroProfile Telemetry 2.0]
+
+| jvm.gc.duration
+| * jvm.gc.action=<gc_action>
+* jvm.gc.name=<gc_name>
+| Duration of JVM garbage collection actions. This metric is an Histogram. / (seconds). This histogram has the following explicit bucket boundaries [ 0.01, 0.1, 1, 10 ]
+| n/a
+| feature:mpTelemetry[display=MicroProfile Telemetry]
+| feature:mpTelemetry-2.0[display=MicroProfile Telemetry 2.0]
+
+| jvm.thread.count
+| * jvm.thread.daemon=<is_daemon>
+* jvm.thread.state=<thread_state>
+| Number of executing platform threads. This metric is an `UpDownCounter` counter. /({thread})
+| n/a
+| feature:mpTelemetry[display=MicroProfile Telemetry]
+| feature:mpTelemetry-2.0[display=MicroProfile Telemetry 2.0]
+
+| jvm.class.loaded
+| n/a
+| Number of classes loaded since JVM start. This metric is a Counter. / ({class})
+| n/a
+| feature:mpTelemetry[display=MicroProfile Telemetry]
+| feature:mpTelemetry-2.0[display=MicroProfile Telemetry 2.0]
+
+
+| jvm.class.unloaded
+| n/a
+| Number of classes unloaded since JVM start. This metric is a Counter. / ({class})
+| n/a
+| feature:mpTelemetry[display=MicroProfile Telemetry]
+| feature:mpTelemetry-2.0[display=MicroProfile Telemetry 2.0]
+
+| jvm.class.count
+| n/a
+| Number of classes currently loaded. This metric is an `UpDownCounter` counter. /({class})
+| n/a
+| feature:mpTelemetry[display=MicroProfile Telemetry]
+| feature:mpTelemetry-2.0[display=MicroProfile Telemetry 2.0]
+
+| jvm.cpu.time
+| n/a
+| CPU time used by the process as reported by the JVM. This metric is a Counter
+| n/a
+| feature:mpTelemetry[display=MicroProfile Telemetry]
+| feature:mpTelemetry-2.0[display=MicroProfile Telemetry 2.0]
+
+| jvm.cpu.count
+| n/a
+| Number of processors available to the Java virtual machine. This metric is an `UpDownCounter` counter. /({cpu})
+| n/a
+| feature:mpTelemetry[display=MicroProfile Telemetry]
+| feature:mpTelemetry-2.0[display=MicroProfile Telemetry 2.0]
+
+| jvm.cpu.recent_utilization
+| n/a
+| Recent CPU utilization for the process as reported by the JVM. This metric is a Gauge.
+| n/a
+| feature:mpTelemetry[display=MicroProfile Telemetry]
+| feature:mpTelemetry-2.0[display=MicroProfile Telemetry 2.0]
+
+|===
+
+{empty} +
