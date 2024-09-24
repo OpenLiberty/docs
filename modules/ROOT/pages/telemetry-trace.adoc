@@ -15,13 +15,13 @@
 After you enable MicroProfile Telemetry and configure a trace server, you can instrument tracing in your application code. You can instrument your code automatically, manually, or by using the Java agent.
 
 * <<#auto, Automatic instrumentation>>, which automatically traces your JAX-RS or RESTful web services.
-* <<#manual, Manual instrumentation>>, which allows you to start and end telemetry spans manually for applications that are not JAX-RS or RESTful web services.
+* <<#manual, Manual instrumentation>>, which enables you to start and end telemetry spans manually for applications that are not JAX-RS or RESTful web services.
 * <<#agent, Agent instrumentation>>, which automatically adds telemetry to popular open source libraries. However, agent instrumentation also imposes certain <<#limit, limitations>>.
 
 [#auto]
 == Automatic instrumentation
 
-With automatic instrumentation, you can observe traces without modifying the source code in your applications. All you need to do is configure runtime as described in xref:microprofile-telemetry.adoc#traces[Configuring Open Liberty to use MicroProfile Telemetry to collect traces]. However, automatic instrumentation is available only for JAX-RS and Jakarta RESTful web service applications.
+With automatic instrumentation, you can observe traces without modifying the source code in your applications. All that you need to do is configure runtime as described in xref:microprofile-telemetry.adoc#traces[Configuring Open Liberty to use MicroProfile Telemetry to collect traces]. However, automatic instrumentation is available only for JAX-RS and Jakarta RESTful web service applications.
 
 In Open Liberty version 23.0.0.11 and later, spans are automatically generated for incoming HTTP requests, including static files, servlets, and JSPs.
 
@@ -34,7 +34,7 @@ However, before you manually instrument your code, you must enable MicroProfile 
 
 After you complete those prerequisites, you're ready to instrument your code. The following examples show configuration options with the OpenTelemetry API.
 
-- Add extra information, such as the user ID, to the current span. Any information that you add to a span is visible when you look at traces on your trace server.
+- Add extra information, such as the user ID, to the current span. Any information that you add to a span is visible when you look at the traces on your trace server.
 +
 [source,java]
 ----
@@ -50,7 +50,7 @@ public String myMethod() {
 }
 ----
 
-- Annotate methods in any Jakarta CDI beans by using the `@WithSpan` annotation. This annotation creates a new Span and establishes any required relationships with the current trace context. You can annotate method parameters with the `@SpanAttribute` annotation to indicate which method parameters are part of the trace, as shown in the following example.
+- Annotate methods in any Jakarta CDI beans by using the `@WithSpan` annotation. This annotation creates a span and establishes any required relationships with the current trace context. You can annotate method parameters with the `@SpanAttribute` annotation to indicate which method parameters are part of the trace, as shown in the following example.
 +
 [source,java]
 ----
@@ -90,7 +90,7 @@ public String myMethod() {
 }
 ----
 
-This example creates a span named `QueryDatabase` that can be used to track the execution time and other attributes of the `queryDatabase()` method.
+This example creates a span that is named `QueryDatabase` that can be used to track the execution time and other attributes of the `queryDatabase()` method.
 
 // Assisted by WCA@IBM
 // Latest GenAI contribution: ibm/granite-8b-code-instruct
@@ -99,10 +99,10 @@ This example creates a span named `QueryDatabase` that can be used to track the 
 
 The following important considerations apply to manual instrumentation.
 
-- You must call the `.end()` method on any span you create, otherwise the span is not recorded.
-- The current span is used as the parent for any new spans that are created. Therefore, when you create a span, you usually also want to make it current. However, you must close the `Scope` instance that is returned by the  `Span.makeCurrent()` method. You can close a `Scope` instance by specifying a try-with-resources block, as shown in the previous example for creating a subspan.
+- Call the `.end()` method on any span that you create, otherwise the span is not recorded.
+- The current span is used as the parent for any new spans that are created. Therefore, when you create a span, in most cases you also want to make it current. However, you must close the `Scope` instance that is returned by the `Span.makeCurrent()` method. You can close a `Scope` instance by specifying a try-with-resources block, as shown in the previous example for creating a subspan.
 - Because Liberty supports per-application configuration, it does not support `GlobalOpenTelemetry`. Using that class does not produce any telemetry data.
-- If you set any properties by using environment variables, including those in the `server.env` file, the keys must be in uppercase and all punctuation must be replaced by an underscore. Values must be written normally.
+- If you set any properties by using environment variables, including those in the `server.env` file, specify the keys in uppercase and replace all punctuation with an underscore. Write values normally.
 
 For more information, see the https://opentelemetry.io/docs/instrumentation/java/manual[OpenTelemetry manual instrumentation documentation]. However, remember when you use the MicroProfile Telemetry feature in Open Liberty, you must obtain the `OpenTelemetry` and `Tracer` objects by injecting them, not by creating your own. Furthermore, be aware that this documentation includes information for the OpenTelemetry Metrics and Logging APIs, which are not supported by MicroProfile Telemetry.
 
