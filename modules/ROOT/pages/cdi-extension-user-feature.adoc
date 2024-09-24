@@ -1,0 +1,67 @@
+// Copyright (c) 2024 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description:
+:seo-title: Creating a CDI Extension inside a User Feature
+:seo-description:
+:page-layout: general-reference
+:page-type: general
+= Creating a CDI extension inside an Open Liberty user feature
+
+Contexts and Dependency Injection (CDI) provides powerful extensions to augment, extend, or override the behavior of CDI. To enable CDI to find the extensions inside an Open Liberty user feature, you must implement an Open Liberty-specific SPI: `io.openliberty.cdi.spi.CDIExtensionMetadata`.
+
+The link:https://openliberty.io/docs/latest/reference/javadoc/spi/cdi-1.2.html?path=24.0.0.8/com.ibm.websphere.appserver.spi.cdi_1.1-javadoc/io/openliberty/cdi/spi/package-summary.html[CDIExtensionMetadata] class also provides shortcuts for the two most common uses of a CDI Extension: registering a class as a CDI bean, and registering an annotation as a bean defining annotation (BDA).
+
+The `CDIExtensionMetadata` class includes three possible methods to extend the class:
+
+
+getBeanClasses::
+The `CDIBean` class becomes a CDI bean that can be injected with `@Inject CDIBean cdiBean`. If it does not have a scope, the scope defaults to `@Dependent`.
+
+getBeanDefiningAnnotationClasses::
+The `CDIAnnotation` class becomes a bean defining annotation. Any class that is annotated with `@CDIAnnotation` can be injected through CDI. Unless `CDIAnnotation` defines otherwise, the default scope is `@Dependent`. For more information about how annotations define their scope, see link:https://jakarta.ee/specifications/cdi/4.0/jakarta-cdi-spec-4.0#scopes[Scopes in CDI 4.0].
+
+getExtensions::
+The `CDIExtension` class is processed as a full CDI extension.
+
+
+The following example shows an implementation of the `CDIExtensionMetadata` class. Each of the three methods has a default implementation that returns an empty set, so you can implement only the ones that are relevant to your needs.
+
+[source,java]
+----
+package com.ibm.example.cdi;
+
+import static org.osgi.service.component.annotations.ConfigurationPolicy.IGNORE;
+
+import java.util.Set;
+import jakarta.enterprise.inject.spi.Extension;
+
+import io.openliberty.cdi.spi.CDIExtensionMetadata;
+import org.osgi.service.component.annotations.Component;
+
+@Component(service = CDIExtensionMetadata.class, configurationPolicy = IGNORE)
+public class CDIIntegrationMetaData implements CDIExtensionMetadata
+{
+    public Set<Class<?>> getBeanClasses() {
+        return Set.of(CDIBean.class);
+    }
+
+    public Set<Class<? extends Annotation>> getBeanDefiningAnnotationClasses() {
+        return Set.of(CDIAnnotation.class);
+    }
+
+    public Set<Class<? extends Extension>> getExtensions() {
+        return Set.of(CDIExtension.class);
+    }
+
+}
+----
+
+The `@Component` annotation is required so that Open Liberty processes your implementation of the `CDIExtensionMetadata` class.
+
+This configuration is all that you need to make your user extension extend CDI. For a step-by-step guide to creating a user feature that extends CDI, see the link:https://openliberty.io/blog/2024/06/28/liberty-user-feature-tutorial.html[How to package a library as an Open Liberty user feature] blog post.
