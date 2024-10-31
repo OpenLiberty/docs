@@ -6,6 +6,7 @@
 - <<#ltpa,Specify LTPA keys>>
 - <<#filter,Configure LTPA authentication for a subset of requests>>
 - <<#tai,Disable LTPA cookies for TAI>>
+- <<#validationkeys,Rotate LTPA keys without requiring users to reauthenticate>>
 
 === Configure a basic user registry
 You can configure Open Liberty to authenticate and authorize users by using a basic user registry. The basic user registry contains user credentials that applications need for security-related tasks. To configure a basic user registry, the Application Security feature must be enabled in the `server.xml` file. The following example shows the configuration of a basic user registry in the `server.xml` file:
@@ -52,14 +53,16 @@ When you want to configure a basic user registry for test purposes, you can use 
 ----
 You can use QuickStart security configuration for test purposes. The registry that is configured by this option is not intended for production environments. However, it is useful in test scenarios, particularly for testing secured JMX connections that require administrator access.
 
-[#ltpa]	
-=== Specify LTPA keys	
-When the Application Security feature is enabled, Lightweight Third Party Authentication (LTPA) is enabled by default. You can override the default settings for the `ltpa` element by configuring the `ltpa` element in the `server.xml` file. The following example shows how to configure the `ltpa` element:	
-[source,xml]	
-----	
-<ltpa keysFileName="yourLTPAKeysFileName.keys" keysPassword="keysPassword" expiration="120" />	
-----	
+[#ltpa]
+=== Specify LTPA keys
+When the Application Security feature is enabled, Lightweight Third Party Authentication (LTPA) is enabled by default. You can override the default settings for the `ltpa` element by configuring the `ltpa` element in the `server.xml` file. The following example shows how to configure the `ltpa` element:
+[source,xml]
+----
+<ltpa keysFileName="yourLTPAKeysFileName.keys" keysPassword="keysPassword" expiration="120" />
+----
 For more information on LTPA configuration attributes, see the config:ltpa[display=LTPA] configuration element.
+
+For more information about LTPA best practices, including how to configure secure cookies that must use TLS, see xref:ROOT:network-hardening.adoc#ltpa[LTPA best practices].
 
 [#filter]
 === Configure LTPA authentication for a subset of requests
@@ -82,9 +85,67 @@ If the `ltpa` element does not specify the `authFilterRef` attribute, all reques
 
 [#tai]
 === Disable LTPA cookies for TAI
-LTPA cookies contain secure tokens that are used to verify user credentials and enable SSO. When you don't want to rely on LTPA tokens for SSO, you can use other methods, such as a Trust Association Interceptor (TAI), for authentication. A TAI is used to validate HTTP requests between a third-party security server and an Open Liberty server to complete authentication.  The following example shows how to disable LTPA cookies for TAI by specifying the `disableLtpaCookie` attribute with a value of `true` in the `server.xml` file:
+LTPA cookies contain secure tokens that are used to verify user credentials and enable SSO. When you don't want to rely on LTPA tokens for SSO, you can use other methods, such as a Trust Association Interceptor (TAI), for authentication. A TAI is used to validate HTTP requests between a third-party security server and an Open Liberty server to complete authentication. The following example shows how to disable LTPA cookies for TAI by specifying the `disableLtpaCookie` attribute with a value of `true` in the `server.xml` file:
 
 [source,xml]
 ----
 <trustAssociation id="sample" disableLtpaCookie="true" />
 ----
+
+[#validationkeys]
+=== Rotate LTPA keys without requiring users to reauthenticate
+
+Open Liberty can use either primary keys or validation keys to validate LTPA tokens. You can rotate LTPA keys without requiring reauthentication by using validation keys to validate existing LTPA tokens whenever you generate new primary keys.
+
+Primary Keys are LTPA keys in the specified LTPA keys file, which is `ltpa.keys` by default but can be configured with the `keysFileName` attribute. Primary keys are used both for generating new LTPA tokens and for validating LTPA tokens. Only one primary keys file can exist for each Liberty runtime.
+
+Validation keys are LTPA keys in any `*.keys` files other than the primary keys file. The validation keys are used only for validating LTPA tokens. They are not used for generating new LTPA tokens. All validation keys files must be located in the same directory as the primary keys file.
+
+To rotate LTPA keys without requiring reauthentication, copy the primary keys to a validation keys file and then delete the primary keys file. Open Liberty automatically generates a new primary LTPA keys file to validate any new LTPA tokens while it continues to use validation keys files to validate existing LTPA tokens.
+
+1. Configure Open Liberty to use validation keys.
++
+To enable Open Liberty to use both primary keys and validation keys, specify the `monitorValidationKeysDir` and `monitorInterval` attributes for the `ltpa` element in your `server.xml` file, as shown in the following example:
++
+[source,xml]
+----
+<ltpa monitorValidationKeysDir="true" monitorInterval="5m"/>
+----
++
+The directory monitor looks for any LTPA keys files with the `*.keys` extension in the `${server.config.dir}/resources/security/` directory. Open Liberty reads the LTPA keys in these files and uses them to validate LTPA tokens.
++
+The `monitorValidationKeysDir` attribute monitors the `${server.config.dir}/resources/security/` directory by default, but can monitor any directory the primary keys file is specified in. Monitoring is enabled only when the `updateTrigger` attribute is set to `polled` (the default value) and the `monitorInterval` attribute is set to a duration greater than `0`. The default value of the `monitorInterval` attribute is 0.
++
+Alternatively, you can specify the `validationKeys` subelement to specify a particular validation keys file. You can also remove the validation keys in this file from use at a particular date and time with the optional `validUntilDate` attribute. In the following example, a validation keys file is specified with an expiration date after which the keys in the file are removed from use automatically:
++
+[source,xml]
+----
+<ltpa>
+    <validationKeys fileName="validation1.keys" password="{xor}Lz4sLCgwLTs=" validUntilDate="2024-01-02T12:30:00Z"/>
+</ltpa>
+----
++
+The `fileName` and `password` attributes are required in the `validationKeys` element, but the `validUntilDate` attribute is optional.
++
+When you specify the `validationKeys` subelement, the `monitorValidationKeysDir` element is not required. However, you can use both elements in combination so that any `*.keys` files in the primary keys file directory are used to validate LTPA tokens and not just the file that is specified by the `validationKeys fileName` attribute.
++
+[source,xml]
+----
+<ltpa monitorValidationKeysDir="true" monitorInterval="5m">
+    <validationKeys fileName="validation1.keys" password="{xor}Lz4sLCgwLTs=" validUntilDate="2024-01-02T12:30:00Z"/>
+</ltpa>
+----
++
+In this case, any validation keys in files other than the file that is specified by the `validationKeys` subelement remain in use until you delete the corresponding `.keys` file or set the `monitorValidationKeysDir` attribute to `false`.
+
+2. Copy the primary keys to a validation keys file.
++
+If you copy the primary keys to a validation keys file in the same directory, or to a file that is specified by the `validationKeys` subelement, the runtime can continue to use these keys to validate LTPA tokens when the primary keys file is removed.
+
+3. Delete the primary keys file.
++
+Open Liberty automatically generates a new primary keys file to create and validate new LTPA tokens, while it continues to use the validation keys files to validate existing LTPA tokens. In this way, you can rotate the LTPA keys without requiring existing users to reauthenticate.
+
+4. Optionally, when you no longer need the validation keys, remove them by deleting the validation keys file or by setting the `monitorValidationKeysDir` attribute to `false`.
++
+Removing unused validation keys can improve performance.

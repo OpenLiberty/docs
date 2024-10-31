@@ -19,6 +19,8 @@
 :mp-4-0: feature:mpMetrics-4.0[display=MicroProfile Metrics 4.0]
 :mp-5-0: feature:mpMetrics-5.0[display=MicroProfile Metrics 5.0]
 :mp-ft-3-0: feature:mpFaultTolerance-3.0[display=MicroProfile Fault Tolerance 3.0]
+:mp-tel-2-0: feature:mpTelemetry-2.0[display=MicroProfile Telemetry 2.0]
+:mp-tel-2-0-ft-4-1: feature:mpTelemetry-2.0[display=MicroProfile Telemetry 2.0] and feature:mpFaultTolerance-4.1[display=MicroProfile Fault Tolerance 4.1]
 :connector-metric-features: feature:mpMetrics[display=MicroProfile Metrics] and feature:mpReactiveMessaging[display=MicroProfile Reactive Messaging 3.0]
 :base-metric-features: feature:mpMetrics[display=MicroProfile Metrics]
 :vendor-metric-features: feature:mpMetrics[display=MicroProfile Metrics]
@@ -74,6 +76,112 @@ The **Version introduced** column specifies the minimum version of the feature t
 [options="header"cols="3,4a,6a,2,2,2"]
 |===
 | MicroProfile Telemetry 2.0 name | Attributes | Type and description | Monitoring component | Features required | Version introduced
+
+| ft.bulkhead.calls.total
+| * `method`: The fully qualified method name
+* `bulkheadResult = [accepted\|rejected]`: Whether the bulkhead allowed the method call to run
+| The number of times the bulkhead logic was run. This value is typically equal to once per method call. However, it might be zero if the circuit breaker prevents execution or more than once per method call if the method is retried. This metric is a `LongCounter`.
+| n/a
+| {mp-tel-2-0-ft-4-1}
+| {mp-tel-2-0}
+
+| ft.bulkhead.executionsRunning
+| `method`: The fully qualified method name
+| Number of currently running executions. This metric is a `LongUpDownCounter`.
+| n/a
+| {mp-tel-2-0-ft-4-1}
+| {mp-tel-2-0}
+
+| ft.bulkhead.executionsWaiting
+| `method`: The fully qualified method name
+| Number of executions that are currently waiting in the queue. This metric is a `LongUpDownCounter`.
+| n/a
+| {mp-tel-2-0-ft-4-1}
+| {mp-tel-2-0}
+
+| ft.bulkhead.runningDuration
+| `method`: The fully qualified method name
+| Histogram of the time that method executions spent running. This metric is a `DoubleHistogram`.
+| n/a
+| {mp-tel-2-0-ft-4-1}
+| {mp-tel-2-0}
+
+| ft.bulkhead.waitingDuration
+| `method`: The fully qualified method name
+| Histogram of the time that method executions spent waiting in the queue. This metric is a `DoubleHistogram`.
+| n/a
+| {mp-tel-2-0-ft-4-1}
+| {mp-tel-2-0}
+
+| ft.circuitbreaker.calls.total
+| * `method`: The fully qualified method name,
+    * `circuitBreakerResult = [success\|failure\|circuitBreakerOpen]`: The result of the method call, as considered by the circuit breaker according to the rules in https://download.eclipse.org/microprofile/microprofile-fault-tolerance-4.0.2/microprofile-fault-tolerance-spec-4.0.2.html#circuit-breaker-success-failure[Configuring which exceptions are considered a failure]
+        ** `success`: The method ran and was successful
+        **  `failure`: The method ran and failed
+        ** `circuitBreakerOpen`: The method did not run because the circuit breaker was in open or half-open state
+
+| The number of times the circuit breaker logic was run. This value is typically equal to once per method call, but might be more than once if the method is retried. This metric is a `LongCounter`.
+| n/a
+| {mp-tel-2-0-ft-4-1}
+| {mp-tel-2-0}
+
+| ft.circuitbreaker.opened.total
+| `method`: The fully qualified method name
+| Number of times the circuit breaker moved from closed state to open state. This metric is a `LongCounter`.
+| n/a
+| {mp-tel-2-0-ft-4-1}
+| {mp-tel-2-0}
+
+| ft.circuitbreaker.state.total
+| * `method`: The fully qualified method name
+ * `state = [open\|closed\|halfOpen]`: The circuit breaker state
+| Amount of time the circuit breaker spent in each state. This metric is a `LongCounter`.
+| n/a
+| {mp-tel-2-0-ft-4-1}
+| {mp-tel-2-0}
+
+| ft.invocations.total
+| * `method`: The fully qualified method name
+* `result = [valueReturned\|exceptionThrown]`: Whether the invocation returned a value or threw an exception
+* `fallback = [applied\|notApplied\|notDefined]`: Whether the fallback method was invoked
+    ** `applied` If fallback was used
+    ** `notApplied` If a fallback is configured but was not used
+    ** `notDefined` If a fallback is not configured.
+| The number of times the method was called. This metric is a `LongCounter`.
+| n/a
+| {mp-tel-2-0-ft-4-1}
+| {mp-tel-2-0}
+
+| ft.retry.calls.total
+| * `method`: The fully qualified method name,
+* `retried = [true\|false]`: Whether any retries occurred
+* `retryResult = [valueReturned\|exceptionNotRetryable\|maxRetriesReached\|maxDurationReached]`: The reason that last attempt to call the method was not retried
+| The number of times the retry logic was run. This value is always equal to once per method call. This metric is a `LongCounter`.
+| n/a
+| {mp-tel-2-0-ft-4-1}
+| {mp-tel-2-0}
+
+| ft.retry.retries.total
+| `method`: The fully qualified method name
+| The number of times the method was retried. This metric is a `LongCounter`.
+| n/a
+| {mp-tel-2-0-ft-4-1}
+| {mp-tel-2-0}
+
+| ft.timeout.executionDuration
+| `method`: The fully qualified method name
+| Histogram of execution times for the method. This metric is a `DoubleHistogram`
+| n/a
+| {mp-tel-2-0-ft-4-1}
+| {mp-tel-2-0}
+
+| ft.timeout.calls.total
+| * `method`: The fully qualified method name
+* `timedOut = [true\|false]`: Whether the method call timed out
+| The number of times the timeout logic was run. This value is typically equal to once per method call. However, it might be zero if the circuit breaker prevents execution or more than once per method call if the method is retried. This metric is a `LongCounter`.
+| n/a
+| {mp-tel-2-0-ft-4-1}
+| {mp-tel-2-0}
 
 | `http.server.request.duration`
 |* `http.request.method`
@@ -267,7 +375,6 @@ The **Version introduced** column specifies the minimum version of the feature t
 | n/a
 | feature:mpTelemetry[display=MicroProfile Telemetry]
 | feature:mpTelemetry-2.0[display=MicroProfile Telemetry 2.0]
-
 
 | jvm.class.unloaded
 | n/a
