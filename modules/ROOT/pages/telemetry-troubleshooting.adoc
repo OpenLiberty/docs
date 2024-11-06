@@ -1,0 +1,43 @@
+// Copyright (c) 2022 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description:
+:seo-description:
+:page-layout: general-reference
+:page-type: general
+= Troubleshooting OpenTelemetry
+
+The following information can help you determine the cause of common problems and error messages that are associated with OpenTelemetry logs, metrics, and tracing.
+
+Previous spans are incorrectly shown as current or parent spans::
+
+If the `Scope` instance is not closed correctly, the context and baggage values of previous spans might remain when the next operation executes. Alternatively, the current span might remain and be picked up as the parent of the next operation that executes.
++
+Always close the `Scope` instance when you exit an operation. This configuration stops the span from being current and makes the previous span current again. Use a `try-with-resources` block, which automatically closes the `Scope` instance at the end of the block, as shown in the following example:
++
+[source, java]
+----
+Span span = tracer.spanBuilder("PerformingOperation").startSpan();
+try (Scope scope = span.makeCurrent()) {
+    ...
+} finally {
+    span.end();
+}
+----
+
+You receive the `CWMOT5100I` message that tracing is disabled::
+
+If you enable the `mpTelemetry-1.1` or `mpTelemetry-1.0` feature, you must also set the `otel.sdk.disabled=false` property in any of the configuration sources that are accessible through MicroProfile Config to enable tracing.
+
+You receive the CWMOT5003W message that the application attempted to acquire MicroProfile Telemetry after shut down::
+
+Review the application to see why it attempted to use MicroProfile Telemetry after it shut down. Actions that might trigger MicroProfile Telemetry include calling a method that is annotated with `@WithSpan` or making a request with a JAX-RS Client or MP Rest Client.
+
+You receive either of the CWMOT5006W or CWMOT5007 warning message that conflicting configuration is specified for otel.sdk.disabled::
+
+Specify the settings to enable or disable OpenTelemetry instances by using either environment variables or MicroProfile Config sources, but not both. If you see these warnings, the other MicroProfile Config source to look at is your `server.xml` file.

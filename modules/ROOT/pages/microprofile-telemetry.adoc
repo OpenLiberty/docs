@@ -10,57 +10,72 @@
 :seo-description:
 :page-layout: general-reference
 :page-type: general
-= Enable observability with MicroProfile Telemetry
+= OpenTelemetry
 
-With MicroProfile Telemetry 2.0 and later, you can manage logs, metrics, and traces in a standardized way by using the OpenTelemetry protocol.
-MicroProfile Telemetry is based on the OpenTelemetry project, a collection of open source vendor-independent tools, APIs, and SDKs for creating and managing logs, metrics, and trace data.
+The OpenTelemetry project is a collection of open source vendor-independent tools, APIs, and SDKs for creating and managing logs, metrics, and trace data. With Open Liberty and MicroProfile Telemetry 2.0 and later, you can manage this data in a standardized way by using the OpenTelemetry protocol.
 
-The following sections explain how to prepare your Open Liberty runtime and application code to use MicroProfile Telemetry.
-
-
-- <<#global, Enabling MicroProfile Telemetry for Open Liberty>>
-- <<#traces, Collecting traces>>
-- <<#logs, Collecting logs>>
-- <<#metrics, Collecting metrics>>
-- <<#trouble, Troubleshooting>>
 
 [#global]
-== Enabling MicroProfile Telemetry for Open Liberty
+== Collecting and exporting logs, metrics, and traces with OpenTelemetry
 
-To enable MicroProfile Telemetry in your Open Liberty runtime, you must add the MicroProfile Telemetry feature to your `server.xml` file and enable the OpenTelemetry SDK. OpenTelemetry is disabled by default. Depending on your needs, you can configure OpenTelemetry SDK instances at the runtime level or the application level. In most cases, runtime-level configuration is preferred as it includes both runtime-level telemetry and application-specific telemetry.
+To use OpenTelemetry to collect and export logs, metrics, and traces in your Open Liberty runtime, you must add the MicroProfile Telemetry feature to your `server.xml` file and specify the `otel.sdk.disabled=false` system property in one of the valid configuration sources. Depending on whether you have a single application hosted on your Liberty runtime or multiple applications on the same runtime, you can specify this property at the runtime level or the application level. In most cases, runtime-level configuration is preferred as it includes both runtime-level telemetry and application-specific telemetry. The following table summarizes the benefits and use cases for each option.
 
-Runtime-level configuration::
-Runtime-level configuration collects and emits telemetry from the runtime and all applications. As all telemetry from the runtime and applications is labeled as coming from the same service, this configuration works best when you are running a single application per Liberty runtime.
+.OpenTelemetry configuration sources
+[options="header"cols="3,3,6a,3a"]
+|===
+|Use case| Configuration level | Description | Configuration sources
+
+| One application per Liberty runtime
+| Runtime level
+| Collects and emits telemetry from both the runtime and the application.
+| * `bootstrap.properties` file
+* `jvm.options` file
+* `server.env` file
+
+| Multiple applications in the same Liberty runtime
+| Application level
+| Collects and emits telemetry for a single application and does not include runtime-level data. Provides fine-grained control over data collection for each application.
+| * `microprofile-config.properties` file
+* `appProperties` attribute for the config:application[] element in the `server.xml` file.
+|===
+
+=== Enabling OpenTelemetry for an Open Liberty runtime with a single application
+
+When your Liberty runtime hosts only one application, you can enable Open Telemetry at the runtime level to collect and export logs, metrics, and traces for both the runtime and the application
+
+* Enable the feature:mpTelemetry[display=MicroProfile Telemetry] feature version 2.0 or later in the `featureManager` element of your `server.xml` file.
 +
-You can configure your runtime instance in a few different sources, including your `jvm.options`, `bootstrap.properties`, or `server.env` files. You do not need to modify your application configuration to configure your runtime instance.
+[source,xml]
+----
+<featureManager>
+    <feature>mpTelemetry-2.0</feature>
+    ...
+</featureManager>
+----
 
-Application-level configuration::
-Configuring application-level OpenTelemetry instances gives you more fine-grained control over the data you collect for each application. This option also supports configuration compatibility with feature:mpTelemetry-1.1[display=MicroProfile Telemetry 1.1] and earlier, which created only application-level SDK instances. Runtime-level data is not collected or emitted by application-level instances.
-+
-You can configure your application-level OpenTelemetry instances in the `microprofile-config.properties` file or the `appProperties` attribute for the config:application[] element in the `server.xml` file. When you create application-level instances, any system and server environment properties overwrite your application-level configuration.
-
-For more information about configuration sources and their ordinal values, see xref:external-configuration.adoc#default[Default configuration sources].
-
-To enable MicroProfile Telemetry to collect and emit logs, metrics, and traces, complete the following steps.
-
-. Enable the feature:mpTelemetry[display=MicroProfile Telemetry] feature in your `server.xml` file. To export metrics or logs, you must enable `mpTelemetry-2.0` or later.
-
-. Set the `otel.sdk.disabled=false` property at the runtime level or the application level.
-+
-At runtime initialization, if the `otel.sdk.disabled` property is set to `false`, the runtime-level OpenTelemetry SDK instance is created. If the runtime instance is not enabled and `otel.sdk.disabled=false` is specified at the application level, an application-level instance is created during application initialization.
-
-.. To enable the OpenTelemetry SDK at the runtime level, set the `otel.sdk.disabled=false` property as a system property, for example, in the `bootstrap.properties` file:
+* Set `otel.sdk.disabled=false` as a runtime-level property, for example, in the `bootstrap.properties` file:
 +
 ----
 otel.sdk.disabled=false
-otel.service.name=RT1
 ----
-+
-The `otel.service.name` property creates a name for any telemetry that this OpenTelemetry SDK instance collects and emits.
-+
-Alternatively, you can set runtime-level configuration properties by using environment variables in your `server.env` file. For any property definition, make the key name uppercase and convert any punctuation to underscores. For example, the `otel.sdk.disabled=false` property is equivalent to the `OTEL_SDK_DISABLED=false` environment variable.
 
-.. To enable the OpenTelemetry SDK at the application level, set the `otel.sdk.disabled=false` property in the `microprofile-config.properties` file of each application.
+After you enable the MicroProfile Telemetry feature and set this system property, your runtime is ready to start collecting and exporting logs, metrics, and traces from the application and the runtime. For more information, see the individual sections for logs, metrics, and traces.
+
+=== Enabling OpenTelemetry for multiple applications in the same Open Liberty runtime
+
+When your Liberty runtime hosts multiple applications, you can enable OpenTelemetry to collect logs, metrics, and traces at the application level for each application. Although this option does not collect runtime-level telemetry, it gives you fine-grained control of the data you collect for each application.
+
+* Enable the feature:mpTelemetry[display=MicroProfile Telemetry] feature version 2.0 or later in the `featureManager` element of the `server.xml` file of each application that you want to collect telemetry for.
++
+[source,xml]
+----
+<featureManager>
+    <feature>mpTelemetry-2.0</feature>
+    ...
+</featureManager>
+----
+
+* Set `otel.sdk.disabled=false` as an application-level property in the `microprofile-config.properties` file of each application. You can also set the `otel.service.name` property in each application to assign a service name to the telemetry data that is collected. This service name helps you identify the source of the data from each application when you send your data to monitoring and analytics tools.
 +
 Application 1 `microprofile-config.properties` file:
 +
@@ -76,194 +91,57 @@ otel.sdk.disabled=false
 otel.service.name=A2
 ----
 +
-This configuration creates all telemetry from Application 1 with the service name `A1`, and from Application 2 with the service name `A2`. It omits all runtime-level telemetry.
+This configuration creates all telemetry from Application 1 with the service name `A1`, and from Application 2 with the service name `A2`.
 
-.. Optionally, use a combination of application-level and runtime-level configuration.
+* You can also use a combination of runtime-level and application-level configuration, so that some settings apply to all applications on the runtime, while others are specific to each application. This strategy can save you from having to duplicate general configuration settings in multiple applications on the same runtime.
+
+Any configuration in the system properties and server environment variables takes precedence over application-level configuration. Therefore, you can enable OpenTelemetry and assign a service name individually for each application, but specify other settings at the runtime level to apply globally to all applications on the runtime.
 +
-Regardless of whether a runtime instance is created, any configuration in the system properties and server environment variables takes precedence over application-level configuration. Therefore, you can configure shared application configuration at the runtime level and make application-specific changes in your application configuration.
-+
-For example, you can set the OpenTelemetry exporter at the runtime-level in the `bootstrap.properties` file:
+For example, you might want to collect a unique set of telemetry data for each application in the runtime, but have all applications share the same OpenTelemetry exporter. You can set the OpenTelemetry exporter at the runtime-level in the `bootstrap.properties` file:
 +
 ----
 otel.logs.exporter=myExporter
 ----
 +
-Then, enable an application-level OpenTelemetry SDK instance in the `microprofile-config.properties` file for each application in the runtime:
+Then, enable application-level telemetry and specify a service name in the `microprofile-config.properties` file for each application in the runtime:
 +
 ----
 otel.sdk.disabled=false
 otel.service.name=<serviceName>
 ----
 +
-This configuration enables an application-level SDK instance and custom service name for each configured application, while all applications in the runtime use the `myExporter` OpenTelemetry exporter.
+This configuration enables an application-level telemetry with a unique service name for each application, while all applications in the runtime use the `myExporter` OpenTelemetry exporter.
 
+After you enable the MicroProfile Telemetry feature and set the `otel.sdk.disabled=false` property for each application on the runtime, your applications are ready to start collecting and exporting logs, metrics, and traces. For more information, see the individual sections for logs, metrics, and traces.
+
+== OpenTelemetry settings and configuration
 
 [#traces]
-== Configuring Open Liberty to use MicroProfile Telemetry to collect traces
+== Trace
 
 One way to increase observability of an application is by emitting traces. Traces represent requests and consist of multiple spans. A span represents a single operation in a request. It includes a name, time-related data, log messages, and metadata about what happens during a transaction.
 
-MicroProfile Telemetry replaces MicroProfile OpenTracing. For more information about migrating your applications from MicroProfile OpenTracing to MicroProfile Telemetry, see xref:reference:diff/mp-50-60-diff.adoc#telemetry[Differences between MicroProfile Telemetry 1.0 and MicroProfile OpenTracing 3.0].
+When you enable OpenTelemetry for Open Liberty, Jakarta RESTful Web Services and JAX-RS applications are instrumented for trace by default. Spans are automatically generated for incoming HTTP requests, including static files, servlets, and JSPs. These spans are automatically exported according to the configured OpenTelemetry settings.
 
-. Enable the MicroProfile Telemetry feature and specify a MicroProfile Config property or environment variable to enable the OpenTelemetry SDK.
-+
-For more information, see <<#global,Enabling MicroProfile Telemetry for Open Liberty>>
-
-. Configure a trace storage system by specifying an exporter definition that includes the exporter type and endpoint.
-+
-For example, to use a Jaeger server or to forward data to an OpenTelemetry collector, you might add configuration similar to the following example to your `bootstrap.properties` file:
-+
-[source,properties]
-----
-otel.sdk.disabled=false
-otel.traces.exporter=otlp
-otel.exporter.otlp.endpoint=http://localhost:4317/
-----
-+
-Alternatively, to use a Zipkin server, you might add configuration similar to the following example to your `bootstrap.properties` file:
-+
-[source,properties]
-----
-otel.sdk.disabled=false
-otel.traces.exporter=zipkin
-otel.exporter.zipkin.endpoint=http://localhost:9411/api/v2/spans
-----
-
-. Optionally, set other MicroProfile Config properties to configure trace details.
-+
-For example, if you want to export traces to Open Liberty log files, set the following property:
-+
-[source,properties]
-----
-otel.traces.exporter=console
-----
-+
-For more information about the available properties, see xref:reference:microprofile-config-properties.adoc#telemetry[MicroProfile Config properties: MicroProfile Telemetry].
-
-. Depending on how you choose to instrument your application code for tracing, further configuration might be required.
-+
-For more information, see xref:telemetry-trace.adoc#t[Code instrumentation for MicroProfile Telemetry tracing].
+Automatic instrumentation is available only for JAX-RS and Jakarta RESTful web service applications. To create spans for other operations, such as database calls, you can add manual instrumentation to the source code for those operations by using the OpenTelemetry API. Alternatively, you can attach the OpenTelemetry Java agent to any Java 8+ application. For more information about these options, see xref:telemetry-trace.adoc#t[Code instrumentation for MicroProfile Telemetry tracing].
 
 [#logs]
-== Configuring Open Liberty to use MicroProfile Telemetry to collect logs
+== Logs
 
-To enable MicroProfile Telemetry to collect and export logs in your Open Liberty runtime, add the MicroProfile Telemetry feature 2.0 or later to your `server.xml` file and enable the OpenTelemetry SDK. Optionally, you can specify MicroProfile Config properties to configure how MicroProfile Telemetry collects and exports logs.
+OpenTelemetry automatically collects any logs that are sent to the `java.util.logging` API. Any messages that are logged at a `java.util.logging.Level` log level of `INFO` and above are considered messages. Levels below `INFO` are considered trace. By default, OpenTelemetry automatically collects messages, but you can configure the sources that it collects from in your `server.xml` file. For more information, see link:/docs/latest/reference/feature/mpTelemetry-2.0.html#_collect_logs_from_a_specified_source[Collect logs from a specified source].
 
-. Enable the MicroProfile Telemetry feature 2.0 or later and specify a MicroProfile Config property or environment variable to enable the OpenTelemetry SDK.
-+
-For more information, see <<#global,Enabling MicroProfile Telemetry for Open Liberty>>.
+For information about Liberty message event fields for OpenTelemetry, see xref:mptel-log-events-list.adoc[MicroProfile Telemetry log events reference list].
 
-. Optionally, configure the log sources that MicroProfile Telemetry collects and where the logs are exported.
-+
-You can configure how MicroProfile Telemetry collects and exports logs by specifying configuration properties in any of the xref:external-configuration.adoc#default[config sources that are available to MicroProfile Config], or by specifying environment variables.
+By default, the OpenTelemetry Simple logRecord Processor is enabled, so the records are sent immediately. However, if you want to send the records in batches, you can also configure the logging-specific Batch LogRecord Processor properties.
 
-.. Enable MicroProfile Telemetry to collect logs from different sources in the Open Liberty runtime environment.
-+
-Configure the `source` attribute for the `mpTelemetry` element with a comma-separated list of log sources:
-+
-[source,xml]
-----
-<mpTelemetry source="message, trace, ffdc"/>
-----
-+
-The `mpTelemetry` configuration element is optional. If you do not specify it, or if you do not include the `source` attribute, the default configuration source is `message`. For more information, see feature:mpTelemetry-2.0[display=Collect logs from a specified source].
-
-.. Change the log exporter that MicroProfile Telemetry uses.
-+
-By default, all OpenTelemetry data is exported to link:https://opentelemetry.io/docs/languages/java/exporters/#otlp[OTLP]. You can change this setting by specifying the `otel.logs.exporter` property.
-+
-For example, to send logs to the `console.log` file for debugging purposes, you might add configuration similar to the following example to your `bootstrap.properties` file:
-+
-[source,properties]
-----
-otel.sdk.disabled=false
-otel.logs.exporter=console
-----
-+
-If you set this property to `console`, all the logs are exported to standard out (`stdout`) or the `console.log` file. The `console.log` file contains the usual logs, along with duplicate OpenTelemetry-mapped logs. This setting is only for debugging purposes because the `console.log` file does not roll over and might affect performance if it gets too large. If you set this property to `none`, no logs are exported.
-+
-.. Configure MicroProfile Telemetry to use the OpenTelemetry Batch LogRecord Processor.
-+
-By default, the `SimpleLogRecordProcessor` is enabled, so the records are sent immediately. However, if you want to send the records in batches, you can also configure the following logging-specific Batch LogRecord Processor properties or environment variables:
-+
-* `otel.blrp.schedule.delay` or `OTEL_BLRP_SCHEDULE_DELAY`
-* `otel.blrp.max.queue.size` or `OTEL_BLRP_MAX_QUEUE_SIZE`
-* `otel.blrp.max.export.batch.size` or `OTEL_BLRP_MAX_EXPORT_BATCH_SIZE`
-* `otel.blrp.export.timeout` or `OTEL_BLRP_EXPORT_TIMEOUT`
-+
-For more information, see the OpenTelemetry link:https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/#batch-logrecord-processor[Batch LogRecord Processor] documentation.
-
-For more information about the available properties, see xref:reference:microprofile-config-properties.adoc#telemetry[MicroProfile Config properties: MicroProfile Telemetry].
-
-For information about Liberty message event fields for MicroProfile Telemetry, see xref:mptel-log-events-list.adoc[MicroProfile Telemetry log events reference list].
 
 [#metrics]
-== Configuring Open Liberty to use MicroProfile Telemetry to collect metrics
+== Metrics
 
-To enable MicroProfile Telemetry to collect and export metrics in your Open Liberty runtime, add the MicroProfile Telemetry 2.0 feature to your `server.xml` file and enable the OpenTelemetry SDK. Optionally, you can specify MicroProfile Config properties to configure how MicroProfile Telemetry collects and exports metrics.
-
-. Enable the MicroProfile Telemetry feature 2.0 or later and specify a MicroProfile Config property or environment variable to enable the OpenTelemetry SDK.
-+
-For more information, see <<#global,Enabling MicroProfile Telemetry for Open Liberty>>
-
-. Optionally, change the log exporter that MicroProfile Telemetry uses.
-+
-By default, all OpenTelemetry data is exported to link:https://opentelemetry.io/docs/languages/java/exporters/#otlp[OTLP]. You can change this setting by specifying the `otel.metrics.exporter` property or the `OTEL_METRICS_EXPORTER` environment variable.
-+
-For example, to export metrics to Open Liberty log files, specify the following property:
-+
-----
-otel.metrics.exporter=console
-----
-
-. Optionally, change the metric export interval.
-+
-By default, metric data is exported at an interval of 60 seconds. To modify the export interval, specify the `otel.metric.export.interval` property or the `OTEL_METRIC_EXPORT_INTERVAL` environment variable. Specify the value in milliseconds. For more information, see link:https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/#periodic-exporting-metricreader[Periodic exporter MetricReader] in the OpenTelemetry documentation.
-
-Depending on how you choose to instrument your application code for metrics, further configuration might be required. For information about defining your own metrics, see xref:custom-mptelemetry-metrics.adoc[Define custom MicroProfile Telemetry metrics].
+By default, OpenTelemetry exports metric data at an interval of 60 seconds. You can modify the export interval and other default settings by using MicroProfile config properties.
 
 For a list of metrics that are available for Open Liberty when you enable the MicroProfile Telemetry feature 2.0 or later, see xref:mptelemetry-metrics-list.adoc[MicroProfile Telemetry metrics reference list].
 
-[#trouble]
-== Troubleshooting MicroProfile Telemetry
-The following information can help you determine the cause of common problems and error messages.
-
-Previous spans are incorrectly shown as current or parent spans::
-
-If the `Scope` instance is not closed correctly, the context and baggage values of previous spans might remain when the next operation executes. Alternatively, the current span might remain and be picked up as the parent of the next operation that executes.
-+
-Always close the `Scope` instance when you exit an operation. This configuration stops the span from being current and makes the previous span current again. Use a `try-with-resources` block, which automatically closes the `Scope` instance at the end of the block, as shown in the following example:
-+
-[source, java]
-----
-Span span = tracer.spanBuilder("PerformingOperation").startSpan();
-try (Scope scope = span.makeCurrent()) {
-    ...
-} finally {
-    span.end();
-}
-----
-
-You receive the `CWMOT5100I` message that tracing is disabled::
-
-If you enable the `mpTelemetry-1.1` or `mpTelemetry-1.0` feature, you must also set the `otel.sdk.disabled=false` property in any of the configuration sources that are accessible through MicroProfile Config to enable tracing.
-
-You receive the CWMOT5003W message that the application attempted to acquire MicroProfile Telemetry after shut down::
-
-Review the application to see why it attempted to use MicroProfile Telemetry after it shut down. Actions that might trigger MicroProfile Telemetry include calling a method that is annotated with `@WithSpan` or making a request with a JAX-RS Client or MP Rest Client.
-
-You receive either of the CWMOT5006W or CWMOT5007 warning message that conflicting configuration is specified for otel.sdk.disabled::
-
-Specify the settings to enable or disable OpenTelemetry instances by using either environment variables or MicroProfile Config sources, but not both. If you see these warnings, the other MicroProfile Config source to look at is your `server.xml` file.
-
-////
-+
-Different versions of the MicroProfile Telemetry feature are compatible with different MicroProfile versions, Jakarta and Java Enterprise Editions, and the Open Liberty umbrella features that support them. Both feature:mpTelemetry-1.0[] and feature:mpTelemetry-1.1[] are compatible with feature:jakartaee-10.0[] and feature:microProfile-6.0[]. However, `mpTelemetry-1.1` is also compatible with the following earlier umbrella features:
-+
-*  feature:javaee-7.0[] and feature:microProfile-1.4[]
-*  feature:jakartaee-8.0[] and feature:microProfile-4.1[]
-*  feature:jakartaee-9.1[] and feature:microProfile-5.0[]
-////
 
 == See also
 
