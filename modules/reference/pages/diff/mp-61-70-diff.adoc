@@ -1,0 +1,303 @@
+// Copyright (c) 2024 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+// https://creativecommons.org/licenses/by-nd/4.0/
+//
+//
+// Contributors:
+// IBM Corporation
+//
+//
+//
+//
+:page-description: MicroProfile 7.0 is a major release. If you are updating your application from using MicroProfile 6.1 features to MicroProfile 7.0 features, the changes in API behavior might require you to update your application code.
+:projectName: Open Liberty
+:page-layout: general-reference
+:page-type: general
+
+
+= Differences between MicroProfile 6.1 and 6.0
+
+MicroProfile 7.0 is a major release. It introduces updated MicroProfile specifications, including MicroProfile Telemetry 2.0, MicroProfile Rest Client 4.0, MicroProfile OpenAPI 4.0, and MicroProfile Fault Tolerance 4.1. 
+
+This release includes several significant changes. 
+- MicroProfile Metrics 5.1 has been removed from the MicroProfile umbrella release and is now a stand-alone specification. 
+- MicroProfile Telemetry 2.0 marks a major release by incorporating support for Logs and Metrics in addition to Tracing, broadening its observability capabilities. 
+- MicroProfile Rest Client 4.0 has adopted Jakarta Restful Web Services 3.1 to support multipart form data, while MicroProfile OpenAPI 4.0 has aligned with the OpenAPI 3.1 standards to help ensure compliance with the latest specifications. 
+- MicroProfile 7.0 is designed to work with Jakarta EE 10 as the minimum version.
+
+If you are updating your application from using MicroProfile 6.1 features to using link:https://github.com/eclipse/microprofile/releases/tag/7.0[MicroProfile 7.0] features, the changes in API behavior might require you to update your application code. The following sections provide details about migrating your applications from MicroProfile 6.1 to MicroProfile 7.0:
+
+- <<#rc, Differences between MicroProfile REST Client 4.0 and 3.0>>
+- <<#openapi, Differences between MicroProfile OpenAPI 3.1 and 4.0>>
+- <<#ft, Fault Tolerance Version Updated to 4.1>>
+- <<#mp, MicroProfile 7.0 vs. MicroProfile 6.1>>
+- <<#tm, Telemetry Version Updated to 2.0>>
+
+
+
+[#rc]
+== Differences between MicroProfile REST Client 4.0 and 3.0
+
+With the release of the feature:mpRestClient-4.0[display=MicroProfile REST Client 4.0] feature, the underlying MicroProfile REST Client implementation for Open Liberty is now compatible with Jakarta EE 10 and is designed to tolerate Jakarta EE 11.
+
+If you are updating your server from a version of the MicroProfile REST Client feature prior to version 3.0, you may need to update your application code due to changes in API behavior. For more information, see xref:reference:diff/mp-41-50-diff.adoc#rc[Differences between MicroProfile REST Client 3.0 and 2.0].
+
+The following sections provide details about changes in behavior between the feature:mpRestClient-3.0[display=mpRestClient-3.0] and feature:mpRestClient-4.0[display=mpRestClient-4.0] features.
+
+
+=== Client creation without URI
+
+You no longer need to create a `URI` object themselves to create a Client instance; instead, you can pass a `String` directly.
+
+[source,java]
+----
+RestClientBuilder.newBuilder()
+                 .baseUri("http://example.com")
+                 .build(SomeClient.class)
+----
+
+
+=== Set HTTP Headers on a per instance basis
+
+You can now set HTTP headers for each Client instance using the new `RestClientBuilder.header(String, Object)` method.
+
+[source,java]
+----
+RestClientBuilder.newBuilder()
+                 .baseUri(someURI or String)
+                 .header("Some-Header", headerValueObj)
+                 .build(SomeClient.class)
+----
+
+
+
+[#openapi]
+== Differences between MicroProfile OpenAPI 3.1 and 4.0
+
+=== OpenAPI Version Updated to 3.1
+
+The OpenAPI document is now generated in OpenAPI 3.1 format by default, an update from OpenAPI 3.0 in `mpOpenAPI-3.1`.
+
+OpenAPI 3.1 introduces the ability to capture more detail, including the use of the full JSON Schema (2020-12 draft) for describing data objects. It also adds support for documenting webhooks and for indicating that an API uses mutual TLS for authentication. For more information see the link:https://github.com/OAI/OpenAPI-Specification/releases/tag/3.1.0[OpenAPI 3.1.0 release notes].
+
+New APIs and annotation parameters are added to MicroProfile OpenAPI 4.0, to allow users to take advantage of the new OpenAPI 3.1 features. For more information on new APIs, see the link:https://download.eclipse.org/microprofile/microprofile-open-api-4.0.2/microprofile-openapi-spec-4.0.2.html#release_notes_40[MicroProfile OpenAPI 4.0 release notes].
+
+However, these changes mean that OpenAPI 3.1 is not fully backward compatible with OpenAPI 3.0, and existing tools may not work with it. To maintain compatibility with existing tools, you can configure `mpOpenAPI-4.0` to produce OpenAPI 3.0 documentation.
+
+[source,xml]
+----
+<mpOpenAPI openAPIVersion="3.0" />
+----
+
+If you use the new APIs and annotations corresponding to OpenAPI 3.1 features, the additional information they provide is not be included when the feature is configured to generate OpenAPI 3.0 documents.
+
+=== All Deployed Applications Are Documented by Default
+In this update, all deployed applications are included in the OpenAPI documentation by default. In previous versions of mpOpenAPI, only the first module of the first deployed application was documented by default.
+
+You can control which applications are included in the documentation using the following configuration:
+
+[source,xml]
+----
+<mpOpenAPI>
+  <includeApplication>application1</includeApplication>
+  <includeApplication>application2</includeApplication>
+</mpOpenAPI>
+----
+
+For more information, see <link to main MP OpenAPI docs for this configuration>.
+
+
+
+[#ft]
+== Fault Tolerance Version Updated to 4.1
+
+MicroProfile Fault Tolerance 4.1, an update to version 4.0, introduces integration with MicroProfile Telemetry 2.0. This allows Fault Tolerance to export metrics directly to MicroProfile Telemetry. The existing integration with `mpMetrics` remains unchanged.
+
+
+=== Enable MicroProfile Fault Tolerance
+
+To enable MicroProfile Fault Tolerance, add the following to your `server.xml` file.
+
+[source,xml]
+----
+<feature>mpFaultTolerance-4.1</feature>
+----
+
+For integration between `mpFaultTolerance` and `mpTelemetry`, you must enable both `mpFaultTolerance-4.1` and `mpTelemetry-2.0` simultaneously. When both features are enabled, mpFaultTolerance will automatically export metrics to mpTelemetry.
+
+[source,xml]
+----
+<feature>mpFaultTolerance-4.1</feature>
+<feature>mpTelemetry-2.0</feature>
+----
+
+For more information on configuring mpTelemetry to export metrics, see the section on `mpTelemetry-2.0`.
+
+If `mpFaultTolerance-4.1` is enabled alongside both `mpTelemetry-2.0` and `mpMetrics-5.1`, Fault Tolerance will export metrics to both mpTelemetry and mpMetrics.
+
+.Comparison between metrics in mpMetrics and mpTelemetry
+[cols="1,1,1", options="header"]
+|===
+|Name |Type in mpMetrics |Type in mpTelemetry
+
+|`ft.invocations.total`
+|`Counter`
+|A counter that emits long
+
+|`ft.retry.calls.total`
+|`Counter`
+|A counter that emits long
+
+|`ft.retry.retries.total`
+|`Counter`
+|A counter that emits long
+
+|`ft.timeout.calls.total`
+|`Counter`
+|A counter that emits long
+
+|`ft.circuitbreaker.calls.total`
+|`Counter`
+|A counter that emits long
+
+|`ft.circuitbreaker.state.total`
+|`Gauge<Long>`
+|A counter that emits long
+
+|`ft.circuitbreaker.opened.total`
+|`Counter`
+|A counter that emits long
+
+|`ft.bulkhead.calls.total`
+|`Counter`
+|A counter that emits long
+
+|`ft.bulkhead.executionsRunning`
+|`Gauge<Long>`
+|An UpDownCounter that emits long
+
+|`ft.bulkhead.executionsWaiting`
+|`Gauge<Long>`
+|An UpDownCounter that emits long
+|===
+
+
+.Comparison between Histogram Metrics in mpMetrics and mpTelemetry
+[cols="1,1,1,1,1", options="header"]
+|===
+|Name |Type in mpMetrics |Unit in mpMetrics |Type in mpTelemetry |Unit in mpTelemetry
+
+|`ft.timeout.executionDuration`
+|`Histogram`
+|Nanoseconds
+|A Histogram that records `double` values with explicit bucket boundaries `[ 0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1, 2.5, 5, 7.5, 10 ]`
+|Seconds
+
+|`ft.bulkhead.runningDuration`
+|`Histogram`
+|Nanoseconds
+|A Histogram that records `double` values with explicit bucket boundaries `[ 0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1, 2.5, 5, 7.5, 10 ]`
+|Seconds
+
+|`ft.bulkhead.waitingDuration`
+|`Histogram`
+|Nanoseconds
+|A Histogram that records `double` values with explicit bucket boundaries `[ 0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1, 2.5, 5, 7.5, 10 ]`
+|Seconds
+|===
+
+
+
+[#mp]
+== MicroProfile 7.0 vs. MicroProfile 6.1
+
+link:https://download.eclipse.org/microprofile/microprofile-7.0/microprofile-spec-7.0.html[MicroProfile 7.0] is a major release that includes backward-incompatible changes. One significant update is the replacement of MicroProfile Metrics with MicroProfile Telemetry 2.0, which offers Metrics capabilities in addition to support for logs and tracing.
+
+If you are using MicroProfile Metrics from MicroProfile 6.1, you will need to add the following in your `server.xml` file when upgrading to MicroProfile 7.0.
+
+[source,xml]
+----
+<feature>mpMetrics-5.1</feature>
+----
+
+If your application does not use any APIs from MicroProfile Metrics, your application will have the Metrics from MicroProfile Telemetry 2.0, and no migration effort is required.
+
+In Open Liberty, the Jakarta EE 10 Core Profile features are automatically included with the `microProfile-7.0` feature to provide a smoother upgrade experience from `microProfile-6.1`.
+
+
+
+[#tm]
+== Telemetry Version Updated to 2.0
+
+MicroProfile Telemetry 2.0 is an update to MicroProfile Telemetry 1.1, incorporating the latest OpenTelemetry SDK (version 1.39). Previously, only traces were collected and exported. The updated feature now includes the ability to collect and export metrics and logs. Specifically, the following enhancements are provided:
+
+* Access to the OpenTelemetry Metrics API
+* HTTP metrics
+* JVM runtime environment metrics
+* Runtime-level logs
+* Application logs
+
+=== Enable MicroProfile Telemetry
+
+To enable MicroProfile Telemetry, add the following to your `server.xml` file.
+
+[source,xml]
+----
+<feature>mpTelemetry-2.0</feature>
+----
+
+MicroProfile Telemetry 2.0 provides runtime-level telemetry. To enable this, you must add the MicroProfile Telemetry feature to your `server.xml` file and enable the OpenTelemetry SDK using system properties or environment variables. Once enabled, you can configure how MicroProfile Telemetry collects and exports traces, metrics, and logs.
+
+This is significantly different from MicroProfile Telemetry 1.1, which provided full functionality using only MicroProfile Config for configuration. If you do not use system properties or environment variables for configuration, runtime-level metrics and logs cannot be collected.
+
+To enable the OpenTelemetry SDK, use the following configuration.
+
+[source,properties]
+----
+otel.sdk.disabled=false
+----
+
+=== Accessing the Metrics API
+
+You can use the OpenTelemetry Metrics API to define custom metrics within your application code. By enabling the MicroProfile Telemetry feature version 2.0 or later, you can collect and emit these custom metrics to customize the observability of your application.
+
+For more information on the OpenTelemetry metrics, see the link:https://www.javadoc.io/doc/io.opentelemetry/opentelemetry-api/1.39.0/io/opentelemetry/api/metrics/package-summary.html[OpenTelemetry Metrics API documentation].
+
+To make the APIs accessible, you must enable third-party APIs for your application by adding the following configuration to your `server.xml` file.
+
+[source,xml]
+----
+<webApplication id="app-name" location="app-name.war">
+    <classloader apiTypeVisibility="+third-party"/>
+</webApplication>
+----
+
+=== Collecting Logs
+
+You can enable MicroProfile Telemetry to collect logs from various sources within the Open Liberty runtime environment. MicroProfile Telemetry can collect the following types of events:
+
+- xref:mptel-log-events-list.adoc#me[Message events]
+- xref:mptel-log-events-list.adoc#te[Trace events]
+- xref:mptel-log-events-list.adoc#ffdce[FFDC events]
+
+To enable these log sources, configure the source attribute for the mpTelemetry element with a comma-separated list of the desired log sources:
+
+[source,xml]
+----
+<mpTelemetry source="message, trace, ffdc"/>
+----
+
+The mpTelemetry configuration element is optional. If you do not specify it or omit the source attribute, the default configuration source is message. For more details, see feature:mpTelemetry-2.0[display=Collect logs from a specified source].
+
+=== Exporting Metrics and Logs
+
+By default, all OpenTelemetry data is exported to link:https://opentelemetry.io/docs/specs/otel/protocol/exporter/[OTLP]. You can change the export settings for metrics by specifying the `otel.metrics.exporter` property or the `OTEL_METRICS_EXPORTER` environment variable. For logs, specify the `otel.logs.exporter` property or the `OTEL_LOGS_EXPORTER` environment variable.
+
+For example, to change the metrics exporter so that collected metrics are sent to the console, set the following:
+
+[source,properties]
+----
+otel.metrics.exporter = console
+----
+
