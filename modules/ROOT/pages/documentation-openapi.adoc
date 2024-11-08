@@ -127,33 +127,127 @@ You can augment manually created API documents by adding annotations to the code
 For more information, see https://openliberty.io/guides/microprofile-openapi.html#using-pregenerated-openapi-documents[Using pregenerated OpenAPI documents].
 
 
-[#multi-module]
-== Multiple application and multi-module application support with MicroProfile OpenAPI
+== Supported OpenAPI versions
 
-By default, OpenAPI documentation is generated for only the first web module of the first application that is deployed on the server. The MicroProfile OpenAPI feature, version 2.0 and later, provides configuration properties to select which applications and web modules OpenAPI documentation is generated for. If more than one web module or application is specified, an OpenAPI document is generated for each module or application and then they are merged to create a single OpenAPI document. A property is also provided to set the `info` section of the final merged OpenAPI document.
+The MicroProfile OpenAPI feature generates structured documentation based on the OpenAPI specification. Each new version of the OpenAPI specification updates the documentation format, and different versions of MicroProfile OpenAPI support different OpenAPI specification versions.
 
-For example, to include all the applications in your deployment in a single merged OpenAPI document, you can define the following MicroProfile Config property as a variable in your `server.xml` file.
+|===
+|Feature | OpenAPI versions supported
+
+|`mpOpenAPI-4.0`
+| 3.1, 3.0
+
+|`mpOpenAPI-3.1`
+| 3.0
+
+|`mpOpenAPI-3.0`
+| 3.0
+
+|`mpOpenAPI-2.0`
+| 3.0
+
+|`mpOpenAPI-1.1`
+| 3.0
+
+|`mpOpenAPI-1.0`
+| 3.0
+|===
+
+If you are using a feature that supports more than one version of the OpenAPI specification, you can switch between versions with configuration. You might need to do this if you or your end users use tools or libraries that don't yet support a newer version of the OpenAPI specification.
+
+For example, you can select OpenAPI v3.0 when using `mpOpenAPI-4.0`.
 
 [source,xml]
 ----
-<variable name="mp.openapi.extensions.liberty.merged.include" value="all"/>
+<mpOpenAPI openAPIVersion="3.0"/>
 ----
 
+[#multi-module]
+== Multiple application and multi-module application support with MicroProfile OpenAPI
 
-The following table lists xref:external-configuration.adoc[MicroProfile Config] properties that can be specified to configure which modules or applications are included in the generated OpenAPI documentation. These properties are available when you enable the MicroProfile OpenAPI feature, version 2.0 and later. Alternatively, you can specify the feature:microProfile[display=MicroProfile] convenience feature, version 4.0 or later, which automatically enables the full set of MicroProfile features. For configuration examples, see the feature:mpOpenAPI[display=MicroProfile OpenAPI] feature.
+When multiple applications, or applications with more than one web module are deployed to the same Open Liberty server, the behavior differs between MicroProfile OpenAPI feature versions.
+
+|===
+|Feature |Behavior
+
+|`mpOpenAPI-4.0`
+|By default, all deployed applications and modules are included in the structured documentation. This can changed through configuration.
+
+|`mpOpenAPI-2.0` to `mpOpenAPI-3.1`
+|By default, only the first web module of the first application deployed is included in the structured documentation. This can be changed through configuration.
+
+|`mpOpenAPI-1.0` to `mpOpenAPI-1.1`
+|Only the first web module of the first application deployed is included in the structured documentation. This cannot be changed.
+|===
+
+For MicroProfile OpenAPI 2.0 and later, you can control the applications and modules that are included in the structured documentation by using the `<includeApplication>`, `<excludeApplication>`, `<includeModule>`, and `<excludeModule>` elements within the `<mpOpenAPI>` configuration element.
+
+For example, to include all deployed applications and modules in the generated structured documentation when using `mpOpenAPI-2.0`, add the following configuration to your `server.xml` file.
+
+[source,xml]
+----
+<mpOpenAPI>
+  <includeApplication>all</includeApplication>
+</mpOpenAPI>
+----
+
+For example, to include all deployed applications and modules except the `admin` module of `application1`, add the following configuration to your `server.xml` file.
+
+[source,xml]
+----
+<mpOpenAPI>
+  <includeApplication>all</includeApplication>
+  <excludeModule>application1/admin</excludeModule>
+</mpOpenAPI>
+----
+
+==== Key Points:
+
+- The application name is determined by the value of the `name` attribute when the application is deployed in `server.xml` using `<application>`, `<webApplication>`, or `<enterpriseApplication>`. For example:
+
+[source,xml]
+----
+<webApplication name="application1" location="application1-v1.war" />
+----
+
+If the application is deployed in the `dropins` directory or if the `name` attribute is not specified, the name defaults to the archive filename with the extension removed.
+
+- The module name is specified in the web module's `web.xml` file. If there is no `web.xml` file or if it does not specify a name, the module name defaults to the filename with the extension removed.
+
+You can also override the `info` section of the OpenAPI document using the following configuration:
+
+[source,xml]
+----
+<mpOpenAPI>
+  <info title="Example API"
+        version="1.0"
+        description="This is an example API"/>
+</mpOpenAPI>
+----
+
+This override may be useful when documenting multiple modules or applications. Without it, the `info` section would be replaced with a standard one indicating that documentation from several modules was merged.
+
+
+=== Configuring multiple application and multi-module support using MicroProfile Config
+
+You can configure the modules and applications to be included in the structured documentation by using MicroProfile Config, with the following limitations:
+
+- If conflicting configuration is found in the `server.xml` file, the MicroProfile Config settings are ignored.
+
+- The configuration properties must be set by using a configuration source that is not specific to an application. For example, you can use system properties, environment variables, or `<variable>` elements in the `server.xml` file.
+
+The following table lists the MicroProfile Config properties that can be specified to configure which modules or applications are included in the generated OpenAPI documentation.
 
 .Configuration properties for multiple application and multi-module application support
-[%header,cols="3,6,2,6a"]
+[%header,cols="3,6,6a"]
 |===
 
 |Property name
 |Description
-|Default value
 |Valid values
 
 |`mp.openapi.extensions.liberty.merged.include`
 |This property specifies which modules or applications are included in the generated OpenAPI documentation.
-|`first`
 |
 * `all` +
 This value includes all modules and applications in a deployment.
@@ -163,7 +257,6 @@ This value includes only the first web module of the first application deployed.
 
 |`mp.openapi.extensions.liberty.merged.exclude`
 |This property overrides the `mp.openapi.extensions.liberty.merged.include` property to specify which applications or web modules are excluded from the generated OpenAPI documentation.
-|`none`
 |
 * `none` +
 This value excludes no applications or web modules.
@@ -171,30 +264,17 @@ This value excludes no applications or web modules.
 
 |`mp.openapi.extensions.liberty.merged.info`
 |This property sets the `info` section of the final Open API document. If it is set, the `info` section in the final OpenAPI document is replaced with the value of the property. This replacement is made after any merging is completed.
-|N/A
 |The value must be https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#infoObject[a valid OpenAPI info section] in JSON format.
 
 |===
 
-=== Resolution of OpenAPI document merging conflicts
+- The default behavior varies between versions and has been explained earlier.
 
-When OpenAPI documentation from multiple modules is merged into a single document, Open Liberty applies the following rules to resolve potential conflicts between the OpenAPI documents that are being merged.
+==== Key Points:
 
-- If all server URLs end with the context root, the context root is removed from each server URL and added as a prefix to each path. If no servers exist in a document, the context root is added as a prefix to each path. If the same path is then declared in more than one document, a warning is logged and all but one of the clashing documents is excluded from the merged documentation.
+- When you configure support for multiple applications and multi-module environments by using MicroProfile Config, the application name is taken from the application's deployment descriptor (application.xml or web.xml). If there is no deployment descriptor or if it does not specify a name, the name defaults to the application archive filename with the extension removed.
 
-- If the same extension name is declared with different values at the top level of more than one document, a warning is logged. All but one of the clashing documents are excluded from the merged documentation.
-
-- If the top-level `servers` section is not identical across all documents, each server is removed from the top level and copied under the paths that it applies to.
-
-- Component names are made unique by adding a number to the end of them where necessary. References to the component name are updated.
-
-- Operation IDs are made unique by adding a number to the end of them where necessary. References to the operation ID are updated.
-
-- If the `info` section is not identical across all documents, it is replaced by a standard info section that says that the documentation from several modules was merged.
-
-- If the top-level `security` section is not the same across all documents, the security requirements are copied under each operation that they apply to.
-
-- If the `externalDocs` section is not the same across all documents, it is removed from the final document.
+- The module name follows the same rules as described for the server.xml configuration.
 
 
 == See also
