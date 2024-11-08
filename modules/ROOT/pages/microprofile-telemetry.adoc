@@ -15,12 +15,24 @@
 The OpenTelemetry project is a collection of open source vendor-independent tools, APIs, and SDKs for creating and managing logs, metrics, and trace data. With Open Liberty and MicroProfile Telemetry 2.0 and later, you can manage this data in a standardized way by using the OpenTelemetry protocol.
 
 
+OpenTelemetry provides a link:https://opentelemetry.io/docs/collector/[Collector] component that can receive telemetry data from your applications export it to backend services of your choice for visualization and monitoring. The Collector includes various exporters for different open source or commercial services, such as sending your traces to Jaeger or your metrics to Prometheus.
+
+OpenTelemetry is implemented in Open Liberty through the feature:mptelemtry[display=MicroProfile Telemetry] feature, which enables a collector that you can configure with MicroProfile Config properties and other system properties or environment variables.
+
+When you enable the MicroProfile Telemetry feature 2.0 or later and specify the required configuration property, Open Liberty automatically collects and exports logs, traces, and metrics at the application or runtime level. For many common application scenarios, no changes are needed in your application code to collect this data.
+
+MicroProfile 1.1 and earlier enables only the collection of traces and only at the application level.
+
+When you enable OpenTelemetry for Open Liberty, by default, all telemetry data is exported to the Open Telemetry Protocol (OTLP). OTLP defines the encoding of telemetry data and the protocol that is used to exchange data between a client and server.
+
+Many backend services accept OTLP data without requiring conversion, but OpenTelemtry also provides a collection of service-specific exporters for popular open source and commercial services, such as Jaeger, Zipkin, and Prometheus. You can configure global or data-specific exporter settings by specifying MicroProfile Config properties and other system properties or environment variables.
+
 [#global]
 == Collecting and exporting logs, metrics, and traces with OpenTelemetry
 
-To use OpenTelemetry to collect and export logs, metrics, and traces in your Open Liberty runtime, you must add the MicroProfile Telemetry feature to your `server.xml` file and specify the `otel.sdk.disabled=false` system property in one of the valid configuration sources. Depending on whether you have a single application hosted on your Liberty runtime or multiple applications on the same runtime, you can specify this property at the runtime level or the application level. In most cases, runtime-level configuration is preferred as it includes both runtime-level telemetry and application-specific telemetry. The following table summarizes the benefits and use cases for each option.
+To use OpenTelemetry to collect and export logs, metrics, and traces in your Open Liberty runtime, you must add the MicroProfile Telemetry feature to your `server.xml` file and specify the `otel.sdk.disabled=false` system property in one of the valid configuration sources. Depending on whether your Open Liberty runtime hosts a single application or multiple applications, you can specify this property at the runtime level or the application level. In most cases, runtime-level configuration is preferred as it includes both runtime-level telemetry and application-specific telemetry. The following table summarizes the benefits and use cases for each option.
 
-.OpenTelemetry configuration sources
+.OpenTelemetry configuration options
 [options="header"cols="3,3,6a,3a"]
 |===
 |Use case| Configuration level | Description | Configuration sources
@@ -75,7 +87,12 @@ When your Liberty runtime hosts multiple applications, you can enable OpenTeleme
 </featureManager>
 ----
 
-* Set `otel.sdk.disabled=false` as an application-level property in the `microprofile-config.properties` file of each application. You can also set the `otel.service.name` property in each application to assign a service name to the telemetry data that is collected. This service name helps you identify the source of the data from each application when you send your data to monitoring and analytics tools.
+* Set `otel.sdk.disabled=false` as an application-level property in the `microprofile-config.properties` file of each application.
++
+You can also set the `otel.service.name` property in each application to assign a service name to the telemetry data that is collected. This service name helps you identify the source of the data from each application when you send your data to monitoring and analytics tools.
++
+The following examples show an application scenario where two applications on the same Open Liberty runtime are configured to collect and export telemetry data at the application level. The data from each application is assigned a unique service name to clarify which application the data comes from.
+
 +
 Application 1 `microprofile-config.properties` file:
 +
@@ -94,7 +111,7 @@ otel.service.name=A2
 This configuration creates all telemetry from Application 1 with the service name `A1`, and from Application 2 with the service name `A2`.
 
 * You can also use a combination of runtime-level and application-level configuration, so that some settings apply to all applications on the runtime, while others are specific to each application. This strategy can save you from having to duplicate general configuration settings in multiple applications on the same runtime.
-
++
 Any configuration in the system properties and server environment variables takes precedence over application-level configuration. Therefore, you can enable OpenTelemetry and assign a service name individually for each application, but specify other settings at the runtime level to apply globally to all applications on the runtime.
 +
 For example, you might want to collect a unique set of telemetry data for each application in the runtime, but have all applications share the same OpenTelemetry exporter. You can set the OpenTelemetry exporter at the runtime-level in the `bootstrap.properties` file:
@@ -115,6 +132,14 @@ This configuration enables an application-level telemetry with a unique service 
 After you enable the MicroProfile Telemetry feature and set the `otel.sdk.disabled=false` property for each application on the runtime, your applications are ready to start collecting and exporting logs, metrics, and traces. For more information, see the individual sections for logs, metrics, and traces.
 
 == OpenTelemetry settings and configuration
+
+When you enable OpenTelemetry for Open Liberty, by default, all telemetry data is exported to the Open Telemetry Protocol (OTLP) at the `\http://localhost:4317` endpoint. You can configure alternative global or data-specific exporter settings by specifying MicroProfile Config properties and other system properties or environment variables.
+
+Open Liberty supports all link:https://opentelemetry.io/docs/languages/java/configuration/#environment-variables-and-system-properties[OpenTelemtry Java configuration properties].
+
+For information about commonly-used configuration properties, see xref:reference:microprofile-config-properties.adoc#telemetry[MicroPRofile Config properties: MicroPRofile Telemetry].
+
+For common configuration examples, see the feature:mptelemtry[display=MicroProfile Telemetry] feature page.
 
 [#traces]
 == Trace
