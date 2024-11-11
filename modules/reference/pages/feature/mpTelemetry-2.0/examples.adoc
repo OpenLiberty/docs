@@ -1,13 +1,55 @@
 == Examples
 
-=== Enable Open Telemetry
+=== Enable OpenTelemetry
 
-=== Prepare your development environment for Open Telemetry
+In addition to enabling the MicroProfile Telemetry feature, you must also set the `otel.sdk.disabled=false` system property in one of the valid configuration sources. Depending on your application scenario, you can set this property at the runtime level, or the application level. For more information see xref:ROOT:microprofile-telemetry.adoc#global[Collecting and exporting logs, metrics, and traces with OpenTelemetry.]
 
-[#logs]
+The following example demonstrates how to enable OpenTelemetry at the runtime level,by setting the property in your `bootstrap.properties` file:
+
+----
+otel.sdk.disabled=false
+----
+
+When you enable the  MicroProfile Telemetry feature and set this property, your system is ready to collect and export logs, metrics, and traces.
+
+[#dev]
+=== Prepare your development environment for OpenTelemetry
+
+If you need to xref:ROOT:telemetry-trace.adoc[manually instrument your code to collect traces] or xref:ROOT:custom-mptelemetry-metrics.adoc[define custom metrics], complete the following prerequisites to enable MicroProfile Telemetry in your development environment:
+
+. xref:class-loader-library-config.adoc#3rd-party[Enable third-party APIs] for your application by adding the following code in your `server.xml` file:
++
+[source,xml]
+----
+<webApplication id="app-name" location="app-name.war">
+    <classloader apiTypeVisibility="+third-party"/>
+</webApplication>
+----
+
+. Add the `opentelemetry` API and OpenTelemetry instrumentation annotations as a provided dependency to your build path. For example, with Maven, add the following code to your `pom.xml` file.
++
+[source,xml]
+----
+    <dependency>
+        <groupId>io.opentelemetry</groupId>
+        <artifactId>opentelemetry-api</artifactId>
+        <version>1.39.0</version>
+        <scope>provided</scope>
+    </dependency>
+    <dependency>
+        <groupId>io.opentelemetry.instrumentation</groupId>
+        <artifactId>opentelemetry-instrumentation-annotations</artifactId>
+        <version>1.39.0-alpha</version>
+        <scope>provided</scope>
+    </dependency>
+----
+
+
+[#logs-settings]
 === Log settings
 The following examples show common optional settings to configure the collection and export of OpenTelemetry log data.
 
+[#logs]
 ==== Collect logs from a specified source
 
 To enable the MicroProfile Telemetry feature to collect logs from different sources in the Open Liberty runtime environment, configure the `source` attribute for the `mpTelemetry` element with a comma-separated list of comma-separated log sources.
@@ -17,19 +59,16 @@ To enable the MicroProfile Telemetry feature to collect logs from different sour
 <mpTelemetry source="message, trace, ffdc"/>
 ----
 
-* The `mpTelemetry` configuration element is optional. If you do not specify ity or the `source` attribute, the default configuration source is `message`.
+* The `mpTelemetry` configuration element is optional. If you do not specify it or the `source` attribute, the default configuration source is `message`.
 
 * If the source attribute is empty (`source=“”`), no sources are collected, and nothing is routed to the configured OpenTelemetry logs exporter.
 
 * The attributes and values are case insensitive.
 
-[#metrics]
-=== Metrics settings
-The following examples show common optional settings to configure the collection and export of OpenTelemetry metrics data.
 
-[#trace]
-=== Trace settings
-The following examples show common optional settings to configure the collection and export of OpenTelemetry trace data.
+[#blrp]
+==== Configure the OpenTelemetry Batch LogRecord Processor
+
 
 
 ===
