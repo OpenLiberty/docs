@@ -28,11 +28,28 @@ This release includes several significant changes.
 
 If you are updating your application from using MicroProfile 6.1 features to using link:https://github.com/eclipse/microprofile/releases/tag/7.0[MicroProfile 7.0] features, the changes in API behavior might require you to update your application code. The following sections provide details about migrating your applications from MicroProfile 6.1 to MicroProfile 7.0:
 
+- <<#mp, MicroProfile 7.0 vs. MicroProfile 6.1>>
 - <<#rc, Differences between MicroProfile REST Client 4.0 and 3.0>>
 - <<#openapi, Differences between MicroProfile OpenAPI 3.1 and 4.0>>
 - <<#ft, Fault Tolerance Version Updated to 4.1>>
-- <<#mp, MicroProfile 7.0 vs. MicroProfile 6.1>>
 - <<#tm, Telemetry Version Updated to 2.0>>
+
+
+[#mp]
+== MicroProfile 7.0 vs. MicroProfile 6.1
+
+link:https://download.eclipse.org/microprofile/microprofile-7.0/microprofile-spec-7.0.html[MicroProfile 7.0] is a major release that includes backward-incompatible changes. One significant update is the replacement of MicroProfile Metrics with MicroProfile Telemetry 2.0, which offers Metrics capabilities in addition to support for logs and tracing.
+
+If you are using MicroProfile Metrics from MicroProfile 6.1, you will need to add the following in your `server.xml` file when upgrading to MicroProfile 7.0.
+
+[source,xml]
+----
+<feature>mpMetrics-5.1</feature>
+----
+
+If your application does not use any APIs from MicroProfile Metrics, your application will have the Metrics from MicroProfile Telemetry 2.0, and no migration effort is required.
+
+In Open Liberty, the Jakarta EE 10 Core Profile features are automatically included with the `microProfile-7.0` feature to provide a smoother upgrade experience from `microProfile-6.1`.
 
 
 
@@ -40,8 +57,6 @@ If you are updating your application from using MicroProfile 6.1 features to usi
 == Differences between MicroProfile REST Client 4.0 and 3.0
 
 With the release of the feature:mpRestClient-4.0[display=MicroProfile REST Client 4.0] feature, the underlying MicroProfile REST Client implementation for Open Liberty is now compatible with Jakarta EE 10 and is designed to tolerate Jakarta EE 11.
-
-If you are updating your server from a version of the MicroProfile REST Client feature prior to version 3.0, you may need to update your application code due to changes in API behavior. For more information, see xref:reference:diff/mp-41-50-diff.adoc#rc[Differences between MicroProfile REST Client 3.0 and 2.0].
 
 The following sections provide details about changes in behavior between the feature:mpRestClient-3.0[display=mpRestClient-3.0] and feature:mpRestClient-4.0[display=mpRestClient-4.0] features.
 
@@ -70,6 +85,9 @@ RestClientBuilder.newBuilder()
                  .build(SomeClient.class)
 ----
 
+=== Processing Multipart Data
+
+Information and example code are added to the link:https://download.eclipse.org/microprofile/microprofile-rest-client-4.0/microprofile-rest-client-spec-4.0.html#_processing_multipart_data[MicroProfile Rest Client 4.0 specification] for processing multipart data, introduced as part of RESTful Web Services version 3.1 in EE10.
 
 
 [#openapi]
@@ -83,14 +101,14 @@ OpenAPI 3.1 introduces the ability to capture more detail, including the use of 
 
 New APIs and annotation parameters are added to MicroProfile OpenAPI 4.0, to allow users to take advantage of the new OpenAPI 3.1 features. For more information on new APIs, see the link:https://download.eclipse.org/microprofile/microprofile-open-api-4.0.2/microprofile-openapi-spec-4.0.2.html#release_notes_40[MicroProfile OpenAPI 4.0 release notes].
 
+If you use the new APIs and annotations corresponding to OpenAPI 3.1 features, the additional information they provide is not be included when the feature is configured to generate OpenAPI 3.0 documents.
+
 However, these changes mean that OpenAPI 3.1 is not fully backward compatible with OpenAPI 3.0, and existing tools may not work with it. To maintain compatibility with existing tools, you can configure `mpOpenAPI-4.0` to produce OpenAPI 3.0 documentation.
 
 [source,xml]
 ----
 <mpOpenAPI openAPIVersion="3.0" />
 ----
-
-If you use the new APIs and annotations corresponding to OpenAPI 3.1 features, the additional information they provide is not be included when the feature is configured to generate OpenAPI 3.0 documents.
 
 === All Deployed Applications Are Documented by Default
 In this update, all deployed applications are included in the OpenAPI documentation by default. In previous versions of mpOpenAPI, only the first module of the first deployed application was documented by default.
@@ -208,25 +226,6 @@ If `mpFaultTolerance-4.1` is enabled alongside both `mpTelemetry-2.0` and `mpMet
 |===
 
 
-
-[#mp]
-== MicroProfile 7.0 vs. MicroProfile 6.1
-
-link:https://download.eclipse.org/microprofile/microprofile-7.0/microprofile-spec-7.0.html[MicroProfile 7.0] is a major release that includes backward-incompatible changes. One significant update is the replacement of MicroProfile Metrics with MicroProfile Telemetry 2.0, which offers Metrics capabilities in addition to support for logs and tracing.
-
-If you are using MicroProfile Metrics from MicroProfile 6.1, you will need to add the following in your `server.xml` file when upgrading to MicroProfile 7.0.
-
-[source,xml]
-----
-<feature>mpMetrics-5.1</feature>
-----
-
-If your application does not use any APIs from MicroProfile Metrics, your application will have the Metrics from MicroProfile Telemetry 2.0, and no migration effort is required.
-
-In Open Liberty, the Jakarta EE 10 Core Profile features are automatically included with the `microProfile-7.0` feature to provide a smoother upgrade experience from `microProfile-6.1`.
-
-
-
 [#tm]
 == Telemetry Version Updated to 2.0
 
@@ -247,9 +246,9 @@ To enable MicroProfile Telemetry, add the following to your `server.xml` file.
 <feature>mpTelemetry-2.0</feature>
 ----
 
-MicroProfile Telemetry 2.0 provides runtime-level telemetry. To enable this, you must add the MicroProfile Telemetry feature to your `server.xml` file and enable the OpenTelemetry SDK using system properties or environment variables. Once enabled, you can configure how MicroProfile Telemetry collects and exports traces, metrics, and logs.
+MicroProfile Telemetry 2.0 provides runtime-level telemetry. To enable this, you must add the MicroProfile Telemetry feature to your `server.xml` file and enable the OpenTelemetry SDK by using system properties or environment variables. Once enabled, you can configure how MicroProfile Telemetry collects and exports traces, metrics, and logs. This is different from MicroProfile Telemetry 1.1, which provided full functionality by using only MicroProfile Config for configuration.
 
-This is significantly different from MicroProfile Telemetry 1.1, which provided full functionality using only MicroProfile Config for configuration. If you do not use system properties or environment variables for configuration, runtime-level metrics and logs cannot be collected.
+If you do not use system properties or environment variables for configuration, runtime-level metrics and logs cannot be collected. Using other available MicroProfile Config properties cannot enable the collection of these metrics and logs.
 
 To enable the OpenTelemetry SDK, use the following configuration.
 
@@ -257,6 +256,13 @@ To enable the OpenTelemetry SDK, use the following configuration.
 ----
 otel.sdk.disabled=false
 ----
+
+To set the name of the service, use the following configuration.
+[source,properties]
+----
+otel.service.name=app1
+----
+
 
 === Accessing the Metrics API
 
