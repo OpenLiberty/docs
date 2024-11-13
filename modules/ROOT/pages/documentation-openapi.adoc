@@ -131,6 +131,8 @@ For more information, see https://openliberty.io/guides/microprofile-openapi.htm
 
 The MicroProfile OpenAPI feature generates structured documentation based on the OpenAPI specification. Each new version of the OpenAPI specification updates the documentation format, and different versions of MicroProfile OpenAPI support different OpenAPI specification versions.
 
+.Supported OpenAPI versions
+[cols="1,2", options="header"]
 |===
 |Feature | OpenAPI versions supported
 
@@ -167,6 +169,9 @@ For example, you can select OpenAPI v3.0 when using `mpOpenAPI-4.0`.
 
 When multiple applications, or applications with more than one web module are deployed to the same Open Liberty server, the behavior differs between MicroProfile OpenAPI feature versions.
 
+
+.Multiple application and multi-module application support with MicroProfile OpenAPI
+[cols="1,2", options="header"]
 |===
 |Feature |Behavior
 
@@ -180,7 +185,10 @@ When multiple applications, or applications with more than one web module are de
 |Only the first web module of the first application deployed is included in the structured documentation. This cannot be changed.
 |===
 
-For MicroProfile OpenAPI 2.0 and later, you can control the applications and modules that are included in the structured documentation by using the `<includeApplication>`, `<excludeApplication>`, `<includeModule>`, and `<excludeModule>` elements within the `<mpOpenAPI>` configuration element.
+[#serverxml]
+== Configuring multiple application and multi-module support using server.xml
+
+For MicroProfile OpenAPI 2.0 and later, you can control the applications and modules that are included in the structured documentation by using the `<includeApplication>`, `<excludeApplication>`, `<includeModule>`, and `<excludeModule>` elements within the `<mpOpenAPI>` xref:reference:config/mpOpenAPI.adoc[configuration element].
 
 For example, to include all deployed applications and modules in the generated structured documentation when using `mpOpenAPI-2.0`, add the following configuration to your `server.xml` file.
 
@@ -201,21 +209,21 @@ For example, to include all deployed applications and modules except the `admin`
 </mpOpenAPI>
 ----
 
-==== Key Points:
+**Notes:**
 
 - The application name is determined by the value of the `name` attribute when the application is deployed in `server.xml` using `<application>`, `<webApplication>`, or `<enterpriseApplication>`. For example:
-
++
 [source,xml]
 ----
 <webApplication name="application1" location="application1-v1.war" />
 ----
-
++
 If the application is deployed in the `dropins` directory or if the `name` attribute is not specified, the name defaults to the archive filename with the extension removed.
-
++
 - The module name is specified in the web module's `web.xml` file. If there is no `web.xml` file or if it does not specify a name, the module name defaults to the filename with the extension removed.
-
++
 You can also override the `info` section of the OpenAPI document using the following configuration:
-
++
 [source,xml]
 ----
 <mpOpenAPI>
@@ -224,7 +232,7 @@ You can also override the `info` section of the OpenAPI document using the follo
         description="This is an example API"/>
 </mpOpenAPI>
 ----
-
++
 This override may be useful when documenting multiple modules or applications. Without it, the `info` section would be replaced with a standard one indicating that documentation from several modules was merged.
 
 
@@ -268,16 +276,13 @@ This value excludes no applications or web modules.
 
 |===
 
-- The default behavior varies between versions and has been explained earlier.
-
-==== Key Points:
+**Notes:**
 
 - When you configure support for multiple applications and multi-module environments by using MicroProfile Config, the application name is taken from the application's deployment descriptor (application.xml or web.xml). If there is no deployment descriptor or if it does not specify a name, the name defaults to the application archive filename with the extension removed.
-
++
 - The module name follows the same rules as described for the server.xml configuration.
 
 
 == See also
 
--
 - Guide: link:/guides/microprofile-config-intro.html[Separating configuration from code in microservices]
