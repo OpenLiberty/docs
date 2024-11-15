@@ -1,4 +1,4 @@
-// Copyright (c) 2022 IBM Corporation and others.
+// Copyright (c) 2024 IBM Corporation and others.
 // Licensed under Creative Commons Attribution-NoDerivatives
 // 4.0 International (CC BY-ND 4.0)
 //   https://creativecommons.org/licenses/by-nd/4.0/
@@ -14,7 +14,7 @@
 
 The OpenTelemetry project is a collection of open source, vendor-independent resources for collecting and managing application telemetry data. With Open Liberty and MicroProfile Telemetry 2.0 and later, you can manage logs, metrics, and traces in a standardized way by using the OpenTelemetry protocol.
 
-OpenTelemetry provides a link:https://opentelemetry.io/docs/collector/[collector] component that can receive telemetry data from your applications and export it to backend services of your choice for monitoring and analysis. By default, all OpenTelemetry data is exported to the Open Telemetry Protocol (OTLP). OTLP defines the encoding of telemetry data and the protocol that is used to exchange data between a client and server. Many backend services accept OTLP data without requiring conversion, but OpenTelemtry also provides a collection of service-specific exporters for popular open source and commercial services, such as https://www.elastic.co/observability/log-monitoring[Elastic], link:https://zipkin.io/[Zipkin], and link:https://prometheus.io/[Prometheus]. You can configure global or data-specific exporter settings by specifying MicroProfile Config properties and other system properties or environment variables.
+OpenTelemetry provides a link:https://opentelemetry.io/docs/collector/[collector] component that can receive telemetry data from your applications and export it to backend services of your choice for monitoring and analysis. By default, all OpenTelemetry data is exported to the Open Telemetry Protocol (OTLP). OTLP defines the encoding of telemetry data and the protocol that is used to exchange data between a client and server. Many backend services accept OTLP data without requiring conversion, but OpenTelemtry also provides a collection of service-specific exporters for popular open source and commercial services, such as link:https://zipkin.io/[Zipkin] and link:https://prometheus.io/[Prometheus]. You can configure global or data-specific exporter settings by specifying MicroProfile Config properties and other system properties or environment variables.
 
 OpenTelemetry is implemented in Open Liberty through the feature:mptelemtry[display=MicroProfile Telemetry] feature. When you enable the MicroProfile Telemetry feature 2.0 or later and specify the required configuration property, Open Liberty automatically collects and exports logs, traces, and metrics at the application or runtime level. For many common application scenarios, no changes are needed in your application code to collect this data. MicroProfile Telemetry1.1 and earlier enables only the collection of traces and only at the application level.
 
@@ -34,6 +34,8 @@ To collect and export logs, metrics, and traces with OpenTelemetry in your Open 
 | * `bootstrap.properties` file
 * `jvm.options` file
 * `server.env` file
++
+If you choose to use the `server.env` file, specify the `OTEL_SDK_DISABLED=false` enviroment variable instead of the configuration property.
 
 | Application level
 | Multiple applications in the same Liberty runtime
@@ -120,20 +122,19 @@ After you enable the MicroProfile Telemetry feature and set the `otel.sdk.disabl
 [#config]
 == OpenTelemetry settings and configuration
 
-When you enable OpenTelemetry for Open Liberty, by default, all telemetry data is to the link:https://github.com/open-telemetry/oteps/blob/main/text/0035-opentelemetry-protocol.md[Open Telemetry Protocol] (OTLP) at the `\http://localhost:4317` endpoint. You can configure alternative global or data-specific exporter settings by specifying MicroProfile Config properties and other system properties or environment variables. Open Liberty supports all link:https://opentelemetry.io/docs/languages/java/configuration/#environment-variables-and-system-properties[OpenTelemtry Java configuration properties].
+By default, all OpenTelemetry data is exported to the link:https://github.com/open-telemetry/oteps/blob/main/text/0035-opentelemetry-protocol.md[Open Telemetry Protocol] (OTLP) at the `\http://localhost:4317` endpoint. You can configure alternative global or data-specific exporter settings by specifying MicroProfile Config properties and other system properties or environment variables. Open Liberty supports all link:https://opentelemetry.io/docs/languages/java/configuration/#environment-variables-and-system-properties[OpenTelemtry Java configuration properties].
 
 For information about commonly-used configuration properties for logs, metrics, and trace settings, see xref:reference:microprofile-config-properties.adoc#telemetry[MicroProfile Config properties: MicroProfile Telemetry].
 
 [#traces]
-=== Trace
+=== Trace defaults
 
 When you enable OpenTelemetry for Open Liberty, Jakarta RESTful Web Services and JAX-RS applications are instrumented for trace by default. Spans are automatically generated for incoming HTTP requests, including static files, servlets, and JSPs. These spans are automatically exported according to the configured OpenTelemetry settings.
 
 Automatic instrumentation is available only for JAX-RS and Jakarta RESTful web service applications. To create spans for other operations, such as database calls, you can add manual instrumentation to the source code for those operations by using the OpenTelemetry API. Alternatively, you can attach the OpenTelemetry Java agent to any Java 8+ application. For more information about these options, see xref:telemetry-trace.adoc[Code instrumentation for MicroProfile Telemetry tracing].
 
 [#logs]
-=== Logs
-
+=== Logs defaults
 OpenTelemetry automatically collects any logs that are sent to the `java.util.logging` API. Any messages that are logged at a `java.util.logging.Level` log level of `INFO` and above are considered messages. Levels below `INFO` are considered trace. By default, OpenTelemetry logging automatically collects messages, but you can configure it to collect from other sources in your `server.xml` file. For more information, see link:/docs/latest/reference/feature/mpTelemetry-2.0.html#_collect_logs_from_a_specified_source[Collect logs from a specified source].
 
 For information about Liberty log event fields for OpenTelemetry, see xref:mptel-log-events-list.adoc[MicroProfile Telemetry log events reference list].
@@ -143,11 +144,12 @@ By default, the OpenTelemetry Simple logRecord Processor is enabled, so the reco
 ////
 
 [#metrics]
-=== Metrics
+=== Metrics defaults
 
 When you enable OpenTelemetry  for Open Liberty,  a default set of metrics is automatically collected and exported according to the configured OpenTelemetry settings. For more information about these metrics, see xref:mptelemetry-metrics-list.adoc[MicroProfile Telemetry metrics reference list]. You can also define additional xref:custom-mptelemetry-metrics.adoc[custom metrics] in your application code.
 
 
 == See also
 
-https://opentelemetry.io/[OpenTelemetry project]
+* xref:telemetry-troubleshooting.adoc[Troubleshooting OpenTelemetry]
+* https://opentelemetry.io/[OpenTelemetry project]
