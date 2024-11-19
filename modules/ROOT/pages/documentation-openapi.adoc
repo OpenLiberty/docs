@@ -185,10 +185,20 @@ When multiple applications, or applications with more than one web module are de
 |Only the first web module of the first application deployed is included in the structured documentation. This cannot be changed.
 |===
 
-[#serverxml]
-== Configuring multiple application and multi-module support using server.xml
 
-For MicroProfile OpenAPI 2.0 and later, you can control the applications and modules that are included in the structured documentation by using the `<includeApplication>`, `<excludeApplication>`, `<includeModule>`, and `<excludeModule>` elements within the `<mpOpenAPI>` xref:reference:config/mpOpenAPI.adoc[configuration element].
+== Configuring multiple application and multi-module support
+
+Open Liberty offers two main ways to configure support for multiple applications and multi-module projects.
+
+- <<#serverxml, Configure using the `server.xml` file:>> This method involves configuring your server to deploy multiple applications by specifying the applications and modules within the `server.xml` file.
+
+- <<#mpconfigs, Configure using the MicroProfile Config:>> Alternatively, you can use the MicroProfile Config to adjust deployment settings more flexibly, allowing for easy updates and changes without needing to modify XML files.
+
+
+[#serverxml]
+=== Configure using the server.xml file
+
+For MicroProfile OpenAPI 2.0 and later, you can control the applications and modules that are included in the structured documentation by using the `includeApplication`, `excludeApplication`, `includeModule`, and `excludeModule` elements within the `mpOpenAPI` xref:reference:config/mpOpenAPI.adoc[configuration element].
 
 For example, to include all deployed applications and modules in the generated structured documentation when using `mpOpenAPI-2.0`, add the following configuration to your `server.xml` file.
 
@@ -209,9 +219,9 @@ For example, to include all deployed applications and modules except the `admin`
 </mpOpenAPI>
 ----
 
-**Notes:**
+==== Naming applications and modules   
 
-- The application name is determined by the value of the `name` attribute when the application is deployed in `server.xml` using `<application>`, `<webApplication>`, or `<enterpriseApplication>`. For example:
+- The application name is determined by the value of the `name` attribute when the application is deployed in `server.xml` using `application`, `webApplication`, or `enterpriseApplication`. For example:
 +
 [source,xml]
 ----
@@ -236,15 +246,17 @@ You can also override the `info` section of the OpenAPI document using the follo
 This override may be useful when documenting multiple modules or applications. Without it, the `info` section would be replaced with a standard one indicating that documentation from several modules was merged.
 
 
-=== Configuring multiple application and multi-module support using MicroProfile Config
+[#mpconfigs]
+=== Configure using the MicroProfile Config
 
 You can configure the modules and applications to be included in the structured documentation by using MicroProfile Config, with the following limitations:
 
 - If conflicting configuration is found in the `server.xml` file, the MicroProfile Config settings are ignored.
 
-- The configuration properties must be set by using a configuration source that is not specific to an application. For example, you can use system properties, environment variables, or `<variable>` elements in the `server.xml` file.
+- The configuration properties must be set by using a configuration source that is not specific to an application. For example, you can use system properties, environment variables, or `variable` elements in the `server.xml` file.
 
 The following table lists the MicroProfile Config properties that can be specified to configure which modules or applications are included in the generated OpenAPI documentation.
+
 
 .Configuration properties for multiple application and multi-module application support
 [%header,cols="3,6,6a"]
@@ -276,11 +288,11 @@ This value excludes no applications or web modules.
 
 |===
 
-**Notes:**
+==== Multi-module naming rules
 
-- When you configure support for multiple applications and multi-module environments by using MicroProfile Config, the application name is taken from the application's deployment descriptor (application.xml or web.xml). If there is no deployment descriptor or if it does not specify a name, the name defaults to the application archive filename with the extension removed.
+- When you configure support for multiple applications and multi-module environments by using MicroProfile Config, the application name is taken from the application's deployment descriptor (`application.xml` or `web.xml`). If there is no deployment descriptor or if it does not specify a name, the name defaults to the application archive filename with the extension removed.
 +
-- The module name follows the same rules as described for the server.xml configuration.
+- The module name follows the same rules as described for the `server.xml` configuration.
 
 
 == See also
