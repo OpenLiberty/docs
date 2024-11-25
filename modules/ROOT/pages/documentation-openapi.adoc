@@ -189,104 +189,20 @@ When multiple applications or applications with more than one web module are dep
 
 Open Liberty offers two main ways to configure support for multiple applications and multi-module projects.
 
-- <<#serverxml, Configure using the `server.xml` file:>> You can customize the structured API documentation that is generated for your applications by configuring the `server.xml` file. By using the `includeApplication`, `excludeApplication`, `includeModule`, and `excludeModule` elements within the `mpOpenAPI` configuration, you gain precise control over which applications and modules are included in the OpenAPI documentation. This flexibility is useful for tailoring the documentation to your specific needs, such as excluding sensitive modules or overriding default metadata. The following sections provide examples and explain how to configure these elements effectively.
+- Configure using the `server.xml` file
 
-- <<#mpconfigs, Configure using MicroProfile Config properties:>> MicroProfile Config provides a way to manage which applications and modules are included in the generated OpenAPI documentation by specifying configuration properties. With these properties, you can set inclusion and exclusion rules and customize the info section of the final OpenAPI document. This method is ideal for dynamic setups, enabling changes without directly modifying the `server.xml` file. However, there are some limitations. Configurations that are defined in the `server.xml` file take priority over those set through MicroProfile Config. Additionally, the properties must be set by using sources that apply to the entire server, such as `jvm.properties`, `server.env`, or environment variables.
+You can customize the structured API documentation that is generated for your applications by configuring the `server.xml` file. By using the `includeApplication`, `excludeApplication`, `includeModule`, and `excludeModule` elements within the `mpOpenAPI` configuration, you gain precise control over which applications and modules are included in the OpenAPI documentation. This flexibility is useful for tailoring the documentation to your specific needs, such as excluding sensitive modules or overriding default metadata. The following sections provide examples and explain how to configure these elements effectively.
 
+for more information, see the feature:mpOpenAPI[display=MicroProfile OpenAPI 4.0] feature.
 
-[#serverxml]
-=== Configure using the server.xml file
+- Configure using MicroProfile Config properties
 
-For MicroProfile OpenAPI 2.0 and later, you can control the applications and modules that are included in the structured documentation by using the `includeApplication`, `excludeApplication`, `includeModule`, and `excludeModule` elements within the `mpOpenAPI` xref:reference:config/mpOpenAPI.adoc[configuration element].
+MicroProfile Config provides a way to manage which applications and modules are included in the generated OpenAPI documentation by specifying configuration properties. With these properties, you can set inclusion and exclusion rules and customize the info section of the final OpenAPI document. This method is ideal for dynamic setups, enabling changes without directly modifying the `server.xml` file. However, there are some limitations. Configurations that are defined in the `server.xml` file take priority over those set through MicroProfile Config. Additionally, the properties must be set by using sources that apply to the entire server, such as `jvm.properties`, `server.env`, or environment variables.
 
-For example, to include all deployed applications and modules in the generated structured documentation when using `mpOpenAPI-2.0`, add the following configuration to your `server.xml` file.
-
-[source,xml]
-----
-<mpOpenAPI>
-  <includeApplication>all</includeApplication>
-</mpOpenAPI>
-----
-
-For example, to include all deployed applications and modules except the `admin` module of `application1`, add the following configuration to your `server.xml` file.
-
-[source,xml]
-----
-<mpOpenAPI>
-  <includeApplication>all</includeApplication>
-  <excludeModule>application1/admin</excludeModule>
-</mpOpenAPI>
-----
-
-==== Naming applications and modules   
-
-- The application name is determined by the value of the `name` attribute when the application is deployed in `server.xml` using `application`, `webApplication`, or `enterpriseApplication`. For example:
-+
-[source,xml]
-----
-<webApplication name="application1" location="application1-v1.war" />
-----
-+
-If the application is deployed in the `dropins` directory or if the `name` attribute is not specified, the name defaults to the archive filename with the extension removed.
-+
-- The module name is specified in the web module's `web.xml` file. If there is no `web.xml` file or if it does not specify a name, the module name defaults to the filename with the extension removed.
-
-You can also override the `info` section of the OpenAPI document using the following configuration:
-
-[source,xml]
-----
-<mpOpenAPI>
-  <info title="Example API"
-        version="1.0"
-        description="This is an example API"/>
-</mpOpenAPI>
-----
-
-Overriding the `info` section is useful for documenting multiple modules or applications. Without an override, the `info` section can be replaced with a standard version which indicates that documentation from several modules was merged.
-
-[#mpconfigs]
-=== Configure using MicroProfile Config properties
-
-You can configure the modules and applications to be included in the structured documentation by using MicroProfile Config, with the following limitations:
-
-- If conflicting configuration is found in the `server.xml` file, the MicroProfile Config settings are ignored.
-
-- The configuration properties must be set by using a configuration source that is not specific to an application. For example, you can use system properties that can be set in the `jvm.properties` file or`bootstrap.properties` file. The environment variables can be set in the `server.env` file`, or `variable` elements in the `server.xml` file.
-
-The following table lists the MicroProfile Config properties that can be specified to configure which modules or applications are included in the generated OpenAPI documentation.
+for more information, see xref:reference:config/mpOpenAPI.adoc[MicroProfile Config properties for MicroProfile OpenAPI].
 
 
-.Configuration properties for multiple application and multi-module application support
-[%header,cols="3,6,6a"]
-|===
-
-|Property name
-|Description
-|Valid values
-
-|`mp.openapi.extensions.liberty.merged.include`
-|The property specifies which modules or applications are included in the generated OpenAPI documentation.
-|
-* `all` +
-The value includes all the modules and applications in a deployment.
-* `first` +
-The value includes only the first web module of the first deployed application.
-* A comma-separated list of `_application_name_` or `_application_name_/_module_name_` includes the named applications and modules.
-
-|`mp.openapi.extensions.liberty.merged.exclude`
-|The property overrides the `mp.openapi.extensions.liberty.merged.include` property to specify which applications or web modules are excluded from the generated OpenAPI documentation.
-|
-* `none` +
-The value excludes no applications or web modules.
-* A comma-separated list of `_application_name_` or `_application_name_/_module_name_` excludes the named applications and modules.
-
-|`mp.openapi.extensions.liberty.merged.info`
-|The property is used to define the `info` section of the final Open API document. If it is set, the `info` section in the final OpenAPI document is replaced with the value of the property. The replacement occurs only after any merging is completed.
-|The value must be https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#infoObject[a valid OpenAPI info section] in JSON format.
-
-|===
-
-==== Multi-module naming rules
+=== Multi-module naming rules
 
 - When you configure support for multiple applications and multi-module environments by using MicroProfile Config, the application name is taken from the application's deployment descriptor (`application.xml` or `web.xml`). If there is no deployment descriptor or if it does not specify a name, the name defaults to the application archive filename with the extension removed.
 +
