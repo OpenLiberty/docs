@@ -156,14 +156,13 @@ The MicroProfile OpenAPI feature generates structured documentation based on the
 |===
 
 If you are using a feature that supports more than one version of the OpenAPI specification, you can switch between versions with configuration. You might need to do this if you or your end users use tools or libraries that don't yet support a newer version of the OpenAPI specification.
-
 For more information, see link:/docs/latest/reference/feature/mpOpenAPI-4.0.html#apiversion[Selecting the OpenAPI specification version].
 
 
 [#multi-module]
 == Multiple application and multi-module application support with MicroProfile OpenAPI
 
-When multiple applications or applications with more than one web module are deployed to the same Open Liberty server, the structured documentation differs depending on which MicroProfile OpenAPI feature version you use.
+When multiple applications or an application with more than one web module are deployed to the same Open Liberty runtime, the structured documentation differs depending on which MicroProfile OpenAPI feature version you use.
 
 .Multiple application and multi-module application support with MicroProfile OpenAPI
 [cols="1,2", options="header"]
@@ -171,49 +170,36 @@ When multiple applications or applications with more than one web module are dep
 |Feature |Default behavior
 
 |`mpOpenAPI-4.0`
-|All deployed applications and modules are included in the structured documentation, and the behavior can be modified through configuration.
+|All deployed applications and modules are included in the structured documentation. You can modify this behavior through configuration.
 
 |`mpOpenAPI-2.0` to `mpOpenAPI-3.1`
-|Only the first web module of the first deployed application is included in the structured documentation, but the behavior can be modified through configuration.
+|Only the first web module of the first deployed application is included in the structured documentation. You can modify this behavior through configuration.
 
 |`mpOpenAPI-1.0` to `mpOpenAPI-1.1`
-|Only the first web module of the first deployed application is included in the structured documentation, and this behavior cannot be modified.
+|Only the first web module of the first deployed application is included in the structured documentation. This behavior cannot be modified.
 |===
 
 [#conf-mm-supprt]
-== Configuring multiple application and multi-module API documentation
+== Including and excluding applications and modules from OpenAPI documentation
 
-Open Liberty offers two main ways to configure support for multiple applications and multi-module projects.
+You can configure which applications or modules are included in your OpenAPI documentation either by setting elements in your server.xml file or by specifying MicroProfile Config properties. For most scenarios, 'server.xml` configuration is preferred and MicroProfile Config properties are recommended only for compatibility with earlier versions of MicroProfile OpenAPI that are already using these properties.
 
-=== Configure by using the `server.xml` file
+Configure application or module documentation by using the `server.xml` file::
+You can control the inclusion and exclusion of applications and modules in the OpenAPI documentation by configuring the `mpOpenAPI` configuration element in your `server.xml` file.
++
+In MicroProfile OpenAPI 4.0 and later, all applications and modules are included by default. To exclude certain applications or modules, see link:/docs/latest/reference/feature/mpOpenAPI-4.0.html#_configure_openapi_documentation_for_a_multi_module_application[MicroProfile 4.0: Configure OpenAPI documentation for a multi-module application].
++
+In MicroProfile MicroProfile OpenAPI 2.0-.31, only the first web module of the first deployed application is included in the structured documentation. To include or exclude applications or modules, see link:/docs/latest/reference/feature/mpOpenAPI-3.0.html#_configure_openapi_documentation_for_a_multi_module_application[MicroProfile 3.0: Configure OpenAPI documentation for a multi-module application]
 
-Customize the structured API documentation that is generated for your applications by configuring the link:/docs/latest/reference/feature/mpOpenAPI-4.0.html#_configure_openapi_documentation_for_a_multi_module_application[server.xml] file. Use the following elements within the `mpOpenAPI` configuration to control the inclusion and exclusion of applications and modules in the OpenAPI documentation:
-
-- `includeApplication`: Specifies applications to include in the documentation.
-- `excludeApplication`: Specifies applications to exclude from the documentation.
-- `includeModule`: Specifies modules to include in the documentation.
-- `excludeModule`: Specifies modules to exclude from the documentation.
-
-This configuration provides flexibility to tailor the documentation to your specific needs, such as excluding sensitive modules or overriding default metadata.
-
-For more information, see the feature:mpOpenAPI[MicroProfile OpenAPI 4.0] feature.
-
-
-=== Configure by using MicroProfile Config properties
-
-MicroProfile Config provides a way to manage which applications and modules are included in the generated OpenAPI documentation by specifying configuration properties. Use these properties to define inclusion and exclusion rules and to customize the `info` section of the final OpenAPI document.
-
-- This method is suitable for dynamic setups because it allows changes to be made without directly modifying the `server.xml` file.
-- When both methods are used, configurations that are defined in the `server.xml` file take precedence over the ones set through MicroProfile Config.
-- Properties must be configured by using sources that apply to the entire server, such as the `jvm.properties`, `server.env`, or the environment variables.
-- MicroProfile Config options are compatible only with versions 3.0 and earlier.
-
-When you configure support for multiple applications and multi-module environments by using MicroProfile Config, the application and module names are determined based on specific rules.
-
-- **Application name**: The application name is determined from the application's deployment descriptor (`application.xml` or `web.xml`). If the deployment descriptor is missing or does not specify a name, the application name defaults to the application archive filename with the file extension removed.
-- **Module name**: The module name is determined by using the same rules as described for the `server.xml` configuration.
-
+Configure application or module documentation by using MicroProfile Config properties::
+MicroProfile Config provides properties to manage which applications and modules are included in the generated OpenAPI documentation. This option is recommended only for compatibility with applications that already use MicroProfile config to include or exclude modules or applications fro the API documentation. Newer configurations can instead use the `server.xml` file, as previously described.
++
+- You must configure properties by using sources that apply to the entire server, such as the `jvm.properties`, `server.env`, or the environment variables.
+- When you configure support for multiple applications and multi-module environments by using MicroProfile Config, the application name is determined from the application's deployment descriptor (`application.xml` or `web.xml`). If the deployment descriptor is missing or does not specify a name, the application name defaults to the application archive file name without the file extension. Similarly, the module name is specified in the web module `web.xml` file. If the `web.xml` file  does not exist or does not specify a name, the module name defaults to the file name without the file extension.
+- Any configuration that is defined in the `server.xml` file to include or exclude modules and applications takes precedence over configuration that is set through MicroProfile Config.
++
 For more information, see the xref:reference:config/mpOpenAPI.adoc[MicroProfile Config properties for MicroProfile OpenAPI].
+
 
 == See also
 
