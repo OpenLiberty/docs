@@ -15,7 +15,15 @@
 MicroProfile OpenAPI helps you to generate structured documentation from your Jakarta RESTful Services or JAX-RS applications. This documentation helps other microservices and developers to understand and communicate with your application.
 
 Other developers need relevant information to build an application that communicates with the REST API of your application.
-MicroProfile OpenAPI facilitates this communication by generating human and machine-readable documentation on a simple interface that doesn’t require access to the source code.
+MicroProfile OpenAPI facilitates this communication by generating human and machine-readable documentation on a simple interface that does not require access to the source code.
+
+The following sections provide more information about the available approaches, supported versions, and configurations for using MicroProfile OpenAPI with Open Liberty.
+- <<#code1, The code-first approach>>
+- <<#design1, The design-first approach>>
+- <<#supp-ver, Supported OpenAPI versions>>
+- <<#multi-module, Multiple application and multi-module application support with MicroProfile OpenAPI>>
+- <<#conf-mm-supprt, Configuring multiple application and multi-module support>>
+
 
 You can implement MicroProfile OpenAPI for Open Liberty by enabling the feature:mpOpenAPI[display=MicroProfile OpenAPI] feature. When this feature is enabled, you can view the OpenAPI document in a browser by using the `/openapi` endpoint. For example, if your browser is on the same machine where your server is running, you can view the raw OpenAPI document at the `\http://localhost:9080/openapi` URL or view the OpenAPI document in a user interface at the `\http://localhost:9080/openapi/ui` URL.
 
@@ -29,6 +37,8 @@ The JAX-RS framework handles basic API generation for JAX-RS annotations and gen
 You can use this treemap as a starting point and augment it with annotations and code to produce a complete OpenAPI document.
 Additionally, you can use this manually created documentation to generate stubs, or testable versions of code modules, such as client libraries for the API.
 
+
+[#code1]
 == The code-first approach
 
 In the code-first approach, you can initially generate basic API documentation of the REST API from annotations that are specified in the source code.
@@ -112,12 +122,14 @@ The information that is provided through the OpenAPI annotations augments the ba
 
 For more information, see the link:reference/javadoc/microprofile-6.1-javadoc.html?package=org/eclipse/microprofile/openapi/package-frame.html&class=org/eclipse/microprofile/openapi/package-summary.html[MicroProfile OpenAPI Javadoc] for the available annotations.
 
+
+[#design1]
 == The design-first approach
 
-An alternative approach is to design the REST API in an editor, such as the link:https://editor.swagger.io/[Swagger] editor, before you write any code.
+An alternative approach is to design the REST API in an editor, such as the link:https://editor.swagger.io/[Swagger] editor before you write any code.
 With this approach, you can spot and rectify any issues in the design before it is implemented.
-In large companies, subject matter experts review the API to ensure it's consistent and usable.
-This API design then forms a contract and must be implemented as agreed.
+In large companies, subject matter experts review the API to ensure that it is consistent and usable.
+The API design then serves as a contract and must be implemented.
 
 You can write this API design in YAML or JSON format and place it in the `META-INF` directory of your application.
 Optionally, you can create stubs for the API code.
@@ -126,7 +138,7 @@ You can augment manually created API documents by adding annotations to the code
 
 For more information, see https://openliberty.io/guides/microprofile-openapi.html#using-pregenerated-openapi-documents[Using pregenerated OpenAPI documents].
 
-
+[#supp-ver]
 == Supported OpenAPI versions
 
 The MicroProfile OpenAPI feature generates structured documentation based on the OpenAPI specification. Each new version of the OpenAPI specification updates the documentation format, and different versions of MicroProfile OpenAPI support different OpenAPI specification versions.
@@ -139,19 +151,7 @@ The MicroProfile OpenAPI feature generates structured documentation based on the
 |`mpOpenAPI-4.0`
 | 3.1, 3.0
 
-|`mpOpenAPI-3.1`
-| 3.0
-
-|`mpOpenAPI-3.0`
-| 3.0
-
-|`mpOpenAPI-2.0`
-| 3.0
-
-|`mpOpenAPI-1.1`
-| 3.0
-
-|`mpOpenAPI-1.0`
+|`mpOpenAPI-3.1` and earlier
 | 3.0
 |===
 
@@ -167,8 +167,7 @@ For example, you can select OpenAPI v3.0 when using `mpOpenAPI-4.0`.
 [#multi-module]
 == Multiple application and multi-module application support with MicroProfile OpenAPI
 
-When multiple applications, or applications with more than one web module are deployed to the same Open Liberty server, the behavior differs between MicroProfile OpenAPI feature versions.
-
+When multiple applications or applications with more than one web module are deployed to the same Open Liberty server, the structured documentation differs depending on which MicroProfile OpenAPI feature version you use.
 
 .Multiple application and multi-module application support with MicroProfile OpenAPI
 [cols="1,2", options="header"]
@@ -176,23 +175,23 @@ When multiple applications, or applications with more than one web module are de
 |Feature |Behavior
 
 |`mpOpenAPI-4.0`
-|By default, all deployed applications and modules are included in the structured documentation. This can changed through configuration.
+|By default, all deployed applications and modules are included in the structured documentation, and the behavior can be modified through configuration.
 
 |`mpOpenAPI-2.0` to `mpOpenAPI-3.1`
-|By default, only the first web module of the first application deployed is included in the structured documentation. This can be changed through configuration.
+|By default, only the first web module of the first deployed application is included in the structured documentation, but the behavior can be modified through configuration.
 
 |`mpOpenAPI-1.0` to `mpOpenAPI-1.1`
-|Only the first web module of the first application deployed is included in the structured documentation. This cannot be changed.
+|Only the first web module of the first deployed application is included in the structured documentation, and this behavior cannot be modified.
 |===
 
-
+[#conf-mm-supprt]
 == Configuring multiple application and multi-module support
 
 Open Liberty offers two main ways to configure support for multiple applications and multi-module projects.
 
-- <<#serverxml, Configure using the `server.xml` file:>> This method involves configuring your server to deploy multiple applications by specifying the applications and modules within the `server.xml` file.
+- <<#serverxml, Configure using the `server.xml` file:>> You can customize the structured API documentation that is generated for your applications by configuring the `server.xml` file. By using the `includeApplication`, `excludeApplication`, `includeModule`, and `excludeModule` elements within the `mpOpenAPI` configuration, you gain precise control over which applications and modules are included in the OpenAPI documentation. This flexibility is useful for tailoring the documentation to your specific needs, such as excluding sensitive modules or overriding default metadata. The following sections provide examples and explain how to configure these elements effectively.
 
-- <<#mpconfigs, Configure using the MicroProfile Config:>> Alternatively, you can use the MicroProfile Config to adjust deployment settings more flexibly, allowing for easy updates and changes without needing to modify XML files.
+- <<#mpconfigs, Configure using MicroProfile Config properties:>> MicroProfile Config provides a way to manage which applications and modules are included in the generated OpenAPI documentation by specifying configuration properties. With these properties, you can set inclusion and exclusion rules and customize the info section of the final OpenAPI document. This method is ideal for dynamic setups, enabling changes without directly modifying the `server.xml` file. However, there are some limitations. Configurations that are defined in the `server.xml` file take priority over those set through MicroProfile Config. Additionally, the properties must be set by using sources that apply to the entire server, such as `jvm.properties`, `server.env`, or environment variables.
 
 
 [#serverxml]
@@ -243,17 +242,16 @@ You can also override the `info` section of the OpenAPI document using the follo
 </mpOpenAPI>
 ----
 
-This override may be useful when documenting multiple modules or applications. Without it, the `info` section would be replaced with a standard one indicating that documentation from several modules was merged.
-
+Overriding the `info` section is useful for documenting multiple modules or applications. Without an override, the `info` section can be replaced with a standard version which indicates that documentation from several modules was merged.
 
 [#mpconfigs]
-=== Configure using the MicroProfile Config
+=== Configure using MicroProfile Config properties
 
 You can configure the modules and applications to be included in the structured documentation by using MicroProfile Config, with the following limitations:
 
 - If conflicting configuration is found in the `server.xml` file, the MicroProfile Config settings are ignored.
 
-- The configuration properties must be set by using a configuration source that is not specific to an application. For example, you can use system properties, environment variables, or `variable` elements in the `server.xml` file.
+- The configuration properties must be set by using a configuration source that is not specific to an application. For example, you can use system properties that can be set in the `jvm.properties` file or`bootstrap.properties` file. The environment variables can be set in the `server.env` file`, or `variable` elements in the `server.xml` file.
 
 The following table lists the MicroProfile Config properties that can be specified to configure which modules or applications are included in the generated OpenAPI documentation.
 
@@ -267,23 +265,23 @@ The following table lists the MicroProfile Config properties that can be specifi
 |Valid values
 
 |`mp.openapi.extensions.liberty.merged.include`
-|This property specifies which modules or applications are included in the generated OpenAPI documentation.
+|The property specifies which modules or applications are included in the generated OpenAPI documentation.
 |
 * `all` +
-This value includes all modules and applications in a deployment.
+The value includes all the modules and applications in a deployment.
 * `first` +
-This value includes only the first web module of the first application deployed.
+The value includes only the first web module of the first deployed application.
 * A comma-separated list of `_application_name_` or `_application_name_/_module_name_` includes the named applications and modules.
 
 |`mp.openapi.extensions.liberty.merged.exclude`
-|This property overrides the `mp.openapi.extensions.liberty.merged.include` property to specify which applications or web modules are excluded from the generated OpenAPI documentation.
+|The property overrides the `mp.openapi.extensions.liberty.merged.include` property to specify which applications or web modules are excluded from the generated OpenAPI documentation.
 |
 * `none` +
-This value excludes no applications or web modules.
+The value excludes no applications or web modules.
 * A comma-separated list of `_application_name_` or `_application_name_/_module_name_` excludes the named applications and modules.
 
 |`mp.openapi.extensions.liberty.merged.info`
-|This property sets the `info` section of the final Open API document. If it is set, the `info` section in the final OpenAPI document is replaced with the value of the property. This replacement is made after any merging is completed.
+|The property is used to define the `info` section of the final Open API document. If it is set, the `info` section in the final OpenAPI document is replaced with the value of the property. The replacement occurs only after any merging is completed.
 |The value must be https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#infoObject[a valid OpenAPI info section] in JSON format.
 
 |===
