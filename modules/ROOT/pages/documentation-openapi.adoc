@@ -182,22 +182,147 @@ When multiple applications or an application with more than one web module are d
 [#conf-mm-supprt]
 === Including and excluding applications and modules from OpenAPI documentation
 
-You can configure which applications or modules are included in your OpenAPI documentation either by setting elements in your `server.xml` file or by specifying MicroProfile Config properties. For most scenarios, `server.xml` configuration is preferred and MicroProfile Config properties are recommended only for compatibility with existing configurations that are already using these properties.
+You can configure which applications or modules are included in your OpenAPI documentation either by <<server,setting elements in your `server.xml` file>> or by <<mp-config. specifying MicroProfile Config properties>>. For most scenarios, `server.xml` configuration is preferred and MicroProfile Config properties are recommended only for compatibility with existing configurations that are already using these properties.
 
-Configure application or module documentation by using the `server.xml` file::
-You can control the inclusion and exclusion of applications and modules in the OpenAPI documentation by configuring the `mpOpenAPI` configuration element in your `server.xml` file.
-+
-In MicroProfile OpenAPI 4.0 and later, all applications and modules are included by default. To exclude certain applications or modules, see link:/docs/latest/reference/feature/mpOpenAPI-4.0.html#mm[MicroProfile 4.0: Configure OpenAPI documentation for a multi-module application].
-+
-In MicroProfile MicroProfile OpenAPI 2.0-3.1, only the first web module of the first deployed application is included in the structured documentation. To include or exclude applications or modules, see link:/docs/latest/reference/feature/mpOpenAPI-3.0.html#_configure_openapi_documentation_for_a_multi_module_application[MicroProfile 3.0: Configure OpenAPI documentation for a multi-module application]
+[#server]
+==== Configure application or module documentation by using the `server.xml` file
+You can control the inclusion and exclusion of applications and modules in the OpenAPI documentation by configuring the following elements within the  config:mpOpenAPI[] configuration element in your `server.xml` file:
 
-Configure application or module documentation by using MicroProfile Config properties::
+- `excludeModule` | `excludeApplication`: Specify module or application names, one per element, that are to be excluded from the OpenAPI document. Specify module names in the `{ApplicationName}/{ModuleName}` format.
+- `includeModule` | `includeApplication`: Specify module or application names, one per element, that are to be included in the OpenAPI document. Specify module names in the `{ApplicationName}/{ModuleName}` format. The `all` special value includes all available applications.
+- `info`: Specify an `info` section for the OpenAPI document. THis element is useful to override the default `info` section of merged OpenAPI documentation for multiple modules or applications.
+
+In feature:mpOpenAPI-4.0[display=MicroProfile OpenAPI 4.0] and later, all applications and modules are included by default. To exclude certain applications or modules, specify the `excludeModule` or `excludeApplication` element within the `mpOpenAPI` element.
+
+In the following example, the `sample_app` application consists of an EAR file containing five web modules. This configuration excludes modules 3 and 5 and provides a custom `info` section for the merged API documentation for modules 1,2, and 4:
+
+[source,xml]
+----
+<mpOpenAPI>
+  <excludeModule>sample_app/module-3</excludeModule>
+  <excludeModule>sample_app/module-5</excludeModule>
+  <info title="A multi-module sample application"
+        description="This is a sample application."
+        version="2.0.1"
+        termsOfService="http://example.com/sample_app/terms"
+        contactName="API Support"
+        contactUrl="http://www.example.com/sample_app/support"
+        contactEmail="sample_app_support@example.com"
+        licenseName="License 2.0"
+        licenseUrl="https://www.example.org/licenses/LICENSE-2.0.html"
+        />
+</mpOpenAPI>
+----
+
+In MicroProfile MicroProfile OpenAPI 2.0 - feature:mpOpenAPI-3.1[display=3.1], only the first web module of the first deployed application is included in the structured documentation. To include or exclude applications specify the corresponding elements within the `mpOpenAPI` element.
+
+In the following example, the `sample_app` application consists of an EAR file containing five web modules. By default, only `module-1` is included in the documentation. This configuration includes all modules, then selectively excludes modules 3 and 5. It also provides a custom `info` section for the merged API documentation for modules 1,2, and 4:
+
+[source,xml]
+----
+<mpOpenAPI>
+  <includeApplication>all</includeApplication>
+  <excludeModule>sample_app/module-3</excludeModule>
+  <excludeModule>sample_app/module-5</excludeModule>
+  <info title="A multi-module sample application"
+        description="This is a sample application."
+        version="2.0.1"
+        termsOfService="http://example.com/sample_app/terms"
+        contactName="API Support"
+        contactUrl="http://www.example.com/sample_app/support"
+        contactEmail="sample_app_support@example.com"
+        licenseName="License 2.0"
+        licenseUrl="https://www.example.org/licenses/LICENSE-2.0.html"
+        />
+</mpOpenAPI>
+----
+
+When you configure OpenAPI documentation in the `server.xml` file, the application name is determined by the value of the `name` attribute when the application is deployed in `server.xml` using `application`, `webApplication`, or `enterpriseApplication`. For example:
+
+[source,xml]
+----
+<webApplication name="application1" location="application1-v1.war" />
+----
+
+If the application is deployed in the `dropins` directory or if the `name` attribute is not specified, the name defaults to the archive filename without the file extension.
+
+For module names, the module name is specified in the web module's `web.xml` file. If no `web.xml` file exists or if it does not specify a name, the module name defaults to the file name without the file extension.
+
+[#mp-config]
+==== Configure application or module documentation by using MicroProfile Config properties
+
 MicroProfile Config provides properties to manage which applications and modules are included in the generated OpenAPI documentation. This option is recommended only for compatibility with applications that already use MicroProfile Config to include or exclude modules or applications fro the API documentation. Newer configurations can instead use the `server.xml` file, as previously described.
-+
-- You must configure properties by using sources that apply to the entire server, such as the `jvm.properties`, `server.env`, or the environment variables.
-- When you configure support for multiple applications and multi-module environments by using MicroProfile Config, the application name is determined from the application's deployment descriptor (`application.xml` or `web.xml`). If the deployment descriptor is missing or does not specify a name, the application name defaults to the application archive file name without the file extension. Similarly, the module name is specified in the web module `web.xml` file. If the `web.xml` file  does not exist or does not specify a name, the module name defaults to the file name without the file extension.
+
+WHen you configure the inclusion or exclusion of modules or applications with MicroProfile Config, the following limitations apply:
+
+- You must configure properties in a source that applies to the entire runtime, such as the `bootstrap.properties`, `jvm.properties`, or `server.env` files, or the `variable` element in the `server.xml` file.
 - Any configuration that is defined in the `server.xml` file to include or exclude modules and applications takes precedence over configuration that is set through MicroProfile Config.
-+
+
+
+The following table lists xref:external-configuration.adoc[MicroProfile Config] properties that can be specified to configure which modules or applications are included in the generated OpenAPI documentation.
+
+.Configuration properties for multiple application and multi-module application support
+[%header,cols="3,6,6a"]
+|===
+
+|Property name
+|Description
+|Valid values
+
+|`mp.openapi.extensions.liberty.merged.include`
+|This property specifies which modules or applications are included in the generated OpenAPI documentation.
+|
+* `all` +
+This value includes all modules and applications in a deployment.
+* `first` +
+This value includes only the first web module of the first application deployed.
+* A comma-separated list of `_application_name_` or `_application_name_/_module_name_` includes the named applications and modules.
+
+|`mp.openapi.extensions.liberty.merged.exclude`
+|This property overrides the `mp.openapi.extensions.liberty.merged.include` property to specify which applications or web modules are excluded from the generated OpenAPI documentation.
+|
+* `none` +
+This value excludes no applications or web modules.
+* A comma-separated list of `_application_name_` or `_application_name_/_module_name_` excludes the named applications and modules.
+
+|`mp.openapi.extensions.liberty.merged.info`
+|This property sets the `info` section of the final Open API document. If it is set, the `info` section in the final OpenAPI document is replaced with the value of the property. This replacement is made after any merging is completed.
+|The value must be https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#infoObject[a valid OpenAPI info section] in JSON format.
+
+|===
+
+
+When you configure support for multiple applications and multi-module environments by using MicroProfile Config, the application name is determined from the application's deployment descriptor (`application.xml` or `web.xml`). If the deployment descriptor is missing or does not specify a name, the application name defaults to the application archive file name without the file extension. Similarly, the module name is specified in the web module `web.xml` file. If the `web.xml` file  does not exist or does not specify a name, the module name defaults to the file name without the file extension.
+
+In the following `jvm.properties` file example, an OpenAPI document is configured for the `sample_app` application, which consists of an EAR file with five web modules.
+
+[source,properties]
+----
+mp.openapi.extensions.liberty.merged.include=all
+mp.openapi.extensions.liberty.merged.exclude=sample_app/module-3,sample_app/module-5
+mp.openapi.extensions.liberty.merged.info=
+{
+  "title": "A multi-module sample application",
+  "description": "This is a sample application.",
+  "termsOfService": "http://example.com/sample_app/terms",
+  "contact": {
+    "name": "API Support",
+    "url": "http://www.example.com/sample_app/support",
+    "email": "sample_app_support@example.com"
+  },
+  "license": {
+    "name": "License 2.0",
+    "url": "https://www.example.org/licenses/LICENSE-2.0.html"
+  },
+  "version": "2.0.1"
+}
+----
+
+* The `mp.openapi.extensions.liberty.merged.include` property specifies that all five modules are included in the final OpenAPI document.
+* The `mp.openapi.extensions.liberty.merged.exclude` overrides the `mp.openapi.extensions.liberty.merged.include` property to exclude the `module-3` and `module-5` web modules.
+* The `mp.openapi.extensions.liberty.merged.info` property sets the `info` section for the final OpenAPI document, which documents web modules 1, 2, and 4.
+
+
 For more information, see the link:/docs/latest/reference/microprofile-config-properties.html#openapi[MicroProfile Config properties for MicroProfile OpenAPI].
 
 
