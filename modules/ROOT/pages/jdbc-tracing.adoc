@@ -85,13 +85,14 @@ In this example, the custom `traceLevel` attribute for the DB2 JCC driver is set
 The following subsections contain JDBC driver specific configuration.
 
 * <<#DB2JCC,DB2 JCC>>
+  ** <<#DB2Custom,DB2 JCC customized tracing>>
 * <<#Derby,Derby>>
 * <<#InformixJDBC,Informix using JDBC>>
 * <<#InformixDB2JCC,Informix using DB2 JCC>>
 * <<#SQLServerJDBCdriver,Microsoft SQL Server JDBC driver>>
 * <<#SQLServerDataDirectdriver,Microsoft SQL Server DataDirect driver>>
 * <<#Oracle,Oracle>>
-  ** <<#OracleCustom, Oracle customized tracing>>
+  ** <<#OracleCustom,Oracle customized tracing>>
 * <<#PostgreSQL,PostgreSQL>>
 * <<#Sybase,Sybase>>
 * <<#Otherdatabases,Other databases>>
@@ -113,6 +114,32 @@ The DB2 JCC does not support the `java.util.logging` library. This driver has it
 
 For more information about valid values for the `traceLevel` attribute, see https://www.ibm.com/support/pages/collecting-data-tracing-ibm-data-server-driver-jdbc-and-sqlj[Table 1. DB2 JDBC trace constants].
 
+[#DB2Custom]
+=== DB2 JCC customized tracing
+
+By default, the DB2 JCC driver tracing is combined with Liberty tracing because the DB2 logwriter provided by Liberty routes trace to the same file. However, Liberty also supports separating DB2 JCC trace from Liberty trace. You can use this function to provide a stand-alone DB2 JCC JDBC trace to DB2 support, if needed.
+
+This cusomized tracing can be set on a per DataSource basis, such as the example below:
+
+[source, xml]
+----
+<logging traceSpecification="*=info:RRA=all" />
+
+<datasource ... >
+  <properties.db2.jcc
+    traceLevel="-1" traceDirectory="${server.output.dir}/logs/" traceFile="jcc.trace"
+    traceFileAppend="true" traceOption="0"/>
+</datasource>
+----
+
+- `traceLevel` : This property specifies the level of trace.
+- `traceDirectory` : This property specifies the directory to into which trace is written.
+- `traceFile` : This property specifies the name of the file into which trace is written.
+- `traceFileAppend` : This property specifies wheather to append to (true) or overwrite (false) the `traceFile`.
+- `traceOption` (Optional) : This property when set to `0` specifies that a single trace file will be generated, and that no limit to the size of the file exists. 
+
+For additional information about these properties and additional configuration settings, such as `traceFileSize` and `traceFileCount`, see https://www.ibm.com/docs/en/db2/11.5?topic=information-data-server-driver-jdbc-sqlj-configuration-properties(IBM Data Server Driver for JDBC and SQLJ configuration properties
+)
 
 [#Derby]
 === Derby
