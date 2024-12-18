@@ -85,13 +85,14 @@ In this example, the custom `traceLevel` attribute for the DB2 JCC driver is set
 The following subsections contain JDBC driver specific configuration.
 
 * <<#DB2JCC,DB2 JCC>>
+  ** <<#DB2Custom,DB2 JCC customized tracing>>
 * <<#Derby,Derby>>
 * <<#InformixJDBC,Informix using JDBC>>
 * <<#InformixDB2JCC,Informix using DB2 JCC>>
 * <<#SQLServerJDBCdriver,Microsoft SQL Server JDBC driver>>
 * <<#SQLServerDataDirectdriver,Microsoft SQL Server DataDirect driver>>
 * <<#Oracle,Oracle>>
-  ** <<#OracleCustom, Oracle customized tracing>>
+  ** <<#OracleCustom,Oracle customized tracing>>
 * <<#PostgreSQL,PostgreSQL>>
 * <<#Sybase,Sybase>>
 * <<#Otherdatabases,Other databases>>
@@ -113,6 +114,35 @@ The DB2 JCC does not support the `java.util.logging` library. This driver has it
 
 For more information about valid values for the `traceLevel` attribute, see https://www.ibm.com/support/pages/collecting-data-tracing-ibm-data-server-driver-jdbc-and-sqlj[Table 1. DB2 JDBC trace constants].
 
+[#DB2Custom]
+=== DB2 JCC customized tracing
+
+By default, DB2 JCC driver tracing is combined with Liberty tracing because the Liberty-provided DB2 logwriter directs trace output to the same file. However, Liberty also offers the option to separate DB2 JCC trace from Liberty trace. You can use this option to provide a stand-alone DB2 JCC JDBC trace to DB2 support, if needed.
+
+You can set this customized tracing for each configured DataSource in your `server.xml` file, as shown in the following example:
+
+[source, xml]
+----
+<logging traceSpecification="*=info:RRA=all" />
+
+<datasource ... >
+  <properties.db2.jcc
+    traceLevel="-1" traceDirectory="${server.output.dir}/logs/" traceFile="jcc.trace"
+    traceFileAppend="true" traceOption="0"/>
+</datasource>
+----
+
+The following attributes customize the configuration of the DB2 driver trace output:
+
+- `traceLevel` (required): This property specifies the level of trace.
+- `traceDirectory` (required): This property specifies the directory where trace is written.
+- `traceFile` (required): This property specifies the name of the trace output file.
+- `traceFileAppend` (optional): This property specifies whether to append to (`true`) or overwrite (`false`) the trace output to the specified file. Default value is `false`.
+- `traceOption` (optional) : When this property is set to `0`, the `traceFileSize` and `traceFileCount` properties are ignored, and a single trace file with no size limit is generated. To enable circular tracing, set this property to `1`. Default value is `0`.
+- `traceFileSize` (optional) : This property specifies the maximum size of each trace file, for circular tracing (in bytes). Default value is `10485760` (10 MB).
+- `traceFileCount` (optional) : This property specifies the maximum number of trace files for circular tracing. Default value is `2`.
+
+For more information about these properties and other configuration settings, see link:https://www.ibm.com/docs/en/db2/latest?topic=information-data-server-driver-jdbc-sqlj-configuration-properties[IBM Data Server Driver for JDBC and SQLJ configuration properties].
 
 [#Derby]
 === Derby
