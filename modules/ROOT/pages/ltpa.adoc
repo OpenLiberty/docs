@@ -1,0 +1,141 @@
+// Copyright (c) 2025 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+//
+//
+:page-description: Lightweight Third-Party Authentication (LTPA) is a token-based authentication mechanism that enables single sign-on (SSO) across multiple Jakarta EE applications and servers. LTPA tokens allow users to authenticate once and gain access to multiple secured resources without needing to log in again.
+:seo-title: Lightweight Third-Party Authentication (LTPA) - OpenLiberty.io
+:projectName: Open Liberty
+:page-layout: general-reference
+:page-type: general
+
+= Lightweight Third-Party Authentication (LTPA)
+
+Lightweight Third-Party Authentication (LTPA) is a token-based authentication mechanism that enables single sign-on (SSO) across multiple Jakarta EE applications and servers. LTPA tokens allow users to authenticate once and gain access to multiple secured resources without needing to log in again.
+
+== Overview
+
+LTPA is commonly used in enterprise environments where multiple applications run across different application servers, and users require seamless authentication across these systems. The authentication process involves the generation, encryption, and validation of LTPA tokens.
+
+LTPA works by issuing a token to a user upon successful authentication. This token is then passed between applications or servers, allowing them to validate the user without requiring a reauthentication process. The LTPA mechanism includes encryption and signing techniques to help ensure security and prevent tampering.
+
+LTPA is useful in distributed environments where multiple WebSphere Application Servers, Open Liberty servers, or other Jakarta EE-compliant servers need to authenticate users consistently. It supports authentication propagation across domains and reduces the need for repeated credential entry, enhancing the user experience. Since LTPA tokens are encrypted and signed, they provide a secure means of authentication that minimizes the risk of credential exposure. Organizations implementing LTPA benefit from centralized authentication control, making it easier to enforce security policies and streamline user management across different applications and platforms.
+
+LTPA improves the efficiency of authentication by reducing the load on identity providers, as users do not need to reenter their credentials for each application session. This mechanism is advantageous in large-scale environments, where performance and security are critical concerns. By using LTPA, enterprises can ensure a seamless and secure authentication experience, while also maintaining compliance with industry-standard security practices.
+
+LTPA supports SSO and authentication across multiple Liberty servers in a distributed environment. LTPA tokens contain signed user identity and expiration data. In web applications, tokens are typically exchanged using cookies when SSO is enabled. Each Liberty server must share the same LTPA keys and user registry configuration for token validation.
+
+The LTPA token lifecycle begins with user authentication, where the user logs in to an application or server by using credentials such as a username and password, often verified against an LDAP directory. Upon successful authentication, the server generates an LTPA token that contains the user's identity information, which is encrypted and digitally signed by using the LTPA keys. This token is then transmitted to other applications or servers as part of the user's session. When another server receives the token, it validates it using the same LTPA keys and grants access based on the authentication data stored in the token. The user remains authenticated across multiple applications and servers until the token either expires or is explicitly invalidated.
+
+
+== Enabling Application Security
+LTPA is automatically enabled when the Application Security feature is configured. For more information, see feature:appSecurity-5.0[display=Application Security 5.0].
+
+To use LTPA, enable the `appSecurity-5.0` feature in your `server.xml` file.
+
+[source,xml]
+----
+<featureManager>
+  <feature>appSecurity-5.0</feature>
+</featureManager>
+----
+
+== Configuring LTPA in Open Liberty
+
+To configure LTPA in Open Liberty, enable the necessary security features and define the LTPA-related settings. The configuration process involves the following key steps:
+
+- Generating and managing LTPA keys
+- Enabling LTPA for single sign-on (SSO)
+- Configuring LTPA token expiration and domain settings
+
+=== Generate LTPA keys
+
+Use the `securityUtility createLTPAKeys` command to generate the LTPA keys. This command creates a key file that can be shared among trusted servers:
+
+[source,sh]
+----
+securityUtility createLTPAKeys myLTPA.keys --password=mySecret
+----
+
+The generated file (for example, `myLTPA.keys`) must be securely distributed to all participating servers. The password is required to access the keys during runtime.
+
+To avoid storing the password in plaintext, you can encode the `keysPassword` value by using the following command:
+
+[source,sh]
+----
+securityUtility encode --encoding=aes mySecret
+----
+
+Then use the encoded password in your `server.xml` configuration:
+
+[source,xml]
+----
+<ltpa 
+  keysFileName="myLTPA.keys"
+  keysPassword="{aes}EncodedPassword"
+  expiration="120"/>
+----
+
+=== Configure LTPA settings
+
+In your `server.xml` file, configure the `<ltpa>` element to specify the LTPA key file, password, and token expiration time.
+
+[source,xml]
+----
+<ltpa 
+  keysFileName="myLTPA.keys"
+  keysPassword="mySecret"
+  expiration="120"/>
+----
+
+* `keysFileName` - Path to the LTPA keys file.
+* `keysPassword` - Password to access the keys file.
+* `expiration` - Token expiration time in minutes.
+
+To enable dynamic reloading of the keys file without restarting the server, add the `monitorInterval` attribute.
+
+[source,xml]
+----
+<ltpa 
+  keysFileName="myLTPA.keys"
+  keysPassword="mySecret"
+  expiration="120"
+  monitorInterval="5s"/>
+----
+
+This setting allows the server to monitor the keys file and reload it if it detects any changes.
+
+All Liberty servers participating in SSO must share the same keys and user registry. To enable token sharing across applications in the same domain, configure the cookie domain:
+
+[source,xml]
+----
+<webAppSecurity cookieDomain="example.com"/>
+----
+
+To ensure the secure use of LTPA tokens, always transmit tokens over HTTPS to prevent interception. Store tokens in secure, HTTP-only cookies to reduce the risk of client-side access. Rotate LTPA keys regularly across all servers to maintain cryptographic integrity, and configure appropriate token expiration times to limit the potential impact if a token is ever compromised.
+
+== Security Considerations
+
+LTPA tokens contain user authentication data and must be securely managed to prevent unauthorized access. To maintain a secure environment, it is important to regularly rotate LTPA keys, define appropriate token expiration policies, and store LTPA keys in encrypted files. Tokens must always be transmitted over secure channels such as HTTPS to prevent interception. Monitoring for token misuse and enforcing strict access control policies are also essential practices. If an LTPA cookie is intercepted, an attacker might impersonate the authenticated user until the token expires. To mitigate this risk, always ensure that LTPA tokens are sent only over secure connections. 
+
+If you require compliance with FIPS 140-3, you can configure the Liberty server to use FIPS-approved algorithms during LTPA key creation. Before running the key generation command, set the following environment variable:
+
+[source,bash]
+----
+export JVM_ARGS="-Xenablefips140-3 -Dcom.ibm.jsse2.usefipsprovider=true -Dcom.ibm.jsse2.usefipsProviderName=IBMJCEPlusFIPS"
+----
+
+Then run the `securityUtility createLTPAKeys` command as usual. Ensure that all participating servers use FIPS-compatible keys if FIPS is enabled.
+
+For more information on securing LTPA tokens, see xref:network-hardening.adoc#ltpa[security hardening].
+
+
+== See Also
+
+- xref:reference:command/securityUtility-createLTPAKeys.adoc[securityUtility createLTPAKeys command]
+- xref:single-sign-on.adoc[Overview of SSO using LTPA in Open Liberty]
