@@ -1,4 +1,4 @@
-// Copyright (c) 2024 IBM Corporation and others.
+// Copyright (c) 2024,2025 IBM Corporation and others.
 // Licensed under Creative Commons Attribution-NoDerivatives
 // 4.0 International (CC BY-ND 4.0)
 //   https://creativecommons.org/licenses/by-nd/4.0/
@@ -21,6 +21,7 @@ MicroProfile Telemetry can collect the following types of events:
 * <<#me, Message events>>
 * <<#te, Trace events>>
 * <<#ffdce, FFDC events>>
+* <<#audit, Audit events>>
 
 For information about trace log detail levels and how Open Liberty settings map to OpenTelemetry severity numbers, see <<sevlev, OpenTelemetry severity number mapping with Liberty log levels>>.
 
@@ -134,12 +135,12 @@ The following table provides the fields for the first failure data capture (FFDC
 The following example shows the OpenTelemetry Collector output for an FFDC event from an application:
 
 ----
-timeUnixNano=“1232335231363000000”
-observeTimeUnixNano=“123455512929602000000”
-severityNumber=“13”
+timeUnixNano="1232335231363000000"
+observeTimeUnixNano="123455512929602000000"
+severityNumber="13"
 body="Cannot invoke "java.lang.String.toString()" because "myString" is null"
-traceId=“3fced7fbfbc062349c66a8c1a37c31b2”
-spanId=“4be39c323e375d9e”
+traceId="3fced7fbfbc062349c66a8c1a37c31b2"
+spanId="4be39c323e375d9e"
 Attributes:
             io.openliberty.type="liberty_ffdc"
             exception.message="Cannot invoke "java.lang.String.toString()" because "myString" is null"
@@ -148,10 +149,689 @@ Attributes:
             io.openliberty.class_name="io.openliberty.microprofile.telemetry.logging.internal.container.fat.MpTelemetryLogApp"
             io.openliberty.object_details="Object type = io.openliberty.microprofile.telemetry.logging.internal.container.fat.MpTelemetryLogApp\n tc = class             com.ibm.websphere.ras.TraceComponent@7baa4ff8 ...
             io.openliberty.probe_id="62"
-            io.openliberty.sequence=“1723140654466_00000000000011"
-            thread.id=“92”
-            thread.name=“Default Executor-thread-12”
+            io.openliberty.sequence="1723140654466_00000000000011"
+            thread.id="92"
+            thread.name="Default Executor-thread-12"
 ----
+
+
+[#audit]
+== Audit events
+
+The Open Liberty feature:audit[display=Audit] feature captures security-related events from the runtime environment and emits human-readable audit records. You can use the data that is generated from the audit events to analyze the configured environment.
+To collect and send audit logs to your configured OpenTelemetry exporter, add either the `audit-1.0` or `audit-2.0` feature, along with the `mpTelemetry-2.0` or later feature, and specify the `audit` log source in your feature configuration. For more information, see the feature:mpTelemetry[display=MicroProfile Telemetry feature].
+
+The audit events are captured in the following types to help identify different areas where the configured environment can be improved:
+
+* <<SECURITY_AUDIT_MGMT, Management of the audit service (SECURITY_AUDIT_MGMT)>>
+* <<SECURITY_MEMBER_MGMT, SCIM operations/member management (SECURITY_MEMBER_MGMT)>>
+* <<SECURITY_API_AUTHN, Servlet APIs: login/authenticate (SECURITY_API_AUTHN)>>
+* <<SECURITY_API_AUTHN_TERMINATE, Servlet APIs: logout (SECURITY_API_AUTHN_TERMINATE)>>
+* <<SECURITY_AUTHN_TERMINATE, Form Logout (SECURITY_AUTHN_TERMINATE)>>
+* <<SECURITY_AUTHN, Basic Authentication (SECURITY_AUTHN)>>
+* <<SECURITY_AUTHN, Client certificate authentication (SECURITY_AUTHN)>>
+* <<SECURITY_AUTHN, Form Login Authentication (SECURITY_AUTHN)>>
+* <<SECURITY_AUTHN_DELEGATION, Servlet runAs delegation (SECURITY_AUTHN_DELEGATION)>>
+* <<SECURITY_AUTHN_DELEGATION, EJB delegation (SECURITY_AUTHN_DELEGATION)>>
+* <<SECURITY_AUTHN_FAILOVER, Failover to basic authentication (SECURITY_AUTHN_FAILOVER)>>
+* <<SECURITY_AUTHZ, Unprotected servlet authorization (SECURITY_AUTHZ)>>
+* <<SECURITY_AUTHZ, JACC web authorization (SECURITY_AUTHZ)>>
+* <<SECURITY_AUTHZ, JACC EJB authorization (SECURITY_AUTHZ)>>
+* <<SECURITY_AUTHZ, EJB authorization (SECURITY_AUTHZ)>>
+* <<SECURITY_JMS_AUTHN, JMS Authentication (SECURITY_JMS_AUTHN)>>
+* <<SECURITY_JMS_AUTHZ, JMS Authorization (SECURITY_JMS_AUTHZ)>>
+* <<SECURITY_SAF_AUTHZ, SAF Authorization Service API request (SECURITY_SAF_AUTHZ)>>
+* <<SECURITY_SAF_AUTHZ_DETAILS, SAF Authorization Exception (SECURITY_SAF_AUTHZ_DETAILS)>>
+* <<JMX_MBEAN_REGISTER, JMX MBean registration (JMX_MBEAN_REGISTER)>>
+* <<JMX_MBEAN, JMX MBean Operations (JXM_MBEAN)>>
+* <<JMX_MBEAN_ATTRIBUTES, JMX MBean attribute operations (JMX_MBEAN_ATTRIBUTES)>>
+* <<JMX_NOTIFICATION, JMX Notifications (JMX_NOTIFICATION)>>
+
+The following tables provide the fields for Liberty audit events, a description for each field, and the mapping to the OpenTelemetry logs data model and Java agent:
+
+[#SECURITY_AUDIT_MGMT]
+=== SECURITY_AUDIT_MGMT
+
+You can use the `SECURITY_AUDIT_MGMT` event to capture the the audit information from the management of the audit service. The following table provides the fields for the `SECURITY_AUDIT_MGM`T event, a description of each field, and the mapping to the OpenTelemetry logs data model and Java agent:
+
+.SECURITY_AUDIT_MGMT event fields
+[cols="3,3,6",options="header",]
+|======================================
+| Liberty audit event fields | Description | Maps to OpenTelemetry Logs Data Model
+| type | A string that identifies the type of event. | Attributes[`io.openliberty.type`]
+| host | Host name of the server that is the source of the event. | Resource[`host.name`]
+| ibm_sequence | Sequence number of the event,. | Attributes[`io.openliberty.sequence`]
+| ibm_threadId | Thread ID in the log line, for example, 00000015. | Attributes[`thread.id`]
+| loglevel | Severity indicator | SeverityText
+| ibm_audit_eventName | Name of the audit event. | Body and Attributes[`io.openliberty.audit.event_name`]
+| ibm_audit_eventSequenceNumber | Sequence number of the audit event. | Attributes[`io.openliberty.audit.event_sequence_number`]
+| ibm_audit_eventTime | Time the event occurred. | TimeStamp
+| ibm_audit_observer.id | Identifier of the observer of the event. | Attributes[`io.openliberty.audit.observer.id`]
+| ibm_audit_observer.name | Name of the observer of the event | Attributes[`io.openliberty.audit.observer.name`]
+| ibm_audit_observer.typeURI | Unique URI of the observer of the event. | Attributes[`io.openliberty.audit.observer.type_uri`]
+| ibm_audit_outcome | Outcome of the event. | Attributes[`io.openliberty.audit.outcome`]
+| ibm_audit_target.id | Identifier of the target of the action. | Attributes[`io.openliberty.audit.target.id`]
+| ibm_audit_target.typeURI | Unique URI of the target of the event | Attributes[`io.openliberty.audit.target.type_uri`]
+|======================================
+
+[#SECURITY_MEMBER_MGMT]
+=== SECURITY_MEMBER_MGMT
+
+You can use the `SECURITY_MEMBER_MGMT` event to capture the audit information from SCIM operations or member management. The following table provides the fields for the `SECURITY_MEMBER_MGMT` event, a description of each field, and the mapping to the OpenTelemetry logs data model and Java agent:
+
+.SECURITY_MEMBER_MGMT event fields
+[cols="3,3,6",options="header",]
+|======================================
+| Liberty audit event fields | Description | Maps to OpenTelemetry Logs Data Model
+| type | A string that identifies the type of event. | Attributes[`io.openliberty.type`]
+| host | Host name of the server that is the source of the event. | Resource[`host.name`]
+| ibm_sequence | Sequence number of the event,. | Attributes[`io.openliberty.sequence`]
+| ibm_threadId | Thread ID in the log line, for example, 00000015. | Attributes[`thread.id`]
+| loglevel | Severity indicator | SeverityText
+| ibm_audit_eventName | Name of the audit event. | Body and Attributes[`io.openliberty.audit.event_name`]
+| ibm_audit_eventSequenceNumber | Sequence number of the audit event. | Attributes[`io.openliberty.audit.event_sequence_number`]
+| ibm_audit_eventTime | Time the event occurred. | TimeStamp
+| ibm_audit_observer.id | Identifier of the observer of the event. | Attributes[`io.openliberty.audit.observer.id`]
+| ibm_audit_observer.name | Name of the observer of the event | Attributes[`io.openliberty.audit.observer.name`]
+| ibm_audit_observer.typeURI | Unique URI of the observer of the event. | Attributes[`io.openliberty.audit.observer.type_uri`]
+| ibm_audit_outcome | Outcome of the event. | Attributes[`io.openliberty.audit.outcome`]
+| ibm_audit_target.id | Identifier of the target of the action. | Attributes[`io.openliberty.audit.target.id`]
+| ibm_audit_target.typeURI | Unique URI of the target of the event | Attributes[`io.openliberty.audit.target.type_uri`]
+| ibm_audit_initiator.host.address | Host address of the initiator of the event. | Attributes[`io.openliberty.audit.initiator.host.address`]
+| ibm_audit_initiator.host.agent | Name of the monitoring agent that is associated with the initiator. | Attributes[`io.openliberty.audit.initiator.host.agent`]
+| ibm_audit_reason.reasonCode | A value that indicates the underlying success or error code for the outcome. In general, a value of 200 means success. | Attributes[`io.openliberty.audit.reason.reason_code`]
+| ibm_audit_reason.reasonType | A value that indicates the underlying mechanism, such as HTTP or HTTPS, that is associated with the request. | Attributes[`io.openliberty.audit.reason.reason_type`]
+| ibm_audit_target.action | What action is being performed on the target. | Attributes[`io.openliberty.audit.target.action`]
+| ibm_audit_target.appname | Name of the application to be accessed or run on the target. | Attributes[`io.openliberty.audit.target.appname`]
+| ibm_audit_target.credential.token | Token name of the user that is performing the action. | Attributes[`io.openliberty.audit.target.credential.token`]
+| ibm_audit_target.credential.type | Token type of the user that is performing the action. | Attributes[`io.openliberty.audit.target.credential.type`]
+| ibm_audit_target.entityType | Generic name of the member that is acted upon. | Attributes[`io.openliberty.audit.target.entity_type`]
+| ibm_audit_target.host.address | Host and port of the target. | Attributes[`io.openliberty.audit.target.host.address`]
+| ibm_audit_target.method | Method that is being invoked on the target, such as GET or POST.| Attributes[`io.openliberty.audit.target.method`]
+| ibm_audit_target.name | Name of the target. | Attributes[`io.openliberty.audit.target.name`]
+| ibm_audit_target.realm | Realm name associated with the target.| Attributes[`io.openliberty.audit.target.realm`]
+| ibm_audit_target.repositoryId | Repository identifier that is associated with the target.| Attributes[`io.openliberty.audit.target.repository_id`]
+| ibm_audit_target.session | Session identifier that is associated with the target. | Attributes[`io.openliberty.audit.target.session`]
+| ibm_audit_target.uniqueName | Unique name of the member that is acted upon. | Attributes[`io.openliberty.audit.target.unique_name`]
+|======================================
+
+=== SECURITY_API_AUTHN
+
+You can use the `SECURITY_API_AUTHN` event for Servlet 3.0 and later APIs to capture audit information when a user logs in and authenticates. The following table provides the fields for the `SECURITY_API_AUTHN` event, a description of each field, and the mapping to the OpenTelemetry logs data model and Java agent:
+
+.SECURITY_API_AUTHN event fields
+[cols="3,3,6",options="header",]
+|======================================
+| Liberty audit event fields | Description | Maps to OpenTelemetry Logs Data Model
+| type | A string that identifies the type of event. | Attributes[`io.openliberty.type`]
+| host | Host name of the server that is the source of the event. | Resource[`host.name`]
+| ibm_sequence | Sequence number of the event,. | Attributes[`io.openliberty.sequence`]
+| ibm_threadId | Thread ID in the log line, for example, 00000015. | Attributes[`thread.id`]
+| loglevel | Severity indicator | SeverityText
+| ibm_audit_eventName | Name of the audit event. | Body and Attributes[`io.openliberty.audit.event_name`]
+| ibm_audit_eventSequenceNumber | Sequence number of the audit event. | Attributes[`io.openliberty.audit.event_sequence_number`]
+| ibm_audit_eventTime | Time the event occurred. | TimeStamp
+| ibm_audit_observer.id | Identifier of the observer of the event. | Attributes[`io.openliberty.audit.observer.id`]
+| ibm_audit_observer.name | Name of the observer of the event | Attributes[`io.openliberty.audit.observer.name`]
+| ibm_audit_observer.typeURI | Unique URI of the observer of the event. | Attributes[`io.openliberty.audit.observer.type_uri`]
+| ibm_audit_outcome | Outcome of the event. | Attributes[`io.openliberty.audit.outcome`]
+| ibm_audit_target.id | Identifier of the target of the action. | Attributes[`io.openliberty.audit.target.id`]
+| ibm_audit_target.typeURI | Unique URI of the target of the event | Attributes[`io.openliberty.audit.target.type_uri`]
+| ibm_audit_initiator.host.address | Host address of the initiator of the event. | Attributes[`io.openliberty.audit.initiator.host.address`]
+| ibm_audit_initiator.host.agent | Name of the monitoring agent that is associated with the initiator. | Attributes[`io.openliberty.audit.initiator.host.agent`]
+| ibm_audit_reason.reasonCode | A value that indicates the underlying success or error code for the outcome. In general, a value of 200 means success. | Attributes[`io.openliberty.audit.reason.reason_code`]
+| ibm_audit_reason.reasonType | A value that indicates the underlying mechanism, such as HTTP or HTTPS, that is associated with the request. | Attributes[`io.openliberty.audit.reason.reason_type`]
+| ibm_audit_target.appname | Name of the application to be accessed or run on the target. | Attributes[`io.openliberty.audit.target.appname`]
+| ibm_audit_target.credential.token | Token name of the user that is performing the action. |Attributes[`io.openliberty.audit.target.credential.token`]
+| ibm_audit_target.credential.type | Token type of the user that is performing the action. | Attributes[`io.openliberty.audit.target.credential.type`]
+| ibm_audit_target.entityType | Generic name of the member that is acted upon. | Attributes[`io.openliberty.audit.target.entity_type`]
+| ibm_audit_target.host.address | Host and port of the target. | Attributes[`io.openliberty.audit.target.host.address`]
+| ibm_audit_target.method | Method that is being invoked on the target, such as GET or POST. | Attributes[`io.openliberty.audit.target.method`]
+| ibm_audit_target.name | Name of the target. | Attributes[`io.openliberty.audit.target.name`]
+| ibm_audit_target.params | Names and values of any parameters that are sent to the target with the action.|  Attributes[`io.openliberty.audit.target.params`]
+| ibm_audit_target.realm | Realm name associated with the target. |  Attributes[`io.openliberty.audit.target.realm`]
+| ibm_audit_target.session | Session identifier that is associated with the target. |  Attributes[`io.openliberty.audit.target.session`]
+|======================================
+
+[#SECURITY_API_AUTHN_TERMINATE]
+=== SECURITY_API_AUTHN_TERMINATE
+
+You can use the `SECURITY_API_AUTHN_TERMINATE` event for servlet 3.0 and later APIs to capture the audit information when a user logs out. The following table provides the fields for the `SECURITY_API_AUTHN_TERMINATE` event, a description of each field, and the mapping to the OpenTelemetry logs data model and Java agent:
+
+.SECURITY_API_AUTHN_TERMINATE event fields
+[cols="3,3,6",options="header",]
+|======================================
+| Liberty audit event fields | Description | Maps to OpenTelemetry Logs Data Model
+| type | A string that identifies the type of event. | Attributes[`io.openliberty.type`]
+| host | Host name of the server that is the source of the event. | Resource[`host.name`]
+| ibm_sequence | Sequence number of the event,. | Attributes[`io.openliberty.sequence`]
+| ibm_threadId | Thread ID in the log line, for example, 00000015. | Attributes[`thread.id`]
+| loglevel | Severity indicator | SeverityText
+| ibm_audit_eventName | Name of the audit event. | Body and Attributes[`io.openliberty.audit.event_name`]
+| ibm_audit_eventSequenceNumber | Sequence number of the audit event. | Attributes[`io.openliberty.audit.event_sequence_number`]
+| ibm_audit_eventTime | Time the event occurred. | TimeStamp
+| ibm_audit_observer.id | Identifier of the observer of the event. | Attributes[`io.openliberty.audit.observer.id`]
+| ibm_audit_observer.name | Name of the observer of the event | Attributes[`io.openliberty.audit.observer.name`]
+| ibm_audit_observer.typeURI | Unique URI of the observer of the event. | Attributes[`io.openliberty.audit.observer.type_uri`]
+| ibm_audit_outcome | Outcome of the event. | Attributes[`io.openliberty.audit.outcome`]
+| ibm_audit_target.id | Identifier of the target of the action. | Attributes[`io.openliberty.audit.target.id`]
+| ibm_audit_target.typeURI | Unique URI of the target of the event | Attributes[`io.openliberty.audit.target.type_uri`]
+| ibm_audit_initiator.host.address | Host address of the initiator of the event. | Attributes[`io.openliberty.audit.initiator.host.address`]
+| ibm_audit_initiator.host.agent | Name of the monitoring agent that is associated with the initiator. | Attributes[`io.openliberty.audit.initiator.host.agent`]
+| ibm_audit_reason.reasonCode | A value that indicates the underlying success or error code for the outcome. In general, a value of 200 means success. | Attributes[`io.openliberty.audit.reason.reason_code`]
+| ibm_audit_reason.reasonType | A value that indicates the underlying mechanism, such as HTTP or HTTPS, that is associated with the request. | Attributes[`io.openliberty.audit.reason.reason_type`]
+| ibm_audit_target.appname | Name of the application to be accessed or run on the target. | Attributes[`io.openliberty.audit.target.appname`]
+| ibm_audit_target.credential.token | Token name of the user that is performing the action. | Attributes[`io.openliberty.audit.target.credential.token`]​
+| ibm_audit_target.credential.type |  Token type of the user that is performing the action. | Attributes[`io.openliberty.audit.target.credential.type`]
+| ibm_audit_target.host.address | Host and port of the target. | Attributes[`io.openliberty.audit.target.host.address`]
+| ibm_audit_target.method | Method that is being invoked on the target, such as GET or POST. | Attributes[`io.openliberty.audit.target.method`]
+| ibm_audit_target.name | Name of the target. | Attributes[`io.openliberty.audit.target.name`]
+| ibm_audit_target.params | Names and values of any parameters that are sent to the target with the action.| Attributes[`io.openliberty.audit.target.params`]
+| ibm_audit_target.realm | Realm name associated with the target. | Attributes[`io.openliberty.audit.target.realm`]
+| ibm_audit_target.session | Session identifier that is associated with the target. | Attributes[`io.openliberty.target.session`]
+|======================================
+
+[#SECURITY_AUTHN_TERMINATE]
+=== SECURITY_AUTHN_TERMINATE
+
+You can use the `SECURITY_AUTHN_TERMINATE` event to capture the the audit information from a form logout. The following table provides the fields for the `SECURITY_AUTHN_TERMINATE` event, a description of each field, and the mapping to the OpenTelemetry logs data model and Java agent:
+
+.SECURITY_AUTHN_TERMINATE event fields
+[cols="3,3,6",options="header",]
+|======================================
+| Liberty audit event fields | Description | Maps to OpenTelemetry Logs Data Model
+| type | A string that identifies the type of event. | Attributes[`io.openliberty.type`]
+| host | Host name of the server that is the source of the event. | Resource[`host.name`]
+| ibm_sequence | Sequence number of the event,. | Attributes[`io.openliberty.sequence`]
+| ibm_threadId | Thread ID in the log line, for example, 00000015. | Attributes[`thread.id`]
+| loglevel | Severity indicator | SeverityText
+| ibm_audit_eventName | Name of the audit event. | Body and Attributes[`io.openliberty.audit.event_name`]
+| ibm_audit_eventSequenceNumber | Sequence number of the audit event. | Attributes[`io.openliberty.audit.event_sequence_number`]
+| ibm_audit_eventTime | Time the event occurred. | TimeStamp
+| ibm_audit_observer.id | Identifier of the observer of the event. | Attributes[`io.openliberty.audit.observer.id`]
+| ibm_audit_observer.name | Name of the observer of the event | Attributes[`io.openliberty.audit.observer.name`]
+| ibm_audit_observer.typeURI | Unique URI of the observer of the event. | Attributes[`io.openliberty.audit.observer.type_uri`]
+| ibm_audit_outcome | Outcome of the event. | Attributes[`io.openliberty.audit.outcome`]
+| ibm_audit_target.id | Identifier of the target of the action. | Attributes[`io.openliberty.audit.target.id`]
+| ibm_audit_target.typeURI | Unique URI of the target of the event | Attributes[`io.openliberty.audit.target.type_uri`]
+| ibm_audit_initiator.host.address | Host address of the initiator of the event. | Attributes[`io.openliberty.audit.initiator.host.address`]
+| ibm_audit_initiator.host.agent | Name of the monitoring agent that is associated with the initiator. | Attributes[`io.openliberty.audit.initiator.host.agent`]
+| ibm_audit_reason.reasonCode | A value that indicates the underlying success or error code for the outcome. In general, a value of 200 means success. | Attributes[`io.openliberty.audit.reason.reason_code`]
+| ibm_audit_reason.reasonType | A value that indicates the underlying mechanism, such as HTTP or HTTPS, that is associated with the request. | Attributes[`io.openliberty.audit.reason.reason_type`]
+| ibm_audit_target.appname | Name of the application to be accessed or run on the target. | Attributes[`io.openliberty.audit.target.appname`]
+| ibm_audit_target.credential.token | Token name of the user that is performing the action. | Attributes[`io.openliberty.audit.target.credential.token`]​
+| ibm_audit_target.credential.type |  Token type of the user that is performing the action. | Attributes[`io.openliberty.audit.target.credential.type`]
+| ibm_audit_target.host.address | Host and port of the target. | Attributes[`io.openliberty.audit.target.host.address`]
+| ibm_audit_target.method | Method that is being invoked on the target, such as GET or POST. | Attributes[`io.openliberty.audit.target.method`]
+| ibm_audit_target.name | Name of the target. | Attributes[`io.openliberty.audit.target.name`]
+| ibm_audit_target.params | Names and values of any parameters that are sent to the target with the action. |Attributes[`io.openliberty.audit.target.params`]
+| ibm_audit_target.realm | Realm name associated with the target. | Attributes[`io.openliberty.audit.target.realm`]
+| ibm_audit_target.session | Session identifier that is associated with the target. | Attributes[`io.openliberty.target.session`]
+|======================================
+
+[#SECURITY_AUTHN]
+=== SECURITY_AUTHN
+
+You can use the `SECURITY_AUTHN` event to capture the audit information from basic authentication, form login authentication, client certificate authentication, and JASPI authentication. The following table provides the fields for the `SECURITY_AUTHN` event, a description of each field, and the mapping to the OpenTelemetry logs data model and Java agent:
+
+.SECURITY_AUTHN event fields
+[cols="3,3,6",options="header",]
+|======================================
+| Liberty audit event fields | Description | Maps to OpenTelemetry Logs Data Model
+| type | A string that identifies the type of event. | Attributes[`io.openliberty.type`]
+| host | Host name of the server that is the source of the event. | Resource[`host.name`]
+| ibm_sequence | Sequence number of the event,. | Attributes[`io.openliberty.sequence`]
+| ibm_threadId | Thread ID in the log line, for example, 00000015. | Attributes[`thread.id`]
+| loglevel | Severity indicator | SeverityText
+| ibm_audit_eventName | Name of the audit event. | Body and Attributes[`io.openliberty.audit.event_name`]
+| ibm_audit_eventSequenceNumber | Sequence number of the audit event. | Attributes[`io.openliberty.audit.event_sequence_number`]
+| ibm_audit_eventTime | Time the event occurred. | TimeStamp
+| ibm_audit_observer.id | Identifier of the observer of the event. | Attributes[`io.openliberty.audit.observer.id`]
+| ibm_audit_observer.name | Name of the observer of the event | Attributes[`io.openliberty.audit.observer.name`]
+| ibm_audit_observer.typeURI | Unique URI of the observer of the event. | Attributes[`io.openliberty.audit.observer.type_uri`]
+| ibm_audit_outcome | Outcome of the event. | Attributes[`io.openliberty.audit.outcome`]
+| ibm_audit_target.id | Identifier of the target of the action. | Attributes[`io.openliberty.audit.target.id`]
+| ibm_audit_target.typeURI | Unique URI of the target of the event | Attributes[`io.openliberty.audit.target.type_uri`]
+| ibm_audit_initiator.host.address | Host address of the initiator of the event. | Attributes[`io.openliberty.audit.initiator.host.address`]
+| ibm_audit_initiator.host.agent | Name of the monitoring agent that is associated with the initiator. | Attributes[`io.openliberty.audit.initiator.host.agent`]
+| ibm_audit_reason.reasonCode | A value that indicates the underlying success or error code for the outcome. In general, a value of 200 means success. | Attributes[`io.openliberty.audit.reason.reason_code`]
+| ibm_audit_reason.reasonType | A value that indicates the underlying mechanism, such as HTTP or HTTPS, that is associated with the request. | Attributes[`io.openliberty.audit.reason.reason_type`]
+| ibm_audit_target.appname | Name of the application to be accessed or run on the target. | Attributes[`io.openliberty.audit.target.appname`]
+| ibm_audit_target.credential.token | Token name of the user that is performing the action. | Attributes[`io.openliberty.audit.target.credential.token`]​
+| ibm_audit_target.credential.type |  Token type of the user that is performing the action. | Attributes[`io.openliberty.audit.target.credential.type`]
+| ibm_audit_target.host.address | Host and port of the target. | Attributes[`io.openliberty.audit.target.host.address`]
+| ibm_audit_target.method | Method that is being invoked on the target, such as GET or POST. | Attributes[`io.openliberty.audit.target.method`]
+| ibm_audit_target.name | Name of the target. | Attributes[`io.openliberty.audit.target.name`]
+| ibm_audit_target.params | Names and values of any parameters that are sent to the target with the action. |Attributes[`io.openliberty.audit.target.params`]
+| ibm_audit_target.realm | Realm name associated with the target. | Attributes[`io.openliberty.audit.target.realm`]
+| ibm_audit_target.session | Session identifier that is associated with the target. | Attributes[`io.openliberty.target.session`]
+|======================================
+
+[#SECURITY_AUTHN_DELEGATION]
+=== SECURITY_AUTHN_DELEGATION
+
+You can use the `SECURITY_AUTHN_DELEGATION` event to capture the audit information from Servlet runAs delegation and EJB delegation.​ The following table provides the fields for the `SECURITY_AUTHN_DELEGATION` event, a description of each field, and the mapping to the OpenTelemetry logs data model and Java agent:
+
+.SECURITY_AUTHN_DELEGATION event fields
+[cols="3,3,6",options="header",]
+|======================================
+| Liberty audit event fields | Description | Maps to OpenTelemetry Logs Data Model
+| type | A string that identifies the type of event. | Attributes[`io.openliberty.type`]
+| host | Host name of the server that is the source of the event. | Resource[`host.name`]
+| ibm_sequence | Sequence number of the event,. | Attributes[`io.openliberty.sequence`]
+| ibm_threadId | Thread ID in the log line, for example, 00000015. | Attributes[`thread.id`]
+| loglevel | Severity indicator | SeverityText
+| ibm_audit_eventName | Name of the audit event. | Body and Attributes[`io.openliberty.audit.event_name`]
+| ibm_audit_eventSequenceNumber | Sequence number of the audit event. | Attributes[`io.openliberty.audit.event_sequence_number`]
+| ibm_audit_eventTime | Time the event occurred. | TimeStamp
+| ibm_audit_observer.id | Identifier of the observer of the event. | Attributes[`io.openliberty.audit.observer.id`]
+| ibm_audit_observer.name | Name of the observer of the event | Attributes[`io.openliberty.audit.observer.name`]
+| ibm_audit_observer.typeURI | Unique URI of the observer of the event. | Attributes[`io.openliberty.audit.observer.type_uri`]
+| ibm_audit_outcome | Outcome of the event. | Attributes[`io.openliberty.audit.outcome`]
+| ibm_audit_target.id | Identifier of the target of the action. | Attributes[`io.openliberty.audit.target.id`]
+| ibm_audit_target.typeURI | Unique URI of the target of the event | Attributes[`io.openliberty.audit.target.type_uri`]
+| ibm_audit_initiator.host.address | Host address of the initiator of the event. | Attributes[`io.openliberty.audit.initiator.host.address`]
+| ibm_audit_initiator.host.agent | Name of the monitoring agent that is associated with the initiator. | Attributes[`io.openliberty.audit.initiator.host.agent`]
+| ibm_audit_reason.reasonCode | A value that indicates the underlying success or error code for the outcome. In general, a value of 200 means success. | Attributes[`io.openliberty.audit.reason.reason_code`]
+| ibm_audit_reason.reasonType | A value that indicates the underlying mechanism, such as HTTP or HTTPS, that is associated with the request. | Attributes[`io.openliberty.audit.reason.reason_type`]
+| ibm_audit_target.appname | Name of the application to be accessed or run on the target. | Attributes[`io.openliberty.audit.target.appname`]
+| ibm_audit_target.credential.token | Token name of the user that is performing the action. | Attributes[`io.openliberty.audit.target.credential.token`]​
+| ibm_audit_target.credential.type |  Token type of the user that is performing the action. | Attributes[`io.openliberty.audit.target.credential.type`]
+| ibm_audit_target.delegation.users | List of users in the delegation flow, starting with the initial user invoking the action. |Attributes[`io.openliberty.audit.target.delegation.users`]
+| ibm_audit_target.host.address | Host and port of the target. | Attributes[`io.openliberty.audit.target.host.address`]
+| ibm_audit_target.method | Method that is being invoked on the target, such as GET or POST. | Attributes[`io.openliberty.audit.target.method`]
+| ibm_audit_target.name | Name of the target. | Attributes[`io.openliberty.audit.target.name`]
+| ibm_audit_target.params | Names and values of any parameters that are sent to the target with the action. |Attributes[`io.openliberty.audit.target.params`]
+| ibm_audit_target.realm | Realm name associated with the target. | Attributes[`io.openliberty.audit.target.realm`]
+| ibm_audit_target.runas.role | RunAs role name that is used in the delegation. |Attributes[`io.openliberty.audit.target.runas.role`]
+| ibm_audit_target.session | Session identifier that is associated with the target. | Attributes[`io.openliberty.target.session`]
+|======================================
+
+[#SECURITY_AUTHN_FAILOVER]
+=== SECURITY_AUTHN_FAILOVER
+
+You can use the `SECURITY_AUTHN_FAILOVER` event to capture the audit information from failover to basic authentication. The following table provides the fields for the `SECURITY_AUTHN_FAILOVER` event, a description of each field, and the mapping to the OpenTelemetry logs data model and Java agent:
+
+.SECURITY_AUTHN_FAILOVER event fields
+[cols="3,3,6",options="header",]
+|======================================
+| Liberty audit event fields | Description | Maps to OpenTelemetry Logs Data Model
+| type | A string that identifies the type of event. | Attributes[`io.openliberty.type`]
+| host | Host name of the server that is the source of the event. | Resource[`host.name`]
+| ibm_sequence | Sequence number of the event,. | Attributes[`io.openliberty.sequence`]
+| ibm_threadId | Thread ID in the log line, for example, 00000015. | Attributes[`thread.id`]
+| loglevel | Severity indicator | SeverityText
+| ibm_audit_eventName | Name of the audit event. | Body and Attributes[`io.openliberty.audit.event_name`]
+| ibm_audit_eventSequenceNumber | Sequence number of the audit event. | Attributes[`io.openliberty.audit.event_sequence_number`]
+| ibm_audit_eventTime | Time the event occurred. | TimeStamp
+| ibm_audit_observer.id | Identifier of the observer of the event. | Attributes[`io.openliberty.audit.observer.id`]
+| ibm_audit_observer.name | Name of the observer of the event | Attributes[`io.openliberty.audit.observer.name`]
+| ibm_audit_observer.typeURI | Unique URI of the observer of the event. | Attributes[`io.openliberty.audit.observer.type_uri`]
+| ibm_audit_outcome | Outcome of the event. | Attributes[`io.openliberty.audit.outcome`]
+| ibm_audit_target.id | Identifier of the target of the action. | Attributes[`io.openliberty.audit.target.id`]
+| ibm_audit_target.typeURI | Unique URI of the target of the event | Attributes[`io.openliberty.audit.target.type_uri`]
+| ibm_audit_initiator.host.address | Host address of the initiator of the event. | Attributes[`io.openliberty.audit.initiator.host.address`]
+| ibm_audit_initiator.host.agent | Name of the monitoring agent that is associated with the initiator. | Attributes[`io.openliberty.audit.initiator.host.agent`]
+| ibm_audit_reason.reasonCode | A value that indicates the underlying success or error code for the outcome. In general, a value of 200 means success. | Attributes[`io.openliberty.audit.reason.reason_code`]
+| ibm_audit_reason.reasonType | A value that indicates the underlying mechanism, such as HTTP or HTTPS, that is associated with the request. | Attributes[`io.openliberty.audit.reason.reason_type`]
+| ibm_audit_target.appname | Name of the application to be accessed or run on the target. | Attributes[`io.openliberty.audit.target.appname`]
+| ibm_audit_target.authtype.failover | Name of the failover authentication mechanism. | Attributes[`io.openliberty.audit.target.authtype.failover`]
+| ibm_audit_target.credential.token | Token name of the user that is performing the action. | Attributes[`io.openliberty.audit.target.credential.token`]​
+| ibm_audit_target.credential.type |  Token type of the user that is performing the action. | Attributes[`io.openliberty.audit.target.credential.type`]
+| ibm_audit_target.host.address | Host and port of the target. | Attributes[`io.openliberty.audit.target.host.address`]
+| ibm_audit_target.method | Method that is being invoked on the target, such as GET or POST. | Attributes[`io.openliberty.audit.target.method`]
+| ibm_audit_target.name | Name of the target. | Attributes[`io.openliberty.audit.target.name`]
+| ibm_audit_target.params | Names and values of any parameters that are sent to the target with the action. |Attributes[`io.openliberty.audit.target.params`]
+| ibm_audit_target.realm | Realm name associated with the target. | Attributes[`io.openliberty.audit.target.realm`]
+| ibm_audit_target.session | Session identifier that is associated with the target. | Attributes[`io.openliberty.target.session`]
+|======================================
+
+[#SECURITY_AUTHZ]
+=== SECURITY_AUTHZ
+
+You can use the `SECURITY_AUTHZ` event to capture the audit information from Java Authorization Contract for Containers (JACC) web authorization, unprotected servlet authorization, JACC EJB authorization, and EJB authorization. The following table provides the fields for the `SECURITY_AUTHZ` event, a description of each field, and the mapping to the OpenTelemetry logs data model and Java agent:
+
+.SECURITY_AUTHZ event fields
+[cols="3,3,6",options="header",]
+|======================================
+| Liberty audit event fields | Description | Maps to OpenTelemetry Logs Data Model
+| type | A string that identifies the type of event. | Attributes[`io.openliberty.type`]
+| host | Host name of the server that is the source of the event. | Resource[`host.name`]
+| ibm_sequence | Sequence number of the event,. | Attributes[`io.openliberty.sequence`]
+| ibm_threadId | Thread ID in the log line, for example, 00000015. | Attributes[`thread.id`]
+| loglevel | Severity indicator | SeverityText
+| ibm_audit_eventName | Name of the audit event. | Body and Attributes[`io.openliberty.audit.event_name`]
+| ibm_audit_eventSequenceNumber | Sequence number of the audit event. | Attributes[`io.openliberty.audit.event_sequence_number`]
+| ibm_audit_eventTime | Time the event occurred. | TimeStamp
+| ibm_audit_observer.id | Identifier of the observer of the event. | Attributes[`io.openliberty.audit.observer.id`]
+| ibm_audit_observer.name | Name of the observer of the event | Attributes[`io.openliberty.audit.observer.name`]
+| ibm_audit_observer.typeURI | Unique URI of the observer of the event. | Attributes[`io.openliberty.audit.observer.type_uri`]
+| ibm_audit_outcome | Outcome of the event. | Attributes[`io.openliberty.audit.outcome`]
+| ibm_audit_target.id | Identifier of the target of the action. | Attributes[`io.openliberty.audit.target.id`]
+| ibm_audit_target.typeURI | Unique URI of the target of the event | Attributes[`io.openliberty.audit.target.type_uri`]
+| ibm_audit_target.ejb.beanname | EJB bean name for EJB authorization. | Attributes[`io.openliberty.audit.target.ejb.beanname`]
+| ibm_audit_target.ejb.method.interface | EJB method interface for EJB authorization. | Attributes[`io.openliberty.audit.target.ejb.method.interface`]
+| ibm_audit_target.ejb.method.signature | EJB method signature for EJB authorization. | Attributes[`io.openliberty.audit.target.ejb.method.signature`]
+| ibm_audit_target.ejb.module.name | EJB module name for EJB authorization. | Attributes[`io.openliberty.audit.target.ejb.module.name`]
+| ibm_audit_target.role.names | Roles that are identified as being needed. If none are listed, all EJBs are permitted. | Attributes[`io.openliberty.audit_target.role.names`]
+|======================================
+[#SECURITY_REST_HANDLER_AUTHZ]
+=== SECURITY_REST_HANDLER_AUTHZ
+
+You can use the `SECURITY_REST_HANDLER_AUTHZ` event to capture the audit information from REST Handler Authorization.​ The following table provides the fields for the `SECURITY_REST_HANDLER_AUTHZ` event, a description of each field, and the mapping to the OpenTelemetry logs data model and Java agent:
+
+.SECURITY_REST_HANDLER_AUTHZ event fields
+[cols="3,3,6",options="header",]
+|======================================
+| Liberty audit event fields | Description | Maps to OpenTelemetry Logs Data Model
+| type | A string that identifies the type of event. | Attributes[`io.openliberty.type`]
+| host | Host name of the server that is the source of the event. | Resource[`host.name`]
+| ibm_sequence | Sequence number of the event,. | Attributes[`io.openliberty.sequence`]
+| ibm_threadId | Thread ID in the log line, for example, 00000015. | Attributes[`thread.id`]
+| loglevel | Severity indicator | SeverityText
+| ibm_audit_eventName | Name of the audit event. | Body and Attributes[`io.openliberty.audit.event_name`]
+| ibm_audit_eventSequenceNumber | Sequence number of the audit event. | Attributes[`io.openliberty.audit.event_sequence_number`]
+| ibm_audit_eventTime | Time the event occurred. | TimeStamp
+| ibm_audit_observer.id | Identifier of the observer of the event. | Attributes[`io.openliberty.audit.observer.id`]
+| ibm_audit_observer.name | Name of the observer of the event | Attributes[`io.openliberty.audit.observer.name`]
+| ibm_audit_observer.typeURI | Unique URI of the observer of the event. | Attributes[`io.openliberty.audit.observer.type_uri`]
+| ibm_audit_outcome | Outcome of the event. | Attributes[`io.openliberty.audit.outcome`]
+| ibm_audit_target.id | Identifier of the target of the action. | Attributes[`io.openliberty.audit.target.id`]
+| ibm_audit_target.typeURI | Unique URI of the target of the event | Attributes[`io.openliberty.audit.target.type_uri`]
+| ibm_audit_initiator.host.address | Host address of the initiator of the event. | Attributes[`io.openliberty.audit.initiator.host.address`]
+| ibm_audit_initiator.host.agent | Name of the monitoring agent that is associated with the initiator. | Attributes[`io.openliberty.audit.initiator.host.agent`]
+| ibm_audit_reason.reasonCode | A value that indicates the underlying success or error code for the outcome. In general, a value of 200 means success. | Attributes[`io.openliberty.audit.reason.reason_code`]
+| ibm_audit_reason.reasonType | A value that indicates the underlying mechanism, such as HTTP or HTTPS, that is associated with the request. | Attributes[`io.openliberty.audit.reason.reason_type`]
+| ibm_audit_target.appname | Name of the application to be accessed or run on the target. | Attributes[`io.openliberty.audit.target.appname`]
+| ibm_audit_target.credential.token | Token name of the user that is performing the action. | Attributes[`io.openliberty.audit.target.credential.token`]​
+| ibm_audit_target.credential.type |  Token type of the user that is performing the action. | Attributes[`io.openliberty.audit.target.credential.type`]
+| ibm_audit_target.host.address | Host and port of the target. | Attributes[`io.openliberty.audit.target.host.address`]
+| ibm_audit_target.method | Method that is being invoked on the target, such as GET or POST. | Attributes[`io.openliberty.audit.target.method`]
+| ibm_audit_target.name | Name of the target. | Attributes[`io.openliberty.audit.target.name`]
+| ibm_audit_target.realm | Realm name associated with the target. | Attributes[`io.openliberty.audit.target.realm`]
+| ibm_audit_target.session | Session identifier that is associated with the target. | Attributes[`io.openliberty.target.session`]
+|======================================
+
+[#SECURITY_JMS_AUTHN]
+=== SECURITY_JMS_AUTHN
+
+You can use the `SECURITY_JMS_AUTHN` event to capture the audit information from JMS authentication. The following table provides the fields for the `SECURITY_JMS_AUTHN` event, a description of each field, and the mapping to the OpenTelemetry logs data model and Java agent:
+
+.SECURITY_JMS_AUTHN event fields
+[cols="3,3,6",options="header",]
+|======================================
+| Liberty audit event fields | Description | Maps to OpenTelemetry Logs Data Model
+| type | A string that identifies the type of event. | Attributes[`io.openliberty.type`]
+| host | Host name of the server that is the source of the event. | Resource[`host.name`]
+| ibm_sequence | Sequence number of the event,. | Attributes[`io.openliberty.sequence`]
+| ibm_threadId | Thread ID in the log line, for example, 00000015. | Attributes[`thread.id`]
+| loglevel | Severity indicator | SeverityText
+| ibm_audit_eventName | Name of the audit event. | Body and Attributes[`io.openliberty.audit.event_name`]
+| ibm_audit_eventSequenceNumber | Sequence number of the audit event. | Attributes[`io.openliberty.audit.event_sequence_number`]
+| ibm_audit_eventTime | Time the event occurred. | TimeStamp
+| ibm_audit_observer.id | Identifier of the observer of the event. | Attributes[`io.openliberty.audit.observer.id`]
+| ibm_audit_observer.name | Name of the observer of the event | Attributes[`io.openliberty.audit.observer.name`]
+| ibm_audit_observer.typeURI | Unique URI of the observer of the event. | Attributes[`io.openliberty.audit.observer.type_uri`]
+| ibm_audit_outcome | Outcome of the event. | Attributes[`io.openliberty.audit.outcome`]
+| ibm_audit_target.id | Identifier of the target of the action. | Attributes[`io.openliberty.audit.target.id`]
+| ibm_audit_target.typeURI | Unique URI of the target of the event | Attributes[`io.openliberty.audit.target.type_uri`]
+| ibm_audit_initiator.host.address | Host address of the initiator of the event. | Attributes[`io.openliberty.audit.initiator.host.address`]
+| ibm_audit_initiator.host.agent | Name of the monitoring agent that is associated with the initiator. | Attributes[`io.openliberty.audit.initiator.host.agent`]
+| ibm_audit_reason.reasonCode | A value that indicates the underlying success or error code for the outcome. In general, a value of 200 means success. | Attributes[`io.openliberty.audit.reason.reason_code`]
+| ibm_audit_reason.reasonType | A value that indicates the underlying mechanism, such as HTTP or HTTPS, that is associated with the request. | Attributes[`io.openliberty.audit.reason.reason_type`]
+| ibm_audit_target.credential.token | Token name of the user that is performing the action. | Attributes[`io.openliberty.audit.target.credential.token`]​
+| ibm_audit_target.credential.type |  Token type of the user that is performing the action. | Attributes[`io.openliberty.audit.target.credential.type`]
+| ibm_audit_target.host.address | Host and port of the target. | Attributes[`io.openliberty.audit.target.host.address`]
+| ibm_audit_target.messaging.busname | Name of the messaging bus. |Attributes[`io.openliberty.audit.target.messaging.busname`]
+| ibm_audit_target.messaging.callType | Identifies if the call is remote or local. |Attributes[`io.openliberty.audit.target.messaging.call_type`]
+| ibm_audit_target.messaging.engine | Name of the messaging engine. | Attributes[`io.openliberty.audit.target.messaging.engine`]
+| ibm_audit_target.messaging.loginType | Name of the login algorithm that is used, such as Userid+Password. |Attributes[`io.openliberty.audit.target.messaging.login_type`]
+| ibm_audit_target.messaging.remote.chainName | If the operation is remote, the name of the remote chain name. |Attributes[`io.openliberty.audit.target.messaging.remote.chain_name`]
+| ibm_audit_target.realm | Realm name associated with the target. | Attributes[`io.openliberty.audit.target.realm`]
+|======================================
+
+[#SECURITY_JMS_AUTHZ]
+=== SECURITY_JMS_AUTHZ
+
+You can use the `SECURITY_JMS_AUTHZ` event to capture the audit information from JMS authorization. The following table provides the fields for the `SECURITY_JMS_AUTHZ` event, a description of each field, and the mapping to the OpenTelemetry logs data model and Java agent:
+
+.SECURITY_JMS_AUTHZ event fields
+[cols="3,3,6",options="header",]
+|======================================
+| Liberty audit event fields | Description | Maps to OpenTelemetry Logs Data Model
+| type | A string that identifies the type of event. | Attributes[`io.openliberty.type`]
+| host | Host name of the server that is the source of the event. | Resource[`host.name`]
+| ibm_sequence | Sequence number of the event,. | Attributes[`io.openliberty.sequence`]
+| ibm_threadId | Thread ID in the log line, for example, 00000015. | Attributes[`thread.id`]
+| loglevel | Severity indicator | SeverityText
+| ibm_audit_eventName | Name of the audit event. | Body and Attributes[`io.openliberty.audit.event_name`]
+| ibm_audit_eventSequenceNumber | Sequence number of the audit event. | Attributes[`io.openliberty.audit.event_sequence_number`]
+| ibm_audit_eventTime | Time the event occurred. | TimeStamp
+| ibm_audit_observer.id | Identifier of the observer of the event. | Attributes[`io.openliberty.audit.observer.id`]
+| ibm_audit_observer.name | Name of the observer of the event | Attributes[`io.openliberty.audit.observer.name`]
+| ibm_audit_observer.typeURI | Unique URI of the observer of the event. | Attributes[`io.openliberty.audit.observer.type_uri`]
+| ibm_audit_outcome | Outcome of the event. | Attributes[`io.openliberty.audit.outcome`]
+| ibm_audit_target.id | Identifier of the target of the action. | Attributes[`io.openliberty.audit.target.id`]
+| ibm_audit_target.typeURI | Unique URI of the target of the event | Attributes[`io.openliberty.audit.target.type_uri`]
+| ibm_audit_initiator.host.address | Host address of the initiator of the event. | Attributes[`io.openliberty.audit.initiator.host.address`]
+| ibm_audit_initiator.host.agent | Name of the monitoring agent that is associated with the initiator. | Attributes[`io.openliberty.audit.initiator.host.agent`]
+| ibm_audit_reason.reasonCode | A value that indicates the underlying success or error code for the outcome. In general, a value of 200 means success. | Attributes[`io.openliberty.audit.reason.reason_code`]
+| ibm_audit_reason.reasonType | A value that indicates the underlying mechanism, such as HTTP or HTTPS, that is associated with the request. | Attributes[`io.openliberty.audit.reason.reason_type`]
+| ibm_audit_target.credential.token | Token name of the user that is performing the action. | Attributes[`io.openliberty.audit.target.credential.token`]​
+| ibm_audit_target.credential.type |  Token type of the user that is performing the action. | Attributes[`io.openliberty.audit.target.credential.type`]
+| ibm_audit_target.host.address | Host and port of the target. | Attributes[`io.openliberty.audit.target.host.address`]
+| ibm_audit_target.messaging.busname | Name of the messaging bus. |Attributes[`io.openliberty.audit.target.messaging.busname`]
+| ibm_audit_target.messaging.callType | Identifies if the call is remote or local. |Attributes[`io.openliberty.audit.target.messaging.call_type`]
+| ibm_audit_target.messaging.destination | Name of the messaging destination. |Attributes[`io.openliberty.audit.target.messaging.destination`]
+| ibm_audit_target.messaging.engine | Name of the messaging engine. |Attributes[`io.openliberty.audit.target.messaging.engine`]
+| ibm_audit_target.messaging.jmsActions | List of the actions that the credential is allowed. |Attributes[`io.openliberty.audit.target.messaging.jms_actions`]
+| ibm_audit_target.messaging.jmsResource | Name of the JMS resource, such as QUEUE, TOPIC, and TEMPORARY DESTINATION. | Attributes[`io.openliberty.audit.target.messaging.jms_resource`]
+| ibm_audit_target.messaging.operationType | Name of the operation that is being requested. |Attributes[`io.openliberty.audit.target.messaging.operation_type`]
+| ibm_audit_target.messaging.remote.chainName | If the operation is remote, the name of the remote chain name. | Attributes[`io.openliberty.audit.target.messaging.remote.chain_name`]
+| ibm_audit_target.realm | Realm name associated with the target. | Attributes[`io.openliberty.audit.target.realm`]
+|======================================
+
+[#SECURITY_SAF_AUTHZ]
+=== SECURITY_SAF_AUTHZ
+
+You can use the `SECURITY_SAF_AUTHZ` event to capture the audit information from a request to the SAF Authorization Service API. The following table provides the fields for the `SECURITY_SAF_AUTHZ` event, a description of each field, and the mapping to the OpenTelemetry logs data model and Java agent:
+
+.SECURITY_SAF_AUTHZ event fields
+[cols="3,3,6",options="header",]
+|======================================
+| Liberty audit event fields | Description | Maps to OpenTelemetry Logs Data Model
+| type | A string that identifies the type of event. | Attributes[`io.openliberty.type`]
+| host | Host name of the server that is the source of the event. | Resource[`host.name`]
+| ibm_sequence | Sequence number of the event,. | Attributes[`io.openliberty.sequence`]
+| ibm_threadId | Thread ID in the log line, for example, 00000015. | Attributes[`thread.id`]
+| loglevel | Severity indicator | SeverityText
+| ibm_audit_eventName | Name of the audit event. | Body and Attributes[`io.openliberty.audit.event_name`]
+| ibm_audit_eventSequenceNumber | Sequence number of the audit event. | Attributes[`io.openliberty.audit.event_sequence_number`]
+| ibm_audit_eventTime | Time the event occurred. | TimeStamp
+| ibm_audit_observer.id | Identifier of the observer of the event. | Attributes[`io.openliberty.audit.observer.id`]
+| ibm_audit_observer.name | Name of the observer of the event | Attributes[`io.openliberty.audit.observer.name`]
+| ibm_audit_observer.typeURI | Unique URI of the observer of the event. | Attributes[`io.openliberty.audit.observer.type_uri`]
+| ibm_audit_outcome | Outcome of the event. | Attributes[`io.openliberty.audit.outcome`]
+| ibm_audit_target.id | Identifier of the target of the action. | Attributes[`io.openliberty.audit.target.id`]
+| ibm_audit_target.typeURI | Unique URI of the target of the event | Attributes[`io.openliberty.audit.target.type_uri`]
+| ibm_audit_target.access.level | Level of access that is requested. | Attributes[`io.openliberty.audit.target.access.level`]
+| ibm_audit_target.applid | Identifier of the APPL class. | Attributes[`io.openliberty.audit.target.applid`]
+| ibm_audit_target.authorization.decision | A true value if the user is authorized to access the SAF resource in the SAF Class, otherwise a false value. | Attributes[`io.openliberty.audit.authorization.decision`]
+| ibm_audit_target.credential.token | Token name of the user that is performing the action. | Attributes[`io.openliberty.audit.target.credential.token`]​
+| ibm_audit_target.id | Identifier of the target of the action. | Attributes[`io.openliberty.audit.id`]
+| ibm_audit_target.racf.reason.code | RACF reason code. | Attributes[`io.openliberty.audit.racf.reason.code`]
+| ibm_audit_target.racf.return.code | RACF return code. | Attributes[`io.openliberty.audit.racf.return.code`]
+| ibm_audit_target.saf.class | Name of the SAF Class that contains the SAF resource. | Attributes[`io.openliberty.audit.target.saf.class`]
+| ibm_audit_target.saf.profile | Name of the SAF resource that the user requests access to. |Attributes[`io.openliberty.audit.target.saf.profile`]
+| ibm_audit_target.saf.return.code | SAF return code | Attributes[`io.openliberty.audit.saf.return.code`]
+| ibm_audit_target.user.security.name | Username whose access to a SAF resource is being checked. | Attributes[`io.openliberty.audit.target.user.security.name`]
+|======================================
+
+[#SECURITY_SAF_AUTHZ_DETAILS]
+=== SECURITY_SAF_AUTHZ_DETAILS
+
+You can use the `SECURITY_SAF_AUTHZ_DETAILS` event to capture the audit information from a SAF Authorization event that is configured to throw a SAF Authorization Exception on failure. The following table provides the fields for the `SECURITY_SAF_AUTHZ_DETAILS` event, a description of each field, and the mapping to the OpenTelemetry logs data model and Java agent:
+
+.SECURITY_SAF_AUTHZ_DETAILS event fields
+[cols="3,3,6",options="header",]
+|======================================
+| Liberty audit event fields | Description | Maps to OpenTelemetry Logs Data Model
+| type | A string that identifies the type of event. | Attributes[`io.openliberty.type`]
+| host | Host name of the server that is the source of the event. | Resource[`host.name`]
+| ibm_sequence | Sequence number of the event,. | Attributes[`io.openliberty.sequence`]
+| ibm_threadId | Thread ID in the log line, for example, 00000015. | Attributes[`thread.id`]
+| loglevel | Severity indicator | SeverityText
+| ibm_audit_eventName | Name of the audit event. | Body and Attributes[`io.openliberty.audit.event_name`]
+| ibm_audit_eventSequenceNumber | Sequence number of the audit event. | Attributes[`io.openliberty.audit.event_sequence_number`]
+| ibm_audit_eventTime | Time the event occurred. | TimeStamp
+| ibm_audit_observer.id | Identifier of the observer of the event. | Attributes[`io.openliberty.audit.observer.id`]
+| ibm_audit_observer.name | Name of the observer of the event | Attributes[`io.openliberty.audit.observer.name`]
+| ibm_audit_observer.typeURI | Unique URI of the observer of the event. | Attributes[`io.openliberty.audit.observer.type_uri`]
+| ibm_audit_outcome | Outcome of the event. | Attributes[`io.openliberty.audit.outcome`]
+| ibm_audit_target.id | Identifier of the target of the action. | Attributes[`io.openliberty.audit.target.id`]
+| ibm_audit_target.typeURI | Unique URI of the target of the event | Attributes[`io.openliberty.audit.target.type_uri`]
+| ibm_audit_target.access.level | Level of access that is requested. | Attributes[`io.openliberty.audit.target.access.level`]
+| ibm_audit_target.applid | Identifier of the APPL class. | Attributes[`io.openliberty.audit.target.applid`]
+| ibm_audit_target.authorization.decision | A true value if the user is authorized to access the SAF resource in the SAF Class, otherwise a false value. | Attributes[`io.openliberty.audit.authorization.decision`]
+| ibm_audit_target.credential.token | Token name of the user that is performing the action. | Attributes[`io.openliberty.audit.target.credential.token`]​
+| ibm_audit_target.id | Identifier of the target of the action. | Attributes[`io.openliberty.audit.id`]
+| ibm_audit_target.racf.reason.code | RACF reason code. | Attributes[`io.openliberty.audit.racf.reason.code`]
+| ibm_audit_target.racf.return.code | RACF return code. | Attributes[`io.openliberty.audit.racf.return.code`]
+| ibm_audit_target.saf.class | Name of the SAF Class that contains the SAF resource. | Attributes[`io.openliberty.audit.target.saf.class`]
+| ibm_audit_target.saf.profile | Name of the SAF resource that the user requests access to. |Attributes[`io.openliberty.audit.target.saf.profile`]
+| ibm_audit_target.saf.return.code | SAF return code | Attributes[`io.openliberty.audit.saf.return.code`]
+| ibm_audit_target.user.security.name | Username whose access to a SAF resource is being checked. | Attributes[`io.openliberty.audit.target.user.security.name`]
+|======================================
+
+[#JMX_MBEAN_REGISTER]
+=== JMX_MBEAN_REGISTER
+
+You can use the `JMX_MBEAN_REGISTER` event to capture the audit information from JMX MBean registration. The following table provides the fields for the `JMX_MBEAN_REGISTER` event, a description of each field, and the mapping to the OpenTelemetry logs data model and Java agent:
+
+.JMX_MBEAN_REGISTER event fields
+[cols="3,3,6",options="header",]
+|======================================
+| Liberty audit event fields | Description | Maps to OpenTelemetry Logs Data Model
+| type | A string that identifies the type of event. | Attributes[`io.openliberty.type`]
+| host | Host name of the server that is the source of the event. | Resource[`host.name`]
+| ibm_sequence | Sequence number of the event,. | Attributes[`io.openliberty.sequence`]
+| ibm_threadId | Thread ID in the log line, for example, 00000015. | Attributes[`thread.id`]
+| loglevel | Severity indicator | SeverityText
+| ibm_audit_eventName | Name of the audit event. | Body and Attributes[`io.openliberty.audit.event_name`]
+| ibm_audit_eventSequenceNumber | Sequence number of the audit event. | Attributes[`io.openliberty.audit.event_sequence_number`]
+| ibm_audit_eventTime | Time the event occurred. | TimeStamp
+| ibm_audit_observer.id | Identifier of the observer of the event. | Attributes[`io.openliberty.audit.observer.id`]
+| ibm_audit_observer.name | Name of the observer of the event | Attributes[`io.openliberty.audit.observer.name`]
+| ibm_audit_observer.typeURI | Unique URI of the observer of the event. | Attributes[`io.openliberty.audit.observer.type_uri`]
+| ibm_audit_outcome | Outcome of the event. | Attributes[`io.openliberty.audit.outcome`]
+| ibm_audit_target.id | Identifier of the target of the action. | Attributes[`io.openliberty.audit.target.id`]
+| ibm_audit_target.typeURI | Unique URI of the target of the event | Attributes[`io.openliberty.audit.target.type_uri`]
+| ibm_audit_initiator.host.address | Host address of the initiator of the event. | Attributes[`io.openliberty.audit.initiator.host.address`]
+| ibm_audit_initiator.host.agent | Name of the monitoring agent that is associated with the initiator. | Attributes[`io.openliberty.audit.initiator.host.agent`]
+| ibm_audit_reason.reasonCode | A value that indicates the underlying success or error code for the outcome. In general, a value of 200 means success. | Attributes[`io.openliberty.audit.reason.reason_code`]
+| ibm_audit_reason.reasonType | A value that indicates the underlying mechanism, such as HTTP, HTTPS, JMS, or EJB, that is associated with the request, or the state behind the outcome. | Attributes[`io.openliberty.audit.reason.reason_type`]
+| ibm_audit_target.jmx.mbean.action | MBean action that is being performed: register, unregister. |Attributes[`io.openliberty.audit.target.jmx.mbean.action`]
+| ibm_audit_target.jmx.mbean.name | Name of the MBean that is being acted upon. |Attributes[`io.openliberty.audit.target.jmx.mbean.name`]
+| ibm_audit_target.realm | Realm name associated with the target. | Attributes[`io.openliberty.audit.target.realm`]
+|======================================
+
+[#JMX_MBEAN]
+=== JMX_MBEAN
+
+You can use the `JMX_MBEAN` event to capture the audit information from `JMX_MBEAN` operations. The following table provides the fields for the JMX_MBEAN event, a description of each field, and the mapping to the OpenTelemetry logs data model and Java agent:
+
+.JMX_MBEAN event fields
+[cols="3,3,6",options="header",]
+|======================================
+| Liberty audit event fields | Description | Maps to OpenTelemetry Logs Data Model
+| type | A string that identifies the type of event. | Attributes[`io.openliberty.type`]
+| host | Host name of the server that is the source of the event. | Resource[`host.name`]
+| ibm_sequence | Sequence number of the event,. | Attributes[`io.openliberty.sequence`]
+| ibm_threadId | Thread ID in the log line, for example, 00000015. | Attributes[`thread.id`]
+| loglevel | Severity indicator | SeverityText
+| ibm_audit_eventName | Name of the audit event. | Body and Attributes[`io.openliberty.audit.event_name`]
+| ibm_audit_eventSequenceNumber | Sequence number of the audit event. | Attributes[`io.openliberty.audit.event_sequence_number`]
+| ibm_audit_eventTime | Time the event occurred. | TimeStamp
+| ibm_audit_observer.id | Identifier of the observer of the event. | Attributes[`io.openliberty.audit.observer.id`]
+| ibm_audit_observer.name | Name of the observer of the event | Attributes[`io.openliberty.audit.observer.name`]
+| ibm_audit_observer.typeURI | Unique URI of the observer of the event. | Attributes[`io.openliberty.audit.observer.type_uri`]
+| ibm_audit_outcome | Outcome of the event. | Attributes[`io.openliberty.audit.outcome`]
+| ibm_audit_target.id | Identifier of the target of the action. | Attributes[`io.openliberty.audit.target.id`]
+| ibm_audit_target.typeURI | Unique URI of the target of the event | Attributes[`io.openliberty.audit.target.type_uri`]
+| ibm_audit_initiator.host.address | Host address of the initiator of the event. | Attributes[`io.openliberty.audit.initiator.host.address`]
+| ibm_audit_initiator.host.agent | Name of the monitoring agent that is associated with the initiator. | Attributes[`io.openliberty.audit.initiator.host.agent`]
+| ibm_audit_reason.reasonCode | A value that indicates the underlying success or error code for the outcome. In general, a value of 200 means success. | Attributes[`io.openliberty.audit.reason.reason_code`]
+| ibm_audit_reason.reasonType | A value that indicates the underlying mechanism, such as HTTP, HTTPS, JMS, or EJB, that is associated with the request, or the state behind the outcome. | Attributes[`io.openliberty.audit.reason.reason_type`]
+| ibm_audit_target.jmx.mbean.action | MBean action that is being performed: query, create, invoke. |Attributes[`io.openliberty.audit.target.jmx.mbean.action`]
+| ibm_audit_target.jmx.mbean.name | Name of the MBean that is being acted upon. |Attributes[`io.openliberty.audit.target.jmx.mbean.name`]
+| ibm_audit_target.realm | Realm name associated with the target. | Attributes[`io.openliberty.audit.target.realm`]
+|======================================
+
+[#JMX_MBEAN_ATTRIBUTES]
+=== JMX_MBEAN_ATTRIBUTES
+
+You can use the `JMX_MBEAN_ATTRIBUTES` event to capture the audit information from JMX MBEAN attribute operations. The following table provides the fields for the `JMX_MBEAN_ATTRIBUTES` event, a description of each field, and the mapping to the OpenTelemetry logs data model and Java agent:
+
+.JMX_MBEAN_ATTRIBUTES event fields
+[cols="3,3,6",options="header",]
+|======================================
+| Liberty audit event fields | Description | Maps to OpenTelemetry Logs Data Model
+| type | A string that identifies the type of event. | Attributes[`io.openliberty.type`]
+| host | Host name of the server that is the source of the event. | Resource[`host.name`]
+| ibm_sequence | Sequence number of the event,. | Attributes[`io.openliberty.sequence`]
+| ibm_threadId | Thread ID in the log line, for example, 00000015. | Attributes[`thread.id`]
+| loglevel | Severity indicator | SeverityText
+| ibm_audit_eventName | Name of the audit event. | Body and Attributes[`io.openliberty.audit.event_name`]
+| ibm_audit_eventSequenceNumber | Sequence number of the audit event. | Attributes[`io.openliberty.audit.event_sequence_number`]
+| ibm_audit_eventTime | Time the event occurred. | TimeStamp
+| ibm_audit_observer.id | Identifier of the observer of the event. | Attributes[`io.openliberty.audit.observer.id`]
+| ibm_audit_observer.name | Name of the observer of the event | Attributes[`io.openliberty.audit.observer.name`]
+| ibm_audit_observer.typeURI | Unique URI of the observer of the event. | Attributes[`io.openliberty.audit.observer.type_uri`]
+| ibm_audit_outcome | Outcome of the event. | Attributes[`io.openliberty.audit.outcome`]
+| ibm_audit_target.id | Identifier of the target of the action. | Attributes[`io.openliberty.audit.target.id`]
+| ibm_audit_target.typeURI | Unique URI of the target of the event | Attributes[`io.openliberty.audit.target.type_uri`]
+| ibm_audit_initiator.host.address | Host address of the initiator of the event. | Attributes[`io.openliberty.audit.initiator.host.address`]
+| ibm_audit_initiator.host.agent | Name of the monitoring agent that is associated with the initiator. | Attributes[`io.openliberty.audit.initiator.host.agent`]
+| ibm_audit_reason.reasonCode | A value that indicates the underlying success or error code for the outcome. In general, a value of 200 means success. | Attributes[`io.openliberty.audit.reason.reason_code`]
+| ibm_audit_reason.reasonType | A value that indicates the underlying mechanism, such as HTTP, HTTPS, JMS, or EJB, that is associated with the request, or the state behind the outcome. | Attributes[`io.openliberty.sequence`]
+| ibm_audit_reason.reasonType | A value that indicates the underlying mechanism, such as HTTP, HTTPS, JMS, or EJB, that is associated with the request, or the state behind the outcome. | Attributes[`io.openliberty.audit.reason.reason_type`]
+| ibm_audit_target.jmx.mbean.action | MBean action that is being performed on the MBean attribute. getAttribute and setAttribute methods are supported. |Attributes[`io.openliberty.audit.target.jmx.mbean.action`]
+| `bm_audit_target.jmx.mbean.attribute.names | Name of the attributes that are being acted upon. |Attributes[`io.openliberty.audit.target.jmx.mbean.attribute.names`]​
+| ibm_audit_target.jmx.mbean.name | Name of the MBean that is being acted upon. |Attributes[`io.openliberty.audit.target.jmx.mbean.name`]
+| ibm_audit_target.realm | Realm name associated with the target. | Attributes[`io.openliberty.audit.target.realm`]
+|======================================
+
+[#JMX_NOTIFICATION]
+=== JMX_NOTIFICATION
+
+You can use the `JMX_NOTIFICATION` event to capture the audit information from JMX notifications. The following table provides the fields for the `JMX_NOTIFICATION` event, a description of each field, and the mapping to the OpenTelemetry logs data model and Java agent:
+
+.JMX_NOTIFICATION event fields
+[cols="3,3,6",options="header",]
+|======================================
+| Liberty audit event fields | Description | Maps to OpenTelemetry Logs Data Model
+| type | A string that identifies the type of event. | Attributes[`io.openliberty.type`]
+| host | Host name of the server that is the source of the event. | Resource[`host.name`]
+| ibm_sequence | Sequence number of the event,. | Attributes[`io.openliberty.sequence`]
+| ibm_threadId | Thread ID in the log line, for example, 00000015. | Attributes[`thread.id`]
+| loglevel | Severity indicator | SeverityText
+| ibm_audit_eventName | Name of the audit event. | Body and Attributes[`io.openliberty.audit.event_name`]
+| ibm_audit_eventSequenceNumber | Sequence number of the audit event. | Attributes[`io.openliberty.audit.event_sequence_number`]
+| ibm_audit_eventTime | Time the event occurred. | TimeStamp
+| ibm_audit_observer.id | Identifier of the observer of the event. | Attributes[`io.openliberty.audit.observer.id`]
+| ibm_audit_observer.name | Name of the observer of the event | Attributes[`io.openliberty.audit.observer.name`]
+| ibm_audit_observer.typeURI | Unique URI of the observer of the event. | Attributes[`io.openliberty.audit.observer.type_uri`]
+| ibm_audit_outcome | Outcome of the event. | Attributes[`io.openliberty.audit.outcome`]
+| ibm_audit_target.id | Identifier of the target of the action. | Attributes[`io.openliberty.audit.target.id`]
+| ibm_audit_target.typeURI | Unique URI of the target of the event | Attributes[`io.openliberty.audit.target.type_uri`]
+| ibm_audit_reason.reasonCode | A value that indicates the underlying success or error code for the outcome. In general, a value of 200 means success. | Attributes[`io.openliberty.audit.reason.reason_code`]
+| ibm_audit_reason.reasonType | A value that indicates the underlying mechanism, such as HTTP, HTTPS, JMS, or EJB, that is associated with the request, or the state behind the outcome. | Attributes[`io.openliberty.audit.reason.reason_type`]
+| ibm_audit_target.jmx.mbean.action | MBean action that is being performed on one or more MBean attributes. |Attributes[`io.openliberty.audit.target.jmx.mbean.action`]
+| ibm_audit_target.jmx.notification.filter | Name of the notification filter. |Attributes[`io.openliberty.audit.target.jmx.notification.filter`]
+| ibm_audit_target.jmx.notification.listener | Name of the notification listener. |Attributes[`io.openliberty.audit.target.jmx.notification.listener`]
+| ibm_audit_target.jmx.notification.name | Name of the notification. |Attributes[`io.openliberty.audit.target.jmx.notification.name`]
+| ibm_audit_target.realm | Realm name associated with the target. |Attributes[`io.openliberty.audit.target.realm`]
+|======================================
 
 [#sevlev]
 == OpenTelemetry severity number mapping with Open Liberty log levels
@@ -161,7 +841,7 @@ You can set the level of detail that your Open Liberty logs collect by configuri
 The following table describes how the different Liberty log levels map to severity numbers and short names from the OpenTelemetry specification.
 
 .Open Liberty log levels and OpenTelemetry severity numbers
-[options="header"]
+[cols="3,3,6",options="header",]
 |=======================
 | Liberty log levels | OpenTelemetry severity short Name | OpenTelemetry severity meaning | OpenTelemetry severity number
 | fatal             | FATAL                             | A fatal error such as application or system crash. | 21
@@ -175,5 +855,7 @@ The following table describes how the different Liberty log levels map to severi
 | finer             | DEBUG                             | - | 5
 | finest            | TRACE                             | A fine-grained debugging event. Typically disabled in default configurations. | 1
 |=======================
+
+
 
 // assisted by watsonx latest with latest GenAI contribution: llama-3-70b-instruct
