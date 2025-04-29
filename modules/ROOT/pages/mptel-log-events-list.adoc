@@ -22,6 +22,7 @@ MicroProfile Telemetry can collect the following types of events:
 * <<#te, Trace events>>
 * <<#ffdce, FFDC events>>
 * <<#audit, Audit events>>
+* <<#access, Access events>>
 
 For information about trace log detail levels and how Open Liberty settings map to OpenTelemetry severity numbers, see <<sevlev, OpenTelemetry severity number mapping with Liberty log levels>>.
 
@@ -856,6 +857,42 @@ The following table describes how the different Liberty log levels map to severi
 | finest            | TRACE                             | A fine-grained debugging event. Typically disabled in default configurations. | 1
 |=======================
 
+----
 
+
+[#access]
+== Access events
+
+The following table provides the fields for Liberty message events, a description for each field, and the mapping to the OpenTelemetry logs data model:
+
+.Access event fields
+[cols="3,3,6",options="header",]
+|=======================
+| Liberty access event fields     | Description | Maps to OpenTelemetry Logs Data Model 
+| type                            | A string that identifies the type of event. | Attributes[`io.openliberty.type`]
+| host                            | Host name of the server that is the source of the event. | Resource[`host.name`]
+|                                 | default to ”Empty”For example, “POST /resource/test HTTP/1.1”. | Body
+| ibm_remoteHost                  | Remote host IP address, for example, 127.0.0.1. | Attributes[`io.openliberty.type`]
+| ibm_requestProtocol             | Protocol type, for example, HTTP/1.1. | Attributes[`network.protocol.name`] &Attributes[`network.protocol.version`] 
+| ibm_userAgent                   | The userAgent value in the request. | Attributes[`user_agent.original`]
+| ibm_requestHeader_{headername}  | Header value from the request. | Attributes[`http.request.header.{headername}`] 
+| ibm_requestMethod               | HTTP verb, for example, GET. | Attributes[`http.request.method`] 
+| ibm_responseHeader_{headername} | Header value from the response.  | Attributes[`http.response.header.{headername}`] 
+| ibm_requestPort                 | Port number of the request. | Attributes[`network.local.port`] 
+| ibm_requestFirstLine            | First line of the request. | Attributes[`io.openliberty.access_log.request_first_line`]
+| ibm_responseCode                | HTTP response code, for example, 200. | Attributes[`http.response.status_code`]
+| ibm_requestStartTime            | The start time of the request. | Attributes[`io.openliberty.access_log.request_start_time`]
+| ibm_remoteUserID                | Remote user according to the WebSphere ApplicationServer specific $WSRU header. | Attributes[`io.openliberty.access_log.remote_user_id`]
+| ibm_urlPath                     | Path information for the requested URL. This path information does not contain the query parameters, for example, /pushworksserver/push/apps/tags. | Attributes[`io.openliberty.access_log.url.path`]
+| ibm_elapsedTime                 | Time that is taken to serve the request, in microseconds. | Attributes[`io.openliberty.access_log.elapsed_time`]
+| ibm_accessLogDatetime           | The time when the message to the access log is queued to be logged. | Timestamp
+| ibm_remoteIP                    | Remote IP address, for example, 127.0.0.1. | Attributes[`network.peer.address`] 
+| ibm_requestHost                 | Request host IP address, for example, 127.0.0.1. | Attributes[`server.address`]
+| ibm_cookie_{cookiename}         | Cookie value from the request. | Attributes[`io.openliberty.access_log.cookie_{cookiename}`] 
+| ibm_requestElapsedTime          | The elapsed time of the request - millisecond accuracy,microsecond precision. | Attributes[`io.openliberty.access_log.request_elapsed_time`] 
+| ibm_sequence                    | Sequence number of the event, which is useful for sorting records with the same timestamp. | Attributes[`io.openliberty.sequence`] 
+| ibm_bytesSent                   | Response size in bytes excluding headers. | Attributes[`io.openliberty.access_log.bytes_sent`] 
+| ibm_bytesReceived               | Bytes received in the URL, for example, 94. | Attributes[`io.openliberty.access_log.bytes_received`]
+|=======================
 
 // assisted by watsonx latest with latest GenAI contribution: llama-3-70b-instruct
