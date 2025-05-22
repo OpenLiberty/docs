@@ -89,7 +89,7 @@ Messages that are in `DEV` format use the following pattern:
 +
 [subs=+quotes]
 ----
-[_log level_] <message_ID>: <message>
+<log level> <message_ID>: <message>
 ----
 +
 The following example shows a message in `DEV` format:
@@ -104,7 +104,7 @@ Messages that are in `SIMPLE` format use the following pattern:
 +
 [subs=+quotes]
 ----
-[_time stamp_] <thread ID> <fully qualified className> <log level attribute> <message ID>: <message>
+<time stamp> <thread ID> <fully qualified name of logger> <log level attribute> <message ID>: <message>
 ----
 +
 The following example shows a message in `SIMPLE` format:
@@ -130,19 +130,25 @@ Messages that are in `TBASIC` format use the following pattern:
 +
 [subs=+quotes]
 ----
-[_time stamp_] <thread ID> <fully qualified className> <log level attribute> <message ID>: <message>
+<time stamp> <thread ID> <class name of logger> <log level attribute> [<class name>] [<method name>] <message>
 ----
-+
-The following example shows a message in `TBASIC` format:
-+
+- The <message> will contain the message ID if available. This will be the case for logs emitted to the console and messages log, but the traces log include more specific logs that don't require message IDs.
+- The _class name of logger_ will be restricted to 13 characters long.
+- The fields in brackets (i.e., class name and method name) will only be available if present. It is common that these fields may not be present in a trace. A scenario where these fields will be populated is if an application provides the `class name` and `method name` parameters to the `Logger` when instrumenting logging statements.
+
+The following example shows a message in `TBASIC` format without the class name and method name fields filled. Notice how `FeatureManager` has been cut to `FeatureManage` (i.e., 13 characters):
+
 [source,console]
 ----
-[18/10/21 14:47:19:718 EDT] 0000003e FeatureManage A   CWWKF0011I: The defaultServer server is ready to run a smarter planet. The defaultServer server started in 7.718 seconds.
+[2025-05-21, 17:35:56:269 EDT] 0000003d FeatureManage A   CWWKF0011I: The driver server is ready to run a smarter planet. The driver server started in 8.962 seconds.
 ----
-+
-In this example, the `A` attribute that precedes the `CWWKF0011I` message ID code indicates that the message log level is `AUDIT`. For more information about log-level attributes, see <<#log-level,Message log-level attributes>>.
-+
-For more information about `TBASIC`, see <<#tbasic,TBASIC log format>>.
+
+The following is an example of a `TBASIC` formatted message with the class name and method name fields provided. Notice in this example how the _logger_ name is `webcontainer`, but the class the message originates from is `com.ibm.ws.webcontainer.osgi.DynamicVirtualHost`:
+
+[source,console]
+----
+[2025-05-21, 17:57:28:064 EDT] 00000041 webcontainer  I com.ibm.ws.webcontainer.osgi.DynamicVirtualHost addWebApplication SRVE0250I: Web Module ibm/api has been bound to default_host.
+----
 
 
 ENHANCED (trace log)::
