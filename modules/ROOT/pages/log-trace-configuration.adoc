@@ -160,7 +160,7 @@ Messages that are in `ENHANCED` format use the following pattern:
 ----
 - The <message> will contain the message ID if available. The traces log contains more component specific logs that don't require message IDs.
 - The fields in brackets (i.e., method name) will only be available if present. It is common that this field may not be present in a trace. A scenario where this field will be populated is if an application provides the `method name` parameter to the `Logger` when instrumenting logging statements.
-- The `objectID` field respresents the object where the log originates from. This field is always presenteven if it does not contain a value (i.e., 00000000)
+- The `objectID` field represents the object where the log originates from. This field is always presenteven if it does not contain a value (i.e., 00000000).
 
 The following example shows a message in `ENHANCED` format:
 
@@ -181,8 +181,17 @@ For example:
 
 
 ADVANCED (trace log)::
-Messages in `ADVANCED` format include field names and details that are similar to `ENHANCED` format, but that preserve more specific trace information.
-+
+
+Messages that are in `ADVANCED` format use the following pattern:
+
+```
+<time stamp> <thread ID> <log level attribute> UOW=<correlation ID> source=<fully qualified class name of logger> [class=<class name>] [method=<method name>] [id=<object ID>] org=<organization> prod=<product> component=<component> [thread=<thread name>] <message>
+```
+- The <message> will contain the message ID if available. The traces log contains more component specific logs that don't require message IDs.
+- The fields in brackets (i.e., class, method name, object ID and thread) will only be available if present. It is common that these field may not be present in a trace.
+- In comparison to `ENHANCED` format, the objectID will be omitted instead of having a `00000000` if the trace does not contain an object ID associated to it.
+- The fields for organization, product and component are always present even if there is no value assosicated to the field. This results in an empty field (e.g., "org=").
+
 The following example shows a message in `ADVANCED` format:
 +
 [source,console]
@@ -193,6 +202,8 @@ The following example shows a message in `ADVANCED` format:
           java.util.concurrent.ExecutorService
           com.ibm.wsspi.threading.WSExecutorService
 ----
+
+In this trace, we see that the method field has a value and indicates the originating method as `setProperty` and the object ID is `5f05cd40`. The organization, product and component are empty, but as they are always present we see `org= prod= component=`.
 
 [#log-level]
 === Message log-level attributes
