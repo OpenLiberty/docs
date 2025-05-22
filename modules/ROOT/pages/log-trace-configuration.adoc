@@ -152,28 +152,31 @@ The following is an example of a `TBASIC` formatted message with the class name 
 
 
 ENHANCED (trace log)::
-Messages in `ENHANCED` format include field names that are components from the log record for the particular trace message, which provide more details about the trace message. These following details are included:
+Messages that are in `ENHANCED` format use the following pattern:
 +
-- message type
-- date and time
-- messageID
-- fully qualified class name
-- severity level
-- log level
-- method name
-- class name
-- level value
-- thread name
-- correlationID (or product, component, message, and objectID)
-+
+[subs=+quotes]
+----
+<time stamp> <thread ID> <object ID> <fully qualified class name of logger> <log level attribute> [<method name>] <message>
+----
+- The <message> will contain the message ID if available. The traces log contains more component specific logs that don't require message IDs.
+- The fields in brackets (i.e., method name) will only be available if present. It is common that this field may not be present in a trace. A scenario where this field will be populated is if an application provides the `method name` parameter to the `Logger` when instrumenting logging statements.
+- The `objectID` field respresents the object where the log originates from. This field is always presenteven if it does not contain a value (i.e., 00000000)
+
 The following example shows a message in `ENHANCED` format:
-+
+
 [source,console]
 ----
-[26/10/21 10:42:42:300 EDT] 0000006d id=00000000 x.com.ibm.ws.collector.manager.buffer.BufferManagerImpl      3 Adding event to buffer GenericData
-[type=com.ibm.ws.logging.source.trace,ibm_datetime=1635259362300,ibm_messageId=null,ibm_threadId=109,module=com.ibm.ws.event.internal.EventImpl,severity=
-<,loglevel=EXIT,ibm_methodName=setProperty,ibm_className=null,levelValue=400,threadName=Framework stop - Equinox Container: 2005505a-a1d7-46dc-abdd-
-7230d055f81e,correlationId=,org=,product=,component=,message=Exit ,objectId=-964551509]
+[2025-05-21, 16:04:36:874 EDT] 0000004c id=f430e04e cs.internal.monitor.computed.internal.ComputedMonitorMetrics > getMonitorMetricID Entry
+----
+
+The objectID here is `f430e04e`. This reflects the object ID (i.e., hash) of the `ComputedMonitorMetrics` class.
+
+The following example shows a message in `ENHANCED` format with an "empty" object ID:
+For example:
+
+[source,console]
+----
+[2025-05-21, 15:48:16:213 EDT] 00000001 id=00000000 com.ibm.ws.kernel.launch.internal.FrameworkManager           I CWWKE0002I: The kernel started after 1.954 seconds
 ----
 
 
