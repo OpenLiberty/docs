@@ -89,7 +89,7 @@ Messages that are in `DEV` format use the following pattern:
 +
 [subs=+quotes]
 ----
-[_log level_] <message_ID>: <message>
+<log level> <message_ID>: <message>
 ----
 +
 The following example shows a message in `DEV` format:
@@ -104,7 +104,7 @@ Messages that are in `SIMPLE` format use the following pattern:
 +
 [subs=+quotes]
 ----
-[_time stamp_] <thread ID> <fully qualified className> <log level attribute> <message ID>: <message>
+<time stamp> <thread ID> <fully qualified name of logger> <log level attribute> <message ID>: <message>
 ----
 +
 The following example shows a message in `SIMPLE` format:
@@ -130,52 +130,70 @@ Messages that are in `TBASIC` format use the following pattern:
 +
 [subs=+quotes]
 ----
-[_time stamp_] <thread ID> <fully qualified className> <log level attribute> <message ID>: <message>
+<time stamp> <thread ID> <class name of logger> <log level attribute> [<class name>] [<method name>] <message>
 ----
-+
-The following example shows a message in `TBASIC` format:
-+
+- The <message> will contain the message ID if available. This will be the case for logs emitted to the console and messages log, but the traces log include more specific logs that don't require message IDs.
+- The _class name of logger_ will be restricted to 13 characters long.
+- The fields in brackets (i.e., class name and method name) will only be available if present. It is common that these fields may not be present in a trace. A scenario where these fields will be populated is if an application provides the `class name` and `method name` parameters to the `Logger` when instrumenting logging statements.
+
+The following example shows a message in `TBASIC` format without the class name and method name fields filled. Notice how `FeatureManager` has been cut to `FeatureManage` (i.e., 13 characters):
+
 [source,console]
 ----
-[18/10/21 14:47:19:718 EDT] 0000003e FeatureManage A   CWWKF0011I: The defaultServer server is ready to run a smarter planet. The defaultServer server started in 7.718 seconds.
+[2025-05-21, 17:35:56:269 EDT] 0000003d FeatureManage A   CWWKF0011I: The driver server is ready to run a smarter planet. The driver server started in 8.962 seconds.
 ----
-+
-In this example, the `A` attribute that precedes the `CWWKF0011I` message ID code indicates that the message log level is `AUDIT`. For more information about log-level attributes, see <<#log-level,Message log-level attributes>>.
-+
-For more information about `TBASIC`, see <<#tbasic,TBASIC log format>>.
+
+The following is an example of a `TBASIC` formatted message with the class name and method name fields provided. Notice in this example how the _logger_ name is `webcontainer`, but the class the message originates from is `com.ibm.ws.webcontainer.osgi.DynamicVirtualHost`:
+
+[source,console]
+----
+[2025-05-21, 17:57:28:064 EDT] 00000041 webcontainer  I com.ibm.ws.webcontainer.osgi.DynamicVirtualHost addWebApplication SRVE0250I: Web Module ibm/api has been bound to default_host.
+----
 
 
 ENHANCED (trace log)::
-Messages in `ENHANCED` format include field names that are components from the log record for the particular trace message, which provide more details about the trace message. These following details are included:
+Messages that are in `ENHANCED` format use the following pattern:
 +
-- message type
-- date and time
-- messageID
-- fully qualified class name
-- severity level
-- log level
-- method name
-- class name
-- level value
-- thread name
-- correlationID (or product, component, message, and objectID)
-+
+[subs=+quotes]
+----
+<time stamp> <thread ID> <object ID> <fully qualified class name of logger> <log level attribute> [<method name>] <message>
+----
+- The <message> will contain the message ID if available. The traces log contains more component specific logs that don't require message IDs.
+- The fields in brackets (i.e., method name) will only be available if present. It is common that this field may not be present in a trace. A scenario where this field will be populated is if an application provides the `method name` parameter to the `Logger` when instrumenting logging statements.
+- The `objectID` field represents the object where the log originates from. This field is always presenteven if it does not contain a value (i.e., 00000000).
+
 The following example shows a message in `ENHANCED` format:
-+
+
 [source,console]
 ----
-[26/10/21 10:42:42:300 EDT] 0000006d id=00000000 x.com.ibm.ws.collector.manager.buffer.BufferManagerImpl      3 Adding event to buffer GenericData
-[type=com.ibm.ws.logging.source.trace,ibm_datetime=1635259362300,ibm_messageId=null,ibm_threadId=109,module=com.ibm.ws.event.internal.EventImpl,severity=
-<,loglevel=EXIT,ibm_methodName=setProperty,ibm_className=null,levelValue=400,threadName=Framework stop - Equinox Container: 2005505a-a1d7-46dc-abdd-
-7230d055f81e,correlationId=,org=,product=,component=,message=Exit ,objectId=-964551509]
+[2025-05-21, 16:04:36:874 EDT] 0000004c id=f430e04e cs.internal.monitor.computed.internal.ComputedMonitorMetrics > getMonitorMetricID Entry
+----
+
+The objectID here is `f430e04e`. This reflects the object ID (i.e., hash) of the `ComputedMonitorMetrics` class.
+
+The following example shows a message in `ENHANCED` format with an "empty" object ID:
+For example:
+
+[source,console]
+----
+[2025-05-21, 15:48:16:213 EDT] 00000001 id=00000000 com.ibm.ws.kernel.launch.internal.FrameworkManager           I CWWKE0002I: The kernel started after 1.954 seconds
 ----
 
 
 ADVANCED (trace log)::
-Messages in `ADVANCED` format include field names and details that are similar to `ENHANCED` format, but that preserve more specific trace information.
-+
+
+Messages that are in `ADVANCED` format use the following pattern:
+
+```
+<time stamp> <thread ID> <log level attribute> UOW=<correlation ID> source=<fully qualified class name of logger> [class=<class name>] [method=<method name>] [id=<object ID>] org=<organization> prod=<product> component=<component> [thread=<thread name>] <message>
+```
+- The <message> will contain the message ID if available. The traces log contains more component specific logs that don't require message IDs.
+- The fields in brackets (i.e., class, method name, object ID and thread) will only be available if present. It is common that these field may not be present in a trace.
+- In comparison to `ENHANCED` format, the objectID will be omitted instead of having a `00000000` if the trace does not contain an object ID associated to it.
+- The fields for organization, product and component are always present even if there is no value assosicated to the field. This results in an empty field (e.g., "org=").
+
 The following example shows a message in `ADVANCED` format:
-+
+
 [source,console]
 ----
 [26/10/21 10:29:25:011 EDT] 00000073  > UOW= source=com.ibm.ws.event.internal.EventImpl method=setProperty id=5f05cd40 org= prod= component=
@@ -184,6 +202,8 @@ The following example shows a message in `ADVANCED` format:
           java.util.concurrent.ExecutorService
           com.ibm.wsspi.threading.WSExecutorService
 ----
+
+In this trace, we see that the method field has a value and indicates the originating method as `setProperty` and the object ID is `5f05cd40`. The organization, product and component are empty, but as they are always present we see `org= prod= component=`.
 
 [#log-level]
 === Message log-level attributes
@@ -225,6 +245,39 @@ Messages that are in `SIMPLE` or `TBASIC` format include one of the following me
 
 
 For more information about log levels and output streams, see the descriptions for the `consoleLogLevel` and `copySystemStreams` attributes for the config:logging[] element.
+
+[#trace-log-level]
+=== Trace log-level attributes
+
+In addition to message log-level attributes, traces have additional log levels that are listed below. Some traces may have _message log-level attributes_ defined above and some may contain the below _trace log-level attributes_.
+
+.Trace-level attributes
+[%header,cols="3,6,9"]
+|===
+| Attribute|Log level|Description
+
+|`1`
+|FINE
+|Traces that are at the `FINE granularity.
+
+|`2`
+|FINER
+|Traces that are at the `FINER granularity.
+
+|`3`
+|FINEST
+|Traces that are at the `FINEST` granularity.
+
+|`>`
+|ENTRY
+|Traces that indicate an entry into a method. This on the same granularity as `F
+
+|`<`
+|EXIT
+|Traces that indicate an exit of a method. This on the same granularity as `FINEST`.
+
+|===
+
 
 [#tbasic]
 === TBASIC log format
@@ -341,8 +394,6 @@ LogRecordContext.removeExtension(extensionName);
 ----
 
 After you remove an extension, JSON output for subsequent logs and trace that are made on the same thread do not include that field.
-
-
 
 [#http]
 === Selectable HTTP access log JSON fields
