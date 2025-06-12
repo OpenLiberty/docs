@@ -47,6 +47,26 @@ You can view health check results in a web browser by going to one of the endpoi
 
 For more information, see link:/guides/microprofile-health.html[Adding health reports to microservices].
 
+=== MicroProfile Health v4.0
+
+The MicroProfile Health v4.0 runtime in Open Liberty that is enabled through the `mpHealth-4.0` feature provides an alternative file-based health check mechanism. When enabled, the file-based health check mechanism works alongside the REST-based endpoints. The file-based mechanism creates three files that correspond to the health check types at the following locations:
+
+- `<server.output.dir>/health/ready`
+- `<server.output.dir>/health/live`
+- `<server.output.dir>/health/started`
+
+The files are created when all health check statuses return an `UP` status. The files are deleted when the server is shut down along with the `/health` directory. After the files are created, the runtime will query the readiness health checks and liveness health checks at a user-configured interval. For each respective health check, if the status returns `UP`, then the associated health-check file updates the last modified timestamp. The updated timestamp indicates to any observers that an `UP` status was reported. A `DOWN` status results in the file not having its timestamp updated.
+
+The configuration for defining the update interval is the `checkInterval` attribute of the `<mpHealth>` element when using the `mpHealth-4.0` feature. This configuration is required to enable the file-based health-check mechanism. The optional `startupCheckInterval` configuration value is used during the startup of the feature and is the interval between health-check queries for establishing the `UP` statuses for all three health check types. The `startupCheckInterval` configuration value defaults to `100ms`.
+
+The environment variable configuration for the `checkInterval` attribute is `MP_HEALTH_CHECK_INTERVAL`. The environment variable configuration for the `startupCheckInterval` attribute is `MP_HEALTH_STARTUP_CHECK_INTERVAL`. If both an environment variable configuration and a `server.xml` configuration are detected, then the `server.xml` configuration takes precedence.
+
+The following example shows the configuration for `checkInterval` and `startupCheckInterval`.
+
+----
+<mpHealth checkInterval="10s" startupCheckInterval="250ms" />
+----
+
 [#live]
 === The @Liveness annotation
 
