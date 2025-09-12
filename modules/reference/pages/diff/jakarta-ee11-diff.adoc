@@ -1,0 +1,399 @@
+// Copyright (c) 2023 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+// https://creativecommons.org/licenses/by-nd/4.0/
+//
+//
+// Contributors:
+// IBM Corporation
+//
+//
+//
+//
+:page-description: If you are updating your application from using Jakarta EE 10 features to using Jakarta EE 11 features, certain changes in API behavior might require you to update your application code.
+:projectName: Open Liberty
+:page-layout: general-reference
+:page-type: general
+= Differences between Jakarta EE 11 and 10
+
+If you are updating your application from using Jakarta EE 9.1 features to using Jakarta EE 10 features, changes in API behavior might require you to update your application code. These changes apply to several Jakarta EE APIs and the Open Liberty features that support them.
+
+The following sections describe updates for different Jakarta EE 10 features
+
+* <<global, Global differences between Jakarta EE 11 and 10>>
+* <<persist,Jakarta Persistence 3.2>>
+* <<express,Jakarta Expression Language 6.0>>
+* <<faces,Jakarta Server Faces 4.1>>
+* <<pages,Jakarta Server Pages 4.0>>
+* <<websocket,Jakarta WebSocket 2.2>>
+* <<servlet,Jakarta Servlet 6.1>>
+
+
+
+
+
+[#global]
+== Global differences between Jakarta EE 11 and 10
+
+The following changes apply across the Jakarta EE 11 platform.
+
+Content to be added here....
+
+[#persist]
+== Differences between Jakarta Persistence 3.2 and 3.1
+
+
+The feature:persistence-3.2[display=Jakarta Persistence 3.2] feature (`persistence-3.2`) introduces updates that include modifications to the `EclipseLink` packages and adjustments to how certain Java types, such as Instant, are mapped in databases.
+
+The following changes are introduced in Jakarta Persistence 3.2:
+
+=== Package updates in EclipseLink
+
+- The `SessionCustomizer` package is moved from `org.eclipse.persistence.config` to `org.eclipse.persistence.sessions`
+
+- The `DescriptorCustomizer` package is moved from `org.eclipse.persistence.config` to `org.eclipse.persistence.descriptors`
+
+- The `CacheIsolationType` package is moved from `org.eclipse.persistence.config` to `org.eclipse.persistence.annotations`
+
+- The `PropertiesUtils` package is moved from `org.eclipse.persistence.config` to `org.eclipse.persistence.internal.helper`
+
+
+
+=== Mapping change for Instant type
+
+EclipseLink changed the default mapping of the `Instant` type from `BLOB` to `TIMESTAMP`. You must either regenerate the DDL files to align with the new type or override the mapping to preserve the previous behavior.
+
+
+[#express]
+== Differences between Jakarta Expression Language 6.0 and 5.0
+
+The feature:expressionLanguage-6.0[display=Jakarta Expression Language 6.0] feature (`expressionLanguage-6.0`) introduces updates to the ELResolver capabilities by supporting additional Java types and aligning with newer JDK versions.
+
+
+=== Key changes in Jakarta Expression Language 6.0
+
+=== New additions
+
+- Support for `java.lang.Record`, introduced in Java 17, is added through the new `jakarta.el.RecordELResolver` class. This support is enabled by default.
+
+- Support for `java.lang.Optional`, introduced in Java 8, is added through the new `jakarta.el.OptionalELResolver` class. This support is available but NOT enabled by default.
+
+- Arrays now support the `length` property through the official API. However, Open Liberty uses Tomcat’s Expression Language implementation, which has supported the `length` property for many years.
+
+=== Removals
+
+- The `getFeatureDescriptors` method is removed from the `jakarta.el.ELResolver` class.
+
+- All references to `SecurityManager` are removed from within the API to align with the deprecation of SecurityManager in newer JDKs.
+
+
+
+[#faces]
+== Differences between Jakarta Server Faces 4.1 and 4.0
+
+The feature:faces-4.1[display=Jakarta Faces 4.1] feature (`faces-4.1`) introduces general improvements, new convenience methods, and deprecations that are aimed at streamlining the API and aligning with recent platform changes.
+
+=== Key changes in Jakarta Server Faces 4.1
+
+=== New additions
+
+- CDI lifecycle events like `@Initialized`, `@BeforeDestroyed`, and `@Destroyed` will now work for built-in scopes such as `@ViewScoped` and `@FlowScoped`.
+
+-  You can now inject the Flow objects into backing beans using the `@Inject Flow currentFlow`.
+
+- A new built-in `jakarta.faces.convert.UUIDConverter` UUID converter is now available through the API.
+
+- The `setResponseContentLengthLong()` method is added to `jakarta.faces.context.ExternalContext` to support large response content lengths.
+
+- The `rowStatePreserved` property is now supported by the `ui:repeat` tag, similar to how it works in `h:dataTable`.
+
+- The default value of `jakarta.faces.FACELETS_REFRESH_PERIOD` is updated to `0` (always recompile) for the `Development` ProjectStage. The `Production` default remains at `-1` (never recompile).
+
+- The `jakarta.faces.application.FacesMessage` class now includes `equals()`, `hashCode()`, and `toString()` methods, which helps allow `FacesMessages` to be stored within `HashMaps`.
+
+- More parts of the API now support generics, making the code easier to work with and safer at compile time.
+
+=== Deprecations and removals
+
+The following items have been deprecated:
+
+- Full State Saving (FSS) is deprecated. This was previously enabled through either `jakarta.faces.PARTIAL_STATE_SAVING` or `jakarta.faces.FULL_STATE_SAVING_VIEW_ID` settings.
+
+- The classes `jakarta.faces.event.PreDestroyCustomScopeEvent` and `jakarta.faces.event.PostConstructCustomScopeEvent` are deprecated. These were overlooked during the removal of `@CustomScoped` in Faces 4.0.
+
+- The `composite:extension` tag, which was never implemented, has been deprecated.
+
+- All references to SecurityManager have been removed to align with recent Java platform changes.
+
+
+[#pages]
+== Differences between Jakarta Pages 4.0 and 3.1
+
+The feature:pages-4.0[display=Jakarta Server Pages 4.0] feature (`pages-4.0`) removes several deprecated features and introduces small updates that improve alignment with the latest Servlet specification.
+
+=== New additions
+
+The `ErrorData` class is updated to support two new attributes from Servlet 6.1:
+
+- `jakarta.servlet.error.query_string` attribute is now accessible through the `getQueryString()` method.
+
+- `jakarta.servlet.error.method` attribute is now accessible through the `getMethod()` method.
+
+
+=== Removals
+
+- All overrides of `ELResolver.getFeatureDescriptors()` are removed. These were previously deprecated in feature:expressionLanguage-5.0[display=Jakarta Expression Language 5.0].
+
+- The `isThreadSafe` page directive is removed. It was deprecated in feature:pages-3.1[display=Jakarta Server Pages 3.1].
+
+- The following JSP actions are removed because the browsers no longer support the underlying functionality. Deprecated in feature:pages-3.1[display=Jakarta Server Pages 3.1].:
+
+  - `jsp:plugin`
+
+  - `jsp:param`
+
+  - `jsp:fallback`
+
+- The `JspException.getRootCause()` method is removed. It was deprecated since feature:pages-2.1[display=Jakarta Server Pages 2.1].
+
+
+
+[#websocket]
+== Differences between Jakarta WebSocket 2.2 and 2.1
+
+The feature:websocket-2.2[display=Jakarta WebSocket 2.2] feature (`websocket-2.2`) is a minor release includes small improvements and cleanup, with a focus on making it easier to work with WebSocket sessions.
+
+=== New additions
+
+- A new `getSession()` method is added to the `jakarta.websocket.SendResult` class. This makes it easier for asynchronous send operations to access the associated WebSocket session.
+
+- A clarification was made about the `@OnMessage.maxMessageSize` annotation. While the annotation uses a `long` value, the maximum allowed size is effectively limited to `Integer.MAX_VALUE` (about 2 GB) because the underlying `Session.setMaxTextMessageBufferSize()` method uses an `int`.
+
+=== Specification clarification
+
+Automatic handling of ping/pong messages is considered to be an implementation detail and not handled by the API itself. This behavior remains unchanged in Liberty.
+
+
+=== Removals
+
+All references to `SecurityManager` were removed from the API to align with the newer JDKs.
+
+
+[#servlet]
+== Differences between Jakarta Servlet 6.1 and 6.0
+
+The feature:servlet-6.1[display=Jakarta Servlet 6.1] feature (`servlet-6.1`) introduces new APIs, clarifications, and behavior changes.
+
+=== New additions
+
+- **Enhanced `sendRedirect` methods**
+
+  Three new APIs allow a send redirect to include optional response data and custom status codes.
+
+  - `sendRedirect(String location, boolean clearBuffer)`
+  - `sendRedirect(String location, int statusCode)`
+  - `sendRedirect(String location, int statusCode, boolean clearBuffer)`
+
+  Default values are:
+   ```
+   boolean clearBuffer = true
+   statusCode = 302
+   ```
+
+ All `sendRedirect` methods eventually call the third overload with default values if not specified.
+
+
+ If the response buffer is clear, the default globalization HTML message is returned:
+
+ ```html
+ <html><body><p>Redirecting to <a href="{0}"></a></p></body></html>
+ ```
+
+ `{0}` is replaced by the provided `location`.
+
+ **Note:** `statusCode` can now be set to any integer value without verification. However, setting arbitrary codes might prevent browsers from following the redirect request.
+
+
+- **New request attributes**
+
+ - `jakarta.servlet.error.method` - the initial request HTTP method.
+
+ - `jakarta.servlet.error.query_string` - the initial request query string.
+
+ - `jakarta.servlet.request.secure_protocol` - secure protocol information for HTTPS requests.
+
+ All error dispatches are now performed as `GET`. The original request method can be retrieved through `jakarta.servlet.error.method`.
+
+
+- **ByteBuffer support**
+
+ - `ServletInputStream.read(ByteBuffer)`
+
+ - `ServletOutputStream.write(ByteBuffer)`
+
+ Several new APIs to support the setting of request and response character encoding (using `Charset` instead of `String`)
+
+ - `ServletContext.setRequestCharacterEncoding(Charset)`
+
+ - `ServletContext.setResponseCharacterEncoding(Charset)`
+
+ - `ServletRequest.setCharacterEncoding(Charset)`
+
+ - `ServletResponse.setCharacterEncoding(Charset)`
+
+
+- **New HttpSession Accessor API**
+
+ New APIs are added to the `HttpSession`. Enables interaction with `HttpSession` outside the scope of a request.
+
+ ```java
+ public static interface Accessor {
+     void access(Consumer<HttpSession> sessionConsumer)
+ }
+ 
+ default HttpSession.Accessor getAccessor() {
+     return null;
+ }
+ ```
+
+ The session's `lastAccessedTime` is updated automatically whenever Accessor.access() is called.
+
+
+=== Clarifications
+
+- **Canonicalization of path parameters**
+
+  All `ServletContext` and `ServletRequest` path-based methods must validate against the `Servlet 3.5.2 URI Path Canonicalization` rules.
+
+  Previously, these methods returned `null` only when paths could not be resolved. Servlet 6.1 adds an early path verification step that returns `null` sooner if the path is not compliant.
+
+  Methods affected include:
+
+   - `ServletContext.getRealPath(String)`
+
+   - `ServletContext.getRequestDispatcher(String)`
+
+   - `ServletContext.getResource(String)`
+
+   - `ServletContext.getResourceAsStream(String)`
+
+   - `ServletContext.getResourcePaths(String)`
+
+   - `ServletRequest.getRequestDispatcher(String)`
+
+
+- **ServletRequest.getParameter() exceptions**
+
+ getParameter() and related methods throws `IllegalStateException` in Servlet 6.1 if parameter parsing fails.
+
+ ```java
+ String getParameter(String name)
+ Map<String,String[]> getParameterMap()
+ Enumeration<String> getParameterNames()
+ String[] getParameterValues(String name)
+ ```
+ 
+ Previously,these methods threw an `IllegalArgumentException`.
+
+
+- **HttpServletResponse.addDateHeader()**
+
+ Multiple values for the same header name are supported.
+
+ ```java
+ final long DATE_2022 = 1672427151000L; // Fri, 30 Dec 2022 19:05:51 GMT
+ final long DATE_2023 = 1703963151000L; // Sat, 30 Dec 2023 19:05:51 GMT
+
+ response.addDateHeader("TEST-ADD-DATE-HEADER", DATE_2022);
+ response.addDateHeader("TEST-ADD-DATE-HEADER", DATE_2023);
+ ```
+
+ The response contains:
+
+ ```sql
+ TEST-ADD-DATE-HEADER: Fri, 30 Dec 2022 19:05:51 GMT
+ TEST-ADD-DATE-HEADER: Sat, 30 Dec 2023 19:05:51 GMT
+ ```
+
+ Previously, only the last header was kept, for example:`TEST-ADD-DATE-HEADER: Sat, 30 Dec 2023 19:05:51 GMT`.
+
+
+- **HttpServletMapping.getMatchValue()**
+
+ For `PATH` mappings, the match value excludes the leading `/`.
+
+ ```xml
+ <servlet>
+     <servlet-name>MyServlet</servlet-name>
+     <servlet-class>MyServlet</servlet-class>
+ </servlet>
+ ```
+ ```xml
+ <servlet-mapping>
+     <servlet-name>MyServlet</servlet-name>
+     <url-pattern>/MyServlet</url-pattern>
+     <url-pattern>/path/*</url-pattern>
+ </servlet-mapping>
+ ```
+
+ Request URI: `/MyServlet/path/foo/bar`
+
+ ```
+ getMappingMatch() -> [PATH]
+ getMatchValue()   -> [foo/bar]
+ getPattern()      -> [/path/*]
+ getServletName()  -> [MyServlet]
+ ```
+
+- **Default TRACE response**
+
+ ATRACE responses no longer include these headers if handled by the default `HttpServlet.doTrace()`:
+
+ `Authorization`, `Cookie`, `X-Forwarded-For`, `Forwarded`, `Proxy-Authorization`.
+
+- **Error-page dispatch method**
+
+ `HttpServletRequest.getMethod()` is always `GET` during error-page dispatch.
+
+```sql
+Initial request getMethod [POST]
+  -- sendError() -->
+     error dispatcher request getMethod [GET]
+returns-from-error --> request getMethod [POST]
+```
+
+Previously, the error dispatcher used the same method as the initial request (e.g., `POST`).
+
+
+=== Behavior changes
+
+
+- **Set-Cookie headers**
+
+ `addHeader()` and `setHeader()` no longer generate multiple `Set-Cookie` headers for arbitrary attributes.
+  
+  Only one header is generated even if random attributes are included.
+
+ ```java
+ response.setHeader("Set-Cookie",
+     "Cookie_viaSetHeader=CookieValue_viaSetHeader; Secure; SameSite=None; randomAttributeA=myAttValueA");
+ 
+ response.addHeader("Set-Cookie",
+     "Cookie_viaAddHeader=CookieValue_viaAddHeader; Secure; SameSite=None; randomAttributeB=myAttValueB");
+ ```
+
+ Previously, each call generated a separate `Set-Cookie` header for random attributes.
+
+
+- **File upload property change**
+
+ The custom property `allowAbsoluteFileNameForPartWrite` default is now `true`.
+
+ Files are written to the specified absolute path instead of the server’s temporary location.
+
+
+== See also
+
+* xref:ROOT:jakarta-ee.adoc[Jakarta EE overview]
+* xref:diff/jakarta-ee10-diff.adoc[Differences between Jakarta EE 10 and 9.1]
+* xref:diff/jakarta-ee-diff.adoc[Differences between Jakarta EE 9.1 and 8.0]
