@@ -186,209 +186,226 @@ The feature:servlet-6.1[display=Jakarta Servlet 6.1] feature (`servlet-6.1`) int
 
 === New additions
 
-- **Enhanced `sendRedirect` methods**
+=== Enhanced sendRedirect methods
 
-  Three new APIs allow a send redirect to include optional response data and custom status codes.
+Three new APIs allow a send redirect to include optional response data and custom status codes.
 
-  - `sendRedirect(String location, boolean clearBuffer)`
-  - `sendRedirect(String location, int statusCode)`
-  - `sendRedirect(String location, int statusCode, boolean clearBuffer)`
+- `sendRedirect(String location, boolean clearBuffer)`
+- `sendRedirect(String location, int statusCode)`
+- `sendRedirect(String location, int statusCode, boolean clearBuffer)`
 
-  Default values are:
-   ```
-   boolean clearBuffer = true
-   statusCode = 302
-   ```
+Default values are:
 
- All `sendRedirect` methods eventually call the third overload with default values if not specified.
+[source]
+----
+boolean clearBuffer = true
+statusCode = 302
+----
 
- If the response buffer is clear, the default globalization HTML message is returned:
+All `sendRedirect` methods eventually call the third overload with default values if not specified.
 
- ```html
- <html><body><p>Redirecting to <a href="{0}"></a></p></body></html>
- ```
+If the response buffer is clear, the default globalization HTML message is returned:
 
- `{0}` is replaced by the provided `location`.
+[source,html]
+----
+<html><body><p>Redirecting to <a href="{0}"></a></p></body></html>
+----
 
- **Note:** `statusCode` can now be set to any integer value without verification. However, setting arbitrary codes might prevent browsers from following the redirect request.
+`{0}` is replaced by the provided `location`.
 
-
-- **New request attributes**
-
- - `jakarta.servlet.error.method` - the initial request HTTP method.
-
- - `jakarta.servlet.error.query_string` - the initial request query string.
-
- - `jakarta.servlet.request.secure_protocol` - secure protocol information for HTTPS requests.
-
- All error dispatches are now performed as `GET`. The original request method can be retrieved through `jakarta.servlet.error.method`.
+NOTE: `statusCode` can now be set to any integer value without verification. However, setting arbitrary codes might prevent browsers from following the redirect request.
 
 
-- **ByteBuffer support**
+=== New request attributes
 
- - `ServletInputStream.read(ByteBuffer)`
+- `jakarta.servlet.error.method` - the initial request HTTP method.
+- `jakarta.servlet.error.query_string` - the initial request query string.
+- `jakarta.servlet.request.secure_protocol` - secure protocol information for HTTPS requests.
 
- - `ServletOutputStream.write(ByteBuffer)`
-
- Several new APIs to support the setting of request and response character encoding (using `Charset` instead of `String`)
-
- - `ServletContext.setRequestCharacterEncoding(Charset)`
-
- - `ServletContext.setResponseCharacterEncoding(Charset)`
-
- - `ServletRequest.setCharacterEncoding(Charset)`
-
- - `ServletResponse.setCharacterEncoding(Charset)`
+All error dispatches are now performed as `GET`. The original request method can be retrieved through `jakarta.servlet.error.method`.
 
 
-- **New HttpSession Accessor API**
+=== ByteBuffer support
 
- New APIs are added to the `HttpSession`. Enables interaction with `HttpSession` outside the scope of a request.
+- `ServletInputStream.read(ByteBuffer)`
+- `ServletOutputStream.write(ByteBuffer)`
 
- ```java
- public static interface Accessor {
-     void access(Consumer<HttpSession> sessionConsumer)
- }
- 
- default HttpSession.Accessor getAccessor() {
-     return null;
- }
- ```
+Several new APIs to support setting request and response character encoding (using `Charset` instead of `String`):
 
- The session's `lastAccessedTime` is updated automatically whenever Accessor.access() is called.
+- `ServletContext.setRequestCharacterEncoding(Charset)`
+- `ServletContext.setResponseCharacterEncoding(Charset)`
+- `ServletRequest.setCharacterEncoding(Charset)`
+- `ServletResponse.setCharacterEncoding(Charset)`
+
+
+=== New HttpSession Accessor API
+
+New APIs are added to the `HttpSession`. Enables interaction with `HttpSession` outside the scope of a request.
+
+[source,java]
+----
+public static interface Accessor {
+    void access(Consumer<HttpSession> sessionConsumer);
+}
+
+default HttpSession.Accessor getAccessor() {
+    return null;
+}
+----
+
+The session's `lastAccessedTime` is updated automatically whenever Accessor.access() is called.
 
 
 === Clarifications
 
-- **Canonicalization of path parameters**
 
-  All `ServletContext` and `ServletRequest` path-based methods must validate against the `Servlet 3.5.2 URI Path Canonicalization` rules.
+=== Canonicalization of path parameters
 
-  Previously, these methods returned `null` only when paths could not be resolved. Servlet 6.1 adds an early path verification step that returns `null` sooner if the path is not compliant.
+All `ServletContext` and `ServletRequest` path-based methods must validate against the `Servlet 3.5.2 URI Path Canonicalization` rules.
 
-  Methods affected include:
+Previously, these methods returned `null` only when paths could not be resolved. Servlet 6.1 adds an early path verification step that returns `null` sooner if the path is not compliant.
 
-   - `ServletContext.getRealPath(String)`
+Methods affected include:
 
-   - `ServletContext.getRequestDispatcher(String)`
-
-   - `ServletContext.getResource(String)`
-
-   - `ServletContext.getResourceAsStream(String)`
-
-   - `ServletContext.getResourcePaths(String)`
-
-   - `ServletRequest.getRequestDispatcher(String)`
+- `ServletContext.getRealPath(String)`
+- `ServletContext.getRequestDispatcher(String)`
+- `ServletContext.getResource(String)`
+- `ServletContext.getResourceAsStream(String)`
+- `ServletContext.getResourcePaths(String)`
+- `ServletRequest.getRequestDispatcher(String)`
 
 
-- **ServletRequest.getParameter() exceptions**
+=== ServletRequest.getParameter() exceptions
 
- getParameter() and related methods throws `IllegalStateException` in Servlet 6.1 if parameter parsing fails.
+`getParameter()` and related methods throw `IllegalStateException` in Servlet 6.1 if parameter parsing fails.
 
- ```java
- String getParameter(String name)
- Map<String,String[]> getParameterMap()
- Enumeration<String> getParameterNames()
- String[] getParameterValues(String name)
- ```
- 
- Previously,these methods threw an `IllegalArgumentException`.
+[source,java]
+----
+String getParameter(String name)
+Map<String,String[]> getParameterMap()
+Enumeration<String> getParameterNames()
+String[] getParameterValues(String name)
+----
 
-
-- **HttpServletResponse.addDateHeader()**
-
- Multiple values for the same header name are supported.
-
- ```java
- final long DATE_2022 = 1672427151000L; // Fri, 30 Dec 2022 19:05:51 GMT
- final long DATE_2023 = 1703963151000L; // Sat, 30 Dec 2023 19:05:51 GMT
-
- response.addDateHeader("TEST-ADD-DATE-HEADER", DATE_2022);
- response.addDateHeader("TEST-ADD-DATE-HEADER", DATE_2023);
- ```
-
- The response contains:
-
- ```sql
- TEST-ADD-DATE-HEADER: Fri, 30 Dec 2022 19:05:51 GMT
- TEST-ADD-DATE-HEADER: Sat, 30 Dec 2023 19:05:51 GMT
- ```
-
- Previously, only the last header was kept, for example:`TEST-ADD-DATE-HEADER: Sat, 30 Dec 2023 19:05:51 GMT`.
+Previously, these methods threw an `IllegalArgumentException`.
 
 
-- **HttpServletMapping.getMatchValue()**
+=== HttpServletResponse.addDateHeader()
 
- For `PATH` mappings, the match value excludes the leading `/`.
+Multiple values for the same header name are supported.
 
- ```xml
- <servlet>
-     <servlet-name>MyServlet</servlet-name>
-     <servlet-class>MyServlet</servlet-class>
- </servlet>
- ```
- ```xml
- <servlet-mapping>
-     <servlet-name>MyServlet</servlet-name>
-     <url-pattern>/MyServlet</url-pattern>
-     <url-pattern>/path/*</url-pattern>
- </servlet-mapping>
- ```
+[source,java]
+----
+final long DATE_2022 = 1672427151000L; // Fri, 30 Dec 2022 19:05:51 GMT
+final long DATE_2023 = 1703963151000L; // Sat, 30 Dec 2023 19:05:51 GMT
 
- Request URI: `/MyServlet/path/foo/bar`
+response.addDateHeader("TEST-ADD-DATE-HEADER", DATE_2022);
+response.addDateHeader("TEST-ADD-DATE-HEADER", DATE_2023);
+----
 
- ```
- getMappingMatch() -> [PATH]
- getMatchValue()   -> [foo/bar]
- getPattern()      -> [/path/*]
- getServletName()  -> [MyServlet]
- ```
+The response contains:
 
-- **Default TRACE response**
+[source]
+----
+TEST-ADD-DATE-HEADER: Fri, 30 Dec 2022 19:05:51 GMT
+TEST-ADD-DATE-HEADER: Sat, 30 Dec 2023 19:05:51 GMT
+----
 
- ATRACE responses no longer include these headers if handled by the default `HttpServlet.doTrace()`:
+Previously, only the last header was kept, for example:
 
- `Authorization`, `Cookie`, `X-Forwarded-For`, `Forwarded`, `Proxy-Authorization`.
+[source]
+----
+TEST-ADD-DATE-HEADER: Sat, 30 Dec 2023 19:05:51 GMT
+----
 
-- **Error-page dispatch method**
 
- `HttpServletRequest.getMethod()` is always `GET` during error-page dispatch.
+=== HttpServletMapping.getMatchValue()
 
-```sql
+For `PATH` mappings, the match value excludes the leading `/`.
+
+[source,xml]
+----
+<servlet>
+    <servlet-name>MyServlet</servlet-name>
+    <servlet-class>MyServlet</servlet-class>
+</servlet>
+
+<servlet-mapping>
+    <servlet-name>MyServlet</servlet-name>
+    <url-pattern>/MyServlet</url-pattern>
+    <url-pattern>/path/*</url-pattern>
+</servlet-mapping>
+----
+
+Request URI: `/MyServlet/path/foo/bar`
+
+[source]
+----
+getMappingMatch() -> [PATH]
+getMatchValue()   -> [foo/bar]
+getPattern()      -> [/path/*]
+getServletName()  -> [MyServlet]
+----
+
+
+=== Default TRACE response
+
+A TRACE response no longer includes these headers if handled by the default `HttpServlet.doTrace()`:
+
+- `Authorization`
+- `Cookie`
+- `X-Forwarded-For`
+- `Forwarded`
+- `Proxy-Authorization`
+
+
+=== Error-page dispatch method
+
+`HttpServletRequest.getMethod()` is always `GET` during error-page dispatch.
+
+[source]
+----
 Initial request getMethod [POST]
   -- sendError() -->
      error dispatcher request getMethod [GET]
 returns-from-error --> request getMethod [POST]
-```
+----
 
 Previously, the error dispatcher used the same method as the initial request (e.g., `POST`).
 
 
 === Behavior changes
 
+=== Set-Cookie headers
 
-- **Set-Cookie headers**
+`addHeader()` and `setHeader()` no longer generate multiple `Set-Cookie` headers for arbitrary attributes.
 
- `addHeader()` and `setHeader()` no longer generate multiple `Set-Cookie` headers for arbitrary attributes.
-  
-  Only one header is generated even if random attributes are included.
+Only one header is generated even if random attributes are included.
 
- ```java
- response.setHeader("Set-Cookie",
-     "Cookie_viaSetHeader=CookieValue_viaSetHeader; Secure; SameSite=None; randomAttributeA=myAttValueA");
- 
- response.addHeader("Set-Cookie",
-     "Cookie_viaAddHeader=CookieValue_viaAddHeader; Secure; SameSite=None; randomAttributeB=myAttValueB");
- ```
+[source,java]
+----
+response.setHeader("Set-Cookie",
+    "Cookie_viaSetHeader=CookieValue_viaSetHeader; Secure; SameSite=None; randomAttributeA=myAttValueA");
 
- Previously, each call generated a separate `Set-Cookie` header for random attributes.
+response.addHeader("Set-Cookie",
+    "Cookie_viaAddHeader=CookieValue_viaAddHeader; Secure; SameSite=None; randomAttributeB=myAttValueB");
+----
+
+Previously, each call generated a separate `Set-Cookie` header for random attributes.
 
 
-- **File upload property change**
+=== File upload property change
 
- The custom property `allowAbsoluteFileNameForPartWrite` default is now `true`.
+The custom property `allowAbsoluteFileNameForPartWrite` default is now `true`.
 
- Files are written to the specified absolute path instead of the server’s temporary location.
+Files are written to the specified absolute path instead of the server's temporary location.
+
+
+
+
+
+
+
 
 
 
