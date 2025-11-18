@@ -28,6 +28,27 @@ Create a TLS certificate for the `myserver` server with the `mypassword` passwor
 securityUtility createSSLCertificate --server=myserver --password=mypassword --validity=365
 ----
 
+
+Create an SSL certificate by using a Base64-encoded AES-256 key to encrypt the keystore password, specify the `--passwordBase64Key` option:
+
+[source,sh]
+----
+securityUtility createSSLCertificate \
+  --passwordBase64Key=<your_base64_key> \
+  --outputFile=mySSL.p12
+----
+
+
+Create an SSL certificate by using a configuration file that contains the AES key variable:
+
+[source,sh]
+----
+securityUtility createSSLCertificate \
+  --aesConfigFile=aesConfig.xml \
+  --outputFile=mySSL.p12
+----
+
+
 == Syntax
 
 Run the command from the `_path_to_liberty_/wlp/bin` directory. You must specify either the `server` or `client` option or the command fails. The keystore password must be at least six characters long. If the `password` option is not specified, you’re prompted for a password value when you run this command.
@@ -97,6 +118,16 @@ If this option isn't specified, a default encoding type of `xor` is used.
 This string is hashed to produce an encryption key that is used to encrypt and decrypt the password.
 You can provide the key by defining the `wlp.password.encryption.key` variable as the key value.
 If this option isn't specified, a default key is used.
+This option cannot be combined with `--passwordBase64Key` or `--aesConfigFile`.
+
+|--passwordBase64Key=<Key>
+|Specifies a Base64-encoded 256-bit AES key that is used to encrypt the generated keystore password. 
+This option cannot be combined with `--aesConfigFile` or `--passwordKey`.
+
+|--aesConfigFile=<File>
+|Specifies an XML or Java properties file that contains either the `wlp.password.encryption.key` or `wlp.aes.encryption.key` variable. 
+Only one variable can be present in a file. 
+This option cannot be combined with `--passwordBase64Key` or `--passwordKey`.
 
 |--server=_name_
 |Specifies the name of the Open Liberty server for which the keystore and certificate are created.

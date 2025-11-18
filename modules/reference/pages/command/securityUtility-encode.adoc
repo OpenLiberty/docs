@@ -41,6 +41,31 @@ Hash a password. After you enter this command, interactive mode prompts you for 
 securityUtility encode --encoding=hash
 ----
 
+Encode with Base64 AES key
+
+To encode a password by using a Base64-encoded AES key, specify the key directly:
+
+[source,sh]
+----
+securityUtility encode --encoding=aes --base64Key=<your_base64_key> MyPassword
+----
+
+Encode with AES key configuration file
+
+To use a configuration file that contains the AES key variable, specify the `--aesConfigFile` option:
+
+[source,sh]
+----
+securityUtility encode --encoding=aes --aesConfigFile=aesConfig.xml MyPassword
+----
+
+[NOTE]
+====
+The configuration file must contain either the `wlp.aes.encryption.key` or 
+`wlp.password.encryption.key` variable. Only one variable can be present in a file.
+====
+
+
 == Syntax
 
 Run the command from the `_path_to_liberty_/wlp/bin` directory.
@@ -76,6 +101,7 @@ When FIPS 140-3 is enabled, both the `aes` and `hash` options use enhanced algor
 This string is hashed to produce an encryption key that is used to encrypt and decrypt the password.
 You can provide the key by defining the `wlp.password.encryption.key` variable as the key value.
 If this option isn't specified, a default key is used.
+This option cannot be combined with `--base64Key` or `--aesConfigFile`.
 
 |--listCustom
 a|Displays the information of the custom password encryption in JSON format.
@@ -89,6 +115,15 @@ The information consists of the following things:
 |Specifies whether space characters are removed from the beginning and end of the specified text.
 If this option is specified, the provided text is encoded as it is.
 If this option isn't specified, space characters are removed from the beginning and end of the specified text.
+
+|--base64Key=<key>
+|Specifies a Base64-encoded 256-bit AES key that is used to encrypt and decrypt the password. 
+This option cannot be combined with `--aesConfigFile` or `--key`.
+
+|--aesConfigFile=<file>
+|Specifies an XML or Java properties file that contains either the `wlp.password.encryption.key` or `wlp.aes.encryption.key` variable. 
+Only one of these variables can be present in a file. 
+This option cannot be combined with `--base64Key` or `--key`.
 
 |===
 
@@ -145,3 +180,4 @@ pa$$W0rd
 
 $ securityUtility encode pa\$\$W0rd
 ----
+
