@@ -205,6 +205,77 @@ The following example shows a sample configuration to accept JWTs in JWE format.
 
 If you manage single sign-on (SSO) for OIDC with the feature:socialLogin[display=Social Login] feature, you can enable that feature to process tokens in JWE format. Specify the `keyManagementKeyAlias` attribute on the `oidcLogin` element. Set the value to the private key alias of the key management key that is used to decrypt the Content Encryption Key of the JWE format token. For more information, see config:oidcLogin[display=OIDC Social Login].
 
+==== FIPS 140-3
+
+The Semeru implementation of FIPS 140-3 requires the use of ECDH algorithms for key agreement during encryption. The FIPS module currently in use by IBM Semeru Runtimes might not fully support RSA-OAEP operations, or might require a workaround to support them. For more information or updates, check the link:https://www.ibm.com/support/pages/semeru-runtimes-getting-started[IBM Semeru Runtimes release information or version fixes]. In the meantime, to use RSA-OAEP when FIPS 140-3 is enabled, see the <<#oidc-sl-jwt-rsa-ex,OIDC Client, Social Login, or JWT using RSA-OAEP example>> section.
+
+Use of ECDH algorithms requires the use of EC keys. See the section titled <<#gen-ec-keys,Generate EC keys for ECDH>>.
+
+To setup your OIDC Client, Social Login, or JWT consumer to use ECDH-ES, you’ll need to add the EC private key to the keystore and configure the following depending on if you’re using `openidConnectClient`, `oidcLogin`, or `jwtConsumer`.
+
+[source,xml]
+----
+<openidConnectClient keyManagementKeyAlias="myECPrivateKey" />
+----
+
+[source,xml]
+----
+<oidcLogin keyManagementKeyAlias="myECPrivateKey" />
+----
+
+[source,xml]
+----
+<jwtConsumer keyManagementKeyAlias="myECPrivateKey" />
+----
+
+Where `myECPrivateKey` is the alias for the EC private key.
+
+To setup your JWT builder to use ECDH-ES, you’ll need to add the EC public key to the keystore and configure the following.
+
+[source,xml]
+----
+<jwtBuilder keyManagementKeyAlgorithm="ECDH-ES" keyManagementKeyAlias="myECPublicKey" />
+----
+
+Where `myECPublicKey` is the alias for the EC public key.
+
+[#oidc-sl-jwt-rsa-ex]
+===== OIDC Client, Social Login, or JWT using RSA-OAEP example
+
+If your OIDC Client, Social Login, or JWT configuration cannot support ECDH-ES, and you must use RSA-OAEP, you can try and add the following to the FIPS140-3-Liberty-Application.properties custom profile file created when FIPS 140-3 is configured:
+
+[source,xml]
+----
+RestrictedSecurity.OpenJCEPlusFIPS.FIPS140-3-Liberty-Application.jce.provider.2 = sun.security.provider.Sun [+ \
+    {MessageDigest, SHA-1, *, FullClassName:org.jose4j.jwa.AlgorithmFactory}, \
+    {MessageDigest, SHA-1, *, FullClassName:org.jose4j.jwe.CipherUtil}, \
+    {MessageDigest, SHA-1, *, FullClassName:org.jose4j.jwe.WrappingKeyManagementAlgorithm}]
+RestrictedSecurity.OpenJCEPlusFIPS.FIPS140-3-Liberty-Application.jce.provider.4 = com.sun.crypto.provider.SunJCE [+ \
+    {Cipher, RSA, *, FullClassName:org.jose4j.jwa.AlgorithmFactory}, \
+    {Cipher, RSA, *, FullClassName:org.jose4j.jwe.CipherUtil}]
+----
+
+Note that this is just an example, and you might need different constraints based on your application.
+
+This will add the constraints to the already registered Sun and SunJCE providers to allow for RSA-OAEP key agreement algorithm. The constraints to be added will be discovered through the troubleshooting process as described in link:https://www.ibm.com/docs/SSAW57_liberty/com.ibm.websphere.wlp.nd.multiplatform.doc/ae/twlp_fips_troubleshoot.html[Troubleshooting FIPS 140-3 on Liberty]. For more information about the custom profile file, see link:https://www.ibm.com/support/pages/node/7113528#creatingextensionsofprofiles[Creating extensions of profiles].
+
+[#gen-ec-keys]
+===== Generate EC keys for ECDH
+
+To use ECDH, you need to configure the EC keys in the keystores.
+
+The EC public and private key pair can be generated using `securityUtility` or `keytool`, for example:
+
+[source,xml]
+----
+./securityUtility createSSLCertificate --sigAlg=SHA256withECDSA --keySize=256 --server=myServer --validity=3650 --password=password
+----
+
+[source,xml]
+----
+keytool -genkeypair -alias eccert -keyalg EC -groupname secp256r1 -validity 3650 -storetype pkcs12 -keystore 
+----
+
 [#third]
 === Configure a third-party OpenID Connect provider
 
