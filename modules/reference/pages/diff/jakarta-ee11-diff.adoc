@@ -125,51 +125,29 @@ For more information, see the https://jakarta.ee/specifications/persistence/3.2/
 [#concur]
 == Differences between Jakarta Concurrency 3.1 and 3.0
 
-The feature:concurrent-3.1[display=Jakarta Concurrency 3.1] feature (`concurrent-3.1`) introduces support for Java 21 virtual threads, new scheduling capabilities intended to replace legacy EJB timers, and improved integration with CDI and Reactive Streams.
+The feature:concurrent-3.1[display=Jakarta Concurrency 3.1] (`concurrent-3.1`) adds support for Java 21 virtual threads, scheduled asynchronous methods, and integration with CDI and Java Flow / Reactive Streams.
 
 === New additions
 
-==== Support for Virtual Threads
-Managed executors and thread factories can now be configured to use Java 21 virtual threads. This allows applications to handle high-throughput workloads with significantly lower memory overhead.
+* **Virtual threads**: Virtual threads can be requested by setting `virtual = true` on `@ManagedExecutorDefinition`, `@ManagedScheduledExecutorDefinition`, or `@ManagedThreadFactoryDefinition`. Availability requires Java 21 and implementation support.
 
-* You can enable virtual threads by setting the `virtual` attribute to `true` in `@ManagedExecutorDefinition`, `@ManagedScheduledExecutorDefinition`, or `@ManagedThreadFactoryDefinition`.
+* **Scheduled asynchronous methods**: A new `@Schedule` annotation can be used with `@Asynchronous` to define scheduled asynchronous methods as a modern replacement for EJB timer scheduling.
 
-==== New `@Schedule` annotation
-A new `@Schedule` annotation is introduced for asynchronous methods, providing a modern, CDI-friendly alternative to legacy EJB `@Schedule` timers. 
+* **Reactive Streams support**: `ContextService` adds support for Java Flow types so that Jakarta EE contexts propagate when working with Reactive Streams.
 
-* This allows you to schedule tasks using cron expressions directly on asynchronous methods.
-
-* **Example:** `@Asynchronous(runAt = @Schedule(cron = "0 10 * * MON-FRI"))`
-
-==== Reactive Streams and Context Propagation
-Jakarta Concurrency 3.1 adds first-class support for **Java 9 Flow (Reactive Streams)**. 
-
-* The `ContextService` now includes methods to wrap `Subscriber` and `Publisher` instances, ensuring that Jakarta EE contexts (such as Security and CDI) are correctly propagated across reactive pipelines.
-
-==== CDI-Centric Resource Injection
-Concurrency resources like `ManagedExecutorService` and `ContextService` are now more easily injectable as CDI beans using `@Inject`. You can also use custom CDI Qualifiers to distinguish between different configured concurrency resources.
+* **CDI integration**: Concurrency resources such as `ManagedExecutorService`, `ManagedScheduledExecutorService`, and `ContextService` can be injected with CDI and distinguished by qualifiers.
 
 === Behavior changes
 
-==== Branding and naming updates
-In alignment with the full transition to Jakarta EE, several legacy references have been updated:
+* References to **Concurrency Utilities for Java EE** are updated to **Jakarta Concurrency** throughout the feature.
 
-* All documentation and configuration references to **Concurrency Utilities for Java EE** are now renamed to **Jakarta Concurrency**.
+* For Jakarta EE 11 applications, `concurrent-3.1` is the recommended feature version in `server.xml`.
 
-* Feature configuration and internal messaging now consistently use **Jakarta EE** in place of **Java EE**.
+=== Restrictions
 
-==== Configuration standardizing
-When configuring managed executors in the `server.xml` file, the `concurrent-3.1` feature is now the recommended version for all Jakarta EE 11 applications. Older configurations using `concurrent-1.0` should be updated to `concurrent-3.1` to leverage modern threading capabilities.
+* The existing restriction where certain security-related information is not propagated into the submitter’s subject remains in effect for all Jakarta Concurrency feature versions.
 
-=== Removals and deprecations
-
-==== Security Manager removal
-All remaining references to the Java SE `SecurityManager` have been removed from the Concurrency API to align with its deprecation and removal in recent JDK versions.
-
-==== ContextService restrictions
-The long-standing restriction regarding certain security context information not being available in the submitter's subject remains in effect for `concurrent-3.1`, consistent with previous versions of the feature.
-
-For more information, see the https://jakarta.ee/specifications/concurrency/3.1/apidocs/jakarta.concurrency/module-summary.html[Jakarta Concurrency 3.1 Javadoc].
+For more information, see the https://jakarta.ee/specifications/concurrency/3.1/jakarta-concurrency-spec-3.1[Jakarta Concurrency 3.1 Javadoc].
 
 
 [#cdi]
