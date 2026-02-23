@@ -119,12 +119,14 @@ For more information about SSO, see xref:single-sign-on.adoc[Single sign-on].
 
 To ensure that information in your user registry is secure, choose a user registry option that is safe for production environments.
 
-* Basic and Quick Start Security user registries are useful for development environments, but they are not acceptable for readiness testing, quality assurance, or production use.
-For production, use an LDAP user registry, federated registries, or create a custom user registry.
+* Basic and Quick Start Security user registries including in-memory identity stores are useful for development environments, but they are not acceptable for readiness testing, quality assurance, or production use. For production, use an LDAP user registry, federated registries, or create a custom user registry.
 +
 * If you use an LDAP user registry, maintain your bind password in a separate include file, not in the `server.xml` file.
 If you use a custom user registry, use the `UserRegistry` class to implement the registry, and make sure that the registry is thoroughly reviewed before you use it in production.
 For more information about user registries, see xref:user-registries-application-security.adoc[User registries for application security].
++
+* In‑memory identity stores are disabled by default. You must explicitly enable them before you can use them.
+
 
 [#include-file-processing]
 == Include file processing
@@ -176,34 +178,17 @@ Ensure that client data at rest, such as a password, is encrypted. For more info
 == Password encryption
 Use AES encryption for passwords instead of Base64 encoding.
 You can use the xref:reference:command/securityUtility-encode.adoc[securityUtility encode command] with Open Liberty for plain text obfuscation.
-AES encryption is also preferable to XOR encryption because an XOR-encoded password is visible to any administrator. Currently, Open Liberty supports AES-128 encryption.
+
+----
+securityUtility encode --encoding=aes --key=<encryption_key_string>
+----
+
+AES encryption is also preferable to XOR encryption because an XOR-encoded password is visible to any administrator.
+Currently, Open Liberty supports AES-128 encryption and AES-256 encryption.
 For more information, see xref:password-encryption.adoc[Password encryption limitations].
 
-With AES encryption, the default encryption key that is used for decryption can be overridden by setting the `wlp.password.encryption.key` property.
+With AES encryption, an encryption key must configured for decryption.
+The encryption key can be configured by setting either the `wlp.password.encryption.key` or `wlp.aes.encryption.key` property.
 This property must not be set in the `server.xml` file, but in a separate configuration file that is included by the `server.xml` file.
-This separate configuration file must contain only a single property declaration, and must be stored outside the normal configuration directory for the server.
-
-[#pre-gen-aes256-key]
-=== Use a pre-generated AES-256 key
-
-Open Liberty also supports supplying your own Base64-encoded AES key for password encryption.
-This key is defined in the `wlp.aes.encryption.key` variable and improves performance by avoiding the key-derivation process that is required during server start.
-
-You can generate an AES key by using the `securityUtility generateAESKey` command.  
-This command can generate a random key or derive a key from a passphrase.
-
-[source,sh]
-----
-securityUtility generateAESKey --createConfigFile=myAesKey.xml
-----
-
-You can define the generated key directly in `server.xml` or in an included configuration file.
-
-[source,xml]
-----
-<variable name="wlp.aes.encryption.key" value="<base64_key>" />
-----
-
-For more information, see xref:bring-your-own-aes-256-key.adoc[Bring your own AES-256 key for Liberty passwords].
-
-
+This separate configuration file must contain only a single property declaration, and must be stored outside the Liberty installation directory.
+For more information on setting `wlp.aes.encryption.key` property, see link:https://openliberty.io/docs/latest/bring-your-own-aes-256-key.html[Bring your own AES-256 key for Liberty passwords].

@@ -79,6 +79,23 @@ In this case, the JWK endpoint for the JWT builder (`\https://<host>:<port>/jwt/
 
 Regardless of whether JWKs are dynamically created or static, JWT consumers can retrieve JSON Web Key Set (JWKS) documents to reconstruct public keys and verify token signatures. JWKS documents are useful for JWT consumers that receive tokens from issuers that frequently rotate their signing keys, and for server administrators who do not want to manually maintain a keystore.
 
+During JWT signature verification, JWKS documents are used to identify the appropriate public key for validation. Open Liberty matches parameters in the JWT header against the corresponding fields in the key entries within a JWKS document.
+
+Open Liberty performs key selection using one, and only one, of the following JWT headers, in this priority order:
+
+* `kid` (Key ID)
+
+* `x5t#S256` (X.509 Certificate SHA-256 Thumbprint)
+
+* `x5t` (X.509 Certificate SHA-1 Thumbprint)
+
+For example, if a JWT contains an `x5t` header parameter but lacks both `kid` and `x5t#S256`, Liberty looks for a key in the JWKS document with a matching `x5t` value to verify the signature. If a matching value is not found, signature verification fails.
+
+Similarly, if a JWT contains both `kid` and `x5t#S256` header parameters, Liberty expects to find a key in the JWKS document with a matching `kid` value. If the `kid` does not match, signature verification fails; Liberty does not fall back to the `x5t#S256` value to look up a key.
+
+While these parameters are optional in both the JWT header and the JWK entries, a matching value in both uniquely identifies the public key required for verification.
+
+
 To configure Open Liberty to verify token signatures with JWKs, set the `jwkEnabled` attribute in the `jwtConsumer` element to `true`. Also, you must set the `jwkEndpointUrl` attribute to a URI that provides the JWKS document that contains the public keys to verify the signatures of the tokens that are received by this JWT consumer.
 
 [source, xml]
