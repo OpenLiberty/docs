@@ -25,7 +25,8 @@ The following sections describe updates for different Jakarta EE 10 features.
 * <<persist,Jakarta Persistence 3.2>>
 * <<concur,Jakarta Concurrency 3.1>>
 * <<cdi, Jakarta Contexts and Dependency Injection 4.1>>
-* <<interceptors, Jakarta Interceptors 2.2>>  
+* <<interceptors, Jakarta Interceptors 2.2>>
+* <<security, Jakarta Security 4.0>>
 * <<express,Jakarta Expression Language 6.0>>
 * <<faces,Jakarta Server Faces 4.1>>
 * <<pages,Jakarta Server Pages 4.0>>
@@ -184,6 +185,45 @@ New methods are added to `InvocationContext` to obtain the binding annotations a
 All binding annotations associated with the intercepted method or class are returned by these methods, whether those annotations are used directly, indirectly, or were added by an extension.
 
 For more information, see the https://jakarta.ee/specifications/interceptors/2.2/apidocs/jakarta.interceptor/module-summary.html[Jakarta Interceptors 2.2 Javadoc].
+
+
+[#security]
+== Differences between Jakarta Security 4.0 and 3.0
+
+The feature:appSecurity-6.0[display=Application Security 6.0] feature (`appSecurity-6.0`) enables support for securing the server runtime environment and applications using Jakarta Security 4.0. This release introduces an in-memory identity store for testing and support for multiple authentication mechanisms.
+
+=== New additions
+
+==== In-memory identity store
+Jakarta Security 4.0 introduces the `@InMemoryIdentityStoreDefinition` annotation to configure an in-memory store of user, password, and group information.
+
+* **Usage:** This is a convenience-only provision for testing, debugging, development, and demos. Use in a production environment is strongly discouraged.
+* **Enablement:** By default, it is disabled. It must be explicitly enabled in the `server.xml` file using the `allowInMemoryIdentityStores` attribute:
++
+[source,xml]
+----
+<webAppSecurity allowInMemoryIdentityStores="true"/>
+----
+
+==== Support for multiple authentication mechanisms
+Applications can now specify multiple authentication mechanisms to act as a single `HttpAuthenticationMechanism`. 
+* **Abstraction:** Access is now abstracted by the new `HttpAuthenticationMechanismHandler` interface. The container provides a default implementation that prioritizes mechanisms in the following order: OpenId, Custom Form, Form, and Basic.
+* **Custom Handlers:** Developers can provide a custom implementation of `HttpAuthenticationMechanismHandler` to implement a bespoke prioritization algorithm.
+* **Qualifiers:** If an application defines the same authentication mechanism type multiple times, it must use CDI qualifiers. Note that if qualifiers are used, a custom `HttpAuthenticationMechanismHandler` must be defined to avoid an application startup error.
+
+==== SecurityContext update
+The `jakarta.security.enterprise.SecurityContext` interface includes a new method: 
+* `Set<String> getAllDeclaredCallerRoles()`
+
+=== Removals and updates
+
+==== IdentityStorePermission removal
+The `jakarta.security.enterprise.identitystore.IdentityStorePermission` class is removed. Its implementation was tied to the `SecurityManager`, which is not supported and has been removed for Jakarta EE 11.
+
+==== HTTP authentication mechanism qualifiers
+HTTP authentication mechanisms now have a qualifier by default (which can be overridden), whereas previously they were unqualified.
+
+For more information, see the https://jakarta.ee/specifications/security/4.0/apidocs/jakarta.security/module-summary.html[Jakarta Security 4.0 Javadoc].
 
 
 [#express]
