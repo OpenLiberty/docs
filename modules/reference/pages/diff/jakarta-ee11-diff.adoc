@@ -98,10 +98,42 @@ The EclipseLink persistence provider included with Open Liberty has relocated se
 |`PropertiesUtils`
 |===
 
-==== Mapping change for Instant type
-EclipseLink changed the default mapping of the `java.time.Instant` type from `BLOB` to `TIMESTAMP`. 
+==== Mapping changes for Instant and UUID types
+EclipseLink has updated default mappings for specific Java types to improve database efficiency:
 
-* **Action Required:** You must either update or regenerate your DDL files to align with the new column type. Alternatively, you can override the mapping in your entity to preserve the previous `BLOB` behavior.
+* **Instant type:** The default mapping for `java.time.Instant` changed from `BLOB` to `TIMESTAMP`.
+
+* **UUID type:** The default mapping for `java.util.UUID` changed to use the more efficient `BINARY(16)` type.
+
+**Action Required:** You must either update or regenerate your DDL files to align with these new column types. Alternatively, you can explicitly override the mapping in your entity configuration to preserve the previous behavior.
+
+==== Hibernate Dirty Tracking default
+A behavioral change is introduced for the `persistence-3.2` feature when using Hibernate as the persistence provider. The persistence container now overrides the default setting of the `hibernate.enhancer.enableDirtyTracking` property to `false`. This change ensures that merged detached entities are persisted properly and prevents potential data loss. 
+
+If you require the previous behavior, you can explicitly set the property to `true` in your configuration:
+
+.Option 1: persistence.xml
+[source,xml]
+----
+<persistence-unit name="myPU">
+    <properties>
+        <property name="hibernate.enhancer.enableDirtyTracking" value="true"/>
+    </properties>
+</persistence-unit>
+----
+
+.Option 2: server.xml
+[source,xml]
+----
+<jpa defaultPersistenceProvider="org.hibernate.jpa.HibernatePersistenceProvider">
+    <defaultProperties>
+        <property name="hibernate.enhancer.enableDirtyTracking" value="true"/>
+    </defaultProperties>
+</jpa>
+----
+
+==== EclipseLink Literal Handling
+EclipseLink now consistently uses parameterized queries (`?`) for literals in `HAVING` clauses. This behavior is applied across all database vendors, including DB2 and Derby, to ensure consistent query execution and performance.
 
 === Removals and deprecations
 
@@ -109,7 +141,9 @@ EclipseLink changed the default mapping of the `java.time.Instant` type from `BL
 To align with the modern `java.time` API, the following types and annotations are deprecated for use in new applications:
 
 * `java.util.Calendar`, `java.util.Date`
+
 * `java.sql.Time`, `java.sql.Timestamp`
+
 * `@Temporal`, `@MapKeyTemporal`, and the `TemporalType` enum.
 
 ==== Other deprecations
@@ -118,7 +152,11 @@ To align with the modern `java.time` API, the following types and annotations ar
 * **CriteriaQuery:** The `multiselect` methods are deprecated. The preferred approach is to use the `array()` or `tuple()` methods defined in `CriteriaBuilder`.
 
 * **Entity Graphs:** Several methods are deprecated for removal, including `addSubclassSubgraph()` (replaced by `addTreatedSubgraph()`) and `addKeySubgraph()` (replaced by `addMapKeySubgraph()`).
+
+* **SPI and Internal classes:** `jakarta.persistence.spi.PersistenceUnitTransactionType` is deprecated for removal; use `jakarta.persistence.PersistenceUnitTransactionType` instead. 
+
 * **Persistence class:** The default public no-arg constructor, the `PERSISTENCE_PROVIDER` field, and the `providers` field in the `jakarta.persistence.Persistence` class are deprecated for removal.
+
 
 For more information, see the https://jakarta.ee/specifications/persistence/3.2/apidocs/jakarta.persistence/module-summary.html[Jakarta Persistence 3.2 Javadoc].
 
