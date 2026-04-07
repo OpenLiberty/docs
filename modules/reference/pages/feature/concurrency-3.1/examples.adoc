@@ -1,0 +1,73 @@
+== Example
+
+[#virtual]
+=== Run concurrent tasks on virtual threads
+
+In Java 21 and later, you can configure managed executors to run tasks on virtual threads instead of platform threads. Virtual threads are lightweight and are well-suited for I/O-bound workloads that require high throughput.
+
+You can enable virtual thread support by setting the `virtual` attribute to `true` in the `@ContextServiceDefinition` or `@ManagedExecutorDefinition` annotations. In the following example, a managed executor is defined to use virtual threads:
+
+[source,java]
+----
+@ManagedExecutorDefinition(
+    name = "java:module/concurrent/MyVirtualExecutor",
+    virtual = true
+)
+public class MyService {
+    @Inject
+    ManagedExecutor executor;
+
+    public void processTask() {
+        executor.submit(() -> {
+            // This task runs on a Java 21 virtual thread
+        });
+    }
+}
+----
+
+NOTE: If you configure `virtual = true` while running on Java 17, the Open Liberty runtime issues an `INFO` message and falls back to using platform threads, as virtual threads are not supported in Java 17.
+
+
+[#scheduled]
+=== Schedule asynchronous methods
+
+Jakarta Concurrency 3.1 allows you to use the `@Schedule` annotation directly on managed bean methods. This capability enables you to automate tasks using a cron-like syntax within the concurrency framework, removing the previous dependency on EJB for simple scheduling.
+
+In the following example, a method is configured to execute automatically every hour:
+
+[source,java]
+----
+public class InventoryManager {
+
+    @Schedule(hour = "*", minute = "0", second = "0", info = "Hourly inventory check")
+    public void checkStockLevels() {
+        // This method executes automatically at the start of every hour
+    }
+}
+----
+
+To use this feature, ensure that your application is scanned for CDI beans and that the `concurrent-3.1` feature is enabled in your `server.xml` file.
+
+
+[#reactive]
+=== Context propagation for Reactive Streams
+
+The `ContextService` interface now supports Java Flow (Reactive Streams). This support ensures that Jakarta EE contexts, such as security and transaction information, are correctly propagated across asynchronous boundaries when you work with reactive pipelines.
+
+The following example shows how to use the `ContextService` to create a contextual proxy for a `Flow.Subscriber`:
+
+[source,java]
+----
+@Inject
+ContextService contextService;
+
+public void setupPipeline(Flow.Publisher<String> publisher) {
+    Flow.Subscriber<String> subscriber = new MySubscriber();
+    
+    // Create a contextual proxy for the subscriber to maintain thread context
+    Flow.Subscriber<String> contextualSubscriber = 
+        contextService.createContextualProxy(subscriber, Flow.Subscriber.class);
+    
+    publisher.subscribe(contextualSubscriber);
+}
+----
