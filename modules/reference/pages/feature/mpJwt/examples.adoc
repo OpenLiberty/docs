@@ -96,3 +96,37 @@ By default, JSON Web Tokens authenticate user claims without validation from the
 ----
 
 When you set the `mapToUserRegistry` attribute to `true`, JWTs are forced to validate user claims based on the user attributes that are contained in the user registry.
+
+=== Accept signed tokens with signature algorithm validation
+
+MicroProfile JWT supports signature algorithm validation for signed tokens. The process for configuring signature algorithm validation in MicroProfile JWT is similar to the feature:openidConnectClient[display=OpenID Connect Client 1.0] feature.
+
+The following example shows a configuration that accepts only tokens signed with `RS256`:
+
+[source,xml]
+----
+<mpJwt
+    id="myMpJwt"
+    issuer="https://example.com"
+    signatureAlgorithm="RS256"
+    jwksUri="https://localhost:19443/jwt/ibm/api/myBuilder/jwk"/>
+----
+
+The following example shows a configuration that selects the signature algorithm from the token header and accepts tokens signed with `RS256`, `ES384`, or `HS512`:
+
+[source,xml]
+----
+<mpJwt
+    id="myMpJwt"
+    issuer="https://example.com"
+    signatureAlgorithm="FROM_HEADER"
+    allowedSignatureAlgorithms="RS256, ES384, HS512"
+    jwksUri="https://localhost:19443/jwt/ibm/api/myBuilder/jwk"/>
+----
+
+[NOTE]
+====
+When using `FROM_HEADER` option, you cannot use MicroProfile Config properties to configure the signature algorithm (using `mp.jwt.verify.publickey.algorithm`). The signature algorithm configuration must be specified in the `server.xml` file.
+====
+
+
