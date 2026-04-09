@@ -57,11 +57,23 @@ You can use QuickStart security configuration for test purposes. The registry th
 
 [#ltpa]
 === Specify LTPA keys
-When the Application Security feature is enabled, Lightweight Third-Party Authentication (LTPA) is enabled by default. You can override the default settings for the `ltpa` element by configuring the `ltpa` element in the `server.xml` file. The following example shows how to configure the `ltpa` element:
+When security features are enabled, Lightweight Third-Party Authentication (LTPA) is enabled by default.
+
+The LTPA keys are encrypted using a password and stored in the `ltpa.keys` file. If a `keysPassword` is configured in the `ltpa` element, then it will be used as the password to encrypt the LTPA keys. If it is not configured, the LTPA keys are encrypted by using a randomly generated password created during server creation (unless the `--no-password` option is specified with the xref:reference:command/server-create.adoc[server create] command) and stored as `ltpa_keys_password` in the `server.env` file.
+
+On existing servers where the `ltpa_keys_password` does not exist, and the `keysPassword` is not specified in the `ltpa` element, the LTPA keys are encrypted by using the `keystore_password` in the `server.env` file.
+
+[Note]
+====
+If a `keyPassword` is not configured in the `ltpa` element in the `server.xml` file, and if the `ltpa_keys_password` and `keystore_password` environment variables are not set in the `server.env` file, such as when the `--no-password` option is specified with the xref:reference:command/server-create.adoc[server create] command, then the LTPA service will fail.
+====
+
+You can override the default settings for the `ltpa` element by configuring the `ltpa` element in the `server.xml` file. The following example shows how to configure the `ltpa` element:
 [source,xml]
 ----
-<ltpa keysFileName="yourLTPAKeysFileName.keys" keysPassword="keysPassword" expiration="120" />
+<ltpa keysFileName="yourLTPAKeysFileName.keys" keysPassword="changeIt" expiration="120" />
 ----
+
 For more information on LTPA configuration attributes, see the config:ltpa[display=LTPA] configuration element.
 
 For more information about LTPA best practices, including how to configure secure cookies that must use TLS, see xref:ROOT:network-hardening.adoc#ltpa[LTPA best practices].
