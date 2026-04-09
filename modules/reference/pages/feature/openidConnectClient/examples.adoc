@@ -5,6 +5,7 @@ The following examples demonstrate configuration options for the OpenID Connect 
 - <<#minimal,Minimal configuration for Open Liberty to act as an OpenID Connect client>>
 - <<#discovery,Configure a discovery endpoint for an OpenID Connect Provider>>
 - <<#jwt,Configure JSON Web Token (JWT) authentication for OpenID Connect>>
+- <<#signtoken,Accept signed tokens with signature algorithm validation>>
 - <<#jwe,Accept tokens in JWE format>>
 - <<#third,Configure a third-party OpenID Connect provider>>
 - <<#filter,Support Multiple OpenID Connect Providers>>
@@ -117,7 +118,6 @@ The following `server.xml` file example shows two Open ID connect client configu
 </authFilter>
 ----
 
-
 Open Liberty selects the `openidConnectClient` configuration to use for a JWT request according to the following algorithm.
 
 1. If the authentication filter matches the request in *only one* `openidConnectClient` configuration element, choose that configuration.
@@ -161,48 +161,6 @@ For example, the following audience is valid because the resource URL begins wit
   ** Audience claim: `"aud":"https://<server>:<port>/something"`
   ** Resource service URL: `\https://<server>:<port>/something/specific`
 
-[#signtoken]
-==== Accept signed tokens with signature algorithm validation
-The OpenID Connect client validates the signature of ID tokens and access tokens to ensure their authenticity and integrity. To configure the Open Liberty OIDC client to process signed tokens, you must set the `signatureAlgorithm` attribute to either a specific signature algorithm or to `FROM_HEADER` to use the algorithm specific in the token header.
-
-===== Specify a fixed signature algorithm
-You can configure the client to accept tokens signed with a specific algorithm by setting the `signatureAlgorithm` attribute to a recognized signature algorithm. When a fixed algorithm is specified, the client rejects any token that is not signed with that algorithm.
-
-The following example shows a configuration that accepts only tokens signed with `RS256`:
-[source,xml]
-----
-<openidConnectClient 
-    id="RP"
-    clientId="client01"
-    signatureAlgorithm="RS256"
-    jwkEndpointUrl="https://example.com/jwtserver/jwk">
-</openidConnectClient>
-----
-
-===== Use the signature algorithm from the token header
-You can configure the client to use the signature algorithm from the token header by setting the `signatureAlgorithm` attribute to `FROM_HEADER`. This configuration allows the client to accept tokens signed with different algorithms without requiring separate client configurations.
-
-When `signatureAlgorithm` is set to `FROM_HEADER`, the OpenID Connect client reads the `alg` claim from the JOSE header and uses that algorithm to retrieve the public key for signature verification. By default, tokens signed with any Liberty-supported signature algorithm are accepted. For enhanced security, you can restrict which signature algorithms are permitted by configuring the `allowedSignatureAlgorithms` attribute. This attribute accepts a comma-separated list of algorithm names. Only tokens signed by algorithms in this list will be validated.
-
-The following example shows a configuration that accepts tokens signed with a mixed group of algorithms (`RS256`, `ES384`, or `HS512`):
-[source,xml]
-----
-<openidConnectClient 
-    id="RP"
-    clientId="client02"
-    clientSecret="{xor}LDo8LTor"
-    signatureAlgorithm="FROM_HEADER"
-    allowedSignatureAlgorithms="RS256, ES384, HS512"
-    jwkEndpointUrl="https://example.com/jwtserver/jwk" >
-</openidConnectClient>
-----
-
-===== Key selection for signature verification
-When using `FROM_HEADER` with asymmetric algorithms and a trust store configuration. The client uses the following strategy to locate the appropriate public key for signature verification:
-
-The client identifies the `alg` claim from the token header and searches the trust store for a key alias beginning with that value. For example, `rs256_keyalias` for `RS256` tokens or `es384_keyalias` for `ES384` tokens.
-If no algorithm-prefixed key is found, the client falls back to using the key specified by the `trustAliasName` attribute.
-
 Resource requests::
 If a web client sends a JWT to an Open Liberty server in the request `Authorization` header or as a form-encoded body parameter, no extra server configuration is required. If the JWT is sent in a customized request header field, you must configure the `headerName` attribute for the `openidConnectClient` element to equal the name of the field, as shown in the following example.
 +
@@ -222,6 +180,50 @@ GET /resource HTTP/1.1
 Host: server.example.com
 jwt: mF_9.B5f-4.1JqM
 ----
+
+[#signtoken]
+=== Accept signed tokens with signature algorithm validation
+The OpenID Connect client validates the signature of ID tokens and access tokens to ensure their authenticity and integrity. To configure the Open Liberty OIDC client to process signed tokens, you must set the `signatureAlgorithm` attribute to either a single signature algorithm or to `FROM_HEADER` to use the algorithm specifed in the token header.
+
+==== Specify a fixed signature algorithm
+You can configure the client to accept tokens signed with a specific algorithm by setting the `signatureAlgorithm` attribute to a recognized signature algorithm. When a fixed algorithm is specified, the client rejects any token that is not signed with that algorithm.
+
+The following example shows a configuration that accepts only tokens signed with `RS256`:
+[source,xml]
+----
+<openidConnectClient 
+    id="RP"
+    clientId="client01"
+    signatureAlgorithm="RS256"
+    jwkEndpointUrl="https://example.com/jwtserver/jwk">
+</openidConnectClient>
+----
+
+==== Use the signature algorithm from the token header
+You can configure the client to use the signature algorithm from the token header by setting the `signatureAlgorithm` attribute to `FROM_HEADER`. This configuration allows the client to accept tokens signed with different algorithms without requiring separate client configurations.
+
+When `signatureAlgorithm` is set to `FROM_HEADER`, the OpenID Connect client reads the `alg` claim from the JOSE header and uses that algorithm for signature verification. By default, when this option is selected, tokens signed with any Liberty-supported signature algorithm are accepted. For enhanced security, you can restrict which signature algorithms are permitted by configuring the `allowedSignatureAlgorithms` attribute. This attribute accepts a comma-separated list of algorithm names. Only tokens signed by algorithms in this list will be validated.
+
+The following example shows a configuration that accepts tokens signed with a mixed group of algorithms (`RS256`, `ES384`, or `HS512`):
+[source,xml]
+----
+<openidConnectClient 
+    id="RP"
+    clientId="client02"
+    clientSecret="{xor}LDo8LTor"
+    signatureAlgorithm="FROM_HEADER"
+    allowedSignatureAlgorithms="RS256, ES384, HS512"
+    jwkEndpointUrl="https://example.com/jwtserver/jwk" >
+</openidConnectClient>
+----
+
+==== Key selection for signature verification
+When using `FROM_HEADER` with asymmetric algorithms and a trust store configuration, the public keys must be prefixed with their corresponding algorithm (for example, `RS256_keyalias`) for automatic selection. The client uses the following strategy to locate the appropriate public key for signature verification:
+
+The client identifies the `alg` claim from the token header and searches the trust store for a key alias beginning with that value. For example, `rs256_keyalias` for `RS256` tokens or `es384_keyalias` for `ES384` tokens.
+If no algorithm-prefixed key is found, the client falls back to using the key specified by the `trustAliasName` attribute.
+
+When not using `FROM_HEADER` (using a single algorithm), the client only uses the key specified by the `trustAliasName` attribute for signature verification. Alternatively, you can configure JWK-based verification as described in xref:ROOT:json-web-token.adoc[Sign and verify JSON Web Tokens with JSON Web Keys].
 
 [#jwe]
 === Accept tokens in JWE format
