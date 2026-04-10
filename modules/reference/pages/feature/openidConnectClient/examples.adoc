@@ -183,7 +183,7 @@ jwt: mF_9.B5f-4.1JqM
 
 [#signtoken]
 === Accept signed tokens with signature algorithm validation
-The OpenID Connect client validates the signature of ID tokens and access tokens to ensure their authenticity and integrity. To configure the Open Liberty OIDC client to process signed tokens, you must set the `signatureAlgorithm` attribute to either a single signature algorithm or to `FROM_HEADER` to use the algorithm specifed in the token header.
+The OpenID Connect client validates the signature of ID tokens and access tokens to ensure their authenticity and integrity. To configure the Open Liberty OIDC client to process signed tokens, you must set the `signatureAlgorithm` attribute to either a single signature algorithm or to `FROM_HEADER` to use the algorithm specified in the token header.
 
 ==== Specify a fixed signature algorithm
 You can configure the client to accept tokens signed with a specific algorithm by setting the `signatureAlgorithm` attribute to a recognized signature algorithm. When a fixed algorithm is specified, the client rejects any token that is not signed with that algorithm.
@@ -218,12 +218,15 @@ The following example shows a configuration that accepts tokens signed with a mi
 ----
 
 ==== Key selection for signature verification
-When using `FROM_HEADER` with asymmetric algorithms and a trust store configuration, the public keys must be prefixed with their corresponding algorithm (for example, `RS256_keyalias`) for automatic selection. The client uses the following strategy to locate the appropriate public key for signature verification:
 
-The client identifies the `alg` claim from the token header and searches the trust store for a key alias beginning with that value. For example, `rs256_keyalias` for `RS256` tokens or `es384_keyalias` for `ES384` tokens.
-If no algorithm-prefixed key is found, the client falls back to using the key specified by the `trustAliasName` attribute.
+When using asymmetric algorithms and a trust store configuration, the client uses the following strategies to locate the appropriate public key for signature verification:
 
-When not using `FROM_HEADER` (using a single algorithm), the client only uses the key specified by the `trustAliasName` attribute for signature verification. Alternatively, you can configure JWK-based verification as described in xref:ROOT:json-web-token.adoc[Sign and verify JSON Web Tokens with JSON Web Keys].
+- With `FROM_HEADER`: The public keys must be prefixed with their corresponding algorithm for automatic selection. The client identifies the `alg` claim from the token header and searches the trust store for a key alias beginning with that value. For example, the alias `rs256_key` will be used for tokens signed with `RS256`. If no algorithm-prefixed key is found, the client falls back to using the key specified by the `trustAliasName` attribute.
+
+- Without `FROM_HEADER` (Single Algorithm): The client only uses the key specified by the `trustAliasName` attribute for signature verification.
+
+Alternatively, for either of the above configurations, you can configure JWK-based verification as described in xref:ROOT:json-web-token.adoc[Sign and verify JSON Web Tokens with JSON Web Keys].
+
 
 [#jwe]
 === Accept tokens in JWE format
