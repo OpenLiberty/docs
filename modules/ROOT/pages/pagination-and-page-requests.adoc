@@ -1,0 +1,17 @@
+== Pagination and Page Requests
+
+Jakarta Data offers two forms of pagination: *Offset-based Pagination* and *Cursor-based Pagination*. The built-in Jakarta Data provider supports both types.
+
+Repository methods that perform pagination must accept a `PageRequest` parameter and return either `Page` or `CursoredPage`. Repository methods for cursor-based pagination must return a `CursoredPage` of the entity type. Repository methods for offset-based pagination must return a `Page`, which is typically of the entity type, but can alternatively be a `Page` of a record type where the record components are named to match a subset of the entity attributes, or can alternatively be a `Page` of a single entity attribute type. The latter requires annotating the repository method to have a `@Query` annotation that supplies a query that selects a specific entity attribute of that type. Cursor-based pagination does not support returning cursored pages of anything other than the entity type because entity attribute values are used to construct the cursors relative to which next and previous pages are requested.
+
+=== Sort Criteria for Pagination
+
+For pagination to work correctly, sort criteria must define a consistent ordering of results. Sort criteria can be supplied to a repository method at run time via an `Order`, `Sort`, or `Sort[]` parameter. Sort criteria can be supplied by the repository during development time via the `@OrderBy` annotation, the `OrderBy` Query by Method Name keyword, or the `ORDER BY` clause of a `@Query` annotation value. Cursor-based pagination does not support the use of an `ORDER BY` clause in a `@Query` annotation value. In addition, when using cursor-based pagination, the `@Query` annotation value must be written to end with a `WHERE` clause such that additional conditions can be appended by the Jakarta Data provider to fetch results relative to a cursor position.
+
+=== Page Counts and Total Elements
+
+The Jakarta Data API allows obtaining a total count of pages and elements across pages under certain conditions.
+
+As indicated by the `CursoredPage` API, the total count of pages and count of total elements across pages are not accurate when using cursor-based pagination. Note that with cursor-based pagination, queries are performed relative to a cursor position and counts might not include elements prior to the cursor position. If total counts are needed with cursor-based pagination, write a separate `countBy` method or annotated `@Query` method to retrieve the total count.
+
+When using offset-pagination, the total count of pages and count of total elements can be accurately retrieved for pages that are retrieved via the Query by Method Name pattern, the Parameter-based Automatic Query pattern, and annotated `@Query` methods that supply queries that retrieve entities and conform to the subset of Jakarta Persistence Query Language that is defined by the Jakarta Data specification. Totals will also work with some other Jakarta Persistence Query Language (JPQL) queries, but this usage is beyond the Jakarta Data specification and is not guaranteed by the built-in Jakarta Data provider. Do not use pagination with queries that perform modifications or compute aggregate values such as `COUNT(THIS)` rather than retrieving entities.
