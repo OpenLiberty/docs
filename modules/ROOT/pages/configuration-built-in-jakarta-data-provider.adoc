@@ -1,0 +1,118 @@
+== Configuration of the Built-in Jakarta Data Provider
+
+The built-in Jakarta Data Provider is configured using the `<data>` element in `server.xml` when the `data-1.0` feature is enabled.
+
+This section describes the configuration options available for the built-in Jakarta Data Provider.
+
+=== Logging Parameters
+
+By default, the built-in Jakarta Data provider does not log the parameters passed to repository interface methods. This default behavior ensures sensitive user data is not stored in clear text in the logs, maintaining a secure operational environment.
+
+However, to assist with debugging during development, developers can enable detailed logging for specific packages, repository interfaces, or individual repository methods.
+
+==== Customizing Trace Output for Debugging
+
+To aid in debugging, you can explicitly enable logging for specific packages, repository interfaces, or repository methods by using the `<logValues>` element under the `<data>` element. This allows you to capture parameter values in the message and trace output for targeted debugging without exposing unnecessary information.
+
+Consider when the `getPrice` method of the `Cars` repository interface:
+
+[source,java]
+----
+@Repository
+public interface Cars extends BasicRepository<Car, String> {
+    @Query("SELECT price FROM Car WHERE vin = :vehicleId")
+    Optional<Integer> getPrice(@Param("vehicleId") String vin);
+}
+----
+
+is invoked from an application resource:
+
+[source,java]
+----
+@Path("/cars")
+@ApplicationScoped
+public class ExampleResource {
+    @Inject
+    Cars cars;
+
+    @GET
+    @Path("/price/{vehicleIdNum}")
+    @Produces(MediaType.TEXT_PLAIN)
+    public String getPrice(@PathParam("vehicleIdNum") int vehicleIdNum) {
+        Optional<Integer> price = cars.getPrice(vehicleIdNum);
+        return "$" + price.get();
+    }
+}
+----
+
+You might see the following error message in `messages.log`:
+
+----
+[01/01/70, 00:00:00:000 UTC] 00000000 io.openliberty.data.internal.persistence.cdi.DataExtension   E CWWKD1047E: The java.lang.Float result of the getPrice method of the io.openliberty.example.Cars repository interface cannot be converted to the Integer return type of the repository method because the result is not within the range of -2147483648 to 2147483647.
+----
+
+Notice that it refers generally to a `java.lang.Float` typed result without indicating what the problematic value is.
+
+To see the value from the database that caused the error you can enable `logValues` for the specific method identified by the error:
+
+[source,xml]
+----
+<server>
+  ...
+  <data>
+    <logValues>io.openliberty.example.Cars.getPrice</logValues>
+  </data>
+</server>
+----
+
+This configuration produces a detailed error message with the failing value:
+
+----
+[01/01/70, 00:00:00:000 UTC] 00000000 io.openliberty.data.internal.persistence.cdi.DataExtension   E CWWKD1047E: The java.lang.Float (3000000000.0) result of the getPrice method of the io.openliberty.example.Cars repository interface cannot be converted to the Integer return type of the repository method because the result is not within the range of -2147483648 to 2147483647.
+----
+
+Now the message also indicates the problematic value, `3000000000.0`, for which the error was logged.
+
+=== Table Management
+
+The built-in Jakarta Data Provider includes configuration options to manage the lifecycle of database tables for entities associated with Jakarta Data repositories. These options, defined by the `createTables` and `dropTables` attributes, allow you to control the behavior of table creation and removal.
+
+==== Create Tables
+
+The `createTables` configuration element determines whether the built-in Jakarta Data Provider should attempt to create database tables for repository entities when the repository's `dataStore` attribute points to a DataSource.
+
+By default, the built-in Jakarta Data Provider will attempt to create tables.
+
+The `createTables` configuration is ignored when the `dataStore` is a Persistence Unit reference, in which case table creation is governed by Persistence Unit properties. Similarly, if the `dataStore` is a `databaseStore` id, table creation is determined by the `databaseStore` configuration.
+
+Disabling `createTables` after tables are created can improve performance in production environments. For situations where the database user does not have permission to create tables, the `ddlGen` tool can be used to generate DDL scripts for the database administrator to execute.
+
+*Example configuration:*
+
+[source,xml]
+----
+<server>
+  ...
+  <data createTables="false" />
+</server>
+----
+
+==== Drop Tables
+
+The `dropTables` configuration element determines whether the built-in Jakarta Data Provider should attempt to remove database tables for repository entities when the repository's `dataStore` attribute points to a DataSource.
+
+By default, the built-in Jakarta Data Provider will NOT attempt to remove tables.
+
+The `dropTables` configuration is ignored when the `dataStore` is a Persistence Unit reference, in which case table removal is governed by Persistence Unit properties. Similarly, if the `dataStore` is a `databaseStore` id, table removal is determined by the `databaseStore` configuration.
+
+Enabling `dropTables` is useful for cleaning up test or development environments but should be used with caution in production to prevent accidental data loss. This configuration provides a simple mechanism for managing database tables during development while protecting production environments from unintended changes.
+
+*Example configuration:*
+
+[source,xml]
+----
+<server>
+  ...
+  <data dropTables="false" />
+</server>
+----
