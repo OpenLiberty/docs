@@ -1,0 +1,307 @@
+== Data Store Configuration
+
+[#databaseStore]
+=== Specifying a DataSource
+
+To specify which DataSource a repository will use, set the `dataStore` attribute of the `@Repository` annotation to one of:
+
+* JNDI name of a resource reference to a DataSource. For example, `java:app/env/jdbc/MyDataSourceRef`.
+* JNDI name of a DataSource. This could be from the `name` value of a `@DataSourceDefinition` or from the `jndiName` value of a `dataSource` from server configuration.
+* The `id` of a `dataSource` from server configuration.
+
+When using JNDI names or resource reference names that are scoped to a namespace like `java:comp` or `java:module`, you must ensure that the scope is accessible to the location of the repository interface within the application. For example, a DataSource in the `java:comp` scope of an EJB is never accessible to a repository interface because although a repository interface might exist in an EJB module, the repository interface is not part of any specific EJB.
+
+A good practice when using scoped names is to use `java:app` to allow the repository interface to be defined in any module of the application.
+
+EclipseLink will attempt to create the necessary database tables automatically, which is convenient for development, but is not efficient for running in production because checking for table existence incurs a lot of overhead and database admin privileges might be required for table creation.
+
+Refer to the sections on <<Specifying a DatabaseStore>> and <<Specifying an EclipseLink Persistence Unit Reference>> for information about how to control the table creation settings.
+
+==== DataSource id Example
+
+This example shows a repository interface that points to the `id` of a `<dataSource>` in server configuration.
+
+*Repository interface:*
+
+[source,java]
+----
+@Repository(dataStore = "ExampleDataSourceID")
+public interface Cars extends BasicRepository<Car, String> {
+    // Query methods
+}
+----
+
+*Server configuration:*
+
+[source,xml]
+----
+<dataSource id="ExampleDataSourceID">
+  <jdbcDriver libraryRef="OracleLib"/>
+  <properties.oracle URL="jdbc:oracle:thin:@localhost:1521:exampledb"
+    user="${env.DB_USER}" password="${env.DB_PASS}"/>
+</dataSource>
+
+<library id="OracleLib">
+  <fileset dir="${server.config.dir}/lib/ojdbc" includes="*.jar"/>
+</library>
+----
+
+==== DataSource jndiName Example
+
+This example shows a repository interface that points to the `jndiName` of a `<dataSource>` in server configuration.
+
+*Repository interface:*
+
+[source,java]
+----
+@Repository(dataStore = "jdbc/ExampleDataSource")
+public interface Cars extends BasicRepository<Car, String> {
+    // Query methods
+}
+----
+
+*Server configuration:*
+
+[source,xml]
+----
+<dataSource jndiName="jdbc/ExampleDataSource">
+  <jdbcDriver libraryRef="DB2Lib"/>
+  <properties.db2.jcc databaseName="exampledb" serverName="localhost" portNumber="50000"
+    user="${env.DB_USER}" password="${env.DB_PASS}"/>
+</dataSource>
+
+<library id="DB2Lib">
+  <fileset dir="${server.config.dir}/lib/jcc" includes="*.jar"/>
+</library>
+----
+
+==== DataSource Resource Reference Example
+
+This example shows a repository interface that points to a resource reference to a `<dataSource>` in server configuration.
+
+*Repository interface:*
+
+[source,java]
+----
+@Resource(name = "java:app/env/jdbc/ExampleDataSourceRef",
+              lookup = "jdbc/ExampleDataSource")
+@Repository(dataStore = "java:app/env/jdbc/ExampleDataSourceRef")
+public interface Cars extends BasicRepository<Car, String> {
+    // Query methods
+}
+----
+
+*Server configuration:*
+
+[source,xml]
+----
+<dataSource jndiName="jdbc/ExampleDataSource">
+  <jdbcDriver libraryRef="SQLServerLib"/>
+  <properties.microsoft.sqlserver databaseName="exampledb" serverName="localhost" portNumber="1433"/>
+  <containerAuthData user="${env.DB_USER}" password="${env.DB_PASS}"/>
+</dataSource>
+
+<library id="SQLServerLib">
+  <fileset dir="${server.config.dir}/lib/sqlserver" includes="*.jar"/>
+</library>
+----
+
+==== DataSourceDefinition Example
+
+This example shows a repository interface that points to the `name` of a `DataSourceDefinition`.
+
+*Repository interface:*
+
+[source,java]
+----
+@DataSourceDefinition(name = "java:comp/jdbc/ExampleDataSourceDef",
+                      className = "org.apache.derby.jdbc.EmbeddedXADataSource",
+                      databaseName = "memory:exampledb",
+                      user = "${env.DB_USER}",
+                      password = "${env.DB_PASS}",
+                      properties = "createDatabase=create")
+@Repository(dataStore = "java:comp/jdbc/ExampleDataSourceDef")
+public interface Cars extends BasicRepository<Car, String> {
+    // Query methods
+}
+----
+
+[#elpersistence]
+=== Specifying an EclipseLink Persistence Unit Reference
+
+Defining a Persistence Unit gives you more control over the Jakarta Persistence configuration and any Jakarta Persistence provider specific settings. To specify which Persistence Unit a repository will use, set the `dataStore` attribute of the `Repository` annotation to a Persistence Unit reference.
+
+The following sections provide an example of configuring and using a Persistence Unit reference, where the Persistence Unit also requires a resource reference to a Data Source.
+
+==== Repository interface
+
+[source,java]
+----
+@Resource(name = "java:app/env/jdbc/ExampleDataSourceRef",
+          lookup = "jdbc/ExampleDataSource")
+@PersistenceUnit(name = "java:app/env/persistence/ExamplePersistenceUnitRef",
+                 unitName = "ExamplePersistenceUnit")
+@Repository(dataStore = "java:app/env/persistence/ExamplePersistenceUnitRef")
+public interface Cars extends BasicRepository<Car, String> {
+    // Query methods
+}
+----
+
+==== Persistence Unit
+
+The persistence unit is defined according to the Jakarta Persistence specification. It selects which DataSource to use and determines which entity classes are accessible to repositories.
+
+Here is an example element in `persistence.xml` defining a persistence unit that is used by the prior examples:
+
+[source,xml]
+----
+<persistence-unit name="ExamplePersistenceUnit">
+  <jta-data-source>java:app/env/jdbc/ExampleDataSourceRef</jta-data-source>
+  <class>example.data.entity.Car</class>
+  <properties>
+    <property name="jakarta.persistence.schema-generation.database.action" value="create"/>
+    <property name="eclipselink.logging.parameters" value="true"/>
+  </properties>
+</persistence-unit>
+----
+
+The `jakarta.persistence.schema-generation.database.action` property, which is from the Jakarta Persistence specification, allows you to request the automatic creation and/or removal of database tables. Values for this setting include: `create`, `drop`, `drop-and-create`, `none`.
+
+==== DataSource in server configuration
+
+[source,xml]
+----
+<dataSource jndiName="jdbc/ExampleDataSource">
+  <jdbcDriver libraryRef="PostgresLib"/>
+  <properties.postgresql databaseName="exampledb" serverName="localhost" portNumber="5432"/>
+  <containerAuthData user="${env.DB_USER}" password="${env.DB_PASS}"/>
+</dataSource>
+
+<library id="PostgresLib">
+  <fileset dir="${server.config.dir}/lib/postgres" includes="*.jar"/>
+</library>
+----
+
+When using JNDI names or resource reference names that are scoped to a namespace like `java:comp` or `java:module`, you must ensure that the scope is accessible to the location of the repository interface within the application. For example, a Persistence Unit reference in the `java:comp` scope of an EJB is never accessible to a repository interface because although a repository interface might exist in an EJB module, the repository interface is not part of any specific EJB.
+
+A good practice when using scoped names is to use `java:app` to allow the repository interface to be defined in any module of the application.
+
+
+[#hpersistence]
+=== Specifying a Hibernate Persistence Unit Reference
+
+A configuration with a Persistence Unit is the way to use Hibernate with the built-in Jakarta Data provider. Enable the `persistenceContainer-3.2` feature instead of the `persistence-3.2` feature to avoid including EclipseLink.
+
+The following sections provide an example of configuring and using a Persistence Unit reference for Hibernate, where the Persistence Unit also requires a resource reference to a Data Source.
+
+==== Repository interface
+
+[source,java]
+----
+@Resource(name = "java:app/env/jdbc/ExampleDataSourceRef",
+          lookup = "jdbc/ExampleDataSource")
+@PersistenceUnit(name = "java:app/env/persistence/ExamplePersistenceUnitRef",
+                 unitName = "ExamplePersistenceUnit")
+@Repository(dataStore = "java:app/env/persistence/ExamplePersistenceUnitRef")
+public interface Cars extends BasicRepository<Car, String> {
+    // Query methods
+}
+----
+
+==== Persistence Unit
+
+The persistence unit is defined according to the Jakarta Persistence specification. It selects which DataSource to use and determines which entity classes are accessible to repositories.
+
+Here is an example element in `persistence.xml` defining a persistence unit that is used by the prior examples:
+
+[source,xml]
+----
+<persistence-unit name="ExamplePersistenceUnit">
+  <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
+  <jta-data-source>java:app/env/jdbc/ExampleDataSourceRef</jta-data-source>
+  <class>example.data.entity.Car</class>
+  <properties>
+    <property name="jakarta.persistence.schema-generation.database.action" value="create"/>
+    <property name="hibernate.show_sql" value="true"/>
+    <property name="hibernate.allow_update_outside_transaction" value="true"/>
+    <property name="hibernate.delay_cdi_access" value="true" />
+  </properties>
+</persistence-unit>
+----
+
+The `jakarta.persistence.schema-generation.database.action` property, which is from the Jakarta Persistence specification, allows you to request the automatic creation and/or removal of database tables. Values for this setting include: `create`, `drop`, `drop-and-create`, `none`.
+
+==== DataSource in server configuration
+
+[source,xml]
+----
+<featureManager>
+  <feature>data-1.0</feature>
+  <feature>persistenceContainer-3.2</feature>
+  <feature>xmlBinding-4.0</feature> <!-- required by Hibernate -->
+  <feature>bells-1.0</feature>
+  ...
+</featureManager>
+
+<dataSource jndiName="jdbc/ExampleDataSource">
+  <jdbcDriver libraryRef="PostgresLib"/>
+  <properties.postgresql databaseName="exampledb" serverName="localhost" portNumber="5432"/>
+  <containerAuthData user="${env.DB_USER}" password="${env.DB_PASS}"/>
+</dataSource>
+
+<library id="PostgresLib">
+  <fileset dir="${server.config.dir}/lib/postgres" includes="*.jar"/>
+</library>
+
+<library id="HibernateLib">
+  <fileset dir="${server.config.dir}/lib/jpa32_hibernate_orm" includes="*.jar"/>
+</library>
+
+<bell libraryRef="HibernateLib"/>
+
+<jpa defaultPersistenceProvider="org.hibernate.jpa.HibernatePersistenceProvider"/>
+----
+
+When using JNDI names or resource reference names that are scoped to a namespace like `java:comp` or `java:module`, you must ensure that the scope is accessible to the location of the repository interface within the application. For example, a Persistence Unit reference in the `java:comp` scope of an EJB is never accessible to a repository interface because although a repository interface might exist in an EJB module, the repository interface is not part of any specific EJB.
+
+A good practice when using scoped names is to use `java:app` to allow the repository interface to be defined in any module of the application.
+
+[#databasestore]
+=== Specifying a DatabaseStore
+
+A `databaseStore` is an abstraction on top of a `dataSource` which gives you the ability to configure additional aspects related to Jakarta Persistence, such as table creation and removal, without needing to provide persistence units.
+
+Point the `dataStore` attribute of a `Repository` annotation at the `id` of a `databaseStore` element from server configuration.
+
+*Repository interface:*
+
+[source,java]
+----
+@Repository(dataStore = "ExampleDatabaseStore")
+public interface Cars extends BasicRepository<Car, String> {
+    // Query methods
+}
+----
+
+*Server configuration:*
+
+[source,xml]
+----
+<databaseStore id="ExampleDatabaseStore"
+               dataSourceRef="ExampleDataSource"
+               createTables="false"
+               schema="JAKARTA"
+               tablePrefix="DATA">
+  <authData user="${env.DB_USER}" password="${env.DB_PASS}"/>
+</databaseStore>
+
+<dataSource id="ExampleDataSource">
+  <jdbcDriver libraryRef="PostgresLib"/>
+  <properties.postgresql databaseName="exampledb" serverName="localhost" portNumber="5432"/>
+</dataSource>
+
+<library id="PostgresLib">
+  <fileset dir="${server.config.dir}/lib/postgres" includes="*.jar"/>
+</library>
+----
+
