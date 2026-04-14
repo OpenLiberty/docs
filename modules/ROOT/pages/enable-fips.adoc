@@ -16,7 +16,71 @@ FIPS enablement is important for many users, particularly if you work for or wit
 
 == Enable FIPS 140-3 for Open Liberty on IBM Semeru Runtimes
 
-To enable FIPS 140-3 for Liberty with the IBM SDK, Java Technology Edition or IBM Semeru Runtimes, see link:https://www.ibm.com/docs/en/was-liberty/nd?topic=liberty-setting-up-fips-compliance[Setting up Liberty for FIPS compliance] in the WebSphere Liberty documentation. The configuration for FIPS 140-3 is the same for both WebSphere Liberty and Open Liberty.
+To enable FIPS 140-3 for Liberty with the IBM SDK, Java Technology Edition or IBM Semeru Runtimes, complete the following steps.
+
+1. If your Liberty server is running, stop the Liberty server.
+
+2. Configure FIPS 140-3 by using one of the following methods.
+** On 25.0.0.12 and later, use the `securityUtility configureFIPS` command to configure FIPS 140-3 across all servers, clients, and tools.
+*** To configure FIPS 140-3 at a specific server, run the following command.+
++
+----
+securityUtility configureFIPS --server=<server name>
+----
++
+*** To configure FIPS 140-3 at a specific client, run the following command.+
++
+----
+securityUtility configureFIPS --client=<client name>
+----
++
+For IBM Semeru Runtimes, The `securityUtility configureFIPS` command also creates a custom profile file.+
++
+For more information about the configureFIPS task, see https://openliberty.io/docs/latest/reference/command/securityUtility-configureFIPS.html[configureFIPS].+
++
+** For FIPS 140-3 set on Java SE 8, set the following properties in the `jvm.options` file.+
++
+----
+-Dcom.ibm.jsse2.usefipsprovider=true
+-Dcom.ibm.jsse2.usefipsProviderName=IBMJCEPlusFIPS
+-Xenablefips140-3
+----
++
+In this example, the `com.ibm.jsse2.usefipsProviderName` property specifies `IBMJCEPlusFIPS` as the FIPS provider.+
++
+For IBM Semeru Runtimes, set the following properties in the jvm.options file.+
++
+----
+-Dsemeru.fips=true
+-Dsemeru.customprofile=OpenJCEPlusFIPS.FIPS140-3-Liberty
+-Djava.security.propertiesList=<path to wlp>/lib/security/fips140_3/FIPS140-3-Liberty.properties
+----
++
+For IBM Semeru Runtimes, if you have a custom profile file, set the following properties in the jvm.options file.+
++
+----
+-Dsemeru.fips=true
+-Dsemeru.customprofile=<your custom profile name>
+-Djava.security.propertiesList=<path to wlp>/lib/security/fips140_3/FIPS140-3-Liberty.properties:<path to your custom profile file>
+----
++
+To enable FIPS 140-3 for tools, the properties must be set by using the `JVM_ARGS` environment variable instead of in the `jvm.options` file. The following example is for Java SE 8.+
++
+----
+export JVM_ARGS="-Xenablefips140-3 -Dcom.ibm.jsse2.usefipsprovider=true -Dcom.ibm.jsse2.usefipsProviderName=IBMJCEPlusFIPS"
+----
+
+3. If you have LTPA validation keys, delete the LTPA validation keys. Do not delete LTPA keys that are not LTPA validation keys.
+
+4. After you configure FIPS 140-3, restart the Liberty server to enable FIPS 140-3. A new `ltpa.keys` file is created using FIPS 140-3 approved algorithms when the Liberty server restarts.+
+Any existing `ltpa.keys` files created before FIPS 140-3 was enabled are backed up to `ltpa.keys.nofips`.
+If you need to create new LTPA keys and LTPA validation keys that use FIPS 140-3 approved algorithms, you can create the manually by running the following createLTPAKeys command.+
++
+----
+securityUtility createLTPAKeys --password=mypassword --passwordEncoding=aes
+----
++
+For more information about the createLTPAKeys command, see https://openliberty.io/docs/latest/reference/command/securityUtility-createLTPAKeys.html[createLTPAKeys].
 
 Alternatively, to enable the outmoded FIPS 140-2 for Open Liberty with IBM Semeru Runtimes, complete the following steps. Be certain that you want to proceed; FIPS 140-2 validations are scheduled to move to the Historical List.
 
@@ -35,7 +99,7 @@ Run the following command:
 fips-mode-setup --check
 ----
 +
-If FIPS mode is enabled, the command output is `FIPS mode is enabled.` 
+If FIPS mode is enabled, the command output is `FIPS mode is enabled.`
 +
 If your RHEL operating system was not installed in FIPS mode, you must switch it to FIPS mode. For more information about how to enable or check the FIPS status for your RHEL operating system, see https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/8/html/security_hardening/switching-rhel-to-fips-mode_security-hardening#federal-information-processing-standards-140-and-fips-mode_switching-rhel-to-fips-mode[Switching RHEL to FIPS mode] in the RHEL documentation.
 
