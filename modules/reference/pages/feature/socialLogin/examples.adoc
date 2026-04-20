@@ -10,6 +10,7 @@ The following examples show how to configure different scenarios in the `server.
 - <<#loginwithasocialmediaid,Request login with a social media ID or with their account for the configured registry>>
 - <<#loginforsubset,Request login with a social media ID for only a subset of applications, URLs, browsers, or IP addresses>>
 - <<#loginsasoptions,Provide other social media logins as options to the user>>
+- <<#signtoken,Accept signed tokens with signature algorithm validation>>
 - <<#privatekeyjwt,Use Private Key JWT for client authentication>>
 - <<#openshiftservice,Use OpenShift service accounts to authenticate and authorize protected resource requests>>
 - <<#activedirectory,Use Active Directory as an authentication provider>>
@@ -144,10 +145,43 @@ The following example configures Instagram as the social media provider.
 </oauth2Login>
 ----
 
+[#signtoken]
+=== Accept signed tokens with signature algorithm validation
+OpenID Connect clients that are configured by using the `oidcLogin` element in the Social Media Login feature support signature algorithm validation for signed tokens. The process for configuring signature algorithm validation in the Social Media Login feature is identical to the feature:openidConnectClient[display=OpenID Connect Client] feature.
+
+The following example shows an `oidcLogin` configuration that accepts only tokens signed with `RS256`:
+
+[source,xml]
+----
+<oidcLogin
+    id="myOidcLogin"
+    clientId="client01"
+    clientSecret="{xor}LDo8LTor"
+    signatureAlgorithm="RS256"
+    jwksUri="https://example.com/jwtserver/jwk"
+    ...
+/>
+----
+
+The following example shows an `oidcLogin` configuration that selects the signature algorithm from the token header and accepts tokens signed with either `RS256`, `ES384`, or `HS512`:
+
+[source,xml]
+----
+<oidcLogin
+    id="myOidcLogin"
+    clientId="client01"
+    clientSecret="{xor}LDo8LTor"
+    signatureAlgorithm="FROM_HEADER"
+    allowedSignatureAlgorithms="RS256, ES384, HS512"
+    jwksUri="https://example.com/jwtserver/jwk"
+    ...
+/>
+----
+
 [#privatekeyjwt]
 === Use Private Key JWT for client authentication
 
-OpenID Connect clients that are configured by using the `oidcLogin` element in the Social Media Login feature support the `private_key_jwt` client authentication method with OpenID Connect token endpoints. The process for enabling this support in the Social Media Login feature is identical to the xref:reference:feature/openidConnectClient/examples.adoc#privatekey[OpenID Connect Client 1.0] feature.
+OpenID Connect clients that are configured by using the `oidcLogin` element in the Social Media Login feature support the `private_key_jwt` client authentication method with OpenID Connect token endpoints. The process for enabling this support in the Social Media Login feature is identical to the feature:openidConnectClient[display=OpenID Connect Client] feature.
 
 The following example shows how to use a private key JWT for client authentication.
 
@@ -204,6 +238,5 @@ You can configure an Open Liberty server to use Active Directory as an authentic
     signatureAlgorithm="RS256"
     userNameAttribute="preferred_username" />
 ----
-
 
 For more information about Active Directory endpoints, see the link:https://docs.microsoft.com/en-us/azure/active-directory/develop/active-directory-v2-protocols#endpoints[Active Directory documentation].
