@@ -20,13 +20,13 @@ If you are updating your application from using Jakarta EE 10 features to using 
 
 The following sections describe updates for different Jakarta EE 10 features.
 
-
 * <<global, Global differences between Jakarta EE 11 and 10>>
 * <<persist,Jakarta Persistence 3.2>>
 * <<concur,Jakarta Concurrency 3.1>>
 * <<cdi, Jakarta Contexts and Dependency Injection 4.1>>
 * <<interceptors, Jakarta Interceptors 2.2>>
 * <<security, Jakarta Security 4.0>>
+* <<authorization, Jakarta Authorization 3.0>>
 * <<express,Jakarta Expression Language 6.0>>
 * <<faces,Jakarta Server Faces 4.1>>
 * <<pages,Jakarta Server Pages 4.0>>
@@ -40,7 +40,29 @@ The following sections describe updates for different Jakarta EE 10 features.
 
 The following changes apply across the Jakarta EE 11 platform.
 
-Content needs to be added here....
+=== Java SE requirement
+
+Jakarta EE 10 Liberty features can run with Java SE versions 11 and later. All Jakarta EE 11 Liberty features require Java 17 or later, as outlined by the Jakarta EE 11 specification.
+
+=== Managed Beans removal
+
+Unlike the `jakartaee-10.0` Liberty feature, the `jakartaee-11.0` Liberty feature no longer enables the `managedBeans-2.0` Liberty feature, as the Managed Beans specification was removed from the platform. Similarly, the `jakarta.annotation.ManagedBean` annotation API was also removed from the Jakarta Annotations API. Applications relying on the `@ManagedBean` annotation must migrate to use CDI annotations.
+
+=== New Jakarta Data specification
+
+The Jakarta Data 1.0 specification was added to the Jakarta EE 11 platform as well as the Web Profile 11.0 specification. This specification adds a repository-based API for interacting with data. Either the `data-1.0` or `dataContainer-1.0` Liberty feature enables this function. For more information about how to use this new API, see xref:data.adoc[Jakarta Data].
+
+=== Optional specification availability
+
+The Jakarta EE 11 Platform specification removes all optional specifications from the platform, meaning Jakarta SOAP with Attachments, XML Binding, XML Web Services, and Enterprise Beans 2.x API functions are not included any longer with the `jakartaee-11.0` Liberty feature. Similarly, when using the `enterpriseBeans-4.0` convenience feature, it will no longer provide the Enterprise Beans 2.x APIs when combined with other Jakarta EE 11 Liberty features. 
+
+To use these functions, explicitly add Liberty features to your server's feature list: `xmlBinding-4.0` for XML Binding, `xmlWS-4.0` for SOAP with Attachments and XML Web Services, and `enterpriseBeansHome-4.0` for Jakarta Enterprise Beans 2.x APIs. Alternatively, use the equivalent versionless features with the `jakartaee-11.0` platform.
+
+When using the Liberty application client with the `jakartaeeClient-11.0` Liberty feature, Jakarta SOAP with Attachments, XML Binding, and XML Web Services client functions are not available. To continue using these functions in your Liberty application client, enable the `xmlBinding-4.0` and the new `xmlWSClient-4.0` Liberty features in your client's feature list.
+
+=== Java Security support
+
+Use of a `SecurityManager` with Liberty to enable Java Security will no longer work when using Jakarta EE 11 features due to the Jakarta EE 11 platform removing Java Security support. The Liberty runtime will automatically disable the `SecurityManager` if Java security is configured in the server. This is only an issue when using Java SE 17, since Liberty already disables the `SecurityManager` when using Java SE 18 and later releases.
 
 
 [#persist]
@@ -264,6 +286,94 @@ The `jakarta.security.enterprise.identitystore.IdentityStorePermission` class is
 HTTP authentication mechanisms now have a qualifier by default (which can be overridden), whereas previously they were unqualified.
 
 For more information, see the https://jakarta.ee/specifications/security/4.0/apidocs/jakarta.security/module-summary.html[Jakarta Security 4.0 Javadoc].
+
+
+[#authorization]
+== Differences between Jakarta Authorization 3.0 and 2.1
+
+The feature:appAuthorization-3.0[display=Jakarta Authorization 3.0] feature (`appAuthorization-3.0`) introduces new authorization APIs that remove dependency on deprecated Java security classes and provide enhanced flexibility for authorization decisions.
+
+=== New additions
+
+==== New Policy and PolicyFactory classes
+Jakarta Authorization 3.0 introduces the `jakarta.security.jacc.PolicyFactory` and `jakarta.security.jacc.Policy` classes for making authorization decisions. 
+These classes replace the dependency on the `java.security.Policy` class, which is deprecated in newer versions of Java.
+
+* **Per-context policies:** With the new `PolicyFactory` API, you can now have a `Policy` per policy context instead of having a global policy. 
+This design allows separate policies to be maintained for each application.
+
+==== Application-level configuration
+The 3.0 specification defines a mechanism for specifying `PolicyConfigurationFactory` and `PolicyFactory` classes in your application by using a `web.xml` file. 
+This design allows an application to have a different configuration than the server-scoped one, but still allows it to delegate to a server-scoped factory for any other applications. 
+Authorization modules can do this delegation by using decorator constructors for both `PolicyConfigurationFactory` and `PolicyFactory` classes.
+
+To configure your authorization modules in your application's `web.xml` file, add specification-defined context parameters:
+
+[source,xml]
+----
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="https://jakarta.ee/xml/ns/jakartaee"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/web-app_6_1.xsd"
+  version="6.1">
+
+  <context-param>
+    <param-name>jakarta.security.jacc.PolicyConfigurationFactory.provider</param-name>
+    <param-value>com.example.MyPolicyConfigurationFactory</param-value>
+  </context-param>
+
+  <context-param>
+    <param-name>jakarta.security.jacc.PolicyFactory.provider</param-name>
+    <param-value>com.example.MyPolicyFactory</param-value>
+  </context-param>
+
+</web-app>
+----
+
+==== PrincipalMapper class
+The 3.0 API adds a new `jakarta.security.jacc.PrincipalMapper` class that you can obtain from the `PolicyContext` class when authorization processing is done in your `Policy` implementation. From this class, you can obtain the roles associated with a specific `Subject` to be able to determine whether the `Subject` is in the required role. Liberty's implementation of this class provides the roles specified in the `<application-bnd>` application configuration in your `server.xml` or in your application's `ibm-application-bnd.xml` file. If that configuration is not provided, the implementation falls back to the user registry's group names as role names.
+
+You can use the `PrincipalMapper` class in your `Policy` implementation's `impliesByRole` (or `implies`) method, as shown in the following example:
+
+[source,java]
+----
+    public boolean impliesByRole(Permission p, Subject subject) {
+        Map<String, PermissionCollection> perRolePermissions =
+            PolicyConfigurationFactory.get().getPolicyConfiguration(contextID).getPerRolePermissions();
+        PrincipalMapper principalMapper = PolicyContext.get(PolicyContext.PRINCIPAL_MAPPER);
+
+        // Check to see if the Permission is in the any authenticated user role (**)
+        if (!principalMapper.isAnyAuthenticatedUserRoleMapped() && !subject.getPrincipals().isEmpty()) {
+            PermissionCollection rolePermissions = perRolePermissions.get("**");
+            if (rolePermissions != null && rolePermissions.implies(p)) {
+                return true;
+            }
+        }
+
+        // Check to see if the roles for the Subject provided imply the permission
+        Set<String> mappedRoles = principalMapper.getMappedRoles(subject);
+        for (String mappedRole : mappedRoles) {
+            PermissionCollection rolePermissions = perRolePermissions.get(mappedRole);
+            if (rolePermissions != null && rolePermissions.implies(p)) {
+                return true;
+            }
+        }
+        return false;
+    }
+----
+
+=== Removals and behavior changes
+
+==== ProviderService API removal
+Due to Jakarta Authorization 3.0 no longer using the `java.security.Policy` class and introducing a new configuration mechanism for authorization modules, the `com.ibm.wsspi.security.authorization.jacc.ProviderService` Liberty API is no longer available with the `appAuthorization-3.0` feature. 
+
+* **Action Required:** If a Liberty user feature configures authorization modules, the OSGi service that provided a `ProviderService` implementation must be updated to use the `PolicyConfigurationFactory` and `PolicyFactory` set methods in the OSGi component. 
+
+* **Alternative:** You can use a Web Application Bundle (WAB) in your user feature to specify your security modules in a `web.xml` file. 
+
+* **Error Message:** When using an existing user feature that uses the `ProviderService` API, your user feature will fail to start with an error message that states `Unresolved requirement: Import-Package: com.ibm.wsspi.security.authorization.jacc; version="[10.0.0,20.0.0)"`.
+
+For more information, see the https://jakarta.ee/specifications/authorization/3.0/apidocs/jakarta.authorization/module-summary.html[Jakarta Authorization 3.0 Javadoc].
 
 
 [#express]
