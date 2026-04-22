@@ -299,14 +299,14 @@ The feature:appAuthorization-3.0[display=Jakarta Authorization 3.0] feature (`ap
 
 ==== New Policy and PolicyFactory classes
 Jakarta Authorization 3.0 introduces the `jakarta.security.jacc.PolicyFactory` and `jakarta.security.jacc.Policy` classes for making authorization decisions. 
-These classes replace the dependency on the `java.security.Policy` class, which is deprecated in newer versions of Java.
+These classes replace the dependency on the deprecated `java.security.Policy` class from newer versions of Java.
 
-* **Per-context policies:** With the new `PolicyFactory` API, you can now have a `Policy` per policy context instead of having a global policy. 
+* **Per-context policies:** The new `PolicyFactory` API enables a `Policy` per policy context instead of a global policy.
 This design allows separate policies to be maintained for each application.
 
 ==== Application-level configuration
 The 3.0 specification defines a mechanism for specifying `PolicyConfigurationFactory` and `PolicyFactory` classes in your application by using a `web.xml` file. 
-This design allows an application to have a different configuration than the server-scoped one, but still allows it to delegate to a server-scoped factory for any other applications. 
+This design allows an application to have a different configuration from the server-scoped one while still enabling delegation to a server-scoped factory for any other applications. 
 Authorization modules can do this delegation by using decorator constructors for both `PolicyConfigurationFactory` and `PolicyFactory` classes.
 
 To configure your authorization modules in your application's `web.xml` file, add specification-defined context parameters:
@@ -333,7 +333,10 @@ To configure your authorization modules in your application's `web.xml` file, ad
 ----
 
 ==== PrincipalMapper class
-The 3.0 API adds a new `jakarta.security.jacc.PrincipalMapper` class that you can obtain from the `PolicyContext` class when authorization processing is done in your `Policy` implementation. From this class, you can obtain the roles associated with a specific `Subject` to be able to determine whether the `Subject` is in the required role. Liberty's implementation of this class provides the roles specified in the `<application-bnd>` application configuration in your `server.xml` or in your application's `ibm-application-bnd.xml` file. If that configuration is not provided, the implementation falls back to the user registry's group names as role names.
+The 3.0 API adds a new `jakarta.security.jacc.PrincipalMapper` class that you can obtain from the `PolicyContext` class when performing authorization processing in your `Policy` implementation. 
+Using this class, you can obtain the roles associated with a specific `Subject` to be able to determine whether the `Subject` is in the required role.  
+Liberty's implementation of this class provides the roles specified in the <application-bnd>` application configuration. This configuration can be in your `server.xml` or in your application's `ibm-application-bnd.xml` file.
+If that configuration is not provided, the implementation falls back to the user registry's group names as role names.
 
 You can use the `PrincipalMapper` class in your `Policy` implementation's `impliesByRole` (or `implies`) method, as shown in the following example:
 
@@ -369,11 +372,11 @@ You can use the `PrincipalMapper` class in your `Policy` implementation's `impli
 ==== ProviderService API removal
 Due to Jakarta Authorization 3.0 no longer using the `java.security.Policy` class and introducing a new configuration mechanism for authorization modules, the `com.ibm.wsspi.security.authorization.jacc.ProviderService` Liberty API is no longer available with the `appAuthorization-3.0` feature. 
 
-* **Action Required:** If a Liberty user feature configures authorization modules, the OSGi service that provided a `ProviderService` implementation must be updated to use the `PolicyConfigurationFactory` and `PolicyFactory` set methods in the OSGi component. 
+* **Action Required:** If a Liberty user feature configures authorization modules, update the OSGi service that provided a `ProviderService` implementation to use the `PolicyConfigurationFactory` and `PolicyFactory` set methods in the OSGi component. 
 
 * **Alternative:** You can use a Web Application Bundle (WAB) in your user feature to specify your security modules in a `web.xml` file. 
 
-* **Error Message:** When using an existing user feature that uses the `ProviderService` API, your user feature will fail to start with an error message that states `Unresolved requirement: Import-Package: com.ibm.wsspi.security.authorization.jacc; version="[10.0.0,20.0.0)"`.
+* **Error Message:** When using an existing user feature that uses the `ProviderService` API, your user feature will fail to start with the following error message: `Unresolved requirement: Import-Package: com.ibm.wsspi.security.authorization.jacc; version="[10.0.0,20.0.0)"`.
 
 For more information, see the https://jakarta.ee/specifications/authorization/3.0/apidocs/jakarta.security.jacc/module-summary.html[Jakarta Authorization 3.0 Javadoc].
 
