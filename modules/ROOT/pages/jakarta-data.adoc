@@ -17,7 +17,8 @@ Jakarta Data Providers supply an implementation of a repository, which can be in
 
 Open Liberty includes a built-in Jakarta Data Provider for relational database access that can be used with the built-in Jakarta Persistence provider, EclipseLink, or with the Hibernate Jakarta Persistence provider.
 
-Alternatively, you can use third-party Jakarta Data providers, such as Hibernate ORM (for relational data) and Eclipse JNoSQL (for various types of non-relational data), with Open Liberty. The JNoSQL Jakarta Persistence extension is not required, as the Open Liberty Jakarta Data provider and JNoSQL Jakarta Data provider can be used simultaneously.
+Alternatively, you can use third-party Jakarta Data providers, such as Hibernate ORM (for relational data) and Eclipse JNoSQL (for various types of non-relational data), with Open Liberty. 
+The JNoSQL Jakarta Persistence extension is not required because the Open Liberty Jakarta Data provider and JNoSQL Jakarta Data provider can be used simultaneously.
 
 === Entity Model
 
@@ -57,7 +58,7 @@ public class Car {
 
 === Static Metamodel
 
-An entity can optionally have a static metamodel, which might be generated from the entity class by development tooling. They are also simple enough for a developer to write and understand, with uppercase constants for entity attribute names and lowercase constants representing additional detail about each respective entity attribute. The static metamodel can be used by the repository interface as well as the application in defining and invoking data access operations in a more type-safe manner.
+An entity can optionally have a static metamodel, which might be generated from the entity class by development tooling. The static metamodel is also simple enough for a developer to write and understand, with uppercase constants for entity attribute names and lowercase constants representing additional detail about each respective entity attribute. The static metamodel can be used by the repository interface as well as the application in defining and invoking data access operations in a more type-safe manner.
 
 By convention, static metamodel interface classes are named to begin with the underscore (_) character, followed by the entity class name.
 
@@ -102,7 +103,9 @@ Repository interfaces must be annotated with the `@Repository` annotation and ca
 * `BasicRepository`
 * `DataRepository`
 
-The repository supertypes offer a variety of pre-defined methods for commonly-used data access operations. The first type parameter to the repository supertypes specifies a primary Entity class that can be assumed for repository methods that do not otherwise specify an Entity class. The second type parameter to the repository supertypes specifies the type of the Id attribute that can be assumed for repository methods that do not otherwise specify an Id type.
+The repository supertypes offer a variety of pre-defined methods for commonly-used data access operations. 
+The first type parameter to a repository supertype specifies a primary Entity class to use for repository methods that do not otherwise specify an Entity class. 
+The second type parameter to a repository supertype must be the type of the Id attribute of the primary Entity class.
 
 ==== Repository Interface Example
 
@@ -175,39 +178,3 @@ public class ExampleResource {
 }
 ----
 
-=== Linking a Repository to a Provider
-
-When there is only one Jakarta Data provider that handles the type of entity, it is unnecessary for the Repository to specify which Jakarta Data provider to use.
-
-However, when multiple Jakarta Data providers coexist in a system and handle the same entity type, the Repository must specify a provider name to disambiguate which Jakarta Data provider is to be used.
-
-The built-in Jakarta Data provider for Liberty uses the provider name, *Liberty*. It is included in the `data-1.0` feature.
-
-Alternatively, third-party Jakarta Data providers can be used in Liberty by including the `dataContainer-1.0` feature which will only provide the Jakarta Data API (without the built-in Jakarta Data Provider).
-
-==== Hibernate ORM Provider Name Example
-
-[source,java]
-----
-@Repository(provider = "Hibernate", dataStore = "MyPersistenceUnit")
-public interface Employee extends CrudRepository<Employee, Long> {
-}
-----
-
-==== Eclipse JNoSQL Provider Name Example
-
-[source,java]
-----
-@Repository(provider = "Eclipse_JNoSQL")
-public interface Cars extends BasicRepository<Car, String> {
-}
-----
-
-==== Built-in Provider Name Example
-
-[source,java]
-----
-@Repository(provider = "Liberty", dataStore = "java:app/env/jdbc/MyDataSourceRef")
-public interface Products extends CrudRepository<Product, String> {
-}
-----
