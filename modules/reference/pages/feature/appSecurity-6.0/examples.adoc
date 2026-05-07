@@ -5,8 +5,7 @@
 [#inmemory]
 === Enable in-memory identity stores
 
-By default, the in-memory identity store is disabled for security reasons. To use the @InMemoryIdentityStoreDefinition annotation within your application for testing or development, you must explicitly set the allowInMemoryIdentityStores attribute to true on the webAppSecurity element in the `server.xml` file:
-
+By default, the in-memory identity store is disabled for security reasons. To use the `@InMemoryIdentityStoreDefinition` annotation within your application for testing or development, you must explicitly set the `allowInMemoryIdentityStores` attribute to `true` on the `webAppSecurity` element in the `server.xml` file:
 
 [source,xml]
 ----
@@ -14,7 +13,6 @@ By default, the in-memory identity store is disabled for security reasons. To us
 ----
 
 Once enabled, you can define users, passwords, and groups directly in your application code. The following example shows an in-memory identity store definition with multiple credentials:
-
 
 [source,java]
 ----
@@ -28,8 +26,7 @@ Once enabled, you can define users, passwords, and groups directly in your appli
 )
 ----
 
-The password specification supports the same encryption and encoding as the basic user registry: hash, aes, and xor (along with plain text passwords, which are supported but not encouraged).
-
+The password specification supports the same encryption and encoding as the basic user registry: `hash`, `aes`, and `xor` (along with plain text passwords, which are supported but not encouraged).
 
 [NOTE]
 ====
@@ -40,8 +37,9 @@ If this annotation is found within an application, a clear warning about its use
 [#builtin]
 === Use multiple built-in authentication mechanisms
 
-You can specify multiple built-in mechanisms, such as Basic and OpenID Connect, within the same application code. The container provides a default prioritization algorithm to select the mechanism if a custom handler is not provided. The following example shows an application class configured with three different authentication mechanism types:
+You can specify multiple built-in mechanisms, such as Basic and OpenID Connect, within the same application code. The container provides a default prioritization algorithm to select the mechanism if a custom handler is not provided. 
 
+The following example shows an application class configured with three different authentication mechanism types:
 
 [source,java]
 ----
@@ -62,7 +60,7 @@ public class MySecureApplication extends Application { }
 ----
 
 The internal prioritization algorithm selects mechanisms in the following order:
-1. Developer-provided custom mechanisms (using @Priority annotation values if multiple are found)
+1. Developer-provided custom mechanisms (using `@Priority` annotation values if multiple are found)
 2. Built-in mechanism types in order: OpenID, Custom Form, Form, Basic
 
 
@@ -120,19 +118,18 @@ The following table shows the default qualifiers for built-in HTTP authenticatio
 
 [NOTE]
 ====
-If you use qualifiers, you must provide a custom HttpAuthenticationMechanismHandler implementation. Otherwise, an error is thrown at application start-up.
+If you use qualifiers, you must provide a custom `HttpAuthenticationMechanismHandler` implementation. Otherwise, an error is thrown at application start-up.
 ====
 
 
 [#authmech]
 === Configure a custom authentication mechanism handler
 
-Jakarta Security 4.0 allows you to specify multiple HTTP authentication mechanisms within a single application. When you use custom qualifiers to differentiate between multiple mechanisms of the same type, or when you need custom routing logic, you must provide a custom HttpAuthenticationMechanismHandler implementation.
+Jakarta Security 4.0 allows you to specify multiple HTTP authentication mechanisms within a single application. When you use custom qualifiers to differentiate between multiple mechanisms of the same type, or when you need custom routing logic, you must provide a custom `HttpAuthenticationMechanismHandler` implementation.
 
-The HttpAuthenticationMechanismHandler interface abstracts the authentication mechanism from the authentication module, providing a bridge between them. Its main purpose is to select and invoke the appropriate authentication mechanism based on your custom logic.
+The `HttpAuthenticationMechanismHandler` interface abstracts the authentication mechanism from the authentication module, providing a bridge between them. Its main purpose is to select and invoke the appropriate authentication mechanism based on your custom logic.
 
 The following example shows a custom handler that routes requests to different authentication mechanisms based on the request URI:
-
 
 [source,java]
 ----
@@ -187,14 +184,14 @@ public class CustomHttpAuthenticationMechanismHandler implements HttpAuthenticat
 
 [NOTE]
 ====
-The HttpAuthenticationMechanismHandler interface provides default implementations for secureResponse() and cleanSubject() methods, so you only need to override them if custom behavior is required.
+The `HttpAuthenticationMechanismHandler` interface provides default implementations for `secureResponse()` and `cleanSubject()` methods, so you only need to override them if custom behavior is required.
 ====
 
 
 [#custom]
 === Use custom authentication mechanisms
 
-You can also create custom authentication mechanisms by implementing the HttpAuthenticationMechanism interface. Custom mechanisms can be combined with built-in mechanisms and can use qualifiers for differentiation:
+You can also create custom authentication mechanisms by implementing the `HttpAuthenticationMechanism` interface. Custom mechanisms can be combined with built-in mechanisms and can use qualifiers for differentiation:
 
 
 [source,java]
@@ -218,7 +215,7 @@ public class CustomHttpAuthenticationMechanism implements HttpAuthenticationMech
 }
 ----
 
-If you don't specify @Priority, a default value is assigned that is higher than all built-in authentication mechanisms. If you specify multiple custom mechanisms without @Priority, you must set unique @Priority values to avoid application start-up errors.
+If you don't specify `@Priority`, a default value is assigned that is higher than all built-in authentication mechanisms. If you specify multiple custom mechanisms without `@Priority`, you must set unique `@Priority` values to avoid application start-up errors.
 
 
 [#errors]
@@ -232,13 +229,13 @@ CWWKS2605E: Unable to determine which HttpAuthenticationMechanism to handle requ
 The following HttpAuthenticationMechanisms have the same priority or Http Authentication 
 Mechanism Type: CustomHAMOne Priority = 100, CustomHAMTwo Priority = 100.
 ----
-Solution: If you define multiple mechanisms with the same qualifier, CDI will throw an ambiguous resolution error at start-up. Ensure each HttpAuthenticationMechanism implementation (either annotation built-ins or developer defined) have unique qualifiers or use a custom handler to manage them.
+Solution: If you define multiple mechanisms with the same qualifier, CDI will throw an ambiguous resolution error at start-up. Ensure each `HttpAuthenticationMechanism` implementation (either annotation built-ins or developer defined) have unique qualifiers or use a custom handler to manage them.
 
 *Missing custom handler with qualified mechanisms:*
 ----
 CWWKS2610E: Missing a custom handler that uses qualified HttpAuthenticationMechanisms.
 ----
-Solution: When using qualifiers, you must provide a custom HttpAuthenticationMechanismHandler implementation.
+Solution: When using qualifiers, you must provide a custom `HttpAuthenticationMechanismHandler` implementation.
 
 
 [#logging]
