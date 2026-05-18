@@ -9,7 +9,6 @@
 - <<#certs, Provide certificates from an environment variable or a file>>
 - <<#hostverify, Hostname and IP address verification>>
 - <<#cipher-config, Configuring TLS handshake ciphers>>
-- <<#migration-example, Migrate from securityLevel to the new syntax>>
 
 
 [#config]
@@ -23,6 +22,7 @@ The server creates a default `keystore` and certificate if you specify `defaultK
 ----
 <keyStore id="defaultKeyStore" password="yourPassword"/>
 ----
+
 
 [#keystore]
 === Default keystore and TLS certificate configurations
@@ -71,6 +71,7 @@ You can also run the xref:reference:command/securityUtility-createSSLCertificate
 
 For more information, see xref:reference:config/ssl.adoc[SSL Repertoire].
 
+
 [#alt]
 === Specify an alternate SSL configuration as default
 
@@ -80,6 +81,7 @@ You can designate a different `ssl` element in the configuration as the default 
 ----
 <sslDefault sslRef="customSSLConfiguration"/>
 ----
+
 
 [#configure-specific]
 === Configure specific TLS protocols
@@ -107,6 +109,7 @@ You can set the `trustDefaultCerts` attribute to `true` to specify that the JVM 
       trustStoreRef="defaultTrustStore"
       trustDefaultCerts="true"/>
 ----
+
 
 [#outbound]
 === Configure outbound TLS
@@ -148,6 +151,7 @@ In the following example, outbound TLS connections that go to any port on the `o
            password="yourpassword"/>
 ----
 
+
 [#certs]
 === Provide certificates from an environment variable or a file
 
@@ -170,6 +174,7 @@ cert_defaultKeyStore="-----BEGIN CERTIFICATE-----
 ....
 -----END CERTIFICATE-----"
 ----
+
 
 [#hostverify]
 === Hostname and IP address verification
@@ -196,7 +201,7 @@ Typically, during hostname verification, when the hostname is used in the reques
 
 For more information, see xref:ROOT:troubleshooting.adoc#hostverify[Troubleshooting SSL and TLS].
 
-     
+
 [#cipher-config]
 === Configuring TLS handshake ciphers
 
@@ -207,8 +212,6 @@ The `enabledCiphers` attribute on the `ssl` element allows you to control which 
 2. **Explicit list**: Provide a custom list of cipher suites, separated by spaces.
 
 3. **Filtering syntax**: Add (`+`) or remove (`-`) cipher suites from the JDK's effective list. A wildcard (`*`) is supported for removal entries only, and must appear at the end of the pattern.
-
-
 
 The following example shows the default behavior where no `enabledCiphers` attribute is specified:
 
@@ -241,42 +244,4 @@ This configuration starts with the JDK's effective cipher list, removes all ciph
 ====
 The explicit list and filtering syntax modes are mutually exclusive. If the `enabledCiphers` value contains both a static entry and a `+`/`-` entry, an error is logged, and the server ignores the `enabledCiphers` value by returning the effective JDK cipher list.
 ====
-
-
-[#migration-example]
-=== Migrate from securityLevel to the new syntax
-
-The following examples show how to migrate from the deprecated `securityLevel` attribute to the new `enabledCiphers` syntax.
-
-**Previous configuration using securityLevel:**
-
-[source,xml]
-----
-<ssl id="defaultSSL" securityLevel="HIGH"/>
-----
-
-**New configuration (securityLevel is ignored):**
-
-[source,xml]
-----
-<ssl id="defaultSSL"/>
-----
-
-Since Liberty now uses the JDK's effective cipher list by default, the `securityLevel` attribute is no longer required and is ignored if provided.
-
-The following example shows the previous approach of using an explicit list with `securityLevel="CUSTOM"`:
-
-[source,xml]
-----
-<ssl id="defaultSSL" securityLevel="CUSTOM" enabledCiphers="TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256 TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256 TLS_DHE_DSS_WITH_AES_256_GCM_SHA384 TLS_DHE_DSS_WITH_AES_128_GCM_SHA256 TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384 TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256 TLS_DHE_DSS_WITH_AES_256_CBC_SHA256 TLS_DHE_DSS_WITH_AES_128_CBC_SHA256 TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA TLS_DHE_DSS_WITH_AES_256_CBC_SHA TLS_DHE_DSS_WITH_AES_128_CBC_SHA TLS_RSA_WITH_AES_128_GCM_SHA256"/>
-----
-
-The same result can be achieved more efficiently using the new filtering syntax with wildcards:
-
-[source,xml]
-----
-<ssl id="defaultSSL" enabledCiphers="-TLS_RSA* +TLS_RSA_WITH_AES_128_GCM_SHA256"/>
-----
-
-The filtering syntax is recommended for most use cases because it reduces configuration complexity, automatically benefits from JDK security updates, and supports efficient pattern-based removal with wildcards.
 
