@@ -1,0 +1,182 @@
+= Jakarta Data
+
+== Overview of Jakarta Data
+
+Jakarta Data standardizes a programming model for accessing relational and non-relational data. You define simple Java objects to represent data. You define interfaces that represent operations on data. You inject these interfaces into your application, using them to insert, modify, delete, and query your data. A Jakarta Data provider supplies the data access implementation for you.
+
+== Concepts in Jakarta Data
+
+Jakarta Data simplifies data access by allowing you to:
+
+* Represent data with simple Java objects (entities), and
+* Define interfaces (repositories) with methods that perform operations on entities.
+
+You inject the repository into your application via CDI (Contexts and Dependency Injection), and the repository implementation is supplied by a Jakarta Data provider.
+
+== Entity Model
+
+Jakarta Data reuses the entity models of Jakarta Persistence and Jakarta NoSQL:
+
+* *Jakarta Persistence entities* for relational data.
+* *Jakarta NoSQL entities* for non-relational (NoSQL) data.
+
+Jakarta Data providers might define additional entity models, possibly by defining their own entity annotations, or by defining conventions for supporting unannotated entities, or by some other vendor-specific model.
+
+=== Jakarta Persistence Entity Example
+
+[source,java]
+----
+@Entity
+public class Car {
+    String make;
+    String model;
+    int modelYear;
+    int odometer;
+    float price;
+
+    @Id
+    String vin; 
+
+    public String getMake() {
+        return make;
+    }
+
+    public void setMake(String make) {
+        this.make = make;
+    }
+
+    // ... plus getters and setters for the other fields shown above
+}
+----
+
+== Static Metamodel
+
+An entity can optionally have a static metamodel, which development tooling might generate from the entity class. The static metamodel is also simple enough for a developer to write and understand, with uppercase constants for entity attribute names and lowercase constants representing additional detail about each respective entity attribute. The static metamodel can be used by the repository interface as well as the application in defining and invoking data access operations in a more type-safe manner.
+
+By convention, you name static metamodel interface classes to begin with the underscore (_) character, followed by the entity class name.
+
+=== Static Metamodel Example
+
+[source,java]
+----
+@StaticMetamodel(Car.class)
+public interface _Car {
+    String MAKE = "make";
+    String MODEL = "model";
+    String MODELYEAR = "modelYear";
+    String ODOMETER = "odometer";
+    String PRICE = "price";
+    String VIN = "vin";
+
+    TextAttribute<Car> make = new TextAttributeRecord<>(MAKE);
+    TextAttribute<Car> model = new TextAttributeRecord<>(MODEL);
+    SortableAttribute<Car> modelYear = new SortableAttributeRecord<>(MODELYEAR);
+    SortableAttribute<Car> odometer = new SortableAttributeRecord<>(ODOMETER);
+    SortableAttribute<Car> price = new SortableAttributeRecord<>(PRICE);
+    TextAttribute<Car> vin = new TextAttributeRecord<>(VIN);
+}
+----
+
+With the static metamodel above, you can define how to sort results of a query:
+
+[source,java]
+----
+Order<Car> orderOfResults = Order.by(_Car.make.asc(),
+                                     _Car.model.asc(),
+                                     _Car.modelYear.desc(),
+                                     _Car.price.desc(),
+                                     _Car.vin.asc());
+----
+
+== Repositories
+
+You must annotate repository interfaces with the `@Repository` annotation and can optionally inherit from any of the following repository supertypes that Jakarta Data defines:
+
+* `CrudRepository`
+* `BasicRepository`
+* `DataRepository`
+
+The repository supertypes offer a variety of pre-defined methods for commonly-used data access operations. 
+The first type parameter to a repository supertype specifies a primary Entity class to use for repository methods that do not otherwise specify an Entity class. 
+The second type parameter to a repository supertype must be the type of the Id attribute of the primary Entity class.
+
+=== Repository Interface Example
+
+[source,java]
+----
+@Repository
+public interface Cars extends BasicRepository<Car, String> {
+    @Insert
+    Car add(Car car);
+
+    @OrderBy(_Car.ODOMETER)
+    @OrderBy(_Car.VIN)
+    List<Car> findByModelYearGreaterThanEqualAndPriceBetween(int minYear,
+                                                             float minPrice,
+                                                             float maxPrice);
+
+    @Find
+    Page<Car> search(@By(_Car.MAKE) String manufacturer,
+                     @By(_Car.MODEL) String model,
+                     @By(_Car.MODELYEAR) int year,
+                     PageRequest pageRequest,
+                     Order<Car> sortBy);
+
+    @Query("UPDATE Car SET price = ?2 WHERE vin = ?1")
+    boolean setPrice(String vehicleIdNum, float newPrice);
+
+    @Query("SELECT price FROM Car WHERE vin = :vehicleId AND price > 0")
+    Optional<Float> getPrice(@Param("vehicleId") String vin);
+
+    @Delete
+    boolean remove(@By(ID) String vehicleIdNum);
+}
+----
+
+=== Repository Interface Usage Example
+
+[source,java]
+----
+@Path("/cars")
+@ApplicationScoped
+public class ExampleResource {
+    @Inject
+    Cars cars;
+
+    @GET
+    @Path("/make/{make}/model/{model}/year/{year}/page/{pageNum}")
+    @Produces(MediaType.TEXT_PLAIN)
+    public String search(
+            @PathParam("make") String make,
+            @PathParam("model") String model,
+            @PathParam("year") int year,
+            @PathParam("pageNum") long pageNum) {
+
+        PageRequest pageRequest = PageRequest.ofPage(pageNum).size(10);
+
+        Order<Car> mostToLeastExpensive = Order.by(
+                _Car.price.desc(),
+                _Car.vin.asc());
+
+        Page<Car> page = cars.search(make, model, year, 
+                                     pageRequest, 
+                                     mostToLeastExpensive);
+
+        return page.stream()
+                .map(c -> c.getModelYear() + " " + c.getMake() + " " + c.getModel() + " " +
+                          c.getOdometer() + " miles $" + c.getPrice() + " #" + c.getVin())
+                .toList()
+                .toString();
+    }
+}
+----
+
+== Jakarta Data Providers
+
+Jakarta Data Providers supply an implementation of a repository, which you can inject into applications via CDI (Contexts and Dependency Injection). Jakarta Data Providers can be third-party products or the application server can provide them.
+
+Open Liberty includes a built-in Jakarta Data Provider for relational database access that you can use with the built-in Jakarta Persistence provider, EclipseLink, or with the Hibernate Jakarta Persistence provider.
+
+Alternatively, you can use third-party Jakarta Data providers, such as Hibernate ORM (for relational data) and Eclipse JNoSQL (for various types of non-relational data), with Open Liberty. 
+The JNoSQL Jakarta Persistence extension is not required because you can use the Open Liberty Jakarta Data provider and JNoSQL Jakarta Data provider simultaneously.
+

@@ -1,0 +1,30 @@
+= Limitations of the Built-in Jakarta Data Provider
+
+The built-in Jakarta Data Provider operates by translating the Jakarta Data API into equivalent operations in Jakarta Persistence and delegating those operations to a Jakarta Persistence provider. 
+The capability of the Jakarta Persistence provider both limits and, in some cases, expands the capability of the built-in Jakarta Data provider.
+The built-in Jakarta Data provider does not claim support for expanded capability that goes beyond the Jakarta Data specification.
+
+In some cases, expanded capability will work correctly when the Jakarta Persistence provider handles it entirely according to the requirements of the Jakarta Persistence specification. 
+In other cases, the combination of Jakarta Persistence capability with Jakarta Data will not be possible and will result in errors, which might appear as exceptions that the Jakarta Persistence layer or Jakarta Data layer raises to the application or as incorrect results.
+
+
+== Examples of Limitations
+
+The following are examples of limitations and you must not view them as an exhaustive list.
+
+
+=== JPQL Queries
+
+Jakarta Data requires a subset of JPQL to be usable as a query language. An application, however, might attempt to use JPQL language features that fall outside of the required subset, such as a `JOIN` operation or subquery. 
+Generally, the built-in Jakarta Data provider delegates the JPQL query to the Jakarta Persistence provider, which runs it and retrieves the results. 
+However, in cases where the Jakarta Data provider generates or modifies queries, the capability is not supported. JPQL queries that go beyond the query language requirements of the Jakarta Data specification might not be suitable for pagination or the addition of ordering, restrictions, or other constraints. 
+This might result in the system sending an invalid query to the Jakarta Persistence provider.
+
+
+=== Annotations from the Entity Model
+
+Many annotations from the Jakarta Persistence Entity model will work fine in Jakarta Data based on the support that the Jakarta Persistence provider offers.
+However, some annotations will result in undefined behavior. For example, in Jakarta Persistence, an application can declare the `jakarta.persistence.IdClass` annotation on an Entity to assign a composite unique identifier and use the Jakarta Data API to attempt a `LessThan` operation on the composite unique identifier. 
+Similarly, the application might attempt the same with an embeddable or relation attribute. 
+The Jakarta Data provider has no obligation to support these combinations of the Jakarta Data API with Jakarta Persistence features. 
+Whether the Jakarta Persistence provider allows it, including any resulting behavior or how it might surface an error, largely depends on the Jakarta Persistence provider.

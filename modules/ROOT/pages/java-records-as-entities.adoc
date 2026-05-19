@@ -1,0 +1,137 @@
+= Java Records as Entities
+
+The built-in Jakarta Data provider allows Java records to be entities when the `dataStore` is not a Persistence Unit reference (because Jakarta Persistence does not allow Java records to be entities). Java record entities are not annotated and instead rely on a couple of basic conventions to be interpreted as entities. The built-in Jakarta Data provider substitutes a Jakarta Persistence entity for the Java Record. Thus the entity model for Java Record entities is in effect a subset of the Jakarta Persistence entity model, with the difference that it is defined by a Java Record rather than entity annotations.
+
+
+== Record Components
+
+The record components are the attributes of the entity.
+
+Record components can be of any of the Basic Types that are specified by Jakarta Data. These include types such as `int`, `Integer`, `String`, `UUID`, `byte[]`, `LocalDateTime`, `Instant`, and enum types. Some additional types for collections and embeddables can also be used.
+
+
+== Determining the Id
+
+Precedence for determining the Id attribute (which the system requires), from highest to lowest:
+
+. Record component name is "id", ignoring case.
+. Record component name ends with "_id", ignoring case.
+. Record component name ends with "Id" or "ID".
+. Record component type is `UUID` with any name.
+
+Use the same basic types for Ids that you can use with Jakarta Persistence entities. You can also form composite Ids by using a type that is another Java record whose record components are basic types for Ids that you can use with Jakarta Persistence entities.
+
+
+== Determining the Version
+
+Precedence for determining the version attribute (optional), from highest to lowest:
+
+. Record component name is "version", ignoring case.
+. Record component name is "_version", ignoring case.
+
+
+== Nullable Attributes
+
+Record components with primitive types are non-nullable. Record components with other types are nullable.
+
+
+== Collection Attributes
+
+The system considers record component types that are instances of `java.util.Collection` as element collections.
+
+
+== Relation Attributes
+
+The system considers record components with other types (including Java record) as embeddables. Like Java record entities, these embeddables are not annotated.
+
+
+=== Record Entity Example
+
+[source,java]
+----
+public record Rectangle(
+                String id,
+                Point position,
+                int height,
+                int width,
+                long version) {
+
+    public static record Point(
+                    int x,
+                    int y) {
+    }
+}
+----
+
+The static metamodel for a record entities is optional and follows the same rules and conventions as with other types of entities. Tooling typically generates the static metamodel.
+
+
+=== Static Metamodel Example
+
+[source,java]
+----
+@StaticMetamodel(Rectangle.class)
+public interface _Rectangle {
+    String HEIGHT = "height";
+    String ID = "id";
+    String POSITION = "position";
+    String POSITION_X = "position.x";
+    String POSITION_Y = "position.y";
+    String VERSION = "version";
+    String WIDTH = "width";
+
+    SortableAttribute<Rectangle> height = new SortableAttributeRecord<>(HEIGHT);
+    TextAttribute<Rectangle> id = new TextAttributeRecord<>(ID);
+    Attribute<Rectangle> position = new AttributeRecord<>(POSITION);
+    SortableAttribute<Rectangle> position_x = new SortableAttributeRecord<>(POSITION_X);
+    SortableAttribute<Rectangle> position_y = new SortableAttributeRecord<>(POSITION_Y);
+    SortableAttribute<Rectangle> version = new SortableAttributeRecord<>(VERSION);
+    SortableAttribute<Rectangle> width = new SortableAttributeRecord<>(WIDTH);
+}
+----
+
+
+== Identifying When a Record is an Entity
+
+A Repository that defines queries and other operations on Java Record entities must indicate its use of the Java Record as an entity in one of the following ways:
+
+. Inherit from a built-in repository superinterface and specify the Java Record class as its first type parameter.
+
+*Repository with Superinterface Example:*
+
+[source,java]
+----
+@Repository
+public interface Rectangles extends CrudRepository<Rectangle, String> {
+}
+----
+
+[start=2]
+. Instead of inheriting from a built-in repository superinterface, define one or more life cycle methods (annotated with `@Insert`, `@Delete`, `@Save`, or `@Update`), all of which specify the same Java record type as the parameter type or as the element type of the parameter collection or array.
+
+*Repository with Life Cycle Methods Example:*
+
+[source,java]
+----
+@Repository
+public interface Rectangles {
+    @Insert
+    Rectangle[] create(Rectangle... r);
+
+    @Update
+    Rectangle modify(Rectangle r);
+
+    @Delete
+    void remove(List<Rectangle> r);
+}
+----
+
+
+== Limitations of Record Entities
+
+Jakarta Persistence does not allow Java records to be entities. The built-in Jakarta Data provider makes this possible by substituting a generated Jakarta Persistence entity class for the record. The generated Jakarta Persistence entity class has a name that begins with the name of the record, followed by `Entity`. 
+For example, if the Java record entity is named `Product`, the system generates a Jakarta Persistence entity named `ProductEntity` and uses it internally. 
+The application must not define an entity of its own that collides with the generated name.
+
+Java record entities offer a simple way to define entities at the expense of the richer programming model that Jakarta Persistence entities can use. Where additional function is needed, use Jakarta Persistence entities instead.
+
