@@ -1,0 +1,108 @@
+== Examples
+
+
+=== Define an entity class
+
+The following example shows a `City` entity class with Jakarta Persistence annotations:
+
+[source,java]
+----
+@Entity
+class City {
+    @Id
+    long id;
+    String name;
+    String stateName;
+    LocalDate founded;
+    int population;
+
+    // constructors, getters, setters, and other methods ...
+}
+----
+
+
+=== Create a repository interface
+
+Define a repository interface that extends `CrudRepository` to perform database operations on the `City` entity:
+
+[source,java]
+----
+@Repository
+interface Cities extends CrudRepository<City, Long> {
+
+    @Find
+    Optional<City> named(@By("name") String city,
+                         @By("stateName") String state);
+
+    @Find
+    @OrderBy("stateName")
+    @OrderBy("name")
+    List<City> foundedOn(@By("founded") LocalDate foundedOn);
+
+    @Find
+    Page<City> inState(@By("stateName") String state,
+                       Order<City> sortBy,
+                       PageRequest pageReq);
+
+    @Query("""
+            UPDATE City
+               SET population = ?3
+             WHERE city = ?1 AND stateName = ?2
+            """)
+    boolean setPopulation(String city, String state, int newPopulation);
+}
+----
+
+The repository interface includes:
+
+* Built-in CRUD methods inherited from `CrudRepository`
+* Custom `@Find` methods for querying cities by name, founding date, and state
+* A custom `@Query` method for updating population data
+* Support for pagination and sorting
+
+
+=== Use the repository in a Jakarta EE component
+
+Inject and use the repository in Jakarta EE components such as JAX-RS endpoints, servlets, or CDI beans:
+
+[source,java]
+----
+@Inject
+Cities cities;
+
+void exampleUsage() {
+    // Using a built-in CrudRepository method:
+    cities.insert(City.of(1, "Rochester", "Minnesota",
+                          LocalDate.of(1854, 7, 12),
+                          121395));
+
+    // Using a @Find method and another built-in CrudRepository method:
+    City city = cities.named("Rochester", "Minnesota").orElseThrow();
+    city.population = 123624;
+    city = cities.update(city);
+
+    // Using a @Query method:
+    cities.setPopulation("Rochester", "Minnesota", 124648);
+
+    // Using a @Find method with a PageRequest
+    Order<City> sorts = Order.by(Sort.desc("population"),
+                                 Sort.asc("name"));
+    Page<City> page1 = cities.inState("Minnesota",
+                                      sorts,
+                                      PageRequest.ofSize(10));
+
+    // Obtaining a next page
+    Page<City> page2 = cities.inState("Minnesota",
+                                      sorts,
+                                      page1.nextPageRequest());
+}
+----
+
+This example demonstrates:
+
+* **Insert operation**: Adding a new city using the built-in `insert` method
+* **Query and update**: Finding a city by name and state, modifying it, and saving changes
+* **Custom query**: Updating population using a JPQL query
+* **Pagination**: Retrieving cities in a specific state with sorting and pagination
+* **Navigation**: Moving to the next page of results
+
