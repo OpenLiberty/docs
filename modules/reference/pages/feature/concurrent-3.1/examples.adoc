@@ -1,0 +1,49 @@
+== Examples
+
+=== Virtual Threads
+
+In Java 21 and later, you can configure managed executors to run tasks on virtual threads instead of platform threads. You can enable virtual thread support by setting the `virtual` attribute to `true` in the `@ManagedExecutorDefinition`, `@ManagedScheduledExecutorDefinition`, or `@ManagedThreadFactory` annotations. In the following example, a managed executor is defined to use virtual threads:
+
+[source, java]
+----
+@ManagedExecutorDefinition(
+    name = "java:module/concurrent/virtual-executor",
+    virtual = true
+)
+public class MyServlet extends HttpServlet {
+
+    @Resource(lookup = "java:module/concurrent/virtual-executor")
+    ManagedExecutorService virtualManagedExecutor;
+
+    public void virtualTask() {
+        virtualManagedExecutor.submit(() -> {
+            // This task runs on a virtual thread
+        });
+    };
+}
+----
+
+=== Schedule Annotation
+
+The `@Schedule` annotation enables scheduling of asynchronous methods. When an `@Asynchronous` method is invoked with a `@Schedule`, it runs on the specified schedule after the initial invocation.
+
+Using a cron expression to define a schedule that becomes effective after the application invokes the `counter()` method:
+
+[source, java]
+----
+@Asynchronous(runAt = @Schedule(cron = "*/30 * * * *"))
+void counter() {
+    // Runs every 30 minutes
+}
+----
+
+Defines a schedule using an interval and automatically activates on application startup via CDI's `@Observes Startup`:
+
+[source, java]
+----
+@Asynchronous(runAt = @Schedule(daysOfWeek = DayOfWeek.FRIDAY, hours = 9))
+void fridayMorning(@Observes Startup event) {
+    // Runs every Friday at 9:00 AM
+}
+----
+
