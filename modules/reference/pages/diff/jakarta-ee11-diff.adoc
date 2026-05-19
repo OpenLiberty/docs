@@ -1,0 +1,660 @@
+// Copyright (c) 2023 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+// https://creativecommons.org/licenses/by-nd/4.0/
+//
+//
+// Contributors:
+// IBM Corporation
+//
+//
+//
+:page-description: If you are updating your application from using Jakarta EE 10 features to using Jakarta EE 11 features, changes in API behavior might require you to update your application code.
+:projectName: Open Liberty
+:page-layout: general-reference
+:page-type: general
+
+= Differences between Jakarta EE 11 and 10
+
+If you are updating your application from using Jakarta EE 10 features to using Jakarta EE 11 features, changes in API behavior might require you to update your application code. These changes apply to several Jakarta EE APIs and the Open Liberty features that support them.
+
+The following sections describe updates for different Jakarta EE 11 features.
+
+* <<global, Global differences between Jakarta EE 11 and 10>>
+* <<persist, Jakarta Persistence 3.2>>
+* <<concur, Jakarta Concurrency 3.1>>
+* <<cdi, Jakarta Contexts and Dependency Injection 4.1>>
+* <<interceptors, Jakarta Interceptors 2.2>>
+* <<security, Jakarta Security 4.0>>
+* <<authorization, Jakarta Authorization 3.0>>
+* <<express, Jakarta Expression Language 6.0>>
+* <<faces, Jakarta Server Faces 4.1>>
+* <<pages, Jakarta Server Pages 4.0>>
+* <<rest, Jakarta RESTful Web Services 4.0>>
+* <<websocket, Jakarta WebSocket 2.2>>
+* <<servlet, Jakarta Servlet 6.1>>
+* <<validation, Jakarta Validation 3.1>>
+
+
+[#global]
+== Global differences between Jakarta EE 11 and 10
+
+The following changes apply across the Jakarta EE 11 platform.
+
+=== Java SE requirement
+
+Jakarta EE 10 Liberty features can run with Java SE 11 and later. All Jakarta EE 11 Liberty features require Java 17 or later, as outlined by the Jakarta EE 11 specification.
+
+=== Managed Beans removal
+
+Unlike the `jakartaee-10.0` Liberty feature, the `jakartaee-11.0` Liberty feature no longer enables the `managedBeans-2.0` Liberty feature, as the Managed Beans specification was removed from the platform. Similarly, the `jakarta.annotation.ManagedBean` annotation API was also removed from the Jakarta Annotations API. Applications relying on the `@ManagedBean` annotation must migrate to use CDI annotations.
+
+=== New Jakarta Data specification
+
+The Jakarta Data 1.0 specification was added to the Jakarta EE 11 platform and the Web Profile 11.0 specification. 
+This specification adds a repository-based API for interacting with data. Either the `data-1.0` or `dataContainer-1.0` Liberty feature enables this capability. 
+For more information about how to use this new API, see xref:ROOT:jakarta-data.adoc[Jakarta Data].
+
+=== Optional specification availability
+
+The Jakarta EE 11 Platform specification removes all optional specifications from the platform, meaning Jakarta SOAP with Attachments, XML Binding, XML Web Services, and Enterprise Beans 2.x API functions are not included any longer with the `jakartaee-11.0` Liberty feature. Similarly, when using the `enterpriseBeans-4.0` convenience feature, it will no longer provide the Enterprise Beans 2.x APIs when combined with other Jakarta EE 11 Liberty features. 
+
+To use these functions, explicitly add Liberty features to your server's feature list: `xmlBinding-4.0` for XML Binding, `xmlWS-4.0` for SOAP with Attachments and XML Web Services, and `enterpriseBeansHome-4.0` for Jakarta Enterprise Beans 2.x APIs. Alternatively, use the equivalent versionless features with the `jakartaee-11.0` platform.
+
+When using the Liberty application client with the `jakartaeeClient-11.0` Liberty feature, Jakarta SOAP with Attachments, XML Binding, and XML Web Services client functions are not available. To continue using these capabilities in your Liberty application client, enable the `xmlBinding-4.0` and the new `xmlWSClient-4.0` Liberty features in your client's feature list.
+
+=== Java Security
+
+Liberty does not support the use of a `SecurityManager` to enable Java Security when you use Jakarta EE 11 features. This change aligns with the removal of Java Security support in the Jakarta EE 11 platform. The Liberty runtime automatically disables the `SecurityManager` on Java SE 17 if Java Security and Jakarta EE 11 features are configured in the server. Liberty already disables the `SecurityManager` for Java SE 18 and subsequent releases.
+
+
+[#persist]
+== Differences between Jakarta Persistence 3.2 and 3.1
+
+The feature:persistence-3.2[display=Jakarta Persistence 3.2] feature (`persistence-3.2`) introduces support for Java records, programmatic schema management, and extended JPQL/Criteria capabilities.
+
+=== New additions
+
+==== Support for Java Records
+You can now use Java records as `@Embeddable` types. This allows for more concise data models when mapping database components.
+
+==== Programmatic Schema Management
+A new `SchemaManager` API provides a standardized way to perform schema operations like creating, dropping, or truncating tables programmatically.
+
+==== Enhanced JPQL and Criteria API
+Jakarta Persistence 3.2 introduces several improvements to the query language:
+
+* **Subqueries:** Support for subqueries is added to the `SELECT`, `FROM`, and `JOIN` clauses.
+
+* **New Operations:** Support for the concatenation operator (`||`) and set operations such as `UNION`, `INTERSECT`, and `EXCEPT` (including `ALL` variants).
+
+* **New Functions:** Standardized support for `LEFT()`, `RIGHT()`, `REPLACE()`, and `CAST()`.
+
+==== Improved type safety and metadata
+* The `find()` and `refresh()` methods are updated to improve type safety.
+
+* The `@Table` and `@Column` annotations now include `comment` and `check` attributes to define database-level comments and check constraints directly in your entities.
+
+=== Behavior changes
+
+==== Package updates in EclipseLink
+The EclipseLink persistence provider included with Open Liberty has relocated several internal classes. If your application references these classes directly, you must update your import statements:
+
+[%header,cols="2,2,1"]
+|===
+|Previous Package
+|New Package
+|Class Name
+
+|`org.eclipse.persistence.config`
+|`org.eclipse.persistence.sessions`
+|`SessionCustomizer`
+
+|`org.eclipse.persistence.config`
+|`org.eclipse.persistence.descriptors`
+|`DescriptorCustomizer`
+
+|`org.eclipse.persistence.config`
+|`org.eclipse.persistence.annotations`
+|`CacheIsolationType`
+
+|`org.eclipse.persistence.config`
+|`org.eclipse.persistence.internal.helper`
+|`PropertiesUtils`
+|===
+
+==== Mapping changes for Instant and UUID types
+EclipseLink has updated default mappings for specific Java types to improve database efficiency:
+
+* **Instant type:** The default mapping for `java.time.Instant` changed from `BLOB` to `TIMESTAMP`.
+
+* **UUID type:** The default mapping for `java.util.UUID` changed to use the more efficient `BINARY(16)` type.
+
+**Action Required:** You must either update or regenerate your DDL files to align with these new column types. Alternatively, you can explicitly override the mapping in your entity configuration to preserve the previous behavior.
+
+==== Hibernate Dirty Tracking default
+A behavioral change is introduced for the `persistence-3.2` feature when using Hibernate as the persistence provider. The persistence container now overrides the default setting of the `hibernate.enhancer.enableDirtyTracking` property to `false`. This change ensures that merged detached entities are persisted properly and prevents potential data loss. 
+
+If you require the previous behavior, you can explicitly set the property to `true` in your configuration:
+
+.Option 1: persistence.xml
+[source,xml]
+----
+<persistence-unit name="myPU">
+    <properties>
+        <property name="hibernate.enhancer.enableDirtyTracking" value="true"/>
+    </properties>
+</persistence-unit>
+----
+
+.Option 2: server.xml
+[source,xml]
+----
+<jpa defaultPersistenceProvider="org.hibernate.jpa.HibernatePersistenceProvider">
+    <defaultProperties>
+        <property name="hibernate.enhancer.enableDirtyTracking" value="true"/>
+    </defaultProperties>
+</jpa>
+----
+
+==== EclipseLink Literal Handling
+EclipseLink now consistently uses parameterized queries (`?`) for literals in `HAVING` clauses. This behavior is applied across all database vendors, including DB2 and Derby, to ensure consistent query execution and performance.
+
+=== Removals and deprecations
+
+==== Deprecation of legacy Date and Time types
+To align with the modern `java.time` API, the following types and annotations are deprecated for use in new applications:
+
+* `java.util.Calendar`, `java.util.Date`
+
+* `java.sql.Time`, `java.sql.Timestamp`
+
+* `@Temporal`, `@MapKeyTemporal`, and the `TemporalType` enum.
+
+==== Other deprecations
+* **Array types:** The use of `Byte[]` and `Character[]` (wrapper) arrays for basic attributes is deprecated in favor of primitive `byte[]` and `char[]` arrays.
+
+* **CriteriaQuery:** The `multiselect` methods are deprecated. The preferred approach is to use the `array()` or `tuple()` methods defined in `CriteriaBuilder`.
+
+* **Entity Graphs:** Several methods are deprecated for removal, including `addSubclassSubgraph()` (replaced by `addTreatedSubgraph()`) and `addKeySubgraph()` (replaced by `addMapKeySubgraph()`).
+
+* **SPI and Internal classes:** `jakarta.persistence.spi.PersistenceUnitTransactionType` is deprecated for removal; use `jakarta.persistence.PersistenceUnitTransactionType` instead. 
+
+* **Persistence class:** The default public no-arg constructor, the `PERSISTENCE_PROVIDER` field, and the `providers` field in the `jakarta.persistence.Persistence` class are deprecated for removal.
+
+
+For more information, see the https://jakarta.ee/specifications/persistence/3.2/apidocs/jakarta.persistence/module-summary.html[Jakarta Persistence 3.2 Javadoc].
+
+
+[#concur]
+== Differences between Jakarta Concurrency 3.1 and 3.0
+
+The feature:concurrent-3.1[display=Jakarta Concurrency 3.1] feature (`concurrent-3.1`) adds support for Java 21 virtual threads, scheduled asynchronous methods, Java Flow/Reactive Streams support, and additional integration with CDI.
+
+=== New additions
+
+* **Virtual threads**: Virtual threads can be requested by setting `virtual = true` on `@ManagedExecutorDefinition`, `@ManagedScheduledExecutorDefinition`, or `@ManagedThreadFactoryDefinition`. Availability requires Java 21.
+
+* **Scheduled asynchronous methods**: A new `@Schedule` annotation can be used with `@Asynchronous` to define scheduled asynchronous methods as a modern replacement for EJB timer scheduling.
+
+* **Java Flow/Reactive Streams support**: `ContextService` adds support for Java Flow types allowing Jakarta EE context to be propagated when working with Java Flow/Reactive Streams.
+
+* **CDI integration**: Concurrency resources such as `ManagedExecutorService`, `ManagedScheduledExecutorService`, and `ContextService` can be injected with CDI and distinguished by qualifiers.
+
+For more information, see the https://jakarta.ee/specifications/concurrency/3.1/apidocs/jakarta.concurrency/module-summary.html[Jakarta Concurrency 3.1 Javadoc].
+
+
+[#cdi]
+== Differences between Jakarta Contexts and Dependency Injection 4.1 and 4.0
+
+The feature:cdi-4.1[display=Jakarta Contexts and Dependency Injection 4.1] feature (`cdi-4.1`) introduces the Method Invokers API and deprecates certain Expression Language-related methods.
+
+=== New additions
+
+==== Method invokers
+The Method Invokers API is designed to allow frameworks to call application methods while having the instance and method parameters optionally being provided by CDI. 
+
+* An `Invoker` must be created at startup by an extension using an `InvokerBuilder`. 
+
+* The builder can be obtained from the `ProcessManagedBean` event in a portable extension or from an `InvokerFactory` injected into a `@Registration` method in a build-compatible extension.
+
+=== Removals and deprecations
+
+==== Deprecated methods
+The following methods on `BeanManager` are deprecated for removal in the next major version so that the CDI API does not depend on the Expression Language API:
+
+* `getELResolver`
+* `wrapExpressionFactory`
+
+**Replacement:** Replacements for these methods are available on `ELAwareBeanManager`, which is published in a separate API jar. `ELAwareBeanManager` can be injected anywhere that `BeanManager` is valid and any `BeanManager` instance can be safely cast to `ELAwareBeanManager`.
+
+For more information, see the https://jakarta.ee/specifications/cdi/4.1/apidocs/[Jakarta Contexts and Dependency Injection 4.1 Javadoc].
+
+
+[#interceptors]
+== Differences between Jakarta Interceptors 2.2 and 2.1
+
+Jakarta Interceptors 2.2 adds new methods to allow an interceptor to access any binding annotations used to bind that interceptor to a class or method.
+
+=== New additions
+
+==== Access to binding annotations
+New methods are added to `InvocationContext` to obtain the binding annotations associated with the intercepted method or class:
+
+* `getInterceptorBinding(Class)`
+* `getInterceptorBindings()`
+* `getInterceptorBindings(Class)`
+
+All binding annotations associated with the intercepted method or class are returned by these methods, whether those annotations are used directly, indirectly, or were added by an extension.
+
+For more information, see the https://jakarta.ee/specifications/interceptors/2.2/apidocs/jakarta.interceptor/module-summary.html[Jakarta Interceptors 2.2 Javadoc].
+
+
+[#security]
+== Differences between Jakarta Security 4.0 and 3.0
+
+The feature:appSecurity-6.0[display=Application Security 6.0] feature (`appSecurity-6.0`) enables support for securing the server runtime environment and applications using Jakarta Security 4.0. This release introduces an in-memory identity store for testing and support for multiple authentication mechanisms.
+
+=== New additions
+
+==== In-memory identity store
+Jakarta Security 4.0 introduces the `@InMemoryIdentityStoreDefinition` annotation to configure an in-memory store of user, password, and group information.
+
+* **Usage:** This is a convenience-only provision for testing, debugging, development, and demos. Use in a production environment is strongly discouraged.
+* **Enablement:** By default, it is disabled. It must be explicitly enabled in the `server.xml` file using the `allowInMemoryIdentityStores` attribute:
++
+[source,xml]
+----
+<webAppSecurity allowInMemoryIdentityStores="true"/>
+----
+
+==== Support for multiple authentication mechanisms
+Applications can now specify multiple authentication mechanisms to act as a single `HttpAuthenticationMechanism`. 
+
+* **Abstraction:** Access is now abstracted by the new `HttpAuthenticationMechanismHandler` interface. The container provides a default implementation that prioritizes mechanisms in the following order: OpenID, Custom Form, Form, and Basic.
+* **Custom Handlers:** Developers can provide a custom implementation of `HttpAuthenticationMechanismHandler` to implement a bespoke prioritization algorithm.
+* **Qualifiers:** If an application defines the same authentication mechanism type multiple times, it must use CDI qualifiers. Note that if qualifiers are used, a custom `HttpAuthenticationMechanismHandler` must be defined to avoid an application startup error.
+
+==== SecurityContext update
+The `jakarta.security.enterprise.SecurityContext` interface includes a new method: 
+
+* `Set<String> getAllDeclaredCallerRoles()`
+
+=== Removals and updates
+
+==== IdentityStorePermission removal
+The `jakarta.security.enterprise.identitystore.IdentityStorePermission` class is removed. Its implementation was tied to the `SecurityManager`, which is not supported and has been removed for Jakarta EE 11.
+
+==== HTTP authentication mechanism qualifiers
+HTTP authentication mechanisms now have a qualifier by default (which can be overridden), whereas previously they were unqualified.
+
+For more information, see the https://jakarta.ee/specifications/security/4.0/apidocs/jakarta.security/module-summary.html[Jakarta Security 4.0 Javadoc].
+
+
+[#authorization]
+== Differences between Jakarta Authorization 3.0 and 2.1
+
+The feature:appAuthorization-3.0[display=Jakarta Authorization 3.0] feature (`appAuthorization-3.0`) introduces new authorization APIs that remove dependency on deprecated Java security classes and provide enhanced flexibility for authorization decisions.
+
+=== New additions
+
+==== New Policy and PolicyFactory classes
+Jakarta Authorization 3.0 introduces the `jakarta.security.jacc.PolicyFactory` and `jakarta.security.jacc.Policy` classes for making authorization decisions. 
+These classes replace the dependency on the deprecated `java.security.Policy` class from newer versions of Java.
+
+* **Per-context policies:** The new `PolicyFactory` API enables a `Policy` per policy context instead of a global policy.
+This design allows separate policies to be maintained for each application.
+
+==== Application-level configuration
+The 3.0 specification defines a mechanism for specifying `PolicyConfigurationFactory` and `PolicyFactory` classes in your application by using a `web.xml` file. 
+This design allows an application to have a different configuration from the server-scoped one while still enabling delegation to a server-scoped factory for any other applications. 
+Authorization modules can do this delegation by using decorator constructors for both `PolicyConfigurationFactory` and `PolicyFactory` classes.
+
+To configure your authorization modules in your application's `web.xml` file, add specification-defined context parameters:
+
+[source,xml]
+----
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="https://jakarta.ee/xml/ns/jakartaee"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/web-app_6_1.xsd"
+  version="6.1">
+
+  <context-param>
+    <param-name>jakarta.security.jacc.PolicyConfigurationFactory.provider</param-name>
+    <param-value>com.example.MyPolicyConfigurationFactory</param-value>
+  </context-param>
+
+  <context-param>
+    <param-name>jakarta.security.jacc.PolicyFactory.provider</param-name>
+    <param-value>com.example.MyPolicyFactory</param-value>
+  </context-param>
+
+</web-app>
+----
+
+==== PrincipalMapper class
+The 3.0 API adds a new `jakarta.security.jacc.PrincipalMapper` class that you can obtain from the `PolicyContext` class when performing authorization processing in your `Policy` implementation. 
+Using this class, you can obtain the roles associated with a specific `Subject` to be able to determine whether the `Subject` is in the required role. 
+Liberty's implementation of this class provides the roles specified in the `<application-bnd>` application configuration. This configuration can be in your `server.xml` or in your application's `ibm-application-bnd.xml` file.
+If that configuration is not provided, the implementation falls back to the user registry's group names as role names.
+
+You can use the `PrincipalMapper` class in your `Policy` implementation's `impliesByRole` (or `implies`) method, as shown in the following example:
+
+[source,java]
+----
+    public boolean impliesByRole(Permission p, Subject subject) {
+        Map<String, PermissionCollection> perRolePermissions =
+            PolicyConfigurationFactory.get().getPolicyConfiguration(contextID).getPerRolePermissions();
+        PrincipalMapper principalMapper = PolicyContext.get(PolicyContext.PRINCIPAL_MAPPER);
+
+        // Check to see if the Permission is in the any authenticated user role (**)
+        if (!principalMapper.isAnyAuthenticatedUserRoleMapped() && !subject.getPrincipals().isEmpty()) {
+            PermissionCollection rolePermissions = perRolePermissions.get("**");
+            if (rolePermissions != null && rolePermissions.implies(p)) {
+                return true;
+            }
+        }
+
+        // Check to see if the roles for the Subject provided imply the permission
+        Set<String> mappedRoles = principalMapper.getMappedRoles(subject);
+        for (String mappedRole : mappedRoles) {
+            PermissionCollection rolePermissions = perRolePermissions.get(mappedRole);
+            if (rolePermissions != null && rolePermissions.implies(p)) {
+                return true;
+            }
+        }
+        return false;
+    }
+----
+
+=== Removals and behavior changes
+
+==== ProviderService API removal
+Due to Jakarta Authorization 3.0 no longer using the `java.security.Policy` class and introducing a new configuration mechanism for authorization modules, the `com.ibm.wsspi.security.authorization.jacc.ProviderService` Liberty API is no longer available with the `appAuthorization-3.0` feature. 
+
+* **Action Required:** If a Liberty user feature configures authorization modules, update the OSGi service that provided a `ProviderService` implementation to use the `PolicyConfigurationFactory` and `PolicyFactory` set methods in the OSGi component. 
+
+* **Alternative:** You can use a Web Application Bundle (WAB) in your user feature to specify your security modules in a `web.xml` file. 
+
+* **Error Message:** When using an existing user feature that uses the `ProviderService` API, your user feature will fail to start with the following error message: `Unresolved requirement: Import-Package: com.ibm.wsspi.security.authorization.jacc; version="[10.0.0,20.0.0)"`.
+
+For more information, see the https://jakarta.ee/specifications/authorization/3.0/apidocs/jakarta.security.jacc/module-summary.html[Jakarta Authorization 3.0 Javadoc].
+
+
+[#express]
+== Differences between Jakarta Expression Language 6.0 and 5.0
+
+The feature:el-6.0[display=Jakarta Expression Language 6.0] feature (`el-6.0`) introduces new resolvers for modern Java types and removes legacy methods.
+
+=== New additions
+
+==== Support for Java Records
+Support for `java.lang.Record` is now included by default through `jakarta.el.RecordELResolver`.
+
+==== Support for Java Optional
+Support for `java.util.Optional` is available through `jakarta.el.OptionalELResolver`. This resolver is not enabled by default.
+
+==== Array length property
+Arrays now officially support the `length` property through the specification. Open Liberty’s Tomcat-based Expression Language implementation has supported this for years.
+
+=== Removals
+
+==== Feature descriptors
+The `getFeatureDescriptors` method is removed from `jakarta.el.ELResolver`.
+
+==== Security Manager
+All references to `java.lang.SecurityManager` have been removed to align with its deprecation in modern JDK versions.
+
+For more information, see the https://jakarta.ee/specifications/expression-language/6.0/apidocs/jakarta.el/module-summary.html[Jakarta Expression Language 6.0 Javadoc].
+
+
+[#faces]
+== Differences between Jakarta Server Faces 4.1 and 4.0
+
+The feature:faces-4.1[display=Jakarta Faces 4.1] feature (`faces-4.1`) introduces general improvements, new convenience methods, and deprecations that are aimed at streamlining the API and aligning with recent platform changes.
+
+=== New additions
+
+* **CDI lifecycle events:** Events such as `@Initialized`, `@BeforeDestroyed`, and `@Destroyed` now fire for built-in scopes `@ViewScoped` and `@FlowScoped`.
+
+* **Flow object injection:** You can now inject Flow objects into backing beans using `@Inject Flow currentFlow`.
+
+* **Built-in UUIDConverter:** A new built-in `jakarta.faces.convert.UUIDConverter` is now available through the API.
+
+* **Large response content lengths:** The `setResponseContentLengthLong()` method is added to `jakarta.faces.context.ExternalContext` to support large response content lengths.
+
+* **Row state preservation:** The `rowStatePreserved` property is now supported by the `ui:repeat` tag, similar to how it works in `h:dataTable`.
+
+* **Facelets refresh period:** The default value of `jakarta.faces.FACELETS_REFRESH_PERIOD` is `0` when `ProjectStage` is `Development` (always recompile). The `Production` default remains `-1` (never recompile).
+
+* **Modernized FacesMessage class:** The `jakarta.faces.application.FacesMessage` class now includes `equals()`, `hashCode()`, and `toString()` methods, which allows `FacesMessages` to be stored within `HashMaps`.
+
+* **Generics support:** Generics were further incorporated throughout the API to make the code easier to work with and safer at compile time.
+
+=== Removals and deprecations
+
+The following items are deprecated in Jakarta Faces 4.1:
+
+* **Full State Saving (FSS):** Deprecated. This setting is enabled by either `jakarta.faces.PARTIAL_STATE_SAVING` or `jakarta.faces.FULL_STATE_SAVING_VIEW_ID`.
+
+* **Legacy event classes:** The `jakarta.faces.event.PreDestroyCustomScopeEvent` and `jakarta.faces.event.PostConstructCustomScopeEvent` classes are deprecated. These were overlooked during the removal of `@CustomScoped` in Faces 4.0.
+
+* **Composite extension tag:** The `composite:extension` tag, which was never implemented, is deprecated.
+
+* **Security Manager:** All references to `SecurityManager` within the API have been removed to align with recent Java platform changes.
+
+For more information, see the https://jakarta.ee/specifications/faces/4.1/apidocs/jakarta.faces/module-summary.html[Jakarta Server Faces 4.1 Javadoc].
+
+
+[#pages]
+== Differences between Jakarta Pages 4.0 and 3.1
+
+The feature:pages-4.0[display=Jakarta Server Pages 4.0] feature (`pages-4.0`) removes several deprecated features and introduces updates that improve alignment with the latest Servlet specification.
+
+=== New additions
+
+The `ErrorData` class is updated to support two Servlet 6.1 error attributes:
+
+* **jakarta.servlet.error.query_string:** This attribute is now accessible through the `getQueryString()` method.
+
+* **jakarta.servlet.error.method:** This attribute is now accessible through the `getMethod()` method.
+
+=== Removals
+
+* **ELResolver.getFeatureDescriptors():** All methods that overrode this method are removed. These were previously deprecated in Expression Language 5.0.
+
+* **isThreadSafe page directive:** This directive is removed. It was deprecated in Pages 3.1.
+
+* **Legacy JSP actions:** The `jsp:plugin`, `jsp:param`, and `jsp:fallback` actions are removed because browsers no longer support their functionality. These were deprecated in Pages 3.1.
+
+* **JspException.getRootCause():** This method is removed. It was deprecated since JSP 2.1.
+
+For more information, see the https://jakarta.ee/specifications/pages/4.0/apidocs/jakarta.servlet.jsp/module-summary.html[Jakarta Pages 4.0 Javadoc].
+
+
+[#rest]
+== Differences between Jakarta RESTful Web Services 4.0 and 3.1
+
+The feature:restfulWS-4.0[display=Jakarta RESTful Web Services 4.0] feature (`restfulWS-4.0`) introduces general improvements, removes legacy APIs, and adds small enhancements to URI, JSON, and header handling.
+
+=== New additions
+
+* **Header lookup convenience:** A new `containsHeaderString()` method is added to:
+
+ - `ClientRequestContext`
+ - `ClientResponseContext`
+ - `ContainerRequestContext`
+ - `ContainerResponseContext`
+ - `HttpHeaders`
+
+* **New MediaType constants:** The following JSON Patch and JSON Merge Patch media type constants are added:
+
+ - `MediaType.APPLICATION_JSON_PATCH_JSON`
+ - `MediaType.APPLICATION_JSON_PATCH_JSON_TYPE`
+ - `MediaType.APPLICATION_MERGE_PATCH_JSON`
+ - `MediaType.APPLICATION_MERGE_PATCH_JSON_TYPE`
+
+* **URI template discovery:** A new `UriInfo.getMatchedResourceTemplate()` method retrieves the matched resource template for the current request.
+
+=== Removals
+
+* **Managed Bean support:** Support for `@ManagedBean` is removed. Managed bean functionality now belongs entirely to CDI.
+
+* **JAXB-based Link types:** The `Link.JaxbLink` and `Link.JaxbAdapter` inner classes are removed.
+
+For more information, see the https://jakarta.ee/specifications/restful-ws/4.0/apidocs/[Jakarta RESTful Web Services 4.0 Javadoc].
+
+
+[#websocket]
+== Differences between Jakarta WebSocket 2.2 and 2.1
+
+The feature:websocket-2.2[display=Jakarta WebSocket 2.2] feature (`websocket-2.2`) is a minor release that offers incremental improvements and internal cleanup.
+
+=== New additions
+
+==== `getSession()` method
+* A new `getSession()` method is added to the `jakarta.websocket.SendResult` class. This allows futures to acquire the associated WebSocket session easily.
+
+==== `@OnMessage.maxMessageSize` clarification
+* The `@OnMessage.maxMessageSize` attribute cannot be set to a value higher than `Integer.MAX_VALUE` (approximately 2 GB). This limitation occurs because the annotation uses a `long` type, while `Session.setMaxTextMessageBufferSize()` accepts an `int`.
+
+=== Specification clarification
+
+==== Ping and Pong notifications
+* Automated ping and pong notifications are clarified as an implementation responsibility rather than an API function. No changes were made in Open Liberty.
+_If a different behavior is desired, users may submit an Aha! idea for consideration._
+
+=== Removals
+
+==== Security Manager
+* All references to the Java SE `SecurityManager` have been removed from the API.
+
+For more information, see the https://jakarta.ee/specifications/websocket/2.2/[Jakarta WebSocket 2.2 Javadoc].
+
+
+[#servlet]
+== Differences between Jakarta Servlet 6.1 and 6.0
+
+The feature:servlet-6.1[display=Jakarta Servlet 6.1] feature (`servlet-6.1`) introduces several new APIs to enhance the development and debugging experience. It also clarifies existing behaviors regarding path canonicalization and error handling.
+
+=== New additions
+
+==== Enhanced `sendRedirect()` methods
+* The `HttpServletResponse` interface now includes three new overloads for `sendRedirect()` that allow you to specify the HTTP status code and whether to clear the response buffer:
+
+ - `sendRedirect(String location, boolean clearBuffer)`
+ - `sendRedirect(String location, int statusCode)`
+ - `sendRedirect(String location, int statusCode, boolean clearBuffer)`
+
+* **Defaults:** If not specified, `statusCode` defaults to `302` and `clearBuffer` defaults to `true`.
+
+* **Buffer Management:** Setting `clearBuffer` to `true` resets the response buffer if the response has not yet been committed.
+
+* **Redirection Message:** If the buffer is cleared, a default HTML message is used: `<html><body><p>Redirecting to <a href="{0}"></a></p></body></html>` (where `{0}` is the HTML-encoded location).
+
+==== New request attributes
+Three new attributes are introduced to improve error handling and security auditing:
+
+* `jakarta.servlet.error.method`: Captures the HTTP method of the initial request.
+* `jakarta.servlet.error.query_string`: Captures the query string of the initial request.
+* `jakarta.servlet.request.secure_protocol`: Used in HTTPS requests to retrieve the secure protocol name.
+
+==== `ByteBuffer` support for I/O
+New methods in `ServletInputStream` and `ServletOutputStream` allow reading and writing data using `java.io.ByteBuffer`, facilitating more efficient I/O operations.
+
+[source,java]
+----
+// ServletInputStream
+int read(ByteBuffer buffer)
+
+// ServletOutputStream
+void write(ByteBuffer buffer)
+----
+
+==== `Charset` support for encoding
+New methods allow setting character encoding using `java.nio.charset.Charset` objects instead of `String` names:
+
+* `ServletContext.setRequestCharacterEncoding(Charset)`
+* `ServletContext.setResponseCharacterEncoding(Charset)`
+* `ServletRequest.setCharacterEncoding(Charset)`
+* `ServletResponse.setCharacterEncoding(Charset)`
+
+==== New `HttpSession` Accessor API
+A new `HttpSession.Accessor` interface and `getAccessor()` method allow applications to interact with an `HttpSession` outside the scope of a standard HTTP request. Calling `Accessor.access()` automatically updates the session's `lastAccessedTime`.
+
+=== Behavior clarifications
+
+==== URI Path Canonicalization
+All `ServletContext` and `ServletRequest` methods that accept a String path (such as `getRealPath()`, `getRequestDispatcher()`, or `getResource()`) now strictly validate the path against URI Path Canonicalization rules. If a path is non-compliant, these methods now return `null` immediately.
+
+==== Parameter parsing exceptions
+The methods for retrieving request parameters (e.g., `getParameter()`, `getParameterMap()`) now throw a `java.lang.IllegalStateException` if parameter parsing fails. Previously, these methods threw `java.lang.IllegalArgumentException`.
+
+==== Multiple values for date headers
+The `HttpServletResponse.addDateHeader()` method can now add multiple headers with the same name but different date values. Previously, only the last added value was returned.
+
+==== `HttpServletMapping.getMatchValue()` behavior
+For mappings using the `PATH` match type, the value returned by `getMatchValue()` now correctly excludes the leading forward slash (`/`).
+
+==== `TRACE` response header filtering
+Responses to `TRACE` requests generated by the default `HttpServlet.doTrace()` method no longer include sensitive headers such as `Authorization`, `Cookie`, `X-Forwarded-For`, `Forwarded`, and `Proxy-Authorization`.
+
+==== Error dispatch request method
+When an error-page dispatch is triggered (e.g., via `sendError()`), the request method is now always set to `GET` for the duration of the dispatch, regardless of the original request's method.
+
+=== Behavior changes
+
+==== `Set-Cookie` header generation
+Using `addHeader()` or `setHeader()` to add a `Set-Cookie` header with arbitrary attributes no longer generates separate, additional `Set-Cookie` headers for those attributes.
+
+==== Absolute paths in `Part.write()`
+The default value for the `allowAbsoluteFileNameForPartWrite` custom property is now `true`. When an absolute path is provided to `Part.write()`, the file is written to that specific location rather than a temporary server directory.
+
+For more information, see the https://jakarta.ee/specifications/servlet/6.1/apidocs/jakarta.servlet/module-summary.html[Jakarta Servlet 6.1 Javadoc].
+
+
+[#validation]
+== Differences between Jakarta Validation 3.1 and Jakarta Bean Validation 3.0
+
+The feature:validation-3.1[display=Jakarta Validation 3.1] feature (`validation-3.1`) reflects the specification rename and formalizes support for Java records.
+
+=== Specification rename
+
+The specification has been renamed from Jakarta Bean Validation to Jakarta Validation to better reflect its broader scope beyond just JavaBeans. This change is purely nominal and does not affect functionality.
+
+* **Feature name:** The new Liberty feature is named `validation-3.1` to align with the specification rename.
+
+
+=== New additions
+
+==== Java Records support
+
+Jakarta Validation 3.1 adds support for validating Java records.
+
+
+Example:
+
+[source,java]
+----
+public record Address(
+    @NotBlank String street,
+    @NotBlank String city,
+    @Pattern(regexp = "\\d{5}") String zipCode
+) {}
+
+public class Customer {
+    @Valid
+    private Address address;
+}
+----
+
+For more information, see the https://jakarta.ee/specifications/bean-validation/3.1/apidocs/[Jakarta Validation 3.1 Javadoc].
+
+
+== See also
+
+* xref:ROOT:jakarta-ee.adoc[Jakarta EE overview]
+* xref:diff/jakarta-ee10-diff.adoc[Differences between Jakarta EE 10 and 9.1]
+* xref:diff/jakarta-ee-diff.adoc[Differences between Jakarta EE 9.1 and 8.0]
+
