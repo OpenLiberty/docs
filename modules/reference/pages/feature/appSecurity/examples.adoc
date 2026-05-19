@@ -8,6 +8,7 @@
 - <<#tai,Disable LTPA cookies for TAI>>
 - <<#validationkeys,Rotate LTPA keys without requiring users to reauthenticate>>
 
+[#basic]
 === Configure a basic user registry
 You can configure Open Liberty to authenticate and authorize users by using a basic user registry. The basic user registry contains user credentials that applications need for security-related tasks. To configure a basic user registry, the Application Security feature must be enabled in the `server.xml` file. The following example shows the configuration of a basic user registry in the `server.xml` file:
 [source,xml]
@@ -44,6 +45,7 @@ If a user ID or password contains characters other than US-ASCII, make sure that
 You can use the `securityUtility encode` command to encode the password for each user. For more information, see xref:reference:command/securityUtility-encode.adoc[securityUtility encode].
 You can also specify administrative roles for users and groups to govern access to Open Liberty administrative REST APIs. For more information, see the feature:restConnector[display=Admin REST Connector] feature.
 
+
 [#quick]
 === Configure a basic user registry with QuickStart security
 When you want to configure a basic user registry for test purposes, you can use the `quickStartSecurity` element to automatically configure a registry that grants the administrator role to a user. The administrator role gives the user the authority to manage applications. The following example shows the `server.xml` file configuration to define the username and password for a user that is granted the administrator role with the `quickStartSecurity` element:
@@ -74,6 +76,8 @@ You can override the default settings for the `ltpa` element by configuring the 
 
 For more information on LTPA configuration attributes, see the config:ltpa[display=LTPA] configuration element.
 
+For more information about LTPA best practices, including how to configure secure cookies that must use TLS, see xref:ROOT:network-hardening.adoc#ltpa[LTPA best practices].
+
 [#filter]
 === Configure LTPA authentication for a subset of requests
 You can configure an authentication filter to specify whether certain requests for protected resources are authenticated with LTPA.
@@ -93,6 +97,7 @@ For more information, see xref:ROOT:authentication-filters.adoc[Authentication f
 In the example, request URLs that contain the `/SimpleServlet` pattern are authenticated by using LTPA SSO authentication.
 If the `ltpa` element does not specify the `authFilterRef` attribute, all requests that include an LTPA cookie are processed by LTPA SSO authentication.
 
+
 [#tai]
 === Disable LTPA cookies for TAI
 LTPA cookies contain secure tokens that are used to verify user credentials and enable SSO. When you don't want to rely on LTPA tokens for SSO, you can use other methods, such as a Trust Association Interceptor (TAI), for authentication. A TAI is used to validate HTTP requests between a third-party security server and an Open Liberty server to complete authentication. The following example shows how to disable LTPA cookies for TAI by specifying the `disableLtpaCookie` attribute with a value of `true` in the `server.xml` file:
@@ -101,6 +106,7 @@ LTPA cookies contain secure tokens that are used to verify user credentials and 
 ----
 <trustAssociation id="sample" disableLtpaCookie="true" />
 ----
+
 
 [#validationkeys]
 === Rotate LTPA keys without requiring users to reauthenticate
@@ -159,3 +165,5 @@ Open Liberty automatically generates a new primary keys file to create and valid
 4. Optionally, when you no longer need the validation keys, remove them by deleting the validation keys file or by setting the `monitorValidationKeysDir` attribute to `false`.
 +
 Removing unused validation keys can improve performance.
+
+'''
