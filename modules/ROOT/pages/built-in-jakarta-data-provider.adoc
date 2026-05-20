@@ -1,0 +1,66 @@
+= Built-in Jakarta Data Provider
+
+
+== Overview of Built-in Jakarta Data Provider
+
+Open Liberty includes a built‑in Jakarta Data provider for relational database access, backed by a Jakarta Persistence provider: EclipseLink (the built‑in provider) or Hibernate, which can be added as a third‑party provider.
+
+You can access the built-in Jakarta Data provider when you enable the `data-1.0` feature alongside the `persistence-3.2` feature or the `jdbc-4.3` feature or the `jdbc-4.2` feature. 
+Alternatively, you can use the `data-1.0` feature alongside the `persistenceContainer-3.2` feature if you prefer to use the built-in Jakarta Data provider with Hibernate as a third-party Jakarta Persistence provider.
+
+
+== Entity Model
+
+The built-in provider accepts Jakarta Persistence entities or Java Records as entities.
+
+
+== Provider Name
+
+When multiple Jakarta Data providers supporting Jakarta Persistence entities coexist in the system, use the provider name of `Liberty` to explicitly request the built-in Jakarta Data provider.
+
+[source,java]
+----
+@Repository(provider = "Liberty")
+public interface Products extends BasicRepository<Product, String> {
+}
+----
+
+[#choosedb]
+== Choosing the Database
+ 
+When you use the built-in Jakarta Data Provider with the built-in Jakarta Persistence provider, EclipseLink can connect to the same databases that it supports.
+EclipseLink's support for each database limits individual capabilities within Jakarta Data and the entity model.
+
+
+=== The Default Database
+
+If you do not specify otherwise, you end up with the Jakarta EE Default DataSource, which is `java:comp/DefaultDataSource`, as the data store for your repository. Liberty does not configure the Jakarta EE Default DataSource by default. To configure it, include configuration of a `<dataSource>` with id of `DefaultDataSource` in your server configuration.
+
+*Repository interface:*
+
+[source,java]
+----
+@Repository //Default dataStore = "java:comp/DefaultDataSource"
+public interface Cars extends BasicRepository<Car, String> {
+  // Query methods
+}
+----
+
+*Server configuration:*
+
+[source,xml]
+----
+<dataSource id="DefaultDataSource">
+  <jdbcDriver libraryRef="PostgresLib"/>
+  <properties.postgresql databaseName="exampledb" serverName="localhost" portNumber="5432"
+    user="${env.DB_USER}" password="${env.DB_PASS}"/>
+</dataSource>
+
+<library id="PostgresLib">
+  <fileset dir="${server.config.dir}/lib/postgres" includes="*.jar"/>
+</library>
+----
+
+EclipseLink will attempt to create the necessary database tables automatically, which is convenient for development, but is not efficient for running in production because checking for table existence incurs a lot of overhead and table creation might require database admin privileges.
+
+For information about how to control the table creation settings, see the sections on xref:data-store-configuration.adoc#databasestore[Specifying a DatabaseStore] and xref:data-store-configuration.adoc#elpersistence[Specifying an EclipseLink Persistence Unit Reference].

@@ -8,6 +8,8 @@
 - <<#outbound, Configure outbound TLS>>
 - <<#certs, Provide certificates from an environment variable or a file>>
 - <<#hostverify, Hostname and IP address verification>>
+- <<#cipher-config, Configuring TLS handshake ciphers>>
+
 
 [#config]
 === Configure transport layer security (TLS)
@@ -20,6 +22,7 @@ The server creates a default `keystore` and certificate if you specify `defaultK
 ----
 <keyStore id="defaultKeyStore" password="yourPassword"/>
 ----
+
 
 [#keystore]
 === Default keystore and TLS certificate configurations
@@ -68,6 +71,7 @@ You can also run the xref:reference:command/securityUtility-createSSLCertificate
 
 For more information, see xref:reference:config/ssl.adoc[SSL Repertoire].
 
+
 [#alt]
 === Specify an alternate SSL configuration as default
 
@@ -77,6 +81,7 @@ You can designate a different `ssl` element in the configuration as the default 
 ----
 <sslDefault sslRef="customSSLConfiguration"/>
 ----
+
 
 [#configure-specific]
 === Configure specific TLS protocols
@@ -104,6 +109,7 @@ You can set the `trustDefaultCerts` attribute to `true` to specify that the JVM 
       trustStoreRef="defaultTrustStore"
       trustDefaultCerts="true"/>
 ----
+
 
 [#outbound]
 === Configure outbound TLS
@@ -145,6 +151,7 @@ In the following example, outbound TLS connections that go to any port on the `o
            password="yourpassword"/>
 ----
 
+
 [#certs]
 === Provide certificates from an environment variable or a file
 
@@ -167,6 +174,7 @@ cert_defaultKeyStore="-----BEGIN CERTIFICATE-----
 ....
 -----END CERTIFICATE-----"
 ----
+
 
 [#hostverify]
 === Hostname and IP address verification
@@ -192,4 +200,48 @@ The verification makes sure that the hostname or IP address in the URL matches t
 Typically, during hostname verification, when the hostname is used in the request, it checks against the `DNSName` entry in the SAN. If the SAN does not contain a `DNSName` entry, hostname verification uses the certificate owner's Common Name (CN). When an IP address is used in the request, hostname verification relies on the IP address information in the SAN only.
 
 For more information, see xref:ROOT:troubleshooting.adoc#hostverify[Troubleshooting SSL and TLS].
+
+
+[#cipher-config]
+=== Configuring TLS handshake ciphers
+
+The `enabledCiphers` attribute on the `ssl` element allows you to control which cipher suites are used during TLS handshakes. Open Liberty uses the effective JDK cipher list from the JDK, and the `securityLevel` attribute is no longer used. The `enabledCiphers` attribute supports three configuration modes:
+
+1. **Default behavior**: If `enabledCiphers` is empty or not specified, the JDK's effective cipher list is used.
+
+2. **Explicit list**: Provide a custom list of cipher suites, separated by spaces.
+
+3. **Filtering syntax**: Add (`+`) or remove (`-`) cipher suites from the JDK's effective list. A wildcard (`*`) is supported for removal entries only, and must appear at the end of the pattern.
+
+The following example shows the default behavior where no `enabledCiphers` attribute is specified:
+
+[source,xml]
+----
+<ssl id="defaultSSL" keyStoreRef="defaultKeyStore" trustStoreRef="defaultTrustStore"/>
+----
+
+The JDK's effective cipher list varies depending on the Java version and security policies in use. This approach ensures that your server benefits from security updates and improvements provided by JDK updates.
+
+The following example shows an explicit list of cipher suites:
+
+[source,xml]
+----
+<ssl id="defaultSSL" enabledCiphers="TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256 TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256 TLS_DHE_DSS_WITH_AES_256_GCM_SHA384 TLS_DHE_DSS_WITH_AES_128_GCM_SHA256 TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384 TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256 TLS_DHE_DSS_WITH_AES_256_CBC_SHA256 TLS_DHE_DSS_WITH_AES_128_CBC_SHA256 TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA TLS_DHE_DSS_WITH_AES_256_CBC_SHA TLS_DHE_DSS_WITH_AES_128_CBC_SHA TLS_RSA_WITH_AES_128_GCM_SHA256"/>
+----
+
+When using an explicit list, you must manually update the configuration over time to include any new cipher suites introduced by JDK updates.
+
+The following example shows the filtering syntax to remove all RSA key exchange cipher suites except `TLS_RSA_WITH_AES_128_GCM_SHA256`:
+
+[source,xml]
+----
+<ssl id="defaultSSL" enabledCiphers="-TLS_RSA* +TLS_RSA_WITH_AES_128_GCM_SHA256"/>
+----
+
+This configuration starts with the JDK's effective cipher list, removes all cipher suites matching the pattern `TLS_RSA*`, and adds back `TLS_RSA_WITH_AES_128_GCM_SHA256`. The filtering syntax allows you to efficiently remove groups of cipher suites using wildcards, while implicitly starting from the full JDK effective cipher list. In contrast, the explicit list approach requires specifying every cipher suite that should be enabled for the TLS handshake.
+
+[NOTE]
+====
+The explicit list and filtering syntax modes are mutually exclusive. If the `enabledCiphers` value contains both a static entry and a `+`/`-` entry, an error is logged, and the server ignores the `enabledCiphers` value by returning the effective JDK cipher list.
+====
 

@@ -1,0 +1,73 @@
+= Pagination and Page Requests
+
+Jakarta Data offers two forms of pagination:
+
+- *Offset-based Pagination* - Breaks results into pages using an index offset and a maximum number of results per page.
+- *Cursor-based Pagination* - Breaks results into pages using a cursor and a maximum number of results per page.
+
+The built-in Jakarta Data provider supports both types.
+
+Repository methods that perform pagination must accept a `PageRequest` parameter and return either `Page` or `CursoredPage`.
+
+== Sort Criteria for Pagination
+
+For pagination to work correctly, sort criteria must define a consistent ordering of results. You can supply sort criteria to a repository method at run time using an `Order`, `Sort`, or `Sort[]` parameter. The repository can supply sort criteria during development time using the `@OrderBy` annotation, the `OrderBy` Query by Method Name keyword, or the `ORDER BY` clause of a `@Query` annotation value. Cursor-based pagination does not support the use of an `ORDER BY` clause in a `@Query` annotation value. In addition, when using cursor-based pagination, you must write the `@Query` annotation value to end with a `WHERE` clause so that the Jakarta Data provider can append additional conditions to fetch results relative to a cursor position.
+
+== Offset-Based Pagination
+
+Repository methods for offset-based pagination must return a `Page`, which is typically of the entity type, but can alternatively be a `Page` of a record type where the record components are named to match a subset of the entity attributes, or can alternatively be a `Page` of a single entity attribute type. The latter requires you to annotate the repository method with a `@Query` annotation that supplies a query selecting a specific entity attribute of that type.
+
+=== Example Offset-Based Pagination methods
+
+[source,java]
+----
+public record CarInventory(String vin, String make, String model, int year) {}
+
+@Repository
+public interface Cars extends BasicRepository<Car, String> {
+    @Find // Pages of entity type
+    @OrderBy(_Car.YEAR)
+    @OrderBy(_Car.VIN)
+    Page<Car> getCars(@By(_Car.MAKE) String make,
+                      @By(_Car.MODEL) String model,
+                      PageRequest request);
+
+    // Page of record type
+    @Query("SELECT NEW io.openliberty.CarInventory(c.vin, c.make, c.model, c.year) FROM Car c")
+    Page<CarInventory> getCarsInventory(PageRequest request, Order<?> order);
+
+    // Page of entity attribute
+    Page<Float> findPriceOrderByPrice(PageRequest request);
+}
+----
+
+== Cursor-Based Pagination
+
+Repository methods for cursor-based pagination must return a `CursoredPage` of the entity type. Cursor-based pagination does not support returning cursored pages of anything other than the entity type because the system uses entity attribute values to construct the cursors relative to which you request next and previous pages.
+
+=== Example Cursor-Based Pagination method
+
+[source,java]
+----
+@Repository
+public interface Cars extends BasicRepository<Car, String> {
+    @Find
+    CursoredPage<Car> getCars(@By(_Car.MAKE) String make,
+                              @By(_Car.MODEL) String model,
+                              PageRequest request,
+                              Order<Car> sort);
+}
+----
+
+== Page Counts and Total Elements
+
+The Jakarta Data API allows obtaining a total count of pages and elements across pages under certain conditions.
+As indicated by the `CursoredPage` API, the total count of pages and count of total elements across pages are not accurate when using cursor-based pagination. 
+
+[NOTE]
+====
+With cursor-based pagination, the system performs queries relative to a cursor position and counts might not include elements before the cursor position. 
+If total counts are needed with cursor-based pagination, write a separate `countBy` method or annotated `@Query` method to retrieve the total count.
+====
+
+When using offset-pagination, you can accurately retrieve the total count of pages and count of total elements for pages retrieved using the Query by Method Name pattern, the Parameter-based Automatic Query pattern, and annotated `@Query` methods that supply queries that retrieve entities and conform to the subset of Jakarta Persistence Query Language that the Jakarta Data specification defines. Totals will also work with some other Jakarta Persistence Query Language (JPQL) queries, but this usage goes beyond the Jakarta Data specification and the built-in Jakarta Data provider does not guarantee it. Do not use pagination with queries that perform modifications or compute aggregate values such as `COUNT(THIS)` rather than retrieving entities.
