@@ -57,15 +57,20 @@ The MicroProfile Health v4.0 runtime in Open Liberty that is enabled through the
 
 The files are created when all health check statuses return an `UP` status. The files are deleted when the server is shut down along with the `/health` directory. After the files are created, the runtime will query the readiness health checks and liveness health checks at a user-configured interval. For each respective health check, if the status returns `UP`, then the associated health-check file updates the last modified timestamp. The updated timestamp indicates to any observers that an `UP` status was reported. A `DOWN` status results in the file not having its timestamp updated.
 
-The configuration for defining the update interval is the `checkInterval` attribute of the `<mpHealth>` element when using the `mpHealth-4.0` feature. This configuration is required to enable the file-based health-check mechanism. The optional `startupCheckInterval` configuration value is used during the startup of the feature and is the interval between health-check queries for establishing the `UP` statuses for all three health check types. The `startupCheckInterval` configuration value defaults to `100ms`.
+The configuration for defining the update interval is the `checkInterval` attribute of the `<mpHealth>` element when using the `mpHealth-4.0` feature. This configuration is required to enable the file-based health check mechanism. The environment variable configuration for the `checkInterval` attribute is `MP_HEALTH_CHECK_INTERVAL`.
 
-The environment variable configuration for the `checkInterval` attribute is `MP_HEALTH_CHECK_INTERVAL`. The environment variable configuration for the `startupCheckInterval` attribute is `MP_HEALTH_STARTUP_CHECK_INTERVAL`. If both an environment variable configuration and a `server.xml` configuration are detected, then the `server.xml` configuration takes precedence.
+The optional `startupCheckInterval` attribute of the `<mpHealth>` element is used during the startup of the feature and is the interval between health check queries to establish the `UP` status for all three health check types. The `startupCheckInterval` configuration value defaults to `100ms`. The environment variable configuration for the `startupCheckInterval` attribute is `MP_HEALTH_STARTUP_CHECK_INTERVAL`.
 
-The following example shows the configuration for `checkInterval` and `startupCheckInterval`.
+The optional `enableEndpoints` attribute of the `<mpHealth>` element controls whether the MicroProfile Health REST-based endpoints are exposed. This attribute defaults to `true`, meaning that the REST-based health check endpoints are enabled and accessible. When set to `false` while file-based health checks are enabled, the REST-based endpoints are not exposed and return a 404 status. The environment variable configuration for the `enableEndpoints` attribute is `MP_HEALTH_ENABLE_ENDPOINTS`. The `enableEndpoints` attribute or environment variable configuration works only when the file-based health check mechanism is enabled by configuring the `checkInterval` attribute.
 
+The following example shows the configuration for `checkInterval`, `startupCheckInterval`, and `enableEndpoints`:
+
+[source,xml]
 ----
-<mpHealth checkInterval="10s" startupCheckInterval="250ms" />
+<mpHealth checkInterval="10s" startupCheckInterval="250ms" enableEndpoints="false" />
 ----
+
+If both an environment variable configuration and a `server.xml` configuration are detected, then the `server.xml` configuration takes precedence.
 
 [#live]
 === The @Liveness annotation
