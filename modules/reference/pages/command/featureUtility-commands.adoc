@@ -24,6 +24,7 @@ The following `featureUtility` commands are available:
 * xref:command/featureUtility-installServerFeatures.adoc[featureUtility installServerFeatures]: The command installs the required features that are listed in the `server.xml` file of a server.
 * xref:command/featureUtility-viewSettings.adoc[featureUtility viewSettings]: The command is used to view Maven repository and proxy settings when Maven repositories other than Maven Central are configured.
 
+
 [#mod]
 == Modifications for featureUtility commands
 
@@ -84,6 +85,7 @@ a|Configures the outbound HTTPS proxy.
 |===
 {empty} +
 
+
 == Verify user features
 
 You can verify your user features by providing the long key ID and key URL to reference your public key that is stored on a key server. Alternatively, you can specify a local file path for your public key. The supported protocols for the key URL are `HTTP`, `HTTPS`, and `file`.
@@ -105,6 +107,7 @@ Alternatively, you can provide a local file path instead of a URL. If you have y
 myKey.keyurl=/pubkey.asc
 ----
 
+
 == Install user features
 
 You can specify the maven coordinates for the features BOM file to install user features by adding the `customBomFileName.featuresbom` property in the `featureUtility.properties` file, as shown in the following example:
@@ -112,6 +115,7 @@ You can specify the maven coordinates for the features BOM file to install user 
 ----
 customBomFileName.featuresbom=my.maven.coordinate:my-features-bom:version
 ----
+
 
 == Define custom repositories
 
@@ -127,3 +131,36 @@ remoteRepo2.url=https://my-remote-server2/secure/maven2
 remoteRepo2.user=operator
 remoteRepo2.password={aes}KM8dhwcv892Ss1sawu9R+
 ----
+
+
+== Disable Maven Central fallback
+
+By default, if custom repositories are configured but cannot be reached, the `featureUtility` commands fall back to using Maven Central. You can prevent this fallback behavior by setting the `useDefaultRepository` property to `false` in the `repositories.properties` file that's located in the `{wlp.install.dir}/etc/` directory.
+
+When `useDefaultRepository=false` is set and a custom repository cannot be reached, the `featureUtility` command fails with an error message instead of attempting to use Maven Central.
+
+In the following example, the `useDefaultRepository` property is set to `false` in the `{wlp.install.dir}/etc/repositories.properties` file:
+
+----
+useDefaultRepository=false
+----
+
+With this setting and a custom repository that cannot be connected in the `{wlp.install.dir}/etc/featureUtility.properties` file:
+
+----
+myRepo.url=http://alt.mycomp.com/maven2
+----
+
+The `featureUtility install` command produces output similar to the following example:
+
+----
+> featureUtility install mpHealth-2.2
+Initializing ...
+Using 8 threads to download artifacts.
+http://alt.mycomp.com/maven2 cannot be connected
+<---------------------> 0.00%
+com.ibm.ws.install.InstallException: CWWKF1248E: One of the repositories that is specified in the configuration cannot be reached. Verify that your computer has network access and firewalls are configured correctly, then try the action again. If the connection still fails, the repository server might be temporarily unavailable.
+----
+
+This behavior ensures that features are only installed from your configured repositories and prevents unintended installations from Maven Central when custom repositories are unavailable.
+
