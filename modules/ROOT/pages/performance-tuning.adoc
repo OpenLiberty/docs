@@ -13,6 +13,7 @@ The following sections provide more information about tuning parameters and attr
 * <<#decrease_responsetime, Decrease response time of servlets>>
 * <<#idle_cpu, Reduce idle server CPU time>>
 * <<#startup_time, Tune startup time>>
+* <<#tune_logging, Tune logging>> 
 
 
 [#jvm]
@@ -166,3 +167,13 @@ This setting skips the scanning of archives unless they contain a `beans.xml` fi
 
 The feature:cdi[display=CDI] feature might be included in your server configuration even if it is not explicitly specified in your `server.xml` file because other features might implicitly enable it.
 For example, the feature:microProfile[display=MicroProfile] feature and the feature:webProfile[display=Jakarta EE Web Profile] feature each enable the CDI feature by default.
+
+
+[#tune_logging]
+== Tune logging
+
+By default, messages sent to https://docs.oracle.com/javase/8/docs/api/java/lang/System.html#out[System.out] and https://docs.oracle.com/javase/8/docs/api/java/lang/System.html#err[System.err] are sent to both `messages.log` and process stdout/stderr (for example, `console.log`) because xref:log-trace-configuration.adoc[copySystemStreams / com.ibm.ws.logging.copy.system.streams] default to `true`. With high volume `System.out`/`System.err` usage, this duplicated output might have a significant performance impact. You can disable sending `System.out`/`System.err` to process stdout/stderr by setting `com.ibm.ws.logging.copy.system.streams=false` in `bootstrap.properties`.
+
+If `System.out`/`System.err` logging is excessive and causes a performance problem even when sending just to `messages.log`, then you can disable them temporarily with `<logging traceSpecification="*=info:SystemOut=off:SystemErr=off"/>`. However, this approach generally isn't recommended long-term because some components in the Java Class Library (and others) might have critical diagnostics that write to `System.out` or `System.err`. Instead, it's best to fix such excessive `System.out`/`System.err` usage.
+
+
