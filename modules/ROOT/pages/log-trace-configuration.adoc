@@ -36,6 +36,7 @@ The following sections provide more information about configuring your Open Libe
 * <<#mptel,Logging with MicroProfile Telemetry>>
 * <<#configuaration,Logging configuration>>
 * <<#storage,Log file storage management>>
+* <<#performance,Performance considerations for logging>>
 * <<#log_formats,Log formats>>
 * <<#json,JSON logging>>
   ** <<#names,Configurable JSON field names>>
@@ -47,6 +48,7 @@ The following sections provide more information about configuring your Open Libe
 * <<#settings,Configuration settings by source>>
 * <<#log_details,Trace log detail levels>>
 * <<#log_throttling,Log throttling>>
+
 
 [#mptel]
 == Logging with MicroProfile Telemetry
@@ -73,6 +75,30 @@ com.ibm.ws.logging.max.files=3
 com.ibm.ws.logging.console.log.level=OFF
 com.ibm.ws.logging.copy.system.streams=false
 ----
+
+[#performance]
+== Performance considerations for logging
+
+=== High-volume System.out and System.err usage
+
+By default, messages sent to https://docs.oracle.com/javase/8/docs/api/java/lang/System.html#out[System.out] and https://docs.oracle.com/javase/8/docs/api/java/lang/System.html#err[System.err] are sent to both `messages.log` and process stdout/stderr (for example, `console.log`) because the `copySystemStreams` attribute defaults to `true`. With high-volume `System.out`/`System.err` usage, this duplicated output can have a significant performance impact.
+
+You can disable sending `System.out`/`System.err` to process stdout/stderr by setting `com.ibm.ws.logging.copy.system.streams=false` in the `bootstrap.properties` file, as shown in the following example:
+
+[source,properties,linenums,role="code_column"]
+----
+com.ibm.ws.logging.copy.system.streams=false
+----
+
+If `System.out`/`System.err` logging is excessive and causes a performance problem even when sending just to `messages.log`, you can disable them temporarily with the following configuration in your `server.xml` file:
+
+[source,xml]
+----
+<logging traceSpecification="*=info:SystemOut=off:SystemErr=off"/>
+----
+
+However, this approach generally isn't recommended long-term because some components in the Java Class Library and other libraries might have critical diagnostics that write to `System.out` or `System.err`. Instead, it's best to fix such excessive `System.out`/`System.err` usage in your application code.
+
 
 [#log_formats]
 == Log formats
@@ -542,7 +568,7 @@ The following table shows the equivalent `server.xml` file, `bootstrap.propertie
 |copySystemStreams
 |com.ibm.ws.logging.copy.system.streams
 |
-|If this setting is set to `true`, messages that are written to the System.out and System.err streams are copied to process `stdout` and `stderr` streams and so appear in the `console.log` file. If this setting is set to `false`, those messages are written to configured logs such as the `messages.log` file or `trace.log` file, but they are not copied to `stdout` and `stderr` and do not appear in `console.log`. The default value is true.
+|If this setting is set to `true`, messages that are written to the System.out and System.err streams are copied to process `stdout` and `stderr` streams and so appear in the `console.log` file. If this setting is set to `false`, those messages are written to configured logs such as the `messages.log` file or `trace.log` file, but they are not copied to `stdout` and `stderr` and do not appear in `console.log`. The default value is true. With high-volume System.out/System.err usage, setting this to `false` can improve performance by avoiding duplicated output. For more information, see <<#performance,Performance considerations for logging>>.
 
 |messageFileName
 |com.ibm.ws.logging.message.file.name
