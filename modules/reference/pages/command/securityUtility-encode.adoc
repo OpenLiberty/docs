@@ -25,41 +25,64 @@ Enclose any text with spaces in quotation marks.
 If your password includes special characters, you must escape each special character to help ensure that the password is properly encoded. For more information, see <<pw,Check passwords for special characters>>.
 
 
-For more information about limits to password encryption, see xref:ROOT:password-encryption.adoc[Password encryption limitations].
+Starting in version 26.0.0.3, the `securityUtility encode --encoding=aes` command no longer uses a default encryption key.
+One of the following arguments must now be specified: `--key`, `--base64Key`, `--aesConfigFile`, or `--keyring`.
 
+For more information about limits to password encryption, see xref:ROOT:password-encryption.adoc[Password encryption limitations].
 
 == Usage examples
 
 Encrypt a password with Advanced Encryption Standard (AES) encryption by specifying an encryption key string.
 After you enter this command, interactive mode prompts you for the password that you want to encrypt:
 
-[source,sh]
 ----
 securityUtility encode --encoding=aes --key=<encryption_key_string>
 ----
 
 Hash a password. After you enter this command, interactive mode prompts you for the password that you want to hash:
 
-[source,sh]
 ----
 securityUtility encode --encoding=hash
 ----
 
-Encode a password by using a Base64-encoded AES key. Specify the key directly:
+Encode a password by using a Base64-encoded AES key, specify the key directly:
 
 [source,sh]
 ----
 securityUtility encode --encoding=aes --base64Key=<your_base64_key> MyPassword
 ----
 
-Use a configuration file that contains the AES key. Specify the `--aesConfigFile` option:
+Use a configuration file that contains the AES key variable, specify the `--aesConfigFile` option:
 
 [source,sh]
 ----
 securityUtility encode --encoding=aes --aesConfigFile=aesConfig.xml MyPassword
 ----
-**NOTE**: The configuration file must contain either the `wlp.aes.encryption.key` or the
-`wlp.password.encryption.key` variable. Only one variable can be present in a file.
+
+For example, `aesConfig.xml` could contain one of the following definitions:
+
+[source,xml]
+----
+<variable name="wlp.aes.encryption.key" value="<your_aes_key>" />
+----
+
+or
+
+[source,xml]
+----
+<variable name="wlp.password.encryption.key" value="yourKey" />
+----
+
+[NOTE]
+====
+The `aesConfigFile.xml` file must contain either the `wlp.aes.encryption.key` or `wlp.password.encryption.key` variable. Only one variable can be present in a file.
+====
+
+Hash a password. After you enter this command, interactive mode prompts you for the password that you want to hash:
+
+----
+securityUtility encode --encoding=hash
+----
 
 
 == Syntax
