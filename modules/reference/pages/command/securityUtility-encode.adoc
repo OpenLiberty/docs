@@ -12,6 +12,7 @@
 :seo-description: The `securityUtility encode` command supports plain text obfuscation for Open Liberty.
 :page-layout: general-reference
 :page-type: general
+
 = securityUtility encode
 
 The `securityUtility encode` command supports plain text obfuscation for Open Liberty.
@@ -25,6 +26,9 @@ Enclose any text with spaces in quotation marks.
 If your password includes special characters, you must escape each special character to help ensure that the password is properly encoded. For more information, see <<pw,Check passwords for special characters>>.
 
 
+Starting in version 26.0.0.3, the `securityUtility encode --encoding=aes` command no longer uses a default encryption key.
+One of the following arguments must now be specified: `--key`, `--base64Key`, `--aesConfigFile`, or `--keyring`.
+
 For more information about limits to password encryption, see xref:ROOT:password-encryption.adoc[Password encryption limitations].
 
 == Usage examples
@@ -32,14 +36,9 @@ For more information about limits to password encryption, see xref:ROOT:password
 Encrypt a password with Advanced Encryption Standard (AES) encryption by specifying an encryption key string.
 After you enter this command, interactive mode prompts you for the password that you want to encrypt:
 
+[source,sh]
 ----
 securityUtility encode --encoding=aes --key=<encryption_key_string>
-----
-
-Hash a password. After you enter this command, interactive mode prompts you for the password that you want to hash:
-
-----
-securityUtility encode --encoding=hash
 ----
 
 Encode a password by using a Base64-encoded AES key, specify the key directly:
@@ -56,16 +55,38 @@ Use a configuration file that contains the AES key variable, specify the `--aesC
 securityUtility encode --encoding=aes --aesConfigFile=aesConfig.xml MyPassword
 ----
 
+For example, `aesConfig.xml` could contain one of the following definitions:
+
+[source,xml]
+----
+<variable name="wlp.aes.encryption.key" value="<your_aes_key>" />
+----
+
+or
+
+[source,xml]
+----
+<variable name="wlp.password.encryption.key" value="yourKey" />
+----
+
 [NOTE]
 ====
-The configuration file must contain either the `wlp.aes.encryption.key` or `wlp.password.encryption.key` variable. Only one variable can be present in a file.
+The `--aesConfigFile` file must contain either the `wlp.aes.encryption.key` or `wlp.password.encryption.key` variable. Only one variable can be present in a file.
 ====
+
+Hash a password. After you enter this command, interactive mode prompts you for the password that you want to hash:
+
+[source,sh]
+----
+securityUtility encode --encoding=hash
+----
 
 
 == Syntax
 
 Run the command from the `_path_to_liberty_/wlp/bin` directory.
 
+[source,sh]
 ----
 securityUtility encode [options]
 ----
@@ -87,10 +108,9 @@ The default encoding is `xor`.
 {empty} +
 {empty} +
 You can use the `hash` encoding type to encode passwords for a xref:ROOT:user-registries-application-security.adoc[basic user registry] or passwords for the xref:config/quickStartSecurity.adoc[quickStartSecurity element].
-
-
+{empty} +
+{empty} +
 When FIPS 140-3 is enabled, both the `aes` and `hash` options use enhanced algorithms to encrypt and hash strings. Strings that were encrypted or hashed before the algorithms were enhanced might fail in FIPS 140-3 environments.
-
 
 |--key=_encryption_key_
 |Specifies the key to use when you encode with AES encryption.
