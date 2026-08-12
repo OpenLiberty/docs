@@ -92,14 +92,14 @@ Once registered, IBM Bob discovers your tools automatically the next time a conv
 
 === Test with the MCP Inspector
 
-The https://github.com/modelcontextprotocol/inspector[MCP Inspector] is an open-source browser UI that lets you browse and invoke tools on any MCP server. It is the easiest way to verify your tools are registered correctly before connecting a full AI agent. With `npm` installed, run:
+Once you have added one or more tools, the https://github.com/modelcontextprotocol/inspector[MCP Inspector] is an open-source browser UI that lets you browse and invoke those tools against your running MCP server. Use it to verify that your tools are listed and return the expected results before connecting a full AI agent. With `npm` installed, run:
 
 [source,sh]
 ----
 npx @modelcontextprotocol/inspector
 ----
 
-Point it at your MCP endpoint URL to list tools, invoke them, and inspect the raw JSON-RPC messages.
+Point it at your MCP endpoint URL to list your registered tools, invoke them with test inputs, and inspect the raw JSON-RPC messages.
 
 === Registering tools
 
@@ -554,6 +554,8 @@ During MCP initialisation, the server sends a `serverInfo` block containing the 
 </application>
 ----
 
+NOTE: Some AI applications display the server name and description directly in their UI — for example, in a list of connected MCP servers shown to the user. Setting meaningful values makes it easier for users to identify which server they are connected to.
+
 [[async-tool-timeout]]
 === Async tool timeout
 
@@ -584,3 +586,32 @@ This produces two independent endpoints:
 * `\http://localhost:9080/reporting/reporting-mcp`
 
 Each module logs its own `CWMCM0008I` message at startup, so you can find each endpoint URL in the messages log.
+
+== Supported MCP protocol versions and features
+
+=== Protocol versions
+
+The `mcp-1.0` feature supports the following specification versions, negotiated automatically with the client at connection time:
+
+* https://modelcontextprotocol.io/specification/2025-11-25[`2025-11-25`]
+* https://modelcontextprotocol.io/specification/2025-06-18[`2025-06-18`]
+* https://modelcontextprotocol.io/specification/2025-03-26[`2025-03-26`]
+
+=== Supported features
+
+The MCP specification defines several capability areas. The following table summarises what `mcp-1.0` supports:
+
+[cols="1,1,3",options="header"]
+|===
+| Feature | Supported | Notes
+| Tools (`tools/list`, `tools/call`) | Yes | Full support, including tool annotations and structured content.
+| Resources (`resources/list`, `resources/read`) | No | Not supported in this release.
+| Prompts (`prompts/list`, `prompts/get`) | No | Not supported in this release.
+| Sampling (`sampling/createMessage`) | No | Not supported in this release.
+| Roots | No | Not supported in this release.
+| Logging (`logging/setLevel`, `notifications/message`) | No | Not supported in this release.
+| Completion (`completion/complete`) | No | Not supported in this release.
+| Cancellation (`notifications/cancelled`) | Yes | Supported in stateful mode only.
+| Progress (`notifications/progress`) | No | Not supported in this release.
+| Ping (`ping`) | Yes | Fully supported.
+|===
