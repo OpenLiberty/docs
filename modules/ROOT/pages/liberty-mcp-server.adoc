@@ -15,13 +15,11 @@
 
 The `mcp-1.0` feature lets you expose your Liberty application's business logic as AI-callable tools by using the https://modelcontextprotocol.io/[Model Context Protocol (MCP)]. Any MCP-compatible AI agent can then discover and invoke those tools directly over HTTP.
 
-This guide walks through the most common tasks, from registering your first tool to advanced topics such as async execution, structured content, and endpoint configuration.
+This page explains the most common tasks, from registering your first tool to advanced topics such as async execution, structured content, and endpoint configuration.
 
-== mcp-1.0
+== Getting started
 
-=== Getting started
-
-==== Add the MCP API dependency
+=== Add the MCP API dependency
 
 The `mcp-1.0` feature uses the https://github.com/mcp-java/java-mcp-annotations[`mcp-java` API] (`org.mcpjava:mcp-server-api`), which is available on Maven Central.
 
@@ -38,29 +36,19 @@ Add the following dependency to your `pom.xml`:
 </dependency>
 ----
 
-Some features — such as `@Schema`, `DefaultValueConverter`, `ToolManager`, and `ToolResponseEncoder` — are provided by the `io.openliberty.mcp` jar that ships with Liberty. To make these available on the build path, locate the `io.openliberty.mcp_*.jar` in `<wlp>/dev/api/ibm/`, note the version suffix (for example, `1.0.106`), and add a `system`-scoped dependency:
-
-[source,xml]
-----
-<properties>
-    <wlp-dir-path>replace-with-path-to-wlp-dir</wlp-dir-path>
-    <mcp-jar-version>replace-with-version-number</mcp-jar-version>
-</properties>
-----
+Some features — such as `@Schema`, `DefaultValueConverter`, `ToolManager`, and `ToolResponseEncoder` — are provided by the Liberty API, which is available on Maven Central under `io.openliberty.api:io.openliberty.mcp`. Add the following dependency to your `pom.xml`:
 
 [source,xml]
 ----
 <!-- Liberty MCP extensions (io.openliberty.mcp) -->
 <dependency>
-    <groupId>io.openliberty.mcp</groupId>
-    <artifactId>mcp-core</artifactId>
-    <version>${mcp-jar-version}</version>
-    <scope>system</scope>
-    <systemPath>${wlp-dir-path}/dev/api/ibm/io.openliberty.mcp_${mcp-jar-version}.jar</systemPath>
+    <groupId>io.openliberty.api</groupId>
+    <artifactId>io.openliberty.mcp</artifactId>
+    <scope>provided</scope>
 </dependency>
 ----
 
-==== Enable the feature
+=== Enable the feature
 
 Add `mcp-1.0` to your `server.xml`:
 
@@ -73,7 +61,7 @@ Add `mcp-1.0` to your `server.xml`:
 </featureManager>
 ----
 
-==== Find your MCP endpoint URL
+=== Find your MCP endpoint URL
 
 Once your application is deployed, the `mcp-1.0` feature logs the full MCP endpoint URL in your Liberty messages log:
 
@@ -84,7 +72,7 @@ CWMCM0008I: The MCP server endpoint: http://localhost:9080/myMcpApp/mcp
 
 You can connect any MCP client that supports the https://modelcontextprotocol.io/specification/2025-03-26/basic/transports#streamable-http[Streamable HTTP transport] to that URL.
 
-==== Connect an AI client
+=== Connect an AI client
 
 To connect an AI agent to your MCP server, provide the MCP endpoint URL in the client's configuration. For example, to add your MCP server to https://bob.ibm.com/[IBM Bob], open `~/.bob/settings/mcp.json` and add an entry to the `mcpServers` object:
 
@@ -102,7 +90,7 @@ To connect an AI agent to your MCP server, provide the MCP endpoint URL in the c
 
 Once registered, IBM Bob discovers your tools automatically the next time a conversation starts.
 
-==== Test with the MCP Inspector
+=== Test with the MCP Inspector
 
 The https://github.com/modelcontextprotocol/inspector[MCP Inspector] is an open-source browser UI that lets you browse and invoke tools on any MCP server. It is the easiest way to verify your tools are registered correctly before connecting a full AI agent. With `npm` installed, run:
 
@@ -390,13 +378,13 @@ public class DataTools {
 ----
 
 ==== Other Exceptions
-Any exception type that is *not* listed in `@WrapBusinessError` (and is not a `ToolCallException`) is treated as an unexpected server error — the runtime logs the full stack trace and returns a generic error response to the AI.
+Any exception type that is *not* a `ToolCallException` or listed in `@WrapBusinessError` is treated as an unexpected server error and Liberty logs the full stack trace and returns a generic error response to the AI.
 
 === Handling cancellation
 
 NOTE: Cancellation relies on session tracking and is not available in xref:liberty-mcp-server.adoc#stateless-mode[stateless mode]. A cancellation request sent to a stateless server has no effect.
 
-Long-running tools should accept a {javadoc-base}/org/mcpjava/server/Cancellation.html[`Cancellation`] parameter. The runtime injects it automatically — it is never supplied by the AI. Call `cancellation.check().isRequested()` periodically and throw `Cancellation.OperationCancelledException` to stop execution cleanly:
+Long-running tools should accept a {javadoc-base}/org/mcpjava/server/Cancellation.html[`Cancellation`] parameter. The runtime injects this object automatically. Call `cancellation.check().isRequested()` periodically and throw `Cancellation.OperationCancelledException` to stop execution cleanly:
 
 [source,java]
 ----
@@ -516,9 +504,14 @@ Tools registered via `ToolManager` and tools declared with `@Tool` coexist on th
 [[stateless-mode]]
 === Stateless mode
 
+MCP is a stateful protocol (up to version 2025-11-25) and requests from the same MCP session must be handled by the same server. In a clustered environment, this requires a load balancer that can route requests based on the `Mcp-Session-Id` header.
+
+To allow easier deployment in a cluster, it's possible to disable stateful features so that special routing rules are not required.
+The trade-off is that client-driven cancellation of in-flight tool calls is not supported.
+
 NOTE: In stateless mode, features that rely on per-client session state — including cancellation — are not available. Each request is handled independently with no shared state between calls.
 
-By default, `mcp-1.0` maintains sessions to associate requests from the same client. In horizontally scaled or clustered deployments where requests can be routed to different server instances, enable stateless mode to remove this session affinity:
+By default, `mcp-1.0` maintains sessions to associate requests from the same client. To enable stateless mode:
 
 [source,xml]
 ----
@@ -527,13 +520,13 @@ By default, `mcp-1.0` maintains sessions to associate requests from the same cli
 </application>
 ----
 
-In stateless mode, each incoming request is processed independently. This makes the server suitable for load-balanced environments where there is no sticky session routing, but the trade-off is that client-driven cancellation of in-flight tool calls is not supported.
+In stateless mode, each incoming request is processed independently with no shared state between calls.
 
-=== Configuration
+== Configuration
 
 The `<mcpServer>` element in `server.xml` lets you customise the MCP endpoint per application.
 
-==== Custom endpoint path
+=== Custom endpoint path
 
 By default the MCP endpoint is served at `/<contextRoot>/mcp`. Use the `path` attribute to change this:
 
@@ -546,7 +539,7 @@ By default the MCP endpoint is served at `/<contextRoot>/mcp`. Use the `path` at
 
 With this configuration, the endpoint is available at `http://localhost:9080/myMcpApp/custom-mcp`.
 
-==== Server description and metadata
+=== Server description and metadata
 
 During MCP initialisation, the server sends a `serverInfo` block containing the server name, version, and description. Configure it with the nested `<info>` element:
 
@@ -562,7 +555,7 @@ During MCP initialisation, the server sends a `serverInfo` block containing the 
 ----
 
 [[async-tool-timeout]]
-==== Async tool timeout
+=== Async tool timeout
 
 By default, asynchronous tool executions are limited to *30 seconds*. Increase this limit using the `asyncTimeout` attribute. The value uses Liberty's standard duration format — for example, `30s`, `2m`, `1h`:
 
@@ -573,7 +566,7 @@ By default, asynchronous tool executions are limited to *30 seconds*. Increase t
 </application>
 ----
 
-==== EAR deployments with multiple modules
+=== EAR deployments with multiple modules
 
 When deploying an EAR with multiple WAR modules, use the `moduleName` attribute to target each WAR independently. Each module gets its own isolated MCP endpoint:
 
