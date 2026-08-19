@@ -13,21 +13,31 @@
 :page-type: general
 = Securing an MCP server
 
-You can protect an MCP server endpoint by using the `openidConnectClient-1.0` feature to require a valid bearer token on every request. When the optional `<protectedResourceMetadata>` sub-element is also configured, Liberty publishes an https://datatracker.ietf.org/doc/html/rfc9728[OAuth 2.0 Protected Resource Metadata] document that MCP clients can use to discover the authorization server without any prior configuration.
+The https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization[MCP specification defines a standard OAuth 2.0 authorization flow] that any compatible MCP client can follow to authenticate without any prior knowledge of the authorization server. Liberty implements this flow using the `openidConnectClient-1.0` feature for bearer-token validation and https://datatracker.ietf.org/doc/html/rfc9728[OAuth 2.0 Protected Resource Metadata (RFC 9728)] for authorization server discovery.
 
-== How it works
+== Prerequisites
+
+To use the standard MCP authorization flow you need:
+
+* An OAuth 2.0 authorization server that publishes its own metadata at a https://datatracker.ietf.org/doc/html/rfc8414[well-known endpoint (RFC 8414)]. Most modern authorization servers support this.
+* The `openidConnectClient-1.0` feature configured as a resource server on Liberty (see below).
+
+Without the `<protectedResourceMetadata>` sub-element, token validation still works but clients must be pre-configured with the authorization server details — they cannot discover it automatically.
+
+== How the authorization flow works
 
 . An MCP client makes an unauthenticated request to the MCP endpoint.
-. Liberty rejects the request with a `401` response. When `<protectedResourceMetadata>` is configured, the `WWW-Authenticate` header includes a `resource_metadata` URL:
+. Liberty rejects the request with a `401` response whose `WWW-Authenticate` header includes a `resource_metadata` URL pointing to Liberty's discovery document:
 +
 ----
 WWW-Authenticate: Bearer realm="oauth", resource_metadata="https://resource.example.com/.well-known/oauth-protected-resource/myapp/mcp"
 ----
-. The client fetches that URL and receives a JSON document describing the authorization server and any advertised scopes.
+. The client fetches that URL and receives a JSON document identifying the authorization server.
+. The client fetches the authorization server's own well-known metadata to discover its token and registration endpoints.
 . The client obtains a bearer token from the authorization server and retries the original request with an `Authorization: Bearer <token>` header.
 . Liberty validates the token and allows the request.
 
-Without `<protectedResourceMetadata>`, step 2 still returns a `401`, but no `resource_metadata` URL is included in the `WWW-Authenticate` header.
+This is the standard MCP authorization flow. Any MCP client that implements the specification can complete it automatically without the user needing to configure the authorization server details in the client.
 
 == Enable the features
 
