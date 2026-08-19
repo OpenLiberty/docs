@@ -45,6 +45,7 @@ Some features — such as `@Schema`, `DefaultValueConverter`, `ToolManager`, and
     <groupId>io.openliberty.api</groupId>
     <artifactId>io.openliberty.mcp</artifactId>
     <scope>provided</scope>
+    <version>1.0.117</version> 
 </dependency>
 ----
 
@@ -195,7 +196,7 @@ Tool parameters are annotated with {javadoc-base}/org/mcpjava/server/tools/ToolA
 | `defaultValue` | A string default used when the AI does not supply the argument. Also makes the argument optional.
 |===
 
-A parameter is treated as optional if `required = false`, `defaultValue` is set, or the parameter type is `java.util.Optional<T>`, `OptionalInt`, `OptionalDouble`, or `OptionalLong`.
+A parameter is treated as optional if `required = false`, `defaultValue` is set, or the parameter type is `java.util.Optional<T>`.
 
 [source,java]
 ----
@@ -247,9 +248,11 @@ public class CatalogueTools {
 
 NOTE: Structured content is only returned to clients that negotiate MCP protocol version `2025-06-18` or later. Clients using earlier protocol versions receive the unstructured text content only.
 
-When `structuredContent = true` on `@Tool`, Liberty serialises the return value as JSON and includes it in the `structuredContent` field of the tool response alongside the unstructured text representation. This allows clients to consume a strongly-typed object rather than parsing text.
+By default, MCP tool responses are *unstructured* so the return value is converted to a plain text string and sent in the `content` field of the response. This is the ideal format for LLMs to work with.
 
-The following example returns a `City` record as both unstructured text (the default JSON serialisation) and as structured JSON content:
+When you need a client to consume a strongly-typed object , you can enable *structured content* by setting `structuredContent = true` on `@Tool`. Liberty then serialises the return value as JSON and includes it in the `structuredContent` field of the response. For backwards compatibility with older clients, the same JSON representation is also always included as unstructured text in the `content` field alongside the structured data.
+
+The following example returns a `City` record as both structured JSON content and as unstructured text:
 
 [source,java]
 ----
@@ -509,7 +512,7 @@ MCP is a stateful protocol (up to version 2025-11-25) and requests from the same
 To allow easier deployment in a cluster, it's possible to disable stateful features so that special routing rules are not required.
 The trade-off is that client-driven cancellation of in-flight tool calls is not supported.
 
-NOTE: In stateless mode, features that rely on per-client session state — including cancellation — are not available. Each request is handled independently with no shared state between calls.
+NOTE: In stateless mode, features that rely on per-client session state including cancellations are not available.
 
 By default, `mcp-1.0` maintains sessions to associate requests from the same client. To enable stateless mode:
 
@@ -519,8 +522,6 @@ By default, `mcp-1.0` maintains sessions to associate requests from the same cli
     <mcpServer stateless="true"/>
 </application>
 ----
-
-In stateless mode, each incoming request is processed independently with no shared state between calls.
 
 == Configuration
 
@@ -598,20 +599,18 @@ The `mcp-1.0` feature supports the following specification versions, negotiated 
 * https://modelcontextprotocol.io/specification/2025-03-26[`2025-03-26`]
 
 === Supported features
-
 The MCP specification defines several capability areas. The following table summarises what `mcp-1.0` supports:
-
 [cols="1,1,3",options="header"]
 |===
 | Feature | Supported | Notes
 | Tools (`tools/list`, `tools/call`) | Yes | Full support, including tool annotations and structured content.
-| Resources (`resources/list`, `resources/read`) | No | Not supported in this release.
-| Prompts (`prompts/list`, `prompts/get`) | No | Not supported in this release.
-| Sampling (`sampling/createMessage`) | No | Not supported in this release.
-| Roots | No | Not supported in this release.
-| Logging (`logging/setLevel`, `notifications/message`) | No | Not supported in this release.
-| Completion (`completion/complete`) | No | Not supported in this release.
+| Resources (`resources/list`, `resources/read`) | No |
+| Prompts (`prompts/list`, `prompts/get`) | No |
+| Elicitation ('elicitation/create') | No |
+| Sampling (`sampling/createMessage`) | No | Deprecated in latest MCP specification
+| Roots  (`roots/list`) | No | Deprecated in latest MCP specification
+| Logging (`logging/setLevel`, `notifications/message`) | No | Deprecated in latest MCP specification
 | Cancellation (`notifications/cancelled`) | Yes | Supported in stateful mode only.
-| Progress (`notifications/progress`) | No | Not supported in this release.
-| Ping (`ping`) | Yes | Fully supported.
+| Progress (`notifications/progress`) | No | 
+| Ping (`ping`) | Yes | 
 |===
