@@ -117,7 +117,7 @@ A `GET` to a path not covered by any `authFilterRef` returns `404`.
 
 === Add signed metadata
 
-When `jwtBuilderRef` is set on `<protectedResourceMetadata>`, Liberty builds a compact JWS whose payload mirrors all of the plain metadata fields and includes it as a `signed_metadata` field in the response. This lets clients verify the authenticity of the document.
+When `jwtBuilderRef` is set on `<protectedResourceMetadata>`, Liberty builds a compact JWS whose payload mirrors all of the plain metadata fields and includes it as a `signed_metadata` field in the response.
 
 [source,xml]
 ----
@@ -147,7 +147,6 @@ The response includes the additional field:
 }
 ----
 
-If signing fails — for example, because the key is unavailable — Liberty logs a warning and returns the response without the `signed_metadata` field. The endpoint does not return an error.
 
 == Complete server.xml example
 
@@ -190,6 +189,8 @@ If signing fails — for example, because the key is unavailable — Liberty log
 == Controlling access per tool
 
 Once a bearer token is validated, you can restrict which roles can access individual tools by using standard Jakarta Security annotations on your tool methods or classes. Liberty enforces these on every `tools/call` request. Tools the authenticated user is not permitted to call are also filtered out of `tools/list` responses, so unauthorised tools are not visible to the client.
+
+For roles to be recognised by the application, declare them using `<security-role>` elements in `WEB-INF/web.xml`.
 
 The following annotations are supported:
 
@@ -249,9 +250,9 @@ To map token group claims to Liberty roles, set `groupIdentifier` on `<openidCon
 
 When a token contains `"groups": ["admin", "user"]`, a tool annotated with `@RolesAllowed("admin")` is accessible to that caller. If the caller is authenticated but does not have the required role, Liberty returns `403 Forbidden`. If the caller is not authenticated at all, Liberty returns `401 Unauthorized`.
 
-=== Declare roles in web.xml
+=== Restrict access at the endpoint level
 
-For `@RolesAllowed` to work, the roles must be known to the application. You can declare them using a `<security-role>` element in `WEB-INF/web.xml`. You can also use `web.xml` to enforce endpoint-level access control by combining `<security-role>` with a `<security-constraint>`, which ensures that only users who already hold one of the permitted roles can reach the MCP endpoint at all, before any per-tool checks are applied.
+You can also combine `<security-role>` with a `<security-constraint>` to enforce endpoint-level access control, ensuring that only users who already hold one of the permitted roles can reach the MCP endpoint at all, before any per-tool checks are applied.
 
 [source,xml]
 ----
@@ -302,6 +303,11 @@ With this configuration, only users with the `user` or `admin` role can reach th
 |===
 
 == Related information
+
+* xref:liberty-mcp-server.adoc[MCP Servers]
+* https://openliberty.io/docs/latest/reference/config/openidConnectClient.html[openidConnectClient configuration reference]
+* https://datatracker.ietf.org/doc/html/rfc9728[RFC 9728 – OAuth 2.0 Protected Resource Metadata]
+
 
 * xref:liberty-mcp-server.adoc[MCP Servers]
 * https://openliberty.io/docs/latest/reference/config/openidConnectClient.html[openidConnectClient configuration reference]
