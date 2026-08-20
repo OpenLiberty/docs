@@ -189,7 +189,7 @@ If signing fails — for example, because the key is unavailable — Liberty log
 
 == Controlling access per tool
 
-Once a bearer token is validated, you can restrict individual tools to specific roles by using the standard Jakarta Security annotations directly on your tool methods or classes. Liberty reads these annotations and enforces them on every `tools/call` request. Tools that the authenticated user is not permitted to call are also filtered out of `tools/list` responses, so unauthorised tools are invisible to the client.
+Once a bearer token is validated, you can restrict which roles can access individual tools by using standard Jakarta Security annotations on your tool methods or classes. Liberty enforces these on every `tools/call` request. Tools the authenticated user is not permitted to call are also filtered out of `tools/list` responses, so unauthorised tools are not visible to the client.
 
 The following annotations are supported:
 
@@ -198,7 +198,7 @@ The following annotations are supported:
 | Annotation | Effect
 
 | `@RolesAllowed("role")`
-| Only callers whose token includes the named role are permitted. Use `groupIdentifier` on `<openidConnectClient>` to map a token claim (such as `groups`) to Liberty roles.
+| Only callers whose token includes the named role are permitted.
 
 | `@PermitAll`
 | All authenticated callers are permitted, regardless of role.
@@ -248,6 +248,39 @@ To map token group claims to Liberty roles, set `groupIdentifier` on `<openidCon
 ----
 
 When a token contains `"groups": ["admin", "user"]`, a tool annotated with `@RolesAllowed("admin")` is accessible to that caller. If the caller is authenticated but does not have the required role, Liberty returns `403 Forbidden`. If the caller is not authenticated at all, Liberty returns `401 Unauthorized`.
+
+=== Declare roles in web.xml
+
+For `@RolesAllowed` to work, the roles must be known to the application. You can declare them using a `<security-role>` element in `WEB-INF/web.xml`. You can also use `web.xml` to enforce endpoint-level access control by combining `<security-role>` with a `<security-constraint>`, which ensures that only users who already hold one of the permitted roles can reach the MCP endpoint at all, before any per-tool checks are applied.
+
+[source,xml]
+----
+<web-app xmlns="https://jakarta.ee/xml/ns/jakartaee" version="6.0">
+
+    <security-role>
+        <role-name>user</role-name>
+    </security-role>
+
+    <security-role>
+        <role-name>admin</role-name>
+    </security-role>
+
+    <security-constraint>
+        <web-resource-collection>
+            <web-resource-name>MCP endpoint</web-resource-name>
+            <url-pattern>/mcp</url-pattern>
+            <url-pattern>/mcp/*</url-pattern>
+        </web-resource-collection>
+        <auth-constraint>
+            <role-name>user</role-name>
+            <role-name>admin</role-name>
+        </auth-constraint>
+    </security-constraint>
+
+</web-app>
+----
+
+With this configuration, only users with the `user` or `admin` role can reach the MCP endpoint. Individual tools can then further restrict access — for example, a tool annotated with `@RolesAllowed("admin")` is only callable by users with the `admin` role even though `user`-role callers can reach the endpoint.
 
 == Troubleshooting
 
