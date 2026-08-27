@@ -43,15 +43,15 @@ To enable logging for individual endpoints, use an `accessLogging` child element
 
 Use the `accessLogFormat` property to specify the information and format you want to include in the NCSA access log for an HTTP transport channel. The value for this property is a space-separated list of options.
 
-Specify the log format string with the `logFormat` attribute of `httpAcccessLogging` or `accessLogging` elements in the `server.xml` file, as shown in the following examples.
+Specify the log format string with the `logFormat` attribute of `httpAccessLogging` or `accessLogging` elements in the `server.xml` file, as shown in the following examples.
 
-In the following `server.xml` file example, The `logformat` attribute for the `httpAcccessLogging` element specifies the log format string. Multiple endpoints can specify this string by referencing the `accessLogging` configuration ID.
+In the following `server.xml` file example, the `logFormat` attribute for the `httpAccessLogging` element specifies the log format string. Multiple endpoints can specify this string by referencing the `accessLogging` configuration ID.
 [source,xml]
 ----
 <httpAccessLogging id="accessLogging" logFormat='%h %u %{t}W "%r" %s %b %D %{R}W'/>
 ----
 
-In the following `server.xml` file example, the `logformat` attribute for the `accessLogging` subelement specifies the log format string for a specific endpoint that is defined in the `httpEndpoint` element.
+In the following `server.xml` file example, the `logFormat` attribute for the `accessLogging` subelement specifies the log format string for a specific endpoint that is defined in the `httpEndpoint` element.
 
 [source,xml]
 ----
@@ -124,8 +124,8 @@ If no value is found, `0` is printed instead of `-`.
 |%U
 |The URL Path, not including the query string
 
-|%I or %O
-|Not supported. These Apache httpd tokens for bytes received and bytes sent including headers are not implemented in Liberty. Using them causes a startup FFDC (`IllegalArgumentException: Config: invalid format segment: %I` or `%O`). Use `%b` as the nearest alternative, which logs the response body size in bytes, excluding headers.
+|`%I` and `%O`
+|Liberty does not support the `%I` and `%O` Apache httpd tokens, which represent the total bytes received and sent, including headers. When you use these tokens, Liberty generates a startup First Failure Data Capture (FFDC) error: `IllegalArgumentException: Config: invalid format segment: %I` or `IllegalArgumentException: Config: invalid format segment: %O`. Instead, use `%b`, which logs the response body size in bytes, excluding response headers.
 
 |===
 
@@ -141,7 +141,7 @@ Based on this setting, the NCSA access log includes the following information fo
 
 * The remote host
 * The HeaderName header value from the request
-* The remote user according to the WebSphere Specific $WSRU header
+* The remote user according to the Open Liberty-specific `$WSRU` header
 * The NCSA format of the start time of the request
 * The first line of the request
 * The status code of the response
@@ -156,7 +156,7 @@ You can enable time-based periodic rollover of your HTTP access log file by spec
 
 For example, a server with a rollover start time of midnight and a rollover interval of 1 day rolls over the HTTP access log once every day, at midnight.
 
-Enable time-based rollover of your HTTP access log file by using the `rolloverStartTime` and `rolloverInterval` attributes of the `httpAcccessLogging` or `accessLogging` elements in the `server.xml` file. The following table lists the two attributes, their respective descriptions, and their permitted values.
+Enable time-based rollover of your HTTP access log file by using the `rolloverStartTime` and `rolloverInterval` attributes of the `httpAccessLogging` or `accessLogging` elements in the `server.xml` file. The following table lists the two attributes, their respective descriptions, and their permitted values.
 
 |===
 |Time-based log rollover attribute|Description
@@ -169,13 +169,13 @@ Enable time-based rollover of your HTTP access log file by using the `rolloverSt
 
 |===
 
-The following examples demonstrate how to enable time-based periodic rollover for the HTTP access log file in the `httpAcccessLogging` and `accessLogging` elements. The `rolloverStartTime` attribute is set to  midnight and the `rolloverInterval` attribute is set to 1 day.
+The following examples demonstrate how to enable time-based periodic rollover for the HTTP access log file in the `httpAccessLogging` and `accessLogging` elements. The `rolloverStartTime` attribute is set to midnight and the `rolloverInterval` attribute is set to 1 day.
 
-In the following `server.xml` file example, the `rolloverStartTime` and  `rolloverInterval` attributes for the `httpAcccessLogging` element specify the log rollover start time and interval for multiple endpoints that reference the `accessLogging` configuration ID.
+In the following `server.xml` file example, the `rolloverStartTime` and `rolloverInterval` attributes for the `httpAccessLogging` element specify the log rollover start time and interval for multiple endpoints that reference the `accessLogging` configuration ID.
 
 [source,xml]
 ----
-<httpAccessLogging id="accessLogging`" rolloverStartTime="00:00" rolloverInterval="1d"/>
+<httpAccessLogging id="accessLogging" rolloverStartTime="00:00" rolloverInterval="1d"/>
 ----
 
 In the following server.xml file example, attributes for the `accessLogging` subelement specify configuration for a specific endpoint that is defined in the `httpEndpoint` element. The `rolloverStartTime` and `rolloverInterval` attributes specify the log rollover start time and interval for the endpoint.
