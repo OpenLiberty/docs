@@ -17,12 +17,12 @@ The https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization
 
 == Prerequisites
 
-To use the standard MCP authorization flow you need:
+To use the standard MCP authorization flow, you need:
 
 * An OAuth 2.0 authorization server that publishes its own metadata at a https://datatracker.ietf.org/doc/html/rfc8414[well-known endpoint (RFC 8414)]. Most modern authorization servers support this.
 * The `openidConnectClient-1.0` feature configured as a resource server on Liberty (see below).
 
-Without the `<protectedResourceMetadata>` sub-element, token validation still works but clients must be pre-configured with the authorization server details — they cannot discover it automatically.
+Without the `<protectedResourceMetadata>` sub-element, token validation still works, but clients must be pre-configured with the authorization server details — they cannot discover it automatically.
 
 == How the authorization flow works
 
@@ -37,7 +37,7 @@ WWW-Authenticate: Bearer realm="oauth", resource_metadata="https://resource.exam
 . The client obtains a bearer token from the authorization server and retries the original request with an `Authorization: Bearer <token>` header.
 . Liberty validates the token and allows the request.
 
-This is the standard MCP authorization flow. Any MCP client that implements the specification can complete it automatically without the user needing to configure the authorization server details in the client.
+This is the standard MCP authorization flow. Any MCP client that implements the specification can complete it automatically without requiring the user to configure the authorization server details in the client.
 
 == Enable the features
 
@@ -56,7 +56,7 @@ Add `mcp-1.0`, `openidConnectClient-1.0`, and `appSecurity-5.0` to your `server.
 
 == Configure inbound token validation
 
-To protect the MCP endpoint, configure `<openidConnectClient>` with `inboundPropagation="required"` and an `<authFilter>` that covers only the MCP endpoint path. This ensures that only the MCP endpoint requires a bearer token; all other paths, including `/.well-known/oauth-protected-resource`, remain unauthenticated so that clients can read the metadata document without a token.
+To protect the MCP endpoint, configure `<openidConnectClient>` with `inboundPropagation="required"` and an `<authFilter>` that covers only the MCP endpoint path. This ensures that only the MCP endpoint requires a bearer token. All other paths, including `/.well-known/oauth-protected-resource`, remain unauthenticated so that clients can read the metadata document without a token.
 
 [source,xml]
 ----
@@ -74,7 +74,7 @@ To protect the MCP endpoint, configure `<openidConnectClient>` with `inboundProp
 </openidConnectClient>
 ----
 
-With `inboundPropagation="required"`, Liberty returns a `401` immediately for any request to the filtered path that does not carry a valid bearer token. It does not redirect to a login page.
+With `inboundPropagation="required"`, Liberty returns a `401` immediately for any request to the filtered path that does not carry a valid bearer token. Liberty does not redirect to a login page.
 
 == Publish OAuth 2.0 Protected Resource Metadata
 
@@ -96,7 +96,7 @@ To allow MCP clients to discover the authorization server automatically, add a `
 </openidConnectClient>
 ----
 
-Liberty registers a `/.well-known/oauth-protected-resource` endpoint and serves a JSON document for any path that is covered by the `authFilterRef`. For example, a `GET` to `/.well-known/oauth-protected-resource/myapp/mcp` returns:
+Liberty registers a `/.well-known/oauth-protected-resource` endpoint and serves a JSON document for any path covered by the `authFilterRef`. For example, a `GET` request to `/.well-known/oauth-protected-resource/myapp/mcp` returns:
 
 [source,json]
 ----
@@ -110,14 +110,14 @@ Liberty registers a `/.well-known/oauth-protected-resource` endpoint and serves 
 The fields in the metadata document are populated as follows:
 
 * `resource` — derived from the URL of the incoming metadata request.
-* `authorization_servers` — taken from `issuerIdentifier` on the `<openidConnectClient>`. If `issuerIdentifier` is not set, Liberty falls back to stripping the last path segment from `validationEndpointUrl`. If neither is configured, this field is omitted.
+* `authorization_servers` — taken from the `issuerIdentifier` attribute on `<openidConnectClient>`. If `issuerIdentifier` is not set, Liberty falls back to stripping the last path segment from `validationEndpointUrl`. If neither is configured, this field is omitted.
 * `scopes_supported` — populated from the `advertisedScopes` attribute. Omitted when `advertisedScopes` is not set.
 
-A `GET` to a path not covered by any `authFilterRef` returns `404`.
+A `GET` request to a path not covered by any `authFilterRef` returns `404`.
 
 === Add signed metadata
 
-When `jwtBuilderRef` is set on `<protectedResourceMetadata>`, Liberty builds a compact JWS whose payload mirrors all of the plain metadata fields and includes it as a `signed_metadata` field in the response.
+When `jwtBuilderRef` is set on `<protectedResourceMetadata>`, Liberty builds a compact JWS whose payload mirrors all the plain metadata fields and includes it as a `signed_metadata` field in the response.
 
 [source,xml]
 ----
@@ -135,7 +135,7 @@ When `jwtBuilderRef` is set on `<protectedResourceMetadata>`, Liberty builds a c
 <jwtBuilder id="myJwtBuilder" jwkEnabled="true" issuer="https://resource.example.com"/>
 ----
 
-The response includes the additional field:
+The response also includes the `signed_metadata` field:
 
 [source,json]
 ----
@@ -146,7 +146,6 @@ The response includes the additional field:
   "signed_metadata": "eyJhbGciOiJSUzI1NiJ9..."
 }
 ----
-
 
 == Complete server.xml example
 
@@ -182,15 +181,15 @@ The response includes the additional field:
 <ltpa keysFileName="ltpa.keys" keysPassword="Liberty" expiration="120"/>
 
 <webApplication contextRoot="/myapp" location="myapp.war">
-    <mcpServer path="/mcp"/>
+    <mcp path="/mcp"/>
 </webApplication>
 ----
 
 == Controlling access per tool
 
-Once a bearer token is validated, you can restrict which roles can access individual tools by using standard Jakarta Security annotations on your tool methods or classes. Liberty enforces these on every `tools/call` request. Tools the authenticated user is not permitted to call are also filtered out of `tools/list` responses, so unauthorised tools are not visible to the client.
+Once a bearer token is validated, you can restrict which roles can access individual tools by using standard Jakarta Security annotations on your tool methods or classes. Liberty enforces these annotations on every `tools/call` request. Tools that the authenticated user is not permitted to call are also filtered out of `tools/list` responses.
 
-For roles to be recognised by the application, declare them using `<security-role>` elements in `WEB-INF/web.xml`.
+For the application to recognise roles, declare them using `<security-role>` elements in `WEB-INF/web.xml`.
 
 The following annotations are supported:
 
@@ -236,7 +235,7 @@ public class OrderTools {
 }
 ----
 
-To map token group claims to Liberty roles, set `groupIdentifier` on `<openidConnectClient>` to the name of the claim in the bearer token that contains the user's group memberships:
+To map token group claims to Liberty roles, set the `groupIdentifier` attribute on `<openidConnectClient>` to the name of the bearer token claim that contains the user's group memberships:
 
 [source,xml]
 ----
@@ -248,11 +247,11 @@ To map token group claims to Liberty roles, set `groupIdentifier` on `<openidCon
 </openidConnectClient>
 ----
 
-When a token contains `"groups": ["admin", "user"]`, a tool annotated with `@RolesAllowed("admin")` is accessible to that caller. If the caller is authenticated but does not have the required role, Liberty returns `403 Forbidden`. If the caller is not authenticated at all, Liberty returns `401 Unauthorized`.
+When a token contains `"groups": ["admin", "user"]`, that caller can access a tool annotated with `@RolesAllowed("admin")`. If the caller is authenticated but does not have the required role, Liberty returns `403 Forbidden`. If the caller is unauthenticated, Liberty returns `401 Unauthorized`.
 
 === Restrict access at the endpoint level
 
-You can also combine `<security-role>` with a `<security-constraint>` to enforce endpoint-level access control, ensuring that only users who already hold one of the permitted roles can reach the MCP endpoint at all, before any per-tool checks are applied.
+You can also combine `<security-role>` with a `<security-constraint>` to enforce endpoint-level access control, ensuring that only users with a permitted role can reach the MCP endpoint before any per-tool checks are applied.
 
 [source,xml]
 ----
@@ -281,7 +280,7 @@ You can also combine `<security-role>` with a `<security-constraint>` to enforce
 </web-app>
 ----
 
-With this configuration, only users with the `user` or `admin` role can reach the MCP endpoint. Individual tools can then further restrict access — for example, a tool annotated with `@RolesAllowed("admin")` is only callable by users with the `admin` role even though `user`-role callers can reach the endpoint.
+With this configuration, only users with the `user` or `admin` role can reach the MCP endpoint. Individual tools can then further restrict access — for example, a tool annotated with `@RolesAllowed("admin")` can be called only by users with the `admin` role, even though users with the `user` role can reach the endpoint.
 
 == Troubleshooting
 
@@ -290,24 +289,19 @@ With this configuration, only users with the `user` or `admin` role can reach th
 | Symptom | What to check
 
 | Metadata endpoint returns `404`
-| Confirm `<protectedResourceMetadata>` is present inside `<openidConnectClient>` and that the `authFilterRef` covers the path you are requesting. A path with no matching `authFilterRef` always returns `404`.
+| Confirm that `<protectedResourceMetadata>` is present inside `<openidConnectClient>` and that the `authFilterRef` covers the path you are requesting. A path with no matching `authFilterRef` always returns `404`.
 
 | `401` response does not include a `resource_metadata` URL
-| Confirm the `<protectedResourceMetadata>` sub-element is present inside `<openidConnectClient>`.
+| Confirm that the `<protectedResourceMetadata>` sub-element is present inside `<openidConnectClient>`.
 
 | `authorization_servers` is missing from the metadata JSON
-| Set `issuerIdentifier` on `<openidConnectClient>`. If `issuerIdentifier` is absent, Liberty falls back to `validationEndpointUrl`; if neither is configured the field is omitted.
+| Set `issuerIdentifier` on `<openidConnectClient>`. If `issuerIdentifier` is absent, Liberty falls back to `validationEndpointUrl`; if neither is configured, the field is omitted.
 
 | Requests with a token still receive `401`
-| Confirm that `issuerIdentifier` and `jwkEndpointUrl` point to the correct authorization server. Enable the following trace string for detailed diagnostics: `com.ibm.ws.security.openidconnect.*=all`
+| Confirm that the `issuerIdentifier` and `jwkEndpointUrl` values point to the correct authorization server. Enable the following trace string for detailed diagnostics: `com.ibm.ws.security.openidconnect.*=all`
 |===
 
 == Related information
-
-* xref:liberty-mcp-server.adoc[MCP Servers]
-* https://openliberty.io/docs/latest/reference/config/openidConnectClient.html[openidConnectClient configuration reference]
-* https://datatracker.ietf.org/doc/html/rfc9728[RFC 9728 – OAuth 2.0 Protected Resource Metadata]
-
 
 * xref:liberty-mcp-server.adoc[MCP Servers]
 * https://openliberty.io/docs/latest/reference/config/openidConnectClient.html[openidConnectClient configuration reference]
