@@ -16,7 +16,7 @@
 With Open Liberty, you can access Java Management Extensions (JMX) metrics.
 JMX metrics are provided by MXBeans and can be used with JConsole or other JMX-based tools.
 
-Enable the feature:monitor[display=Perfomance Monitoring] feature to monitor JMX metrics for your Open Liberty runtime environment.
+Enable the feature:monitor[display=Performance Monitoring] feature to monitor JMX metrics for your Open Liberty runtime environment.
 The following sections list the JMX metrics that are available for different monitoring capabilities:
 
 * <<jvm-stats,JVM monitoring>>
@@ -31,6 +31,7 @@ The following sections list the JMX metrics that are available for different mon
 * <<grpc-server-stats,gRPC server monitoring>>
 * <<grpc-client-stats,gRPC client monitoring>>
 * <<sip-application,SIP application monitoring>>
+* <<mcp-stats,MCP server monitoring>>
 
 When you enable the feature:mpTelemetry-2.0[display=MicroProfile Telemetry] feature version 2.0 and later, you can manage your logs, metrics, and traces in a standardized way with the OpenTelemetry protocol. For more information, see xref:microprofile-telemetry[Enable observability with MicroProfile Telemetry].
 
@@ -126,8 +127,8 @@ The following attributes are available for the `HttpServerStats` MXBean. The obj
 [%header,cols="6,3,12"]
 |===
 | MXBean attribute | Units | Description
-| Duration
-| nanoseconds
+| `Duration`
+| Nanoseconds
 | The cumulative duration, in nanoseconds, of the requests made to this combination of request method, response status, and HTTP route
 
 | `Count`
@@ -487,7 +488,7 @@ You can use the `GrpcServerStats` MXBean to monitor gRPC services.
 Performance data is available for each service.
 
 The following attributes are available for the `GrpcServerStats` MXBean.
-The object name of the MXBean for these attributes is `WebSphere:type=GrpcServerStats,name=*"`:
+The object name of the MXBean for these attributes is `WebSphere:type=GrpcServerStats,name=*`:
 
 .GrpcServerStats MXBean attributes
 [%header,cols="6,3,12"]
@@ -533,7 +534,7 @@ You can use the `GrpcClientStats` MXBean to monitor gRPC services.
 Performance data is available for each service.
 
 The following attributes are available for the `GrpcClientStats` MXBean.
-The object name of the MXBean for these attributes is `WebSphere:type=GrpcClientStats,name=*"`:
+The object name of the MXBean for these attributes is `WebSphere:type=GrpcClientStats,name=*`:
 
 .GrpcClientStats MXBean attributes
 [%header,cols="6,3,12"]
@@ -992,9 +993,9 @@ Because all the metrics that are listed in the following table are counters, no 
 |The number of inbound 603 (Decline) responses that belong to each application.
 
 |Number of inbound 604 responses
-|`etTotalInboundResponses(appName, “604”);`
+|`getTotalInboundResponses(appName, "604");`
 |Application
-|The number of inbound 604 (Does Not Exit Anywhere) responses that belong to each application.
+|The number of inbound 604 (Does Not Exist Anywhere) responses that belong to each application.
 
 |Number of inbound 606 responses
 |`getTotalInboundResponses(appName, “606”);`
@@ -1200,7 +1201,7 @@ Because all the metrics that are listed in the following table are counters, no 
 |Application
 |The number of outbound 405 (Method Not Allowed) responses that belong to each application.
 
-|Number of outbound 406 responses.
+|Number of outbound 406 responses
 |`getTotalOutboundResponses(appName, “406”);`
 |Application
 |The number of outbound 406 (Not Acceptable) responses that belong to each application.
@@ -1356,9 +1357,9 @@ Because all the metrics that are listed in the following table are counters, no 
 |The number of outbound 603 (Decline) responses that belong to each application.
 
 |Number of outbound 604 responses
-|`etTotalOutboundResponses(appName, “604”);`
+|`getTotalOutboundResponses(appName, "604");`
 |Application
-|The number of outbound 604 (Does Not Exit Anywhere) responses that belong to each application.
+|The number of outbound 604 (Does Not Exist Anywhere) responses that belong to each application.
 
 |Number of outbound 606 responses
 |`getTotalOutboundResponses(appName, “606”);`
@@ -1492,5 +1493,154 @@ Because all the metrics that are listed in the following table are counters, no 
 |`PercentageFullTasksCountInOutboundQueue`
 |Server
 |The maximum outbound SIP stack queue usage percentage over a configured window of time.
+
+|===
+
+[#mcp-stats]
+== MCP server monitoring
+You can use the `McpOperationStatistics` and `McpSessionStatistics` MXBeans to monitor MCP server operations and sessions in Open Liberty.
+Both MXBeans activate automatically when feature:mcpServer-1.0[display=MCP Server 1.0] and feature:monitor[display=Performance Monitoring] are enabled.
+The monitoring component filter value is `MCP`.
+MXBean instances are created dynamically as operations and sessions are observed, and are removed when the associated application is unloaded.
+
+[#mcp-operation-stats]
+=== MCP operation monitoring: McpOperationStatistics MXBean
+You can use the `McpOperationStatistics` MXBean to monitor MCP operation performance data in Open Liberty.
+Performance data is available for each unique combination of MCP method and attributes.
+Each unique combination has its own MXBean.
+
+The following attributes are available for the `McpOperationStatistics` MXBean.
+The object name of the MXBean for these attributes is `WebSphere:type=McpOperationStatistics,name=*`:
+
+.McpOperationStatistics MXBean attributes
+[%header,cols="6,3,12"]
+|===
+
+|MXBean attribute
+|Units
+|Description
+
+|`McpMethodName`
+|Not applicable
+|The MCP JSON-RPC method name, for example, `tools/call`, `initialize`, `tools/list`, or `ping`. Always present.
+
+|`GenAiToolName`
+|Not applicable
+|The name of the tool that was called. Only present on `tools/call` data points.
+
+|`GenAiPromptName`
+|Not applicable
+|The prompt name for prompt operations. `null` if not applicable.
+
+|`GenAiOperationName`
+|Not applicable
+|The GenAI operation name. `null` if not applicable.
+
+|`ErrorType`
+|Not applicable
+|Why the operation failed. `null` for successful operations. Values include `tool_error`, `internal_error`, `http_error`, or a JSON-RPC error code such as `INVALID_PARAMS`.
+
+|`RpcResponseStatusCode`
+|Not applicable
+|`ok` on success, `error` on failure.
+
+|`JsonrpcProtocolVersion`
+|Not applicable
+|The JSON-RPC protocol version, for example, `2.0`.
+
+|`McpProtocolVersion`
+|Not applicable
+|The MCP protocol version negotiated with the client, for example, `2025-11-25`.
+
+|`NetworkProtocolName`
+|Not applicable
+|The network protocol name, for example, `HTTP`.
+
+|`NetworkProtocolVersion`
+|Not applicable
+|The network protocol version, for example, `1.1`.
+
+|`NetworkTransport`
+|Not applicable
+|The network transport. Always `tcp`.
+
+|`McpResourceUri`
+|Not applicable
+|The MCP resource URI for resource operations. `null` if not applicable.
+
+|`Count`
+|Not applicable
+|The total number of times this operation has been recorded.
+
+|`CountDetails`
+|Not applicable
+|Detailed counter information including the last update timestamp.
+
+|`Duration`
+|Nanoseconds
+|The total cumulative duration of all recorded executions of this operation.
+
+|`DurationDetails`
+|Nanoseconds
+|Statistical details about operation duration including minimum, maximum, and total values.
+
+|===
+
+[#mcp-session-stats]
+=== MCP session monitoring: McpSessionStatistics MXBean
+You can use the `McpSessionStatistics` MXBean to monitor MCP session performance data in Open Liberty.
+Performance data is available for each unique combination of session attributes.
+Each unique combination has its own MXBean.
+
+The following attributes are available for the `McpSessionStatistics` MXBean.
+The object name of the MXBean for these attributes is `WebSphere:type=McpSessionStatistics,name=*`:
+
+.McpSessionStatistics MXBean attributes
+[%header,cols="6,3,12"]
+|===
+
+|MXBean attribute
+|Units
+|Description
+
+|`ErrorType`
+|Not applicable
+|Why the session ended abnormally. `null` for sessions that closed cleanly.
+
+|`JsonrpcProtocolVersion`
+|Not applicable
+|The JSON-RPC protocol version used when the session was created, for example, `2.0`.
+
+|`McpProtocolVersion`
+|Not applicable
+|The MCP protocol version negotiated during `initialize`, for example, `2025-11-25`.
+
+|`NetworkProtocolName`
+|Not applicable
+|The network protocol name, for example, `HTTP`.
+
+|`NetworkProtocolVersion`
+|Not applicable
+|The network protocol version, for example, `1.1`.
+
+|`NetworkTransport`
+|Not applicable
+|The network transport. Always `tcp`.
+
+|`Count`
+|Not applicable
+|The total number of sessions recorded for this set of attributes.
+
+|`CountDetails`
+|Not applicable
+|Detailed counter information including the last update timestamp.
+
+|`Duration`
+|Nanoseconds
+|The total cumulative duration of all recorded sessions.
+
+|`DurationDetails`
+|Nanoseconds
+|Statistical details about session duration including minimum, maximum, and total values.
 
 |===
