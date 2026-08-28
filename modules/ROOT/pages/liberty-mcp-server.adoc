@@ -7,21 +7,23 @@
 //     IBM Corporation
 //
 :page-description: The mcp-1.0 feature lets you expose your Liberty application's business logic as AI-callable tools using the Model Context Protocol (MCP).
-:seo-description: Learn how to register MCP tools, handle arguments, use structured content, register encoders, handle exceptions, cancellation, async execution, programmatic registration, stateless mode, and endpoint configuration with the Liberty mcp-1.0 feature.
+:seo-description: Learn how to register MCP tools, handle arguments, use structured content, register encoders, handle errors, cancellation, asynchronous execution, programmatic registration, stateless mode, and endpoint configuration with the Liberty mcp-1.0 feature.
 :page-layout: general-reference
 :page-type: general
-:javadoc-base: https://www.javadoc.io/doc/org.mcpjava/mcp-server-api/latest
+:javadoc-base: https://www.javadoc.io/doc/org.mcpjava/mcp-server-api/1.0.0
 = MCP Servers
 
 The `mcp-1.0` feature lets you expose your Liberty application's business logic as AI-callable tools by using the https://modelcontextprotocol.io/[Model Context Protocol (MCP)]. Any MCP-compatible AI agent can then discover and invoke those tools directly over HTTP.
 
-This page explains the most common tasks, from registering your first tool to advanced topics such as async execution, structured content, and endpoint configuration.
+This page explains the most common tasks, from registering your first tool to advanced topics such as asynchronous execution, structured content, and endpoint configuration.
+
+NOTE: The MCP protocol includes various features, but the `mcp-1.0` feature only supports tools. For more information, see <<supported-features>>.
 
 == Getting started
 
 === Add the MCP API dependency
 
-The `mcp-1.0` feature uses the https://github.com/mcp-java/java-mcp-annotations[`mcp-java` API] (`org.mcpjava:mcp-server-api`), which is available on Maven Central.
+The `mcp-1.0` feature uses the https://github.com/mcp-java/java-mcp-annotations[`org.mcpjava` API], which is available on Maven Central.
 
 Add the following dependency to your `pom.xml`:
 
@@ -36,7 +38,7 @@ Add the following dependency to your `pom.xml`:
 </dependency>
 ----
 
-Some features — such as `@Schema`, `DefaultValueConverter`, `ToolManager`, and `ToolResponseEncoder` — are provided by the Liberty API, which is available on Maven Central under `io.openliberty.api:io.openliberty.mcp`. Add the following dependency to your `pom.xml`:
+Some features — such as `@Schema`, `DefaultValueConverter`, `ToolManager`, and `ToolResponseEncoder` — are provided by the Liberty API, which is available on Maven Central under `io.openliberty.api:io.openliberty.mcp`:
 
 [source,xml]
 ----
@@ -44,6 +46,7 @@ Some features — such as `@Schema`, `DefaultValueConverter`, `ToolManager`, and
 <dependency>
     <groupId>io.openliberty.api</groupId>
     <artifactId>io.openliberty.mcp</artifactId>
+    <version>1.0.117</version>
     <scope>provided</scope>
 </dependency>
 ----
@@ -61,6 +64,31 @@ Add `mcp-1.0` to your `server.xml`:
 </featureManager>
 ----
 
+NOTE: The `mcp-1.0` feature is compatible with Jakarta EE 10 and Jakarta EE 11 features.
+
+=== Register a tool
+
+To register a tool, create a public method on a CDI bean and annotate it with `@Tool`:
+
+[source,java]
+----
+import java.time.LocalDateTime;
+
+import org.mcpjava.server.tools.Tool;
+
+import jakarta.enterprise.context.ApplicationScoped;
+
+@ApplicationScoped
+public class McpTools {
+
+    @Tool(description = "Gets the current time")
+    public String getTime() {
+        return LocalDateTime.now().toString();
+    }
+
+}
+----
+
 === Find your MCP endpoint URL
 
 Once your application is deployed, the `mcp-1.0` feature logs the full MCP endpoint URL in your Liberty messages log:
@@ -72,9 +100,22 @@ CWMCM0008I: The MCP server endpoint: http://localhost:9080/myMcpApp/mcp
 
 You can connect any MCP client that supports the https://modelcontextprotocol.io/specification/2025-03-26/basic/transports#streamable-http[Streamable HTTP transport] to that URL.
 
+=== Test with the MCP Inspector
+
+The https://github.com/modelcontextprotocol/inspector[MCP Inspector] is an open-source browser UI that lets you browse and invoke tools against your running MCP server. Once you have added one or more tools, use the MCP Inspector to verify that your tools are listed and return the expected results before connecting a full AI agent. With `npm` installed, run:
+
+[source,sh]
+----
+npx @modelcontextprotocol/inspector
+----
+
+Point it at your MCP endpoint URL to list your registered tools, invoke them with test inputs, and inspect the raw JSON-RPC messages.
+
 === Connect an AI client
 
-To connect an AI agent to your MCP server, provide the MCP endpoint URL in the client's configuration. For example, to add your MCP server to https://bob.ibm.com/[IBM Bob], open `~/.bob/settings/mcp.json` and add an entry to the `mcpServers` object:
+To connect an AI agent to your MCP server, provide the MCP endpoint URL in the client's configuration.
+
+For example, to add your MCP server to https://bob.ibm.com/[IBM Bob], open `~/.bob/settings/mcp.json` and add an entry to the `mcpServers` object:
 
 [source,json]
 ----
@@ -90,20 +131,11 @@ To connect an AI agent to your MCP server, provide the MCP endpoint URL in the c
 
 Once registered, IBM Bob discovers your tools automatically the next time a conversation starts.
 
-=== Test with the MCP Inspector
-
-Once you have added one or more tools, the https://github.com/modelcontextprotocol/inspector[MCP Inspector] is an open-source browser UI that lets you browse and invoke those tools against your running MCP server. Use it to verify that your tools are listed and return the expected results before connecting a full AI agent. With `npm` installed, run:
-
-[source,sh]
-----
-npx @modelcontextprotocol/inspector
-----
-
-Point it at your MCP endpoint URL to list your registered tools, invoke them with test inputs, and inspect the raw JSON-RPC messages.
+== Developing tools
 
 === Registering tools
 
-To expose a method to AI agents, annotate it with {javadoc-base}/org/mcpjava/server/tools/Tool.html[`@Tool`] inside a CDI-managed bean.
+To expose a method to AI agents, annotate it with {javadoc-base}/org/mcpjava/server/tools/Tool.html[@Tool] inside a CDI-managed bean.
 
 [source,java]
 ----
@@ -135,19 +167,19 @@ public class WeatherTools {
 }
 ----
 
-NOTE: The class must be annotated with a CDI scope such as `@ApplicationScoped` or `@RequestScoped` for `@Tool`-annotated methods to be discovered. A class without a CDI scope annotation is ignored.
+NOTE: The class must be annotated with a CDI scope such as `@ApplicationScoped` or `@RequestScoped` for `@Tool`-annotated methods to be discovered. Liberty ignores any class that is not annotated with a CDI scope.
 
-The AI model reads the `description` to decide when and how to call the tool. Writing clear, precise descriptions is critical for effective tool use.
+The AI agent reads the `description` to decide when and how to call the tool. Writing clear, precise descriptions is critical for effective tool use.
 
 [cols="1,3",options="header"]
 |===
 | `@Tool` attribute | Description
 | `name`    | The identifier used when the AI calls the tool. Defaults to the method name.
 | `title`   | An optional human-readable display name shown in client UIs. Defaults to `name`.
-| `description` | Explains what the tool does. The AI model reads this to decide when and how to invoke it.
-| `annotations` | Nested `@Annotations` element providing behavioural hints to clients (see below).
-| `structuredContent` | When `true`, the return value is serialised as JSON and included as structured output alongside unstructured content. Also causes the output JSON Schema to be generated automatically from the return type.
-| `outputSchemaFrom` | Specifies a class from which the output JSON Schema is derived when the method returns `ToolResponse`. Because a `ToolResponse` return type carries no type information about the structured payload, set this attribute to the class that describes the structured content shape. Has no effect when `structuredContent` is `false` or when the return type is not `ToolResponse`. Defaults to `Void.class` (no schema derived).
+| `description` | Explains what the tool does. The AI agent reads this to decide when and how to invoke it.
+| `annotations` | A nested `@Annotations` element that provides behavioural hints to clients (see below).
+| `structuredContent` | When `true`, the return value is serialised as JSON and included as structured output alongside unstructured content. It also causes the output JSON Schema to be generated automatically from the return type.
+| `outputSchemaFrom` | Specifies a class from which the output JSON Schema is derived when the method returns `ToolResponse`. Because a `ToolResponse` return type carries no type information about the structured payload, set this attribute to the class that describes the structured content shape. This attribute has no effect when `structuredContent` is `false` or when the return type is not `ToolResponse`. Defaults to `Void.class` (no schema derived).
 |===
 
 You can give MCP clients hints about your tool's behaviour through the nested `@Annotations` element:
@@ -178,13 +210,13 @@ public class ConfigTools {
 | Hint | Default | Meaning
 | `readOnlyHint`    | `false` | `true` — the tool does not modify any data.
 | `destructiveHint` | `true`  | `true` — the tool may destroy data (only meaningful when `readOnlyHint = false`).
-| `idempotentHint`  | `false` | `true` — calling the tool repeatedly with the same arguments has no additional effect.
+| `idempotentHint`  | `false` | `true` — calling the tool repeatedly with the same arguments has no additional effect (only meaningful when `readOnlyHint = false`).
 | `openWorldHint`   | `true`  | `true` — the tool may interact with external systems outside the application.
 |===
 
 === Providing tool arguments
 
-Tool parameters are annotated with {javadoc-base}/org/mcpjava/server/tools/ToolArg.html[`@ToolArg`]. Each argument becomes a property in the JSON Schema that the AI uses to construct its call.
+Tool parameters are annotated with {javadoc-base}/org/mcpjava/server/tools/ToolArg.html[@ToolArg]. Each argument becomes a property in the JSON Schema that the AI uses to construct the tool call.
 
 [cols="1,3",options="header"]
 |===
@@ -219,37 +251,15 @@ public class CatalogueTools {
 }
 ----
 
-For tool methods that return a full {javadoc-base}/org/mcpjava/server/tools/ToolResponse.html[`ToolResponse`], you can also signal a business-logic error to the AI without throwing an exception:
-
-[source,java]
-----
-import org.mcpjava.server.tools.Tool;
-import org.mcpjava.server.tools.ToolArg;
-import org.mcpjava.server.tools.ToolResponse;
-import jakarta.enterprise.context.ApplicationScoped;
-
-@ApplicationScoped
-public class CatalogueTools {
-
-    @Tool(name = "lookup", description = "Lookup an item.")
-    public ToolResponse lookup(@ToolArg(name = "id", description = "Item ID") String id) {
-        try {
-            String result = catalogue.findById(id);
-            return ToolResponse.ofText(result);
-        } catch (NotFoundException e) {
-            return ToolResponse.ofError("Item not found: " + id);
-        }
-    }
-}
-----
-
 === Using structured content
+
+In MCP, tool responses can carry two representations of the same data: _unstructured_ content (plain text or JSON text) and _structured_ content (a typed JSON object). Unstructured content is the default because AI agents work well with free-form text. Structured content is useful when a downstream client or tool-chaining workflow needs to consume a strongly-typed object rather than parsing text.
 
 NOTE: Structured content is only returned to clients that negotiate MCP protocol version `2025-06-18` or later. Clients using earlier protocol versions receive the unstructured text content only.
 
-When `structuredContent = true` on `@Tool`, Liberty serialises the return value as JSON and includes it in the `structuredContent` field of the tool response alongside the unstructured text representation. This allows clients to consume a strongly-typed object rather than parsing text.
+When `structuredContent = true` on `@Tool`, Liberty serialises the return value as JSON and includes it in the `structuredContent` field of the tool response. The unstructured text representation (the default JSON serialisation) is also included for backward compatibility with older clients.
 
-The following example returns a `City` record as both unstructured text (the default JSON serialisation) and as structured JSON content:
+The following example returns a `City` record as both unstructured text and structured JSON content:
 
 [source,java]
 ----
@@ -273,7 +283,7 @@ public class CityTools {
 
 === Registering encoders
 
-When you return a POJO from a tool method, Liberty serialises it to JSON by default. To control exactly how a type is encoded, implement {javadoc-base}/org/mcpjava/server/ContentEncoder.html[`ContentEncoder<T>`] as a CDI bean. Declare `getType()` to specify which type the encoder handles and `encode()` to produce a `ContentBlock`:
+When you return a POJO from a tool method, Liberty serialises it to JSON by default. To control exactly how a type is encoded, implement {javadoc-base}/org/mcpjava/server/ContentEncoder.html[ContentEncoder<T>] as a CDI bean. Implement `getType()` to specify which type the encoder handles, and `encode()` to produce a `ContentBlock`:
 
 [source,java]
 ----
@@ -303,17 +313,43 @@ public class PersonContentEncoder implements ContentEncoder<Person> {
 }
 ----
 
-If you need control over the entire `ToolResponse` — for example, to map a failed business result to a tool error — implement `ToolResponseEncoder<T>` from `io.openliberty.mcp.tools.ToolResponseEncoder` instead. When both a `ContentEncoder` and a `ToolResponseEncoder` are registered for the same type, `ToolResponseEncoder` takes precedence.
+If you need full control over the `ToolResponse` — for example, to map a failed business result to a tool error — implement `ToolResponseEncoder<T>` from `io.openliberty.mcp.tools.ToolResponseEncoder` instead. When both a `ContentEncoder` and a `ToolResponseEncoder` are registered for the same type, `ToolResponseEncoder` takes precedence.
 
 If multiple encoders of the same kind match a type, the one with the highest `@jakarta.annotation.Priority` value wins.
 
-=== Throwing exceptions
+=== Handling errors
 
-The `mcp-1.0` feature provides two ways to signal an error to the calling AI agent through exceptions.
+==== Error responses
 
-==== Business errors with `ToolCallException`
+An error response indicates that the tool call did not complete successfully. The error response is sent back to the AI agent so that it can decide what to do next. If the error indicates that the AI agent provided invalid arguments, it has the opportunity to call the tool again with different arguments.
 
-Throw `io.openliberty.mcp.tools.ToolCallException` to signal a recoverable business error. The runtime converts it into an MCP tool error response (with `isError: true`) and passes the message directly to the AI, without logging a stack trace to the server:
+You can send an error response by returning a {javadoc-base}/org/mcpjava/server/tools/ToolResponse.html[ToolResponse] with `ToolResponse.ofError()`:
+
+[source,java]
+----
+import org.mcpjava.server.tools.Tool;
+import org.mcpjava.server.tools.ToolArg;
+import org.mcpjava.server.tools.ToolResponse;
+import jakarta.enterprise.context.ApplicationScoped;
+
+@ApplicationScoped
+public class CatalogueTools {
+
+    @Tool(name = "lookup", description = "Lookup an item.")
+    public ToolResponse lookup(@ToolArg(name = "id", description = "Item ID") String id) {
+        try {
+            String result = catalogue.findById(id);
+            return ToolResponse.ofText(result);
+        } catch (NotFoundException e) {
+            return ToolResponse.ofError("Item not found: " + id);
+        }
+    }
+}
+----
+
+==== ToolCallException
+
+It is also possible to return an error response by throwing `io.openliberty.mcp.tools.ToolCallException`. In this case, the tool method does not need to return `ToolResponse`. The message of the `ToolCallException` is returned to the client as the error message:
 
 [source,java]
 ----
@@ -336,9 +372,7 @@ public class OrderTools {
 }
 ----
 
-==== Wrapping arbitrary exceptions with `@WrapBusinessError`
-
-Use the `@WrapBusinessError` annotation from `io.openliberty.mcp.annotations` to declare which exception types should be treated as business errors and wrapped into a tool error response. Any exception not listed propagates as an unexpected server error:
+Other exceptions can also be automatically wrapped into a `ToolCallException` by annotating the method with `@WrapBusinessError`. The exception message is returned directly to the client as the error message, so check carefully that the error message makes sense to the client and does not reveal any sensitive information from the server. In many cases, it is better to catch and handle the exception yourself and provide a more appropriate error message.
 
 [source,java]
 ----
@@ -377,14 +411,15 @@ public class DataTools {
 }
 ----
 
-==== Other Exceptions
-Any exception type that is *not* a `ToolCallException` or listed in `@WrapBusinessError` is treated as an unexpected server error and Liberty logs the full stack trace and returns a generic error response to the AI.
+==== Unhandled exceptions
 
-=== Handling cancellation
+If your method throws an exception that is not converted to a `ToolCallException`, Liberty sends a general "Server error" response to the client and logs the exception details to the server log.
+
+=== Cancellation
 
 NOTE: Cancellation relies on session tracking and is not available in xref:liberty-mcp-server.adoc#stateless-mode[stateless mode]. A cancellation request sent to a stateless server has no effect.
 
-Long-running tools should accept a {javadoc-base}/org/mcpjava/server/Cancellation.html[`Cancellation`] parameter. The runtime injects this object automatically. Call `cancellation.check().isRequested()` periodically and throw `Cancellation.OperationCancelledException` to stop execution cleanly:
+Long-running tools should accept a {javadoc-base}/org/mcpjava/server/Cancellation.html[Cancellation] parameter. The runtime injects this object automatically. Call `cancellation.skipProcessingIfCancelled()` periodically, which throws `Cancellation.OperationCancelledException` if the tool call has been cancelled. It is also possible to call `cancellation.check()` to handle cancellation yourself.
 
 [source,java]
 ----
@@ -408,9 +443,7 @@ public class DataTools {
         List<String> results = new ArrayList<>();
         for (String chunk : dataService.getChunks(datasetId)) {
             // Check for cancellation before each chunk
-            if (cancellation.check().isRequested()) {
-                throw new Cancellation.OperationCancelledException();
-            }
+            cancellation.skipProcessingIfCancelled();
             results.add(process(chunk));
         }
         return results.toString();
@@ -422,9 +455,9 @@ NOTE: Cancellation validates both the session ID and the authenticated user. A d
 
 === Writing asynchronous tools
 
-Tool methods can return `CompletionStage<T>` to execute without holding a server thread for the duration of the call. The type `T` follows the same rules as synchronous tools: it can be `String`, a POJO, a content object, or a `ToolResponse`.
+Tool methods can return `CompletionStage<T>` to execute without holding a server thread for the duration of the call. The type `T` follows the same encoding rules as synchronous return types: it can be `String`, a POJO, a content object, or a `ToolResponse`.
 
-NOTE: The special parameters {javadoc-base}/org/mcpjava/server/Cancellation.html[`Cancellation`] and {javadoc-base}/org/mcpjava/server/McpRequest.html[`McpRequest`] are also supported on async tool methods.
+TIP: The special parameters {javadoc-base}/org/mcpjava/server/Cancellation.html[Cancellation] and {javadoc-base}/org/mcpjava/server/McpRequest.html[McpRequest] are also supported on asynchronous tool methods.
 
 [source,java]
 ----
@@ -450,11 +483,11 @@ public class RemoteTools {
 }
 ----
 
-By default, async tool executions time out after *30 seconds*. You can configure this per application — see <<async-tool-timeout>>.
+By default, asynchronous tool executions time out after *30 seconds*. You can configure this per application — see <<async-tool-timeout>>.
 
 === Programmatically registering tools
 
-In addition to annotation-based declaration, you can register tools at runtime using the `ToolManager` CDI bean (`io.openliberty.mcp.tools.ToolManager`). This is useful when the set of available tools depends on runtime conditions, such as whether an external service is reachable.
+In addition to annotation-based declaration, you can register tools at runtime using the `ToolManager` CDI bean (`io.openliberty.mcp.tools.ToolManager`). This is useful when the available tools depend on runtime conditions, such as whether an external service is reachable.
 
 Inject `ToolManager` and register tools by observing the CDI `Startup` event:
 
@@ -504,19 +537,16 @@ Tools registered via `ToolManager` and tools declared with `@Tool` coexist on th
 [[stateless-mode]]
 === Stateless mode
 
-MCP is a stateful protocol (up to version 2025-11-25) and requests from the same MCP session must be handled by the same server. In a clustered environment, this requires a load balancer that can route requests based on the `Mcp-Session-Id` header.
+MCP is a stateful protocol. Up to version `2025-11-25`, requests from the same MCP session must be handled by the same server. In a clustered environment, this requires a load balancer that routes requests based on the `Mcp-Session-Id` header.
 
-To allow easier deployment in a cluster, it's possible to disable stateful features so that special routing rules are not required.
-The trade-off is that client-driven cancellation of in-flight tool calls is not supported.
+To simplify deployment in a cluster, you can disable stateful features so that no special routing rules are required. The trade-off is that client-driven cancellation of in-flight tool calls is not supported.
 
-NOTE: In stateless mode, features that rely on per-client session state — including cancellation — are not available. Each request is handled independently with no shared state between calls.
-
-By default, `mcp-1.0` maintains sessions to associate requests from the same client. To enable stateless mode:
+To enable stateless mode:
 
 [source,xml]
 ----
 <application location="myMcpApp.war">
-    <mcpServer stateless="true"/>
+    <mcp stateless="true"/>
 </application>
 ----
 
@@ -524,16 +554,16 @@ In stateless mode, each incoming request is processed independently with no shar
 
 == Configuration
 
-The `<mcpServer>` element in `server.xml` lets you customise the MCP endpoint per application.
+The `<mcp>` element in `server.xml` lets you configure the MCP endpoint for each application.
 
 === Custom endpoint path
 
-By default the MCP endpoint is served at `/<contextRoot>/mcp`. Use the `path` attribute to change this:
+By default, the MCP endpoint is served at `/<contextRoot>/mcp`. Use the `path` attribute to change this:
 
 [source,xml]
 ----
 <application location="myMcpApp.war">
-    <mcpServer path="/custom-mcp"/>
+    <mcp path="/custom-mcp"/>
 </application>
 ----
 
@@ -546,37 +576,37 @@ During MCP initialisation, the server sends a `serverInfo` block containing the 
 [source,xml]
 ----
 <application location="myMcpApp.war">
-    <mcpServer>
+    <mcp>
         <info name="Weather Service"
               version="2.0"
               description="Provides real-time weather forecast tools."/>
-    </mcpServer>
+    </mcp>
 </application>
 ----
 
-NOTE: Some AI applications display the server name and description directly in their UI — for example, in a list of connected MCP servers shown to the user. Setting meaningful values makes it easier for users to identify which server they are connected to.
+TIP: Some AI applications display the server name and description directly in their UI — for example, in a list of connected MCP servers shown to the user. Setting meaningful values makes it easier for users to identify which server they are connected to.
 
 [[async-tool-timeout]]
-=== Async tool timeout
+=== Asynchronous tool timeout
 
 By default, asynchronous tool executions are limited to *30 seconds*. Increase this limit using the `asyncTimeout` attribute. The value uses Liberty's standard duration format — for example, `30s`, `2m`, `1h`:
 
 [source,xml]
 ----
 <application location="myMcpApp.war">
-    <mcpServer asyncTimeout="2m"/>
+    <mcp asyncTimeout="2m"/>
 </application>
 ----
 
 === EAR deployments with multiple modules
 
-When deploying an EAR with multiple WAR modules, use the `moduleName` attribute to target each WAR independently. Each module gets its own isolated MCP endpoint:
+When deploying an EAR with multiple WAR modules, use the `moduleName` attribute to configure each WAR module independently. Each module gets its own isolated MCP endpoint:
 
 [source,xml]
 ----
 <application location="myMcpApp.ear">
-    <mcpServer path="/mcp"           moduleName="catalogue"/>
-    <mcpServer path="/reporting-mcp" moduleName="reporting"/>
+    <mcp path="/mcp"           moduleName="catalogue"/>
+    <mcp path="/reporting-mcp" moduleName="reporting"/>
 </application>
 ----
 
@@ -597,27 +627,22 @@ The `mcp-1.0` feature supports the following specification versions, negotiated 
 * https://modelcontextprotocol.io/specification/2025-06-18[`2025-06-18`]
 * https://modelcontextprotocol.io/specification/2025-03-26[`2025-03-26`]
 
+[[supported-features]]
 === Supported features
 
-The MCP specification defines several capability areas. The following table summarises what `mcp-1.0` supports:
+The following table summarises the capability areas defined by the MCP specification and whether `mcp-1.0` supports them:
 
 [cols="1,1,3",options="header"]
 |===
 | Feature | Supported | Notes
 | Tools (`tools/list`, `tools/call`) | Yes | Full support, including tool annotations and structured content.
-| Resources (`resources/list`, `resources/read`) | No | Not supported in this release.
-| Prompts (`prompts/list`, `prompts/get`) | No | Not supported in this release.
-| Sampling (`sampling/createMessage`) | No | Not supported in this release.
-| Roots | No | Not supported in this release.
-| Logging (`logging/setLevel`, `notifications/message`) | No | Not supported in this release.
-| Completion (`completion/complete`) | No | Not supported in this release.
+| Resources (`resources/list`, `resources/read`) | No |
+| Prompts (`prompts/list`, `prompts/get`) | No |
+| Elicitation (`elicitation/create`) | No |
+| Sampling (`sampling/createMessage`) | No | Deprecated in latest MCP specification.
+| Roots (`roots/list`) | No | Deprecated in latest MCP specification.
+| Logging (`logging/setLevel`, `notifications/message`) | No | Deprecated in latest MCP specification.
 | Cancellation (`notifications/cancelled`) | Yes | Supported in stateful mode only.
-| Progress (`notifications/progress`) | No | Not supported in this release.
-| Ping (`ping`) | Yes | Fully supported.
+| Progress (`notifications/progress`) | No |
+| Ping (`ping`) | Yes |
 |===
-
-
-
-
-
-
