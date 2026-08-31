@@ -1,3 +1,15 @@
+== Sub-elements
+
+The `openidConnectClient` element supports the following sub-elements.
+
+[cols="1,3",options="header"]
+|===
+|Sub-element |Description
+
+|`protectedResourceMetadata`
+|Optional. Enables serving of an OAuth 2.0 Protected Resource Metadata document (RFC 9728) and adds the `resource_metadata` URI to `WWW-Authenticate` headers on 401 responses. See <<#protected-resource-metadata,Serve OAuth protected resource metadata (RFC 9728)>>.
+|===
+
 == Examples
 
 The following examples demonstrate configuration options for the OpenID Connect Client feature, which is specified on the `openidConnectClient` element in your `server.xml` file. For a full list of configuration attributes, see the config:openidConnectClient[] element.
@@ -42,7 +54,7 @@ If a default outbound TLS configuration is specified, this configuration must al
 
 The following example shows the minimal configuration for the `openidConnectClient` element to work with the default OP.
 
-The client must have a configured application that is available at the specified URL pattern that can handle redirect requests from an OP. This URL must also precisely match the redirect URL that is registered for the client with the OP.
+The client must have an application configured at the specified URL pattern to handle redirect requests from an OP. This URL must also precisely match the redirect URL that is registered for the client with the OP.
 
 [source,xml]
 ----
@@ -105,7 +117,7 @@ In the following example, the default TLS configuration includes the JWK endpoin
 </openidConnectClient>
 ----
 
-The Open Liberty server expects each request to provide a valid JWT token and does not create or use single-sign-on (SSO) cookies for JWT authentication. If you want the Open Liberty server to create SSO cookies, set the `authnSessionDisabled` attribute on the `openidConnectClient` element to `false`.
+The Open Liberty server expects each request to provide a valid JWT and does not create or use single-sign-on (SSO) cookies for JWT authentication. If you want the Open Liberty server to create SSO cookies, set the `authnSessionDisabled` attribute on the `openidConnectClient` element to `false`.
 
 Open Liberty can use the issuer claim from a JWT or JSON web signature (JWS) access token to select an `openidConnectClient` configuration in the `server.xml` file with a matching issuer attribute.
 
@@ -149,7 +161,7 @@ If both the `realmName` and `realmIdentifier` attributes are configured, the `re
 +
 You can specify an alternative claim as the value for any of these attributes. For example, to use the `name` claim for the principal name instead of the `sub` claim, you can specify `userIdentifier="name"`. For more information about these attributes, see the config:openidConnectClient[] element.
 +
-You can also programmatically map JWT to subjects by implementing the `com.ibm.wsspi.security.oauth.UserCredentialResolver` service programming interface (SPI). For information, see the Java documentation that is provided with the Open Liberty installation in the `${wlp.install.dir}/dev/spi/ibm/` directory.
+You can also programmatically map JWT to subjects by implementing the `com.ibm.wsspi.security.oauth.UserCredentialResolver` service programming interface (SPI). For more information, see the Java documentation that is provided with the Open Liberty installation in the `${wlp.install.dir}/dev/spi/ibm/` directory.
 
 JWT audiences::
 To define a list of trusted audiences, configure the `audiences` attribute on the `openidConnectClient` element.
@@ -194,6 +206,7 @@ The OpenID Connect client validates the signature of ID tokens and access tokens
 You can configure the client to accept tokens signed with a specific algorithm by setting the `signatureAlgorithm` attribute to a recognized signature algorithm. When a fixed algorithm is specified, the client rejects any token that is not signed with that algorithm.
 
 The following example shows a configuration that accepts only tokens signed with `RS256`:
+
 [source,xml]
 ----
 <openidConnectClient 
@@ -213,6 +226,7 @@ You can configure the client to use the signature algorithm from the token heade
 When `signatureAlgorithm` is set to `FROM_HEADER`, the OpenID Connect client reads the `alg` claim from the JOSE header and uses that algorithm for signature verification. By default, when this option is selected, tokens signed with any Liberty-supported signature algorithm are accepted. For enhanced security, you can restrict which signature algorithms are permitted by configuring the `allowedSignatureAlgorithms` attribute. This attribute accepts a comma-separated list of algorithm names. Only tokens signed by algorithms in this list are validated.
 
 The following example shows a configuration that accepts tokens signed with a mixed group of algorithms (`RS256`, `ES384`, or `HS512`):
+
 [source,xml]
 ----
 <openidConnectClient 
@@ -235,7 +249,6 @@ When you use asymmetric algorithms and a trust store configuration, the client u
 - Without `FROM_HEADER` (Single Algorithm): The client uses only the key specified by the `trustAliasName` attribute for signature verification.
 
 Alternatively, for either of these configurations, you can configure JWK-based verification as described in xref:ROOT:json-web-token.adoc[Sign and verify JSON Web Tokens with JSON Web Keys].
-
 
 [#jwe]
 === Accept tokens in JWE format
@@ -287,7 +300,7 @@ To set up your OIDC Client, Social Login, or JWT consumer to use ECDH-ES, add th
 <jwtConsumer keyManagementKeyAlias="myECPrivateKey" />
 ----
 
-Where `myECPrivateKey` is the alias for the EC private key.
+`myECPrivateKey` is the alias for the EC private key.
 
 To set up your JWT builder to use ECDH-ES, add the EC public key to the keystore and configure the following.
 
@@ -296,7 +309,7 @@ To set up your JWT builder to use ECDH-ES, add the EC public key to the keystore
 <jwtBuilder keyManagementKeyAlgorithm="ECDH-ES" keyManagementKeyAlias="myECPublicKey" />
 ----
 
-Where `myECPublicKey` is the alias for the EC public key.
+`myECPublicKey` is the alias for the EC public key.
 
 [#oidc-sl-jwt-rsa-ex]
 ===== OIDC Client, Social Login, or JWT using RSA-OAEP example
@@ -419,7 +432,7 @@ For more information, see xref:ROOT:authentication-filters.adoc[Authentication f
 
 OpenID Connect clients in Open Liberty support the `private_key_jwt` client authentication method with OpenID Connect token endpoints. OpenID Connect clients must provide authentication data to the OpenID Connect provider to access the provider's token endpoint. Clients can authenticate by using several different methods, but most of those methods require a client secret. The `private_key_jwt` authentication method allows clients to use asymmetric keys to create signed JWTs to authenticate instead of client secrets. By using this authentication method, OpenID Connect clients in Open Liberty no longer need a client secret.
 
-Server administrators can enable this function by using the `private_key_jwt` option for the `tokenEndpointAuthMethod` attribute, and the new `tokenEndpointAuthSigningAlgorithm` and `keyAliasName` attributes in the `openidConnectClient` element.
+Server administrators can enable this function by using the `private_key_jwt` option for the `tokenEndpointAuthMethod` attribute, and the `tokenEndpointAuthSigningAlgorithm` and `keyAliasName` attributes in the `openidConnectClient` element.
 
 [source,xml]
 ----
@@ -495,7 +508,7 @@ To configure parameters for the token endpoint, use the `tokenParameter` element
 [#access-token]
 === Check the access token for user and group information
 
-If `userIdentifier` or `groupIdentifier` values are not found in the ID token, Open Liberty can also check in the access token and the `UserInfo` endpoint.
+If `userIdentifier` or `groupIdentifier` values are not found in the ID token, Open Liberty can also check the access token and the `UserInfo` endpoint.
 
 Set the `tokensOrderToFetchCallerClaims` attribute to `AccessToken IDToken Userinfo`, as shown in the following example.
 
@@ -504,7 +517,7 @@ Set the `tokensOrderToFetchCallerClaims` attribute to `AccessToken IDToken Useri
 <openidConnectClient tokensOrderToFetchCallerClaims="AccessToken IDToken Userinfo"  userIdentifier="unique_name" groupIdentifier="aud" ... />
 ----
 
-In this example, Open Liberty checks for `userIdentifier` and `groupIdentifier` values first in the access token, then the ID token, and finally calls the `UserInfo` endpoint. If the values are not found in any of those locations, an unauthorized response code is returned.
+In this example, Open Liberty checks for `userIdentifier` and `groupIdentifier` values first in the access token, then in the ID token, and finally in the `UserInfo` endpoint. If the values are not found in any of those locations, an unauthorized response code is returned.
 
 If the `tokensOrderToFetchCallerClaims` attribute is not specified, the default value is `IDToken` and Open Liberty checks only the ID token for user and group information.
 
@@ -585,4 +598,4 @@ The `resource_metadata` URL points to the metadata document for the specific pro
 ==== Related information
 
 * https://datatracker.ietf.org/doc/html/rfc9728[RFC 9728: OAuth 2.0 Protected Resource Metadata]
-* https://modelcontextprotocol.io/specification/2025-03-26/basic/authorization[MCP Authorization specification]
+* https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization#authorization-server-location[MCP Authorization specification]
