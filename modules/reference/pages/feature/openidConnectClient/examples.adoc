@@ -15,6 +15,7 @@ The following examples demonstrate configuration options for the OpenID Connect 
 - <<#context,Modify the context root>>
 - <<#params,Pass request parameters to OpenID Connect>>
 - <<#access-token,Check the access token for user and group information>>
+- <<#protected-resource-metadata,Serve OAuth protected resource metadata (RFC 9728)>>
 
 [#minimal]
 === Minimal configuration for Open Liberty to act as an OpenID Connect client
@@ -40,6 +41,7 @@ OIDC uses the default TLS configuration that is specified by the server. Therefo
 If a default outbound TLS configuration is specified, this configuration must also use the truststore that is configured for OIDC. You can specify a TLS configuration for OIDC other than the default by referencing it from the `sslRef` attribute of the `openidConnectClient` element. Alternatively, you can specify a nondefault truststore for OIDC by referencing the truststore configuration from the `trustStoreRef` attribute for the `openidConnectClient` element. For more information, see link:/docs/latest/reference/feature/transportSecurity-1.0.html#_configure_transport_layer_security_tls[Configure TLS] and the config:openidConnectClient[] element.
 
 The following example shows the minimal configuration for the `openidConnectClient` element to work with the default OP.
+
 The client must have a configured application that is available at the specified URL pattern that can handle redirect requests from an OP. This URL must also precisely match the redirect URL that is registered for the client with the OP.
 
 [source,xml]
@@ -56,7 +58,7 @@ This configuration assumes the following default values.
 
 - `scope=openid profile`
 +
-You can use the `scope` attribute for the `openidConnectClient` element to edit required scopes. For example, you can change the required scope to `openid profile email`. For more information about OpenID scopes, see the https://openid.net/developers/specs/[OpenID Connect specification].
+You can use the `scope` attribute for the `openidConnectClient` element to specify required scopes. For example, you can change the required scope to `openid profile email`. For more information about OpenID scopes, see the https://openid.net/developers/specs/[OpenID Connect specification].
 - The client registers the `\https://<host name>:<ssl port>/oidcclient/redirect/client01` redirect URL with the OP.
 +
 In this URL, both the hostname and SSL port are automatically resolved and `client01` is the value of the `id` attribute of the `openidConnectClient` element. If a proxy is in front of the RP, you can override the hostname and port by specifying the `redirectToRPHostAndPort` attribute, for example, `redirectToRPHostAndPort="https://<host name>:<ssl port>"`.
@@ -89,7 +91,7 @@ If a discovery endpoint is configured, any other configured OIDC endpoints are i
 [#jwt]
 === Configure JSON Web Token (JWT) authentication for OpenID Connect
 
-Any trusted party with a JWT can use that token to get access to the associated resources in Open Liberty. The Open Liberty server validates the JWT and creates the authenticated subject from it. To be accepted as an authentication token, the JWT must contain `iss`, `sub`, and `exp` claims and be signed with a recognized signature algorithm. Recognized signature algorithms are listed as possible values for the `signatureAlgorithm` attribute of the config:openidConnectClient[] element. An unsigned JWT is accepted when the `signatureAlgorithm` attribute is set to `none` . For more information about signature algorithm configuration options, see <<#signtoken,Accept signed tokens with signature algorithm validation>>. <<#jwe,JSON Web Encryption (JWE)>> is also supported.
+Any trusted party with a JWT can use that token to access the associated resources in Open Liberty. The Open Liberty server validates the JWT and creates the authenticated subject from it. To be accepted as an authentication token, the JWT must contain `iss`, `sub`, and `exp` claims and be signed with a recognized signature algorithm. Recognized signature algorithms are listed as possible values for the `signatureAlgorithm` attribute of the config:openidConnectClient[] element. An unsigned JWT is accepted when the `signatureAlgorithm` attribute is set to `none`. For more information about signature algorithm configuration options, see <<#signtoken,Accept signed tokens with signature algorithm validation>>. <<#jwe,JSON Web Encryption (JWE)>> is also supported.
 
 To configure an Open Liberty server to accept a JWT as an authentication token, you must set the `inboundPropagation` attribute to `required`. You must also configure a truststore that includes the JSON Web Key (JWK) endpoint certificate so that the Open Liberty server can make TLS connections to the JWK endpoint. If the default truststore for your server does not include the JWK endpoint certificate, you can reference an alternative truststore from the `trustStoreRef` attribute for the `openidConnectClient` element.
 
@@ -102,11 +104,12 @@ In the following example, the default TLS configuration includes the JWK endpoin
   issuerIdentifier="https://idp.example.com:8020/jwt" >
 </openidConnectClient>
 ----
+
 The Open Liberty server expects each request to provide a valid JWT token and does not create or use single-sign-on (SSO) cookies for JWT authentication. If you want the Open Liberty server to create SSO cookies, set the `authnSessionDisabled` attribute on the `openidConnectClient` element to `false`.
 
-Open Liberty can use the issuer claim from a JWT or JSON web signature (JWS) access token to select a `openidConnectClient` configuration in the `server.xml` file with a matching issuer attribute.
+Open Liberty can use the issuer claim from a JWT or JSON web signature (JWS) access token to select an `openidConnectClient` configuration in the `server.xml` file with a matching issuer attribute.
 
-The following `server.xml` file example shows two Open ID connect client configurations, with an config:authFilter[Authentication Filter] configured to route requests to the `RP2` configuration. If a request with an issuer claim value of `https://hostname/op1` is presented, the `RP1` configuration is selected unless the `rp2filter` applies to the request.
+The following `server.xml` file example shows two OpenID Connect client configurations, with a config:authFilter[Authentication Filter] configured to route requests to the `RP2` configuration. If a request with an issuer claim value of `https://hostname/op1` is presented, the `RP1` configuration is selected unless the `rp2filter` applies to the request.
 
 [source,xml]
 ----
@@ -126,7 +129,7 @@ Open Liberty selects the `openidConnectClient` configuration to use for a JWT re
 4. If the issuer claim from the JWT matches the `issuerIdentifier` attribute in *multiple* `openidConnectClient` configuration elements, choose one of the configurations in a nondeterministic manner.
 5. If there is *one* `openidConnectClient` configuration without an authentication filter, choose that configuration.
 6. If there are *multiple* `openidConnectClient` configurations without an authentication filter, choose one of the configurations in a nondeterministic manner.
-7. If no match is found, the request is not processed by `openidConnectClient`, and the system determines whether an alternative authentication method is available
+7. If no match is found, the request is not processed by `openidConnectClient`, and the system determines whether an alternative authentication method is available.
 
 Claim to subject mapping::
 If you do not define claim-to-subject mapping, the following default rules apply.
@@ -183,9 +186,11 @@ jwt: mF_9.B5f-4.1JqM
 
 [#signtoken]
 === Accept signed tokens with signature algorithm validation
+
 The OpenID Connect client validates the signature of ID tokens and access tokens to ensure their authenticity and integrity. To configure the Open Liberty OIDC client to process signed tokens, you must set the `signatureAlgorithm` attribute to either a single signature algorithm or to `FROM_HEADER` to use the algorithm specified in the token header.
 
 ==== Specify a fixed signature algorithm
+
 You can configure the client to accept tokens signed with a specific algorithm by setting the `signatureAlgorithm` attribute to a recognized signature algorithm. When a fixed algorithm is specified, the client rejects any token that is not signed with that algorithm.
 
 The following example shows a configuration that accepts only tokens signed with `RS256`:
@@ -202,9 +207,10 @@ The following example shows a configuration that accepts only tokens signed with
 ----
 
 ==== Use the signature algorithm from the token header
+
 You can configure the client to use the signature algorithm from the token header by setting the `signatureAlgorithm` attribute to `FROM_HEADER`. This configuration allows the client to accept tokens signed with different algorithms without requiring separate client configurations.
 
-When `signatureAlgorithm` is set to `FROM_HEADER`, the OpenID Connect client reads the `alg` claim from the JOSE header and uses that algorithm for signature verification. By default, when this option is selected, tokens signed with any Liberty-supported signature algorithm are accepted. For enhanced security, you can restrict which signature algorithms are permitted by configuring the `allowedSignatureAlgorithms` attribute. This attribute accepts a comma-separated list of algorithm names. Only tokens signed by algorithms in this list will be validated.
+When `signatureAlgorithm` is set to `FROM_HEADER`, the OpenID Connect client reads the `alg` claim from the JOSE header and uses that algorithm for signature verification. By default, when this option is selected, tokens signed with any Liberty-supported signature algorithm are accepted. For enhanced security, you can restrict which signature algorithms are permitted by configuring the `allowedSignatureAlgorithms` attribute. This attribute accepts a comma-separated list of algorithm names. Only tokens signed by algorithms in this list are validated.
 
 The following example shows a configuration that accepts tokens signed with a mixed group of algorithms (`RS256`, `ES384`, or `HS512`):
 [source,xml]
@@ -222,21 +228,21 @@ The following example shows a configuration that accepts tokens signed with a mi
 
 ==== Key selection for signature verification
 
-When using asymmetric algorithms and a trust store configuration, the client uses the following strategies to locate the appropriate public key for signature verification:
+When you use asymmetric algorithms and a trust store configuration, the client uses the following strategies to locate the appropriate public key for signature verification:
 
-- With `FROM_HEADER`: The public keys must be prefixed with their corresponding algorithm for automatic selection. The client identifies the `alg` claim from the token header and searches the trust store for a key alias beginning with that value. For example, the alias `rs256_key` will be used for tokens signed with `RS256`. If no algorithm-prefixed key is found, the client falls back to using the key specified by the `trustAliasName` attribute.
+- With `FROM_HEADER`: The public keys must be prefixed with their corresponding algorithm for automatic selection. The client identifies the `alg` claim from the token header and searches the trust store for a key alias beginning with that value. For example, the alias `rs256_key` is used for tokens signed with `RS256`. If no algorithm-prefixed key is found, the client falls back to using the key specified by the `trustAliasName` attribute.
 
-- Without `FROM_HEADER` (Single Algorithm): The client only uses the key specified by the `trustAliasName` attribute for signature verification.
+- Without `FROM_HEADER` (Single Algorithm): The client uses only the key specified by the `trustAliasName` attribute for signature verification.
 
-Alternatively, for either of the above configurations, you can configure JWK-based verification as described in xref:ROOT:json-web-token.adoc[Sign and verify JSON Web Tokens with JSON Web Keys].
+Alternatively, for either of these configurations, you can configure JWK-based verification as described in xref:ROOT:json-web-token.adoc[Sign and verify JSON Web Tokens with JSON Web Keys].
 
 
 [#jwe]
 === Accept tokens in JWE format
 
-In version 22.0.0.1 and later, you can configure an Open Liberty OIDC client to process access and ID tokens that are in a JWE format. The corresponding OP must support creating JWE access or ID tokens. Set the OP with the OIDC client public key that is used to encrypt the Content Encryption Key, according to the OIDC Provider documentation.
+In version 22.0.0.1 and later, you can configure an Open Liberty OIDC client to process access and ID tokens that are in a JWE format. The corresponding OP must support creating JWE access or ID tokens. Configure the OP to use the OIDC client public key that is used to encrypt the Content Encryption Key, according to the OIDC Provider documentation.
 
-The following example shows a sample configuration to accept JWTs in JWE format.
+The following example shows a configuration to accept JWTs in JWE format.
 
 [source,xml]
 ----
@@ -262,9 +268,9 @@ If you manage single sign-on (SSO) for OIDC with the feature:socialLogin[display
 
 The Semeru implementation of FIPS 140-3 requires the use of ECDH algorithms for key agreement during encryption. The FIPS module currently in use by IBM Semeru Runtimes might not fully support RSA-OAEP operations, or might require a workaround to support them. For more information or updates, check the link:https://www.ibm.com/support/pages/semeru-runtimes-getting-started[IBM Semeru Runtimes release information or version fixes]. In the meantime, to use RSA-OAEP when FIPS 140-3 is enabled, see the <<#oidc-sl-jwt-rsa-ex,OIDC Client, Social Login, or JWT using RSA-OAEP example>> section.
 
-Use of ECDH algorithms requires the use of EC keys. See the section titled <<#gen-ec-keys,Generate EC keys for ECDH>>.
+Use of ECDH algorithms requires the use of EC keys. See <<#gen-ec-keys,Generate EC keys for ECDH>>.
 
-To setup your OIDC Client, Social Login, or JWT consumer to use ECDH-ES, you’ll need to add the EC private key to the keystore and configure the following depending on if you’re using `openidConnectClient`, `oidcLogin`, or `jwtConsumer`.
+To set up your OIDC Client, Social Login, or JWT consumer to use ECDH-ES, add the EC private key to the keystore and configure the following depending on whether you are using `openidConnectClient`, `oidcLogin`, or `jwtConsumer`.
 
 [source,xml]
 ----
@@ -283,7 +289,7 @@ To setup your OIDC Client, Social Login, or JWT consumer to use ECDH-ES, you’l
 
 Where `myECPrivateKey` is the alias for the EC private key.
 
-To setup your JWT builder to use ECDH-ES, you’ll need to add the EC public key to the keystore and configure the following.
+To set up your JWT builder to use ECDH-ES, add the EC public key to the keystore and configure the following.
 
 [source,xml]
 ----
@@ -295,7 +301,7 @@ Where `myECPublicKey` is the alias for the EC public key.
 [#oidc-sl-jwt-rsa-ex]
 ===== OIDC Client, Social Login, or JWT using RSA-OAEP example
 
-If your OIDC Client, Social Login, or JWT configuration cannot support ECDH-ES, and you must use RSA-OAEP, you can try and add the following to the FIPS140-3-Liberty-Application.properties custom profile file created when FIPS 140-3 is configured:
+If your OIDC Client, Social Login, or JWT configuration cannot support ECDH-ES, and you must use RSA-OAEP, add the following to the FIPS140-3-Liberty-Application.properties custom profile file created when FIPS 140-3 is configured:
 
 [source,xml]
 ----
@@ -308,16 +314,16 @@ RestrictedSecurity.OpenJCEPlusFIPS.FIPS140-3-Liberty-Application.jce.provider.4 
     {Cipher, RSA, *, FullClassName:org.jose4j.jwe.CipherUtil}]
 ----
 
-Note that this is just an example, and you might need different constraints based on your application.
+NOTE: This is an example. You might need different constraints based on your application.
 
-This will add the constraints to the already registered Sun and SunJCE providers to allow for RSA-OAEP key agreement algorithm. The constraints to be added will be discovered through the troubleshooting process as described in link:https://www.ibm.com/docs/SSAW57_liberty/com.ibm.websphere.wlp.nd.multiplatform.doc/ae/twlp_fips_troubleshoot.html[Troubleshooting FIPS 140-3 on Liberty]. For more information about the custom profile file, see link:https://www.ibm.com/support/pages/node/7113528#creatingextensionsofprofiles[Creating extensions of profiles].
+This adds the constraints to the already registered Sun and SunJCE providers to enable the RSA-OAEP key agreement algorithm. The constraints to be added will be discovered through the troubleshooting process as described in link:https://www.ibm.com/docs/SSAW57_liberty/com.ibm.websphere.wlp.nd.multiplatform.doc/ae/twlp_fips_troubleshoot.html[Troubleshooting FIPS 140-3 on Liberty]. For more information about the custom profile file, see link:https://www.ibm.com/support/pages/node/7113528#creatingextensionsofprofiles[Creating extensions of profiles].
 
 [#gen-ec-keys]
 ===== Generate EC keys for ECDH
 
-To use ECDH, you need to configure the EC keys in the keystores.
+To use ECDH, configure the EC keys in the keystores.
 
-The EC public and private key pair can be generated using `securityUtility` or `keytool`, for example:
+You can generate the EC public and private key pair by using `securityUtility` or `keytool`, for example:
 
 [source,xml]
 ----
@@ -336,7 +342,7 @@ To configure the Liberty OIDC client to use a third-party OIDC Provider, such as
 
 - `jwkEndpointUrl`
 +
-Set this  attribute to the URL of the OP JSON Web Key Set document that is defined by the `jwks_uri` value in the discovery file.
+Set this attribute to the URL of the OP JSON Web Key Set document that is defined by the `jwks_uri` value in the discovery file.
 - `issuerIdentifier`
 +
 Set this attribute to the issuer as defined in the discovery file. An ID Token that does not contain this value as an `iss` claim is rejected.
@@ -350,7 +356,7 @@ Set this attribute to a claim name that is used by the vendor ID Token that repr
 +
 Set the attribute to the claim name that represents the user's group memberships or roles.
 
-The following example shows a sample configuration to connect to Google as an OIDC Provider.
+The following example shows a configuration to connect to Google as an OIDC Provider.
 
 [source,xml]
 ----
@@ -369,7 +375,7 @@ The following example shows a sample configuration to connect to Google as an OI
 [#filter]
 === Support Multiple OpenID Connect Providers
 
-You can configure Open Liberty as an OIDC client to multiple OPs by creating multiple `openidConnectClient` elements and setting authentication filters to route incoming authentication requests to each configuration. Each `openidConnectClient` element defines one SSO relationship with one OIDC Provider. Use the `authFilterRef` attribute to reference the authentication filter to specify the configured authentication filter for each `openidConnectClient` element.
+You can configure Open Liberty as an OIDC client to multiple OPs by creating multiple `openidConnectClient` elements and setting authentication filters to route incoming authentication requests to each configuration. Each `openidConnectClient` element defines one SSO relationship with one OIDC Provider. Use the `authFilterRef` attribute to specify the authentication filter for each `openidConnectClient` element.
 
 In the following example, authentication requests that contain the `/mywebapp/members` URL pattern are filtered to the OP that is referenced by the `RP1` configuration. Authentication requests that contain the `/mywebapp/guests` URL pattern are filtered to the OP that is referenced by the `RP2` configuration.
 
@@ -411,7 +417,7 @@ For more information, see xref:ROOT:authentication-filters.adoc[Authentication f
 [#privatekey]
 === Use Private Key JWT for client authentication
 
-OpenID Connect clients in Open Liberty support the `private_key_jwt` client authentication method with OpenID Connect token endpoints. OpenID Connect clients need to provide authentication data to the OpenID Connect provider for accessing the provider's token endpoint. Clients can authenticate by using several different methods, but most of those methods require a client secret. The `private_key_jwt` authentication method allows clients to use asymmetric keys to create signed JWTs to authenticate instead of client secrets. By using this authentication method, OpenID Connect clients in Open Liberty no longer need to have a client secret.
+OpenID Connect clients in Open Liberty support the `private_key_jwt` client authentication method with OpenID Connect token endpoints. OpenID Connect clients must provide authentication data to the OpenID Connect provider to access the provider's token endpoint. Clients can authenticate by using several different methods, but most of those methods require a client secret. The `private_key_jwt` authentication method allows clients to use asymmetric keys to create signed JWTs to authenticate instead of client secrets. By using this authentication method, OpenID Connect clients in Open Liberty no longer need a client secret.
 
 Server administrators can enable this function by using the `private_key_jwt` option for the `tokenEndpointAuthMethod` attribute, and the new `tokenEndpointAuthSigningAlgorithm` and `keyAliasName` attributes in the `openidConnectClient` element.
 
@@ -427,7 +433,7 @@ Server administrators can enable this function by using the `private_key_jwt` op
 
 The `tokenEndpointAuthSigningAlgorithm` attribute specifies the signing algorithm to sign the JWT that is used for client authentication. The `keyAliasName` attribute points to the private key to use to sign the JWT. The private key must be present in the keystore that is specified by the `sslRef` attribute in the config:openidConnectClient[display=OpenID Connect client configuration]. OpenID Connect providers that support Private Key JWT client authentication typically provide an interface for administrators to upload their corresponding public key.
 
-For more information on `private_key_jwt` client authentication, see the https://openid.net/specs/openid-connect-core-1_0.html#ClientAuthentication[OpenID Connect core specification] and https://datatracker.ietf.org/doc/html/rfc7523[RFC 7523].
+For more information about `private_key_jwt` client authentication, see the https://openid.net/specs/openid-connect-core-1_0.html#ClientAuthentication[OpenID Connect core specification] and https://datatracker.ietf.org/doc/html/rfc7523[RFC 7523].
 
 [#ltpa]
 === Disable LTPA cookies
@@ -448,7 +454,7 @@ When you set this attribute to `true`, the Open Liberty OIDC client accepts only
 [#oauth]
 === Accept an OAuth 2.0 bearer access token without redirecting to an OpenID Connect provider
 
-You can configure an OIDC client to optionally accept a valid OAuth 2.0 bearer access token as an authentication token without redirecting the request to an OIDC provider. With this configuration, if a request contains a valid OAuth 2.0 bearer access token, the Open Liberty OIDC client automatically validates it and creates an authenticated subject based on the token validation result. If the request does not contain an access token or the access token is invalid, then the Open Liberty OIDC client continues to redirect the user to an OIDC provider. This function enables the Open Liberty server to serve both the browser client and nonbrowser client like a RESTful client.
+You can configure an OIDC client to optionally accept a valid OAuth 2.0 bearer access token as an authentication token without redirecting the request to an OIDC provider. With this configuration, if a request contains a valid OAuth 2.0 bearer access token, the Open Liberty OIDC client automatically validates it and creates an authenticated subject based on the token validation result. If the request does not contain an access token or the access token is invalid, the Open Liberty OIDC client continues to redirect the user to an OIDC provider. This function enables the Open Liberty server to serve both browser clients and nonbrowser clients such as RESTful clients.
 
 [source,xml]
 ----
@@ -458,6 +464,7 @@ You can configure an OIDC client to optionally accept a valid OAuth 2.0 bearer a
     ...
 </openidConnectClient>
 ----
+
 [#context]
 === Modify the context root
 
@@ -497,6 +504,85 @@ Set the `tokensOrderToFetchCallerClaims` attribute to `AccessToken IDToken Useri
 <openidConnectClient tokensOrderToFetchCallerClaims="AccessToken IDToken Userinfo"  userIdentifier="unique_name" groupIdentifier="aud" ... />
 ----
 
-In this example, Open Liberty checks for `userIdentifier` and `groupIdentifier` values first in the access token, then the ID token, and lastly, calls the `UserInfo` endpoint. If the values are not found in any of those locations, an unauthorized response code is returned.
+In this example, Open Liberty checks for `userIdentifier` and `groupIdentifier` values first in the access token, then the ID token, and finally calls the `UserInfo` endpoint. If the values are not found in any of those locations, an unauthorized response code is returned.
 
 If the `tokensOrderToFetchCallerClaims` attribute is not specified, the default value is `IDToken` and Open Liberty checks only the ID token for user and group information.
+
+[#protected-resource-metadata]
+=== Serve OAuth protected resource metadata (RFC 9728)
+
+OAuth 2.0 Protected Resource Metadata (https://datatracker.ietf.org/doc/html/rfc9728[RFC 9728]) allows a resource server to publish a well-known JSON document describing how clients can obtain access tokens. This enables MCP clients and other OAuth clients to automatically discover the authorization server without any prior configuration.
+
+Add a `<protectedResourceMetadata>` sub-element to your `<openidConnectClient>` configuration. When the sub-element is present, Liberty:
+
+* Serves the metadata document at `/.well-known/oauth-protected-resource/<protected-path>` for every path matched by the configured `authFilter`.
+* Includes the `resource_metadata` URI in the `WWW-Authenticate` response header whenever a request to a protected resource is rejected with a 401 status code.
+
+The `<protectedResourceMetadata>` sub-element is optional and accepts the following attributes.
+
+[cols="1,1,1,3",options="header"]
+|===
+|Attribute |Type |Default |Description
+
+|`advertisedScopes`
+|String (comma-separated)
+|—
+|Scopes to publish in the metadata document, for example, `toys_browse, cart_read`.
+
+|`jwtBuilderRef`
+|String
+|—
+|Reference to a `<jwtBuilder>` element used to sign the metadata JWT.
+|===
+
+[source,xml]
+----
+<openidConnectClient id="protected-resource-demo"
+    clientId="protected-resource"
+    clientSecret="..."
+    jwkEndpointUrl="https://auth.example.com/oidc/endpoint/SampleProvider/jwk"
+    tokenEndpointAuthMethod="basic"
+    issuerIdentifier="https://auth.example.com/oidc/endpoint/SampleProvider"
+    authFilterRef="mcpAuthFilter"
+    inboundPropagation="required">
+    <protectedResourceMetadata
+        advertisedScopes="toys_browse, toys_search, cart_read, cart_write"/>
+</openidConnectClient>
+----
+
+==== Example: metadata document
+
+When a client sends a `GET` request to `/.well-known/oauth-protected-resource/myApp/protected`, Liberty responds with the following document.
+
+----
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "resource": "https://resource.example.com/myApp/protected",
+  "authorization_servers": ["https://auth.example.com/oidc/endpoint/SampleProvider"],
+  "scopes_supported": ["toys_browse", "toys_search", "cart_read", "cart_write"]
+}
+----
+
+* `resource` — the absolute URL of the protected resource.
+* `authorization_servers` — populated from the `issuerIdentifier` attribute of the matching `<openidConnectClient>`. If `issuerIdentifier` is not set, Liberty derives the authorization server from `validationEndpointUrl` by stripping its last path segment (for example, `\https://as.example.com/introspect` becomes `\https://as.example.com`). If neither is configured, the field is omitted.
+* `scopes_supported` — present only when `advertisedScopes` is configured on `<protectedResourceMetadata>`; omitted otherwise.
+
+NOTE: Requests for paths not protected by any `openidConnectClient` return a 404 response.
+
+==== Example: 401 response with resource_metadata
+
+When a request to a protected resource is rejected because no valid token is present, Liberty returns the following response.
+
+----
+HTTP/1.1 401 Unauthorized
+WWW-Authenticate: Bearer realm="oauth", resource_metadata="https://resource.example.com/.well-known/oauth-protected-resource/myApp/protected"
+----
+
+The `resource_metadata` URL points to the metadata document for the specific protected path. A client can follow this URL to discover the authorization server automatically.
+
+==== Related information
+
+* https://datatracker.ietf.org/doc/html/rfc9728[RFC 9728: OAuth 2.0 Protected Resource Metadata]
+* https://modelcontextprotocol.io/specification/2025-03-26/basic/authorization[MCP Authorization specification]
