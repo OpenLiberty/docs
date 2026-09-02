@@ -25,8 +25,12 @@ NOTE: The MCP protocol includes various features, but the `mcp-1.0` feature only
 
 The `mcp-1.0` feature uses the https://github.com/mcp-java/java-mcp-annotations[`org.mcpjava` API], which is available on Maven Central.
 
-Add the following dependency to your `pom.xml`:
+Add the following dependency to your `pom.xml` or `build.gradle`:
 
+[tabs]
+====
+Maven::
++
 [source,xml]
 ----
 <!-- MCP Server API -->
@@ -37,9 +41,20 @@ Add the following dependency to your `pom.xml`:
     <scope>provided</scope>
 </dependency>
 ----
+Gradle::
++
+[source,gradle]
+----
+providedCompile 'org.mcpjava:mcp-server-api:1.0.0'
+----
+====
 
 Some features — such as `@Schema`, `DefaultValueConverter`, `ToolManager`, and `ToolResponseEncoder` — are provided by the Liberty API, which is available on Maven Central under `io.openliberty.api:io.openliberty.mcp`:
 
+[tabs]
+====
+Maven::
++
 [source,xml]
 ----
 <!-- Liberty MCP extensions (io.openliberty.mcp) -->
@@ -50,6 +65,13 @@ Some features — such as `@Schema`, `DefaultValueConverter`, `ToolManager`, and
     <scope>provided</scope>
 </dependency>
 ----
+Gradle::
++
+[source,gradle]
+----
+providedCompile 'io.openliberty.api:io.openliberty.mcp:1.0.117'
+----
+====
 
 === Enable the feature
 
@@ -81,7 +103,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 @ApplicationScoped
 public class McpTools {
 
-    @Tool(description = "Gets the current time")
+    @Tool(description = "Get the current time")
     public String getTime() {
         return LocalDateTime.now().toString();
     }
@@ -135,7 +157,7 @@ Once registered, IBM Bob discovers your tools automatically the next time a conv
 
 === Registering tools
 
-To expose a method to AI agents, annotate it with {javadoc-base}/org/mcpjava/server/tools/Tool.html[@Tool] inside a CDI-managed bean.
+To expose a method to AI agents, annotate the method with {javadoc-base}/org/mcpjava/server/tools/Tool.html[@Tool] inside a CDI-managed bean.
 
 [source,java]
 ----
@@ -167,7 +189,7 @@ public class WeatherTools {
 }
 ----
 
-NOTE: The class must be annotated with a CDI scope such as `@ApplicationScoped` or `@RequestScoped` for `@Tool`-annotated methods to be discovered. Liberty ignores any class that is not annotated with a CDI scope.
+NOTE: The class must be annotated with a CDI scope such as `@ApplicationScoped` or `@RequestScoped` for tools to be discovered. Liberty does not discover tools in unannotated classes.
 
 The AI agent reads the `description` to decide when and how to call the tool. Writing clear, precise descriptions is critical for effective tool use.
 
@@ -253,7 +275,7 @@ public class CatalogueTools {
 
 === Using structured content
 
-In MCP, tool responses can carry two representations of the same data: _unstructured_ content (plain text or JSON text) and _structured_ content (a typed JSON object). Unstructured content is the default because AI agents work well with free-form text. Structured content is useful when a downstream client or tool-chaining workflow needs to consume a strongly-typed object rather than parsing text.
+In MCP, tool responses can carry two representations of the same data: _unstructured_ content (plain text or JSON text) and _structured_ content (a JSON object). Unstructured content is the default because AI agents work well with free-form text. Structured content is useful when a downstream client or tool-chaining workflow needs to consume a typed object rather than parsing text.
 
 NOTE: Structured content is only returned to clients that negotiate MCP protocol version `2025-06-18` or later. Clients using earlier protocol versions receive the unstructured text content only.
 
@@ -283,7 +305,7 @@ public class CityTools {
 
 === Registering encoders
 
-When you return a POJO from a tool method, Liberty serialises it to JSON by default. To control exactly how a type is encoded, implement {javadoc-base}/org/mcpjava/server/ContentEncoder.html[ContentEncoder<T>] as a CDI bean. Implement `getType()` to specify which type the encoder handles, and `encode()` to produce a `ContentBlock`:
+When you return a POJO from a tool method, Liberty serialises it to JSON by default. To control exactly how a type is encoded, implement {javadoc-base}/org/mcpjava/server/ContentEncoder.html[ContentEncoder<T>] as a CDI bean. Implement `getType()` to specify which type the encoder handles. Implement `encode()` to produce a `ContentBlock`:
 
 [source,java]
 ----
@@ -321,7 +343,7 @@ If multiple encoders of the same kind match a type, the one with the highest `@j
 
 ==== Error responses
 
-An error response indicates that the tool call did not complete successfully. The error response is sent back to the AI agent so that it can decide what to do next. If the error indicates that the AI agent provided invalid arguments, it has the opportunity to call the tool again with different arguments.
+An error response indicates that the tool call failed. The error response is returned to the AI agent so that it can decide what to do next. If the error indicates that the AI agent provided invalid arguments, the AI agent can call the tool again with different arguments.
 
 You can send an error response by returning a {javadoc-base}/org/mcpjava/server/tools/ToolResponse.html[ToolResponse] with `ToolResponse.ofError()`:
 
@@ -335,7 +357,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 @ApplicationScoped
 public class CatalogueTools {
 
-    @Tool(name = "lookup", description = "Lookup an item.")
+    @Tool(name = "lookup", description = "Look up an item.")
     public ToolResponse lookup(@ToolArg(name = "id", description = "Item ID") String id) {
         try {
             String result = catalogue.findById(id);
@@ -349,7 +371,7 @@ public class CatalogueTools {
 
 ==== ToolCallException
 
-It is also possible to return an error response by throwing `io.openliberty.mcp.tools.ToolCallException`. In this case, the tool method does not need to return `ToolResponse`. The message of the `ToolCallException` is returned to the client as the error message:
+You can also signal an error by throwing `io.openliberty.mcp.tools.ToolCallException`. In this case, the tool method does not need to return `ToolResponse`. The `ToolCallException` message is returned to the client as the error response:
 
 [source,java]
 ----
@@ -372,7 +394,7 @@ public class OrderTools {
 }
 ----
 
-Other exceptions can also be automatically wrapped into a `ToolCallException` by annotating the method with `@WrapBusinessError`. The exception message is returned directly to the client as the error message, so check carefully that the error message makes sense to the client and does not reveal any sensitive information from the server. In many cases, it is better to catch and handle the exception yourself and provide a more appropriate error message.
+Other exceptions can be wrapped into a `ToolCallException` by annotating the method with `@WrapBusinessError`. The exception message is returned directly to the client as the error message. Ensure that the error message is meaningful to the client and does not reveal any sensitive information from the server. In many cases, it is better to catch and handle the exception yourself and provide a more appropriate error message.
 
 [source,java]
 ----
@@ -419,7 +441,7 @@ If your method throws an exception that is not converted to a `ToolCallException
 
 NOTE: Cancellation relies on session tracking and is not available in xref:liberty-mcp-server.adoc#stateless-mode[stateless mode]. A cancellation request sent to a stateless server has no effect.
 
-Long-running tools should accept a {javadoc-base}/org/mcpjava/server/Cancellation.html[Cancellation] parameter. The runtime injects this object automatically. Call `cancellation.skipProcessingIfCancelled()` periodically, which throws `Cancellation.OperationCancelledException` if the tool call has been cancelled. It is also possible to call `cancellation.check()` to handle cancellation yourself.
+Long-running tools should accept a {javadoc-base}/org/mcpjava/server/Cancellation.html[Cancellation] parameter. The runtime injects this object automatically. Call `cancellation.skipProcessingIfCancelled()` periodically, which throws `Cancellation.OperationCancelledException` if the tool call has been cancelled. You can also call `cancellation.check()` to handle cancellation yourself.
 
 [source,java]
 ----
@@ -435,7 +457,7 @@ public class DataTools {
 
     @Tool(name = "processDataset",
           title = "Process Large Dataset",
-          description = "Processes a dataset in chunks. Can be cancelled by the client.")
+          description = "Process a dataset in chunks. Supports client-initiated cancellation.")
     public String processDataset(
             @ToolArg(name = "datasetId", description = "ID of the dataset to process") String datasetId,
             Cancellation cancellation) throws InterruptedException {
@@ -455,7 +477,7 @@ NOTE: Cancellation validates both the session ID and the authenticated user. A d
 
 === Writing asynchronous tools
 
-Tool methods can return `CompletionStage<T>` to execute without holding a server thread for the duration of the call. The type `T` follows the same encoding rules as synchronous return types: it can be `String`, a POJO, a content object, or a `ToolResponse`.
+Tool methods can return `CompletionStage<T>`, which allows the tool to complete without holding a server thread for the duration of the call. The type `T` follows the same encoding rules as synchronous return types: it can be `String`, a POJO, a content object, or a `ToolResponse`.
 
 TIP: The special parameters {javadoc-base}/org/mcpjava/server/Cancellation.html[Cancellation] and {javadoc-base}/org/mcpjava/server/McpRequest.html[McpRequest] are also supported on asynchronous tool methods.
 
@@ -464,21 +486,26 @@ TIP: The special parameters {javadoc-base}/org/mcpjava/server/Cancellation.html[
 import java.util.concurrent.CompletionStage;
 import org.mcpjava.server.tools.Tool;
 import org.mcpjava.server.tools.ToolArg;
-import jakarta.annotation.Resource;
-import jakarta.enterprise.concurrent.ManagedExecutorService;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.ClientBuilder;
+import jakarta.ws.rs.core.MediaType;
 
 @ApplicationScoped
 public class RemoteTools {
 
-    @Resource
-    ManagedExecutorService executor;
+    private Client client = ClientBuilder.newClient();
 
-    @Tool(name = "fetchRemoteData",
-          description = "Fetch data from a remote service asynchronously.")
-    public CompletionStage<String> fetchRemoteData(
-            @ToolArg(name = "url", description = "URL to fetch") String url) {
-        return executor.supplyAsync(() -> remoteClient.fetch(url));
+    @Tool
+    public CompletionStage<String> fetchWidget(@ToolArg(name = "id", description = "Widget ID") String id) {
+        validateWidgetId(id);
+
+        return client.target("http://example.com/api/widgets/{id}")
+                .resolveTemplate("id", id)
+                .request(MediaType.APPLICATION_JSON)
+                .rx()
+                .get(Widget.class)
+                .thenApply(w -> createWidgetResponse(w));
     }
 }
 ----
@@ -487,7 +514,7 @@ By default, asynchronous tool executions time out after *30 seconds*. You can co
 
 === Programmatically registering tools
 
-In addition to annotation-based declaration, you can register tools at runtime using the `ToolManager` CDI bean (`io.openliberty.mcp.tools.ToolManager`). This is useful when the available tools depend on runtime conditions, such as whether an external service is reachable.
+In addition to annotation-based declaration, you can register tools at runtime using the `ToolManager` CDI bean (`io.openliberty.mcp.tools.ToolManager`). This is useful when the set of available tools depends on runtime conditions, for example, whether an external service is available.
 
 Inject `ToolManager` and register tools by observing the CDI `Startup` event:
 
@@ -512,7 +539,6 @@ public class WeatherToolRegistrar {
 
     private void registerTools(@Observes Startup startup) {
         if (weatherClientInstance.isResolvable()) {
-            WeatherClient weatherClient = weatherClientInstance.get();
 
             toolManager.newTool("getForecast")
                     .setTitle("Weather Forecast Provider")
@@ -520,11 +546,16 @@ public class WeatherToolRegistrar {
                     .addArgument("latitude",  "Latitude of the location",  true, Double.class)
                     .addArgument("longitude", "Longitude of the location", true, Double.class)
                     .setHandler(args -> {
-                        Double lat = (Double) args.args().get("latitude");
-                        Double lon = (Double) args.args().get("longitude");
-                        String result = weatherClient.getForecast(lat, lon, 4,
+                        WeatherClient weatherClient = weatherClientInstance.get();
+                        try {
+                            Double lat = (Double) args.args().get("latitude");
+                            Double lon = (Double) args.args().get("longitude");
+                            String result = weatherClient.getForecast(lat, lon, 4,
                                 "temperature_2m,snowfall,rain,precipitation,precipitation_probability");
-                        return ToolResponse.ofText(result);
+                                return ToolResponse.ofText(result);
+                        } finally {
+                            weatherClientInstance.destroy(weatherClient);
+                        }
                     })
                     .register();
         }
@@ -537,7 +568,7 @@ Tools registered via `ToolManager` and tools declared with `@Tool` coexist on th
 [[stateless-mode]]
 === Stateless mode
 
-MCP is a stateful protocol. Up to version `2025-11-25`, requests from the same MCP session must be handled by the same server. In a clustered environment, this requires a load balancer that routes requests based on the `Mcp-Session-Id` header.
+MCP is a stateful protocol. In stateful mode, requests from the same MCP session must be handled by the same server. In a clustered environment, this requires a load balancer that routes requests based on the `Mcp-Session-Id` header.
 
 To simplify deployment in a cluster, you can disable stateful features so that no special routing rules are required. The trade-off is that client-driven cancellation of in-flight tool calls is not supported.
 
@@ -589,7 +620,7 @@ TIP: Some AI applications display the server name and description directly in th
 [[async-tool-timeout]]
 === Asynchronous tool timeout
 
-By default, asynchronous tool executions are limited to *30 seconds*. Increase this limit using the `asyncTimeout` attribute. The value uses Liberty's standard duration format — for example, `30s`, `2m`, `1h`:
+By default, asynchronous tool executions are limited to *30 seconds*. Increase this limit using the `asyncTimeout` attribute. The value accepts Liberty's standard duration format — for example, `30s`, `2m`, `1h`:
 
 [source,xml]
 ----
