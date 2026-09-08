@@ -20,6 +20,7 @@
 :mp-5-0: feature:mpMetrics-5.0[display=MicroProfile Metrics 5.0]
 :mp-ft-3-0: feature:mpFaultTolerance-3.0[display=MicroProfile Fault Tolerance 3.0]
 :mp-tel-2-0: feature:mpTelemetry-2.0[display=MicroProfile Telemetry 2.0]
+:mcp-server-1-0-mp-tel-2-0: feature:mcpServer-1.0[display=MCP Server 1.0] and feature:mpTelemetry-2.0[display=MicroProfile Telemetry 2.0]
 :mp-tel-2-0-ft-4-1: feature:mpTelemetry-2.0[display=MicroProfile Telemetry 2.0] and feature:mpFaultTolerance-4.1[display=MicroProfile Fault Tolerance 4.1]
 :connector-metric-features: feature:mpMetrics[display=MicroProfile Metrics] and feature:mpReactiveMessaging[display=MicroProfile Reactive Messaging 3.0]
 :base-metric-features: feature:mpMetrics[display=MicroProfile Metrics]
@@ -44,7 +45,7 @@ To enable only the monitoring components that are used by MicroProfile Telemetry
 
 [source,xml]
 ----
-<monitor  filter="ConnectionPool,ThreadPool,RequestTiming,Session,HTTP"/>
+<monitor  filter="ConnectionPool,ThreadPool,RequestTiming,Session,HTTP,MCP"/>
 ----
 
 To disable all metrics but the `Session` metrics, add the following code to your `server.xml` file:
@@ -73,7 +74,7 @@ The **Version introduced** column specifies the minimum version of the feature t
 // Assisted by watsonx latest genai contribution llama-3-70b
 [#telem-table]
 .MicroProfile Telemetry 2.0 and later metrics reference
-[options="header"cols="3,4a,6a,2,2,2"]
+[options="header", cols="3,4a,6a,2,2,2"]
 |===
 | MicroProfile Telemetry 2.0 name | Attributes | Type and description | Monitoring component | Features required | Version introduced
 
@@ -410,6 +411,35 @@ The **Version introduced** column specifies the minimum version of the feature t
 | Recent CPU utilization for the process as reported by the JVM. This metric is a Gauge.
 | n/a
 | feature:mpTelemetry[display=MicroProfile Telemetry]
+| feature:mpTelemetry-2.0[display=MicroProfile Telemetry 2.0]
+
+| `mcp.server.operation.duration`
+a|
+* `mcp.method.name`: The MCP method that was called, for example, `tools/call`, `initialize`, `tools/list`, or `ping`. Always present.
+* `rpc.response.status_code`: `ok` on success, `error` on failure. Always present.
+* `jsonrpc.protocol.version`: The JSON-RPC version used by the request, for example, `2.0`. Always present.
+* `network.protocol.name`: The HTTP protocol name, for example, `HTTP`. Always present.
+* `network.protocol.version`: The HTTP protocol version, for example, `1.1`. Always present.
+* `network.transport`: The transport layer. Always `tcp`. Always present.
+* `mcp.protocol.version`: The MCP protocol version negotiated with the client, for example, `2025-11-25`. Present after `initialize`.
+* `gen_ai.tool.name`: The name of the tool that was called. Present on `tools/call` requests only.
+* `error.type`: Why the operation failed: `tool_error`, `internal_error`, `http_error`, or a JSON-RPC error code such as `INVALID_PARAMS`. Present on failure only.
+| Duration of every MCP operation. One data point is recorded for each `tools/call`, `tools/list`, `initialize`, `notifications/initialized`, `ping`, and `notifications/cancelled` request. This metric is a `DoubleHistogram` / (seconds). This histogram has the following explicit bucket boundaries [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1.0, 2.0, 5.0, 10.0, 30.0, 60.0, 120.0, 300.0].
+| MCP
+| {mcp-server-1-0-mp-tel-2-0}
+| feature:mpTelemetry-2.0[display=MicroProfile Telemetry 2.0]
+
+| `mcp.server.session.duration`
+a|
+* `jsonrpc.protocol.version`: The JSON-RPC version used when the session was created, for example, `2.0`. Always present.
+* `mcp.protocol.version`: The MCP protocol version negotiated during `initialize`, for example, `2025-11-25`. Always present.
+* `network.protocol.name`: The HTTP protocol name when the session was created, for example, `HTTP`. Always present.
+* `network.protocol.version`: The HTTP protocol version when the session was created, for example, `1.1`. Always present.
+* `network.transport`: The transport layer. Always `tcp`. Always present.
+* `error.type`: Why the session ended abnormally, for example, `timeout`. Only present when the session did not close cleanly.
+| Duration of each MCP session from `initialize` to session end. Only emitted in stateful mode. This metric is a `DoubleHistogram` / (seconds). This histogram has the following explicit bucket boundaries [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1.0, 2.0, 5.0, 10.0, 30.0, 60.0, 120.0, 300.0].
+| MCP
+| {mcp-server-1-0-mp-tel-2-0}
 | feature:mpTelemetry-2.0[display=MicroProfile Telemetry 2.0]
 
 |===

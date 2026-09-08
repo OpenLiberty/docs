@@ -30,7 +30,7 @@ For more information about how Open Liberty handles HTTP session data, see the l
 == Session caching in your application
 
 Distributed session caching with the JCache Session Persistence feature works the same way as non-distributed session caching in an application.
-If your application already caches HTTP session data, you don't need to make any code changes in the application to use the the JCache Session Persistence feature.
+If your application already caches HTTP session data, you don't need to make any code changes in the application to use the JCache Session Persistence feature.
 Instead, link:/docs/latest/reference/feature/sessionCache-1.0.html#_enabling_this_feature[configure the JCache Session Persistence feature in your server.xml file] and reference the library that contains your chosen JCache implementation.
 To benefit from the JCache Session Persistence feature, you must join at least two servers together.
 
@@ -95,7 +95,7 @@ public class ServiceB extends HttpServlet {
 
 Most JCache implementations provide sensible default settings.
 However, if you need to customize your implementation, you can specify a JCache configuration file and link:/docs/latest/reference/feature/sessionCache-1.0.html#_customizing_the_jcache_implementation[reference it from your server.xml file].
-The following example Hazlecast configuration file customizes how Hazelcast defines the cluster:
+The following example Hazelcast configuration file customizes how Hazelcast defines the cluster:
 
 [source, java]
 ----
@@ -111,6 +111,21 @@ The following example Hazlecast configuration file customizes how Hazelcast defi
 ----
 
 In this example, specifying the `myCluster` group name causes the Hazelcast instance to connect only with other instances that are also named `myCluster`.
+
+== Session attribute serialization
+
+When you use distributed session caching, all objects stored as HTTP session attributes must implement `java.io.Serializable`, including all objects in the class hierarchy of those attributes.
+Liberty can only persist serializable attributes to the distributed cache.
+Liberty stores non-serializable attributes only in the local in-memory cache.
+These attributes are lost when the server stops or fails.
+
+Liberty logs the following warning when a non-serializable attribute is detected:
+
+----
+BackedSession putValueGuts Attribute with name <attributeName> is not Serializable. This attribute is not persisted on failover.
+----
+
+Verify that the class for the named attribute and all classes it references implement `java.io.Serializable`.
 
 == See also
 
