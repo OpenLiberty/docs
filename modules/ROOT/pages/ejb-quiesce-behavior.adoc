@@ -1,0 +1,129 @@
+// Copyright (c) 2024 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description: You can configure singleton beans and message-driven beans to control their behavior during the server quiesce period that occurs when the server stop command is issued.
+:seo-title: Configuring Enterprise Beans Quiesce Behavior
+:seo-description: You can configure singleton beans and message-driven beans to control their behavior during the server quiesce period that occurs when the server stop command is issued.
+:page-layout: general-reference
+:page-type: general
+= Configuring Enterprise Beans Quiesce Behavior
+
+When the xref:../reference/command/server-stop.adoc[server stop] command is issued, the server enters a quiesce period before shutting down. During this period, inbound listeners are stopped but existing requests are allowed to complete. You can configure enterprise beans to control their behavior during this quiesce period.
+
+== Configuring singleton bean destruction on server quiesce
+
+By default, a singleton bean is destroyed during application stop, which occurs after the server quiesce period. Configuring an application to be notified of the beginning of the quiesce period can be useful to allow the application to begin shutting down before being stopped and to avoid starting new work while the server is stopping. A Boolean environment entry can be added for a singleton bean to force its destruction prior to the server quiesce period.
+
+The following example shows the syntax for the environment entry in `ejb-jar.xml`:
+
+[source,xml]
+----
+<session>
+    <ejb-name>SingletonQuiesceBean</ejb-name>
+    <env-entry>
+        <env-entry-name>io.openliberty.ejb.destroyOnQuiesce</env-entry-name>
+        <env-entry-type>java.lang.Boolean</env-entry-type>
+        <env-entry-value>true</env-entry-value>
+    </env-entry>
+</session>
+----
+
+When this environment entry is not configured, or is configured with the value `false`, the singleton bean is destroyed during application stop after the server quiesce period. When the configured value is `true`, singleton bean destruction occurs at the beginning of the server quiesce period.
+
+Since `io.openliberty.ejb.destroyOnQuiesce` is a custom environment property, defining the environment entry with `@Resource` or `<env-entry>` in `ejb-jar.xml` is not required. Providing the environment entry binding in `ibm-ejb-jar-bnd.xml` or in `<ejb-jar-bnd>` in `server.xml` overrides the default value of the property.
+
+The following example shows the syntax for the environment entry binding in `ibm-ejb-jar-bnd.xml`:
+
+[source,xml]
+----
+<session name="SingletonQuiesceBean" simple-binding-name="SingletonQuiesce">
+    <env-entry name="io.openliberty.ejb.destroyOnQuiesce" value="true"/>
+</session>
+----
+
+The following example shows the syntax for the environment entry binding in `server.xml`:
+
+[source,xml]
+----
+<webApplication location="sample-application.war">
+    <ejb-jar-bnd>
+        <session name="SingletonQuiesceBean" simple-binding-name="SingletonQuiesce">
+            <env-entry name="io.openliberty.ejb.destroyOnQuiesce" value="true"/>
+        </session>
+    </ejb-jar-bnd>
+</webApplication>
+----
+
+[NOTE]
+====
+This setting is not supported in `web.xml`, `ibm-web-bnd.xml`, or `web-bnd` in `server.xml`. Values that are configured in these locations are ignored.
+====
+
+[NOTE]
+====
+If the singleton bean is configured for destruction during the server quiesce period but the `--force` option is used on the server stop command, the quiesce period is skipped and the singleton bean is destroyed when the application is stopped.
+====
+
+== Configuring message endpoint deactivation on server quiesce
+
+By default, a message endpoint is deactivated during the quiesce period after the server stop command is issued, to prevent additional messages from being delivered while the server is stopping. A Boolean environment entry can be added for a message-driven bean to skip message endpoint deactivation during the server quiesce period.
+
+The following example shows the syntax for the environment entry in `ejb-jar.xml`:
+
+[source,xml]
+----
+<message-driven>
+    <ejb-name>MessageBean</ejb-name>
+    <env-entry>
+        <env-entry-name>io.openliberty.ejb.deactivateOnQuiesce</env-entry-name>
+        <env-entry-type>java.lang.Boolean</env-entry-type>
+        <env-entry-value>false</env-entry-value>
+    </env-entry>
+</message-driven>
+----
+
+When this environment entry is not configured, or is configured with the value `true`, the message endpoint is deactivated during the server quiesce period. When the configured value is `false`, message endpoint deactivation is deferred until application stop, after the `@PreDestroy` method has been called on all `@Startup` singleton beans in the application.
+
+Since `io.openliberty.ejb.deactivateOnQuiesce` is a custom environment property, defining the environment entry with `@Resource` or `<env-entry>` in `ejb-jar.xml` is not required. Providing the environment entry binding in `ibm-ejb-jar-bnd.xml` or in `<ejb-jar-bnd>` in `server.xml` overrides the default value of the property.
+
+The following example shows the syntax for the environment entry binding in `ibm-ejb-jar-bnd.xml`:
+
+[source,xml]
+----
+<message-driven name="MessageBean">
+    <env-entry name="io.openliberty.ejb.deactivateOnQuiesce" value="false"/>
+</message-driven>
+----
+
+The following example shows the syntax for the environment entry binding in `server.xml`:
+
+[source,xml]
+----
+<webApplication location="sample-application.war">
+    <ejb-jar-bnd>
+        <message-driven name="MessageBean">
+            <env-entry name="io.openliberty.ejb.deactivateOnQuiesce" value="false"/>
+        </message-driven>
+    </ejb-jar-bnd>
+</webApplication>
+----
+
+[NOTE]
+====
+This setting is not supported in `web.xml`, `ibm-web-bnd.xml`, or `web-bnd` in `server.xml`. Values that are configured in these locations are ignored.
+====
+
+[NOTE]
+====
+If the message endpoint is configured to deactivate during the server quiesce period but the `--force` option is used on the server stop command, the quiesce period is skipped and the message endpoint is deactivated when the application is stopped.
+====
+
+== Related topics
+
+* xref:jakarta-enterprise-beans.adoc[Jakarta Enterprise Beans (EJB)]
+* xref:../reference/command/server-stop.adoc[server stop command]

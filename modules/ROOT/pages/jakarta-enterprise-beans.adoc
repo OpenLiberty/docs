@@ -1,0 +1,126 @@
+// Copyright (c) 2024 IBM Corporation and others.
+// Licensed under Creative Commons Attribution-NoDerivatives
+// 4.0 International (CC BY-ND 4.0)
+//   https://creativecommons.org/licenses/by-nd/4.0/
+//
+// Contributors:
+//     IBM Corporation
+//
+:page-description: An enterprise bean is a Java component that can be combined with other resources to create Java applications. Liberty supports session beans and message-driven beans running in Enterprise JavaBeans (EJB) containers.
+:seo-title: Jakarta Enterprise Beans (EJB)
+:seo-description: An enterprise bean is a Java component that can be combined with other resources to create Java applications. Liberty supports session beans and message-driven beans running in Enterprise JavaBeans (EJB) containers.
+:page-layout: general-reference
+:page-type: general
+= Jakarta Enterprise Beans (EJB)
+
+An enterprise bean is a Java component that can be combined with other resources to create Java applications. There are two types of enterprise beans supported by Liberty: session beans and message-driven beans.
+
+All beans reside in Enterprise JavaBeans (EJB) containers, which provide an interface between the beans and the application server on which they reside.
+
+An Enterprise Beans application (EJB) is a set of beans that are packaged as a combination of a Java™ archive file (JAR), web application archive file (WAR), or an enterprise application archive file (EAR). Liberty provides several features to enable support for Enterprise Bean applications.
+
+== Session beans
+
+Session beans typically contain the high-level and mid-level business logic for an application. Each method on a session bean performs a particular high-level operation, for example, submitting an order or transferring money between accounts. Session beans often invoke methods on JPA entities in the course of their business logic.
+
+Session beans can be singleton, stateful, or stateless. A stateful bean instance is intended for use by a single client during its lifetime, where the client performs a series of method calls that are related to each other in time for that client. One example is a shopping cart where the client adds items to the cart over the course of an online shopping session. In contrast, a stateless bean instance is typically used by many clients during its lifetime, so stateless beans are appropriate for business logic operations that can be completed in the span of a single method invocation. Stateful beans should be used only where absolutely necessary. Using stateless beans improves the ability to debug, maintain, and scale the application.
+
+The EJB 3.0 specification simplifies session beans. They often invoke methods on JPA entities in the course of their business logic:
+
+- Define the business interface (optional).
+- Define the class that implements it.
+- Add metadata with annotations or with XML deployment descriptors.
+
+=== Singleton session beans
+
+Introduced in the EJB 3.1 specification, a singleton session bean is instantiated once per application and exists for the lifecycle of the application. Singleton session beans are designed for circumstances in which a single enterprise bean instance is shared across and concurrently accessed by clients.
+
+== EJB annotations
+
+Starting with the EJB 3.0 specification, all EJB configuration that can be specified in `ejb-jar.xml` can also be specified by using annotations. There are two types of annotations:
+
+- Component-defining annotations
+- Reference and injection annotations
+
+EJB components, web components, and application clients can use annotations such as `@EJB` and `@Resource` to declare EJB and resource references and the injection of those references. For EJB references defined either in `ejb-jar.xml` or with the `@EJB` annotation, the application can allow the EJBContainer to dynamically bind the reference to the EJB (auto-link) if the referenced bean is located in the same enterprise archive (EAR) file. Otherwise, the application must provide a binding for the reference in either the `ibm-ejb-jar-bnd.xml` file or `ibm-web-bnd.xml` file.
+
+EJB implementation classes can be configured by using the `@Stateless`, `@Stateful`, `@Singleton`, and `@MessageDriven` annotations. The interfaces for an EJB can be configured by using `@Local`, `@Remote`, `@LocalHome`, `@RemoteHome`, and `@LocalBean`. Several other component-defining annotations are related to transaction settings, timers, lifecycle, and other aspects.
+
+== Message-driven beans
+
+Message-driven beans enable asynchronous message servicing.
+
+- The EJB container and a Java Message Service (JMS) provider work together to process messages. When a message arrives from another application component through JMS, the EJB container forwards it through an `onMessage` method call to a message-driven bean instance, which then processes the message. In other respects, message-driven beans are similar to stateless session beans.
+- The EJB container and a Java Connector Architecture (JCA) resource adapter work together to process messages from an enterprise information system (EIS). When a message arrives from an EIS, the resource adapter receives the message and forwards it to a message-driven bean, which then processes the message. The message-driven bean is provided services such as transaction support by the EJB container in the same way that other enterprise beans are provided service.
+
+== EJB container
+
+An Enterprise JavaBeans (EJB) container provides a run-time environment for enterprise beans within the application server. The container handles all aspects of an enterprise bean's operation within the application server and acts as an intermediary between the user-written business logic within the bean and the rest of the application server environment.
+
+One or more EJB modules, each containing one or more enterprise beans, can be installed in a single container.
+
+The EJB container provides the following services to the enterprise bean:
+
+- *Transaction management*: beginning, committing, and rolling back transactions as necessary.
+- *Lifecycle management*: maintaining pools of enterprise bean instances ready for incoming requests and moving these instances between the inactive pools and an active state, ensuring that threading conditions within the bean are satisfied.
+- *JNDI access*
+- *Security services*: The container enforces data protection and access controls implicitly, supporting role-based authorization.
+- *Asynchronous services*: allows methods to execute asynchronously in the background by using the `@Asynchronous` annotation.
+- *Timer service*: supports automatic and programmatic scheduling of timers.
+
+By dynamically maintaining a set of active bean instances and synchronizing bean state with persistent storage when beans are moved into and out of active state, the container makes it possible for an application to manage many more bean instances than could otherwise simultaneously be held in the application server's memory.
+
+== Features providing Enterprise Beans API capabilities
+
+The following features provide the minimum set of capabilities for the Enterprise Beans APIs.
+
+=== ejbLite / enterpriseBeansLite
+
+This feature enables the lite subset of the enterprise beans technology as defined in the Enterprise Beans specification. This subset includes support for local session beans that are written to the Enterprise Beans 3.x APIs. Beginning with the `ejbLite-3.2` feature, the subset also includes support for nonpersistent enterprise bean timers and asynchronous local interface methods.
+
+Other than enabling the feature in the `server.xml` file, no additional configuration is required for this feature.
+
+=== mdb
+
+This feature enables the message-driven bean subset of the enterprise beans technology, which is similar to the support that the `ejbLite` and `enterpriseBeansLite` features enable for session beans. The feature does not enable session beans, so if both session and message-driven beans are needed, both features must be enabled in the `server.xml` file.
+
+The following features provide extensions to the core Enterprise Beans features, which, when combined, support the full set of Enterprise Beans APIs:
+
+=== ejbHome / enterpriseBeansHome
+
+This feature enables support of the Enterprise Beans 2.x APIs, specifically, support for the `javax.ejb.EJBLocalHome` interface. The `javax.ejb.EJBHome` interface is also supported when combined with the `ejbRemote` or `enterpriseBeansHome` features. Since this feature is not useful without the corresponding `ejbLite` or `enterpriseBeansLite` feature, enabling this feature automatically enables the corresponding `ejbLite` or `enterpriseBeansLite` feature.
+
+=== ejbPersistentTimer / enterpriseBeansPersistentTimer
+
+This feature enables support for persistent Enterprise Beans timers. Enabling this feature automatically enables the corresponding `ejbLite` feature.
+
+In addition to enabling this feature in the `server.xml` file, a data source must also be configured to provide the persistent store for the timers. By default, the `DefaultDataSource` data source is used.
+
+=== ejbRemote / enterpriseBeansRemote
+
+This feature enables support for remote Enterprise Beans interfaces. Enabling this feature automatically enables the corresponding `ejbLite` feature.
+
+=== ejb / enterpriseBeans
+
+This feature enables all of the core and extension features for the specification level of the configured feature. For example, `ejb-3.1` enables `ejbLite-3.1` and `mdb-3.1`. This feature provides no additional support beyond what is provided by enabling all of the core and extension Enterprise Beans features.
+
+Other than enabling the feature in the `server.xml` file, no additional configuration is required for this feature beyond what is required for the `ejbPersistentTimer`, `enterpriseBeansPersistentTimer`, `ejbRemote`, and `enterpriseBeansRemote` features.
+
+=== Convenience features that include Enterprise Beans features
+
+==== webProfile
+
+This feature enables all features that are required for the Java EE or Jakarta EE Web Profile, which includes either the `ejbLite` or `enterpriseBeansLite` feature.
+
+==== javaee / jakartaee
+
+This feature enables all features that are required for the Java EE or Jakarta EE Full Profile, which includes either the `ejb` or `enterpriseBeans` convenience feature.
+
+[NOTE]
+====
+Enterprise Beans 2.x API entity beans are not supported by Liberty. For persistence, the Java Persistence API (JPA) must be used instead.
+====
+
+== Related topics
+
+* xref:ejb-quiesce-behavior.adoc[Configuring Enterprise Beans Quiesce Behavior]
