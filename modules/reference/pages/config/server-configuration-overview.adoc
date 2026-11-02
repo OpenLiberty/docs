@@ -18,7 +18,7 @@ This example `server.xml` file configures the server to do the following things:
 
 [source,xml]
 ----
-<server description="new server">
+<server description="new server" quiesceTimeout="1m30s">
     <featureManager>
         <feature>jsp-2.3</feature>
     </featureManager>
@@ -31,6 +31,7 @@ This example `server.xml` file configures the server to do the following things:
 * The `feature` element configures Open Liberty to support the JavaServer Pages 2.3 (`jsp-2.3`) feature. You can also xref:reference:feature/versionless-features.adoc[configure versionless features] for any features that are part of the Java EE, Jakarta EE, or MicroProfile platforms.
 * The `httpPort` attribute is set to `9080`, which configures Open Liberty to listen to incoming traffic to `localhost` on port `9080`.
 * The `autoExpand` attribute is set to `true` so that WAR files are automatically expanded when they are deployed.
+* The `quiesceTimeout` attribute is set to `1m30s`, which gives the server up to 90 seconds to complete active work — such as finishing in-flight requests and stopping services — before shutdown proceeds. The minimum value is `30s` and the default is `30s` if the attribute is omitted.
 
 The term _server configuration_ can be used to refer to all of the files that make up the server configuration or specifically to the configuration that's in the XML files.
 If it's not clear in context, the term _server XML configuration_ might be used to refer to the configuration in the XML files.
@@ -179,7 +180,7 @@ The `jvm.options` file format uses one line per JVM option, as shown in the foll
 -Duser.timezone=_time_zone_code_
 ----
 
-You don’t need to escape special characters, such as spaces.
+You do not need to escape special characters, such as spaces.
 Options are read and provided to the JVM in order.
 If you provide multiple options, then they are all seen by the JVM.
 These files do not support variable substitution.
@@ -189,12 +190,12 @@ These files do not support variable substitution.
 The `bootstrap.properties` file is optional.
 
 This file is read during Open Liberty bootstrap to provide configuration for the earliest stages of the server startup.
-It is read by the server earlier than the `server.xml` file so it can affect the startup and behavior of the Open Liberty kernel from the start.
+The server reads this file earlier than the `server.xml` file, so it can affect the startup and behavior of the Open Liberty kernel from the start.
 The `bootstrap.properties` file is a simple Java properties file and is located in `${server.config.dir}`.
 A common use of the `bootstrap.properties` file is to configure logging because it can affect logging behavior before the `server.xml` file is read.
 
 The `bootstrap.properties` file supports a special optional property, `bootstrap.include`, which specifies another properties file to also be read during the bootstrap stage.
-For example, this `boostrap.include` file can contain a common set of bootstrap properties for multiple servers to use.
+For example, this `bootstrap.include` file can contain a common set of bootstrap properties for multiple servers to use.
 Set the `bootstrap.include` file to an absolute or relative file path.
 
 [#server-xml]
@@ -271,7 +272,7 @@ Default values, which are specified in the `server.xml` file, are used only if n
 ----
 
 You can also specify variables at startup from the command line.
-If you do, the variables that are specified on the command line override all other sources of variables and can't be changed after the server starts:
+If you do, the variables that are specified on the command line override all other sources of variables and cannot be changed after the server starts:
 
 [source,sh]
 ----
@@ -300,7 +301,7 @@ For example, you can create a file in the variables directory that is named `htt
 You can then use the variable `${httpPort}` in the `server.xml` file and it resolves to `9080`.
 
 If you create a file in a directory within the variables directory, then the parent directory is added to the variable name.
-For example, you can create a `${httpPort}` file in the `ports` subdirectory within the variable directory, the variable name is `${ports/httpPort}`.
+For example, if you create a `${httpPort}` file in the `ports` subdirectory within the variable directory, the variable name is `${ports/httpPort}`.
 
 Variables in the `VARIABLE_SOURCE_DIRS` directories can also be defined in properties files.
 If the name of the file ends in `.properties`, each property in the file is used to create a variable.
@@ -354,9 +355,9 @@ The default is `${server.config.dir}`.
 
 [#configuration-merging]
 == Configuration merging
-Since the configuration can consist of multiple files, it is possible that two files provide the same configuration.
+Because the configuration can consist of multiple files, it is possible that two files provide the same configuration.
 In these situations, the server configuration is merged according to a set of simple rules.
-In Open Liberty, configuration is separated into singleton and factory configuration each of which has its own rules for merging.
+In Open Liberty, configuration is separated into singleton and factory configuration, each of which has its own rules for merging.
 Singleton configuration is used to configure a single element (for example, logging).
 Factory configuration is used to configure multiple entities, such as an entire application or data source.
 
@@ -438,7 +439,7 @@ is treated as:
 [#merging-factory-configuration]
 === Merging factory configuration
 Factory configuration merges use the same rules as singleton configuration except elements are not automatically merged just because the element names match.
-With factory  configuration it is valid to configure the same element and mean two different logical objects.
+With factory configuration it is valid to configure the same element and mean two different logical objects.
 Therefore, each element is assumed to configure a distinct object.
 If a single logical object is configured by two elements, the `id` attribute must be set on each element to indicate they are the same thing.
 Variable substitution on an `id` attribute is not supported.
@@ -572,7 +573,7 @@ To disable file system polling and reload only when an MBean is notified, specif
 When the server runs, it might output log messages that reference configuration.
 The references in the log use an XPath-like structure to specify configuration elements.
 The element name is given with the value of the `id` attribute inside square brackets.
-If no `id` is specified in the server  configuration an `id` is automatically generated.
+If no `id` is specified in the server configuration, an `id` is automatically generated.
 Based on the following server XML configuration example, the `dataStore` element and the child `dataSource` are identified in the logs as `dataStore[myDS]` and `dataStore[myDS]/dataSource[default-0]`.
 
 [source,xml]
