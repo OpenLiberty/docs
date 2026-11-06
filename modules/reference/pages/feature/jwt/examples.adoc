@@ -16,6 +16,44 @@ The `issuer` attribute in the example is the `\http://example.com` URL that iden
 
 The `expiresInSeconds` attribute indicates the token expiration time, which is 600 seconds.
 
+=== Enable workload identity
+
+To enable workload identity in the JWT Builder, set the `workloadIdentityClaim` attribute in the `jwtBuilder` element to your desired claim name. For example:
+
+[source, xml]
+----
+<jwtBuilder id="myJwtBuilder" workloadIdentityClaim="workload-identity" />
+----
+
+When the `JwtBuilder` API is used to create a JWT, it automatically injects the workload identity into the `workload-identity` claim. For example:
+
+[source, java]
+----
+JwtBuilder.create("myJwtBuilder")
+    .subject("jdoe")
+    .audience(List.of("server"))
+    .claim("email", "jdoe@example.com")
+    .buildJwt();
+----
+
+This code creates a JWT with the following payload:
+
+[source, json]
+----
+{
+  "token_type": "Bearer",
+  "aud": "server",
+  "sub": "jdoe",
+  "email": "jdoe@example.com",
+  "workload-identity": "myHost,/wlp/usr/,myServer,myApp",
+  "iss": "https://localhost:9443/jwt/myJwtBuilder",
+  "exp": 1790280039,
+  "iat": 1790272839
+}
+----
+
+The format of the workload identity claim's value is `<host-name>,<path-to-usr-dir>,<server-name>,<app-name>`. In a containerized environment, you can use the `CONTAINER_HOST` and `CONTAINER_NAME` environment variables to customize the `<host-name>` and `<server-name>` values.
+
 === Configure the JWT consumer
 
 When the JSON Web Token feature is enabled, Open Liberty creates a default configuration with the following values.
