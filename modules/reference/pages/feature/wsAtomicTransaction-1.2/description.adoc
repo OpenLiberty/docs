@@ -1,0 +1,23 @@
+The `wsAtomicTransaction-1.2` feature enables Web Services Atomic Transaction (WS-AT) support for JAX-WS applications, so that transactions can be propagated to other services. The feature is supported on all Open Liberty editions and platforms.
+
+The `propagation` attribute on the `wsAtomicTransaction` element in the `server.xml` file controls when outbound requests include the WS-AT coordination context. The attribute is available in version 26.0.0.12 and later and requires the `wsAtomicTransaction-1.2` feature.
+
+[source,xml]
+----
+<wsAtomicTransaction propagation="check_wsdl"/>
+----
+
+The `propagation` attribute accepts the following values:
+
+- `always` (default): Outbound requests within an active transaction always include the WS-AT coordination context.
+- `check_wsdl`: Outbound requests include the WS-AT coordination context only when the target WSDL policy includes a WS-AT assertion.
+
+With `check_wsdl`, the server determines the assertion status for each request:
+
+- A `Required` WS-AT assertion attaches the context. The request fails if no transaction is active.
+- An `Optional` WS-AT assertion attaches the context if a transaction is active. Otherwise, the request is sent as plain SOAP.
+- No WS-AT assertion, or a policy that cannot be determined, sends plain SOAP with no context. The endpoint is not enlisted in the transaction. For example, a `Dispatch` client with no WSDL falls into this case.
+
+The `propagation` attribute can be changed while the server is running. An invalid value logs message `CWWKG0032W` and the server uses `always`.
+
+On a server that has only the internal WS-AT features and not the public `wsAtomicTransaction-1.2` feature, the `propagation` attribute is accepted without a warning and has no effect on application traffic. For more information about the transaction service, see xref:transaction-service.adoc[Manage transaction recovery with the transaction service].
